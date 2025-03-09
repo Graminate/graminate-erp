@@ -27,7 +27,7 @@ const navigation = {
   ],
   ourProducts: [
     { key: "Get Started", href: "/products/graminate" },
-    { key: "Pricing", href: "/company/pricing" },
+    { key: "Pricing", href: "/pricing" },
     { key: "Downloads", href: "/company/downloads" },
   ],
 };
@@ -132,7 +132,9 @@ const Footer = () => {
             </div>
 
             <div className="col-span-2 xl:col-span-1">
-              <h3 className="text-sm font-semibold text-white">Graminate AgroERP</h3>
+              <h3 className="text-sm font-semibold text-white">
+                Graminate AgroERP
+              </h3>
               <ul role="list" className="mt-2 space-y-2">
                 {navigation.ourProducts.map((item) => (
                   <li key={item.key}>
