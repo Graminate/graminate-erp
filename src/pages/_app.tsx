@@ -1,6 +1,6 @@
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
-import { appWithTranslation } from "next-i18next";
+
 import { TemperatureScaleProvider } from "@/lib/context/TemperatureScaleContext";
 
 function App({ Component, pageProps }: AppProps) {
@@ -10,4 +10,4 @@ function App({ Component, pageProps }: AppProps) {
     </TemperatureScaleProvider>
   );
 }
-export default appWithTranslation(App);
+export default App;

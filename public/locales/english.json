@@ -1,0 +1,11 @@
+{
+  "profile_settings": "Profile Settings",
+  "applies_across_account": "This applies across your account.",
+  "first_name": "First Name",
+  "last_name": "Last Name",
+  "phone_number": "Phone Number",
+  "language": "Language",
+  "time_format": "Time Format",
+  "save_changes": "Save Changes",
+  "profile_updated": "Profile updated successfully!"
+}

@@ -42,13 +42,13 @@ const Navbar: React.FC<NavbarProps> = ({
     },
   ];
 
-  // Fetch user details similar to onMount in Svelte
   useEffect(() => {
     async function fetchUserDetails() {
       try {
-        const response = await fetch(
-          `http://localhost:3000/api/fetch/${userId}`
-        );
+        const response = await fetch(`/api/user/${userId}`, {
+          credentials: "include", 
+        });
+
         if (response.ok) {
           const data = await response.json();
           setUser({
@@ -66,12 +66,15 @@ const Navbar: React.FC<NavbarProps> = ({
         console.error("Error fetching user details:", error);
       }
     }
-    fetchUserDetails();
+
+    if (userId) {
+      fetchUserDetails();
+    }
   }, [userId]);
 
   const handleLogout = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/logout", {
+      const response = await fetch("http://localhost:3000/api/user/logout", {
         method: "POST",
         credentials: "include",
       });

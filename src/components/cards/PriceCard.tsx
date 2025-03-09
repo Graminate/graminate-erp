@@ -26,8 +26,6 @@ const PriceCard: React.FC<PriceCardProps> = ({
   isSelected,
   onClick,
 }) => {
-  const { t } = useTranslation("common"); // Load translations
-
   return (
     <div
       onClick={onClick}
@@ -49,7 +47,7 @@ const PriceCard: React.FC<PriceCardProps> = ({
         </h2>
         {popular && (
           <span className="rounded-full bg-blue-500 px-2.5 py-1 text-xs leading-5 font-semibold text-white">
-            {t("website.pricing.regular_pack.mostPopular")}
+            Most Popular
           </span>
         )}
       </div>
@@ -71,7 +69,7 @@ const PriceCard: React.FC<PriceCardProps> = ({
           "mt-6 block rounded-md px-3 py-2 text-center text-sm leading-6 font-semibold focus-visible:outline focus-visible:outline-offset-2"
         )}
       >
-        {t("website.pricing.buy_plan")}
+        Buy Plan
       </a>
       <ul
         role="list"

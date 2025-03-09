@@ -14,11 +14,9 @@ import OTPModal from "@/components/modals/OTPModal";
 const SignInPage: React.FC = () => {
   const router = useRouter();
 
-  // Registration Part
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
   const [userEmailForOtp, setUserEmailForOtp] = useState("");
 
-  // Forgot Password
   const [isForgotPasswordModalOpen, setIsForgotPasswordModalOpen] =
     useState(false);
   const openForgotPasswordModal = () => {
@@ -92,7 +90,7 @@ const SignInPage: React.FC = () => {
     }
 
     try {
-      const response = await fetch("/api/login", {
+      const response = await fetch("/api/user/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -182,7 +180,7 @@ const SignInPage: React.FC = () => {
     setUserEmailForOtp(registerData.email);
 
     try {
-      const otpResponse = await fetch("http://localhost:3000/otp/send-otp", {
+      const otpResponse = await fetch("/api/otp/send-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: registerData.email }),
@@ -212,7 +210,7 @@ const SignInPage: React.FC = () => {
 
   const handleOtpValidation = async (otp: string) => {
     try {
-      const verifyResponse = await fetch("/otp/verify-otp", {
+      const verifyResponse = await fetch("/api/otp/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: userEmailForOtp, otp }),
@@ -229,7 +227,7 @@ const SignInPage: React.FC = () => {
         return;
       }
 
-      const registerResponse = await fetch("/api/register", {
+      const registerResponse = await fetch("/api/user/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(registerData),

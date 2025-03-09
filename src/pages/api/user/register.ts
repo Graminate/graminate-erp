@@ -1,8 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextApiRequest, NextApiResponse } from "next";
 import argon2 from "argon2";
 import pool from "@/config/database";
 
-export async function POST(req: NextRequest) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
+  }
   try {
     const {
       first_name,
@@ -12,13 +18,10 @@ export async function POST(req: NextRequest) {
       business_name,
       date_of_birth,
       password,
-    } = await req.json();
+    } = req.body;
 
     if (!first_name || !last_name || !email || !phone_number || !password) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+      return res.status(400).json({ error: "Missing required fields" });
     }
 
     // Check if the user already exists
@@ -28,10 +31,9 @@ export async function POST(req: NextRequest) {
     );
 
     if (existingUser.rows.length > 0) {
-      return NextResponse.json(
-        { error: "Email or phone number already in use" },
-        { status: 409 }
-      );
+      return res
+        .status(409)
+        .json({ error: "Email or phone number already in use" });
     }
 
     // Hash password using argon2
@@ -46,7 +48,7 @@ export async function POST(req: NextRequest) {
     // Insert new user into the database
     const result = await pool.query(
       `INSERT INTO users (first_name, last_name, email, phone_number, business_name, date_of_birth, password) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING user_id, first_name, last_name, email, phone_number, business_name`,
+             VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING user_id, first_name, last_name, email, phone_number, business_name`,
       [
         first_name,
         last_name,
@@ -58,15 +60,11 @@ export async function POST(req: NextRequest) {
       ]
     );
 
-    return NextResponse.json(
-      { message: "User registered successfully", user: result.rows[0] },
-      { status: 201 }
-    );
+    return res
+      .status(201)
+      .json({ message: "User registered successfully", user: result.rows[0] });
   } catch (err) {
     console.error("Error registering user:", err);
-    return NextResponse.json(
-      { error: "Failed to register user" },
-      { status: 500 }
-    );
+    return res.status(500).json({ error: "Failed to register user" });
   }
 }
