@@ -10,30 +10,35 @@ type MenuItem = {
   subItems?: MenuItem[];
 };
 
-const settingsMenu: MenuItem[] = [
-  {
-    label: "Your Preferences",
-    subItems: [
-      { label: "General", href: "/platform/settings/general/" },
-      { label: "Notifications", href: "/platform/settings/notifications" },
-    ],
-  },
-  {
-    label: "Account",
-    subItems: [{ label: "Account Settings", href: "/account/defaults" }],
-  },
-  {
-    label: "Tools",
-    subItems: [
-      { label: "Meetings", href: "/tools/meetings" },
-      { label: "Content", href: "/tools/content" },
-      { label: "Payments", href: "/tools/payments" },
-    ],
-  },
-];
-
 const SettingsBar: React.FC = () => {
   const router = useRouter();
+  const { user_id } = router.query;
+  const userId = Array.isArray(user_id) ? user_id[0] : user_id;
+
+  const settingsMenu: MenuItem[] = [
+    {
+      label: "Your Preferences",
+      subItems: [
+        {
+          label: "General",
+          href: `/platform/${userId}/settings/general/`,
+        },
+        {
+          label: "Notifications",
+          href: `/platform/${userId}/settings/notifications`,
+        },
+      ],
+    },
+    {
+      label: "Account",
+      subItems: [
+        {
+          label: "Account Settings",
+          href: `/platform/${userId}/settings/account`,
+        },
+      ],
+    },
+  ];
 
   const goBack = () => {
     router.back();
@@ -72,9 +77,9 @@ const SettingsBar: React.FC = () => {
               </>
             ) : (
               <Link href={menu.href || "#"}>
-                <a className="block px-2 py-1 text-sm font-medium text-gray-700 rounded hover:bg-gray-400">
+                <div className="block px-2 py-1 text-sm font-medium text-gray-700 rounded hover:bg-gray-400">
                   {menu.label}
-                </a>
+                </div>
               </Link>
             )}
           </div>

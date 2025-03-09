@@ -3,6 +3,9 @@ import PlatformLayout from "@/layout/PlatformLayout";
 import TemperatureCard from "@/components/cards/weather/TemperatureCard";
 import Calendar from "@/components/ui/Calendar";
 import Loader from "@/components/ui/Loader";
+import ProgressCard from "@/components/cards/ProgressCard";
+import StatusCard from "@/components/cards/StatusCard";
+import Head from "next/head";
 
 interface Coordinates {
   lat: number;
@@ -17,7 +20,6 @@ const UserPlatformPage: React.FC = () => {
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [temperatureScale] = useState<string>("Fahrenheit");
 
-  // Derived state for temperature scale
   const fahrenheit = temperatureScale === "Fahrenheit";
 
   const steps = [
@@ -28,7 +30,6 @@ const UserPlatformPage: React.FC = () => {
     "Harvest",
   ];
 
-  // On mount: get saved step and check location
   useEffect(() => {
     const savedStep = localStorage.getItem("currentStep");
     if (savedStep) {
@@ -48,12 +49,10 @@ const UserPlatformPage: React.FC = () => {
       });
   }, []);
 
-  // Save currentStep to localStorage on change
   useEffect(() => {
     localStorage.setItem("currentStep", currentStep.toString());
   }, [currentStep]);
 
-  // Check for geolocation availability and get coordinates
   const checkLocationService = (): Promise<Coordinates> => {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
@@ -74,61 +73,68 @@ const UserPlatformPage: React.FC = () => {
     });
   };
 
-  // Handler for step change from ProgressCard
   const handleStepChange = (data: { step: number }) => {
     setCurrentStep(data.step);
   };
 
   return (
-    <PlatformLayout>
-      <main className="min-h-screen text-white relative">
-        <header className="px-6 py-4">
-          <h1 className="text-3xl font-bold text-dark dark:text-light">
-            Dashboard
-          </h1>
-          <hr className="mt-4 border-gray-600" />
-        </header>
+    <>
+      <Head>
+        <title>Graminate | Platform</title>
+      </Head>
+      <PlatformLayout>
+        <main className="min-h-screen text-white relative">
+          <header className="px-6 py-4">
+            <h1 className="text-3xl font-bold text-dark dark:text-light">
+              Dashboard
+            </h1>
+            <hr className="mt-4 border-gray-600" />
+          </header>
 
-        {isLoading ? (
-          <div className="flex justify-center items-center min-h-screen">
-            <Loader />
-          </div>
-        ) : (
-          <div className="flex gap-4 px-6 items-start">
-            {locationServiceEnabled && location && (
-              <div className="flex-shrink-0 w-1/3">
-                <TemperatureCard
-                  lat={location.lat}
-                  lon={location.lon}
-                  fahrenheit={fahrenheit}
+          {isLoading ? (
+            <div className="flex justify-center items-center min-h-screen">
+              <Loader />
+            </div>
+          ) : (
+            <div className="flex gap-4 px-6 items-start">
+              {locationServiceEnabled && location && (
+                <div className="flex-shrink-0 w-1/3">
+                  <h2 className="text-xl font-semibold text-dark dark:text-light mb-2">
+                    Weather
+                  </h2>
+                  <TemperatureCard
+                    lat={location.lat}
+                    lon={location.lon}
+                    fahrenheit={!fahrenheit}
+                  />
+                </div>
+              )}
+
+              <div className="flex-grow">
+                <h2 className="text-xl font-semibold text-dark dark:text-light mb-2">
+                  Budget Tracker
+                </h2>
+                <ProgressCard
+                  steps={steps}
+                  currentStep={currentStep}
+                  onStepChange={handleStepChange}
                 />
-              </div>
-            )}
-
-            <div className="flex-grow">
-              <h2 className="text-xl font-semibold text-dark dark:text-light mb-2">
-                Budget Tracker
-              </h2>
-              {/* <ProgressCard
-                steps={steps}
-                currentStep={currentStep}
-                onStepChange={handleStepChange}
-              /> */}
-              <div className="mt-6 grid grid-cols-2 gap-6">
-                {!error && (
+                <div className="mt-6 grid grid-cols-2 gap-6">
+                  {!error && (
+                    <div>
+                      <StatusCard steps={steps} currentStep={currentStep} />
+                    </div>
+                  )}
                   <div>
-                    {/* <StatusCard steps={steps} currentStep={currentStep} /> */}
+                    <Calendar />
                   </div>
-                )}
-                <div>
-                  <Calendar />
                 </div>
               </div>
             </div>
-          </div>
-        )}
-      </main>
-    </PlatformLayout>
+          )}
+        </main>
+      </PlatformLayout>
+    </>
   );
 };
 

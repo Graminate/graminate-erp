@@ -10,7 +10,7 @@ import {
   faUsers,
   faAddressBook,
   faCloud,
-  faPlug,
+  faDollar,
 } from "@fortawesome/free-solid-svg-icons";
 
 interface SidebarProps {
@@ -33,7 +33,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       icon: faHome,
       label: "Dashboard",
       section: "Dashboard",
-      route: userId ? `/platform/${userId}` : "/platform",
+      route: `/platform/${userId}`,
       subItems: [],
     },
     {
@@ -43,31 +43,23 @@ const Sidebar: React.FC<SidebarProps> = ({
       subItems: [
         {
           label: "Contacts",
-          route: userId ? `/platform/${userId}/contacts` : "/platform/contacts",
+          route: `/platform/${userId}/contacts`,
         },
         {
           label: "Companies",
-          route: userId
-            ? `/platform/${userId}/contacts?view=companies`
-            : "/platform/contacts?view=companies",
+          route: `/platform/${userId}/contacts?view=companies`,
         },
         {
           label: "Deals",
-          route: userId
-            ? `/platform/${userId}/contacts?view=deals`
-            : "/platform/contacts?view=deals",
+          route: `/platform/${userId}/contacts?view=deals`,
         },
         {
           label: "Invoices",
-          route: userId
-            ? `/platform/${userId}/contacts?view=invoices`
-            : "/platform/contacts?view=invoices",
+          route: `/platform/${userId}/contacts?view=invoices`,
         },
         {
           label: "Tickets",
-          route: userId
-            ? `/platform/${userId}/contacts?view=tickets`
-            : "/platform/contacts?view=tickets",
+          route: `/platform/${userId}/contacts?view=tickets`,
         },
       ],
     },
@@ -75,21 +67,21 @@ const Sidebar: React.FC<SidebarProps> = ({
       icon: faChartPie,
       label: "Finder",
       section: "Finder",
-      route: userId ? `/platform/${userId}/finder` : "/platform/finder",
+      route: `/platform/${userId}/finder`,
       subItems: [],
     },
     {
       icon: faChartLine,
       label: "Commodity Prices",
       section: "Commodity Prices",
-      route: userId ? `/platform/${userId}/commodity` : "/platform/commodity",
+      route: `/platform/${userId}/commodity`,
       subItems: [],
     },
     {
       icon: faCloud,
       label: "Weather Monitor",
       section: "Weather Monitor",
-      route: userId ? `/platform/${userId}/weather` : "/platform/weather",
+      route: `/platform/${userId}/weather`,
       subItems: [],
     },
     {
@@ -99,15 +91,15 @@ const Sidebar: React.FC<SidebarProps> = ({
       subItems: [
         {
           label: "Meetings",
-          route: userId ? `/platform/${userId}/meetings` : "/platform/meetings",
+          route: `/platform/${userId}/meetings`,
         },
       ],
     },
     {
-      icon: faPlug,
-      label: "Apps & Integration",
-      section: "Apps & Integration",
-      route: "",
+      icon: faDollar,
+      label: "Budget & Finances",
+      section: "Budget & Finances",
+      route: `/platform/${userId}/budget`,
       subItems: [],
     },
   ];

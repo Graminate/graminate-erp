@@ -2,6 +2,9 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { faChevronUp, faChevronDown } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import Button from "../ui/Button";
 
 interface Notification {
   title: string;
@@ -85,7 +88,13 @@ const NotificationBar: React.FC<NotificationBarProps> = ({
                 onClick={toggleFilterDropdown}
               >
                 Filter
-                <span className="ml-2">{isFilterDropdownOpen ? "▲" : "▼"}</span>
+                <span className="ml-2">
+                  {isFilterDropdownOpen ? (
+                    <FontAwesomeIcon icon={faChevronUp} />
+                  ) : (
+                    <FontAwesomeIcon icon={faChevronDown} />
+                  )}
+                </span>
               </button>
 
               {isFilterDropdownOpen && (
@@ -106,12 +115,8 @@ const NotificationBar: React.FC<NotificationBarProps> = ({
                     <span>Select all</span>
                   </label>
                   <div className="flex justify-between mt-4">
-                    <button className="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600">
-                      Done
-                    </button>
-                    <button className="border px-4 py-2 rounded-md text-gray-700 hover:bg-gray-100">
-                      Cancel
-                    </button>
+                    <Button style="primary" text="Done" />
+                    <Button style="secondary" text="Cancel" />
                   </div>
                 </div>
               )}
@@ -125,7 +130,11 @@ const NotificationBar: React.FC<NotificationBarProps> = ({
               >
                 Actions
                 <span className="ml-2">
-                  {isActionsDropdownOpen ? "▲" : "▼"}
+                  {isActionsDropdownOpen ? (
+                    <FontAwesomeIcon icon={faChevronUp} />
+                  ) : (
+                    <FontAwesomeIcon icon={faChevronDown} />
+                  )}
                 </span>
               </button>
 

@@ -6,9 +6,11 @@ import PlatformLayout from "@/layout/PlatformLayout";
 import SettingsBar from "@/components/layout/SettingsBar";
 import TextField from "@/components/ui/TextField";
 import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
+import { faTimes } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Button from "@/components/ui/Button";
 
-const SettingsPage = () => {
+const GeneralPage = () => {
   const router = useRouter();
   const { view } = router.query;
   const currentView = (view as string) || "profile";
@@ -26,6 +28,8 @@ const SettingsPage = () => {
     });
   };
 
+  const [isSaving, setIsSaving] = useState(false);
+  const [successMessage, setSuccessMessage] = useState("");
   const languageOptions = ["English", "Hindi", "Assamese"];
   const timeFormatOptions = ["12-hour", "24-hour"];
   const [selectedLanguage, setSelectedLanguage] = useState(languageOptions[0]);
@@ -35,6 +39,7 @@ const SettingsPage = () => {
 
   // User state
   const [user, setUser] = useState({
+    profilePicture: "",
     firstName: "",
     lastName: "",
     phoneNumber: "",
@@ -42,38 +47,15 @@ const SettingsPage = () => {
     timeFormat: "24-hour",
   });
 
-  const { user_id } = router.query; // Get user ID from the URL
+  const { user_id } = router.query;
+
+  const [weatherSettings, setWeatherSettings] = useState({
+    location: "",
+    scale: "Celsius",
+    aiSuggestions: false,
+  });
   const userId = Array.isArray(user_id) ? user_id[0] : user_id;
 
-  useEffect(() => {
-    if (!userId) return;
-
-    const fetchUserData = async () => {
-      try {
-        const response = await fetch(`/api/user/${userId}`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch user data");
-        }
-        const data = await response.json();
-
-        setUser({
-          firstName: data.user.first_name || "",
-          lastName: data.user.last_name || "",
-          phoneNumber: data.user.phone_number || "",
-          language: data.user.language || "English",
-          timeFormat: data.user.time_format || "24-hour",
-        });
-      } catch (error) {
-        console.error("Error fetching user data:", error);
-      }
-    };
-
-    fetchUserData();
-  }, [userId]);
-
-  // Save Profile
-  const [isSaving, setIsSaving] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
   const handleSaveChanges = async () => {
     setIsSaving(true);
     setSuccessMessage("");
@@ -104,6 +86,33 @@ const SettingsPage = () => {
       setIsSaving(false);
     }
   };
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const fetchUserData = async () => {
+      try {
+        const response = await fetch(`/api/user/${userId}`);
+        if (!response.ok) {
+          throw new Error("Failed to fetch user data");
+        }
+        const data = await response.json();
+
+        setUser({
+          profilePicture: data.user.profile_picture || "",
+          firstName: data.user.first_name || "",
+          lastName: data.user.last_name || "",
+          phoneNumber: data.user.phone_number || "",
+          language: data.user.language || "English",
+          timeFormat: data.user.time_format || "24-hour",
+        });
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
+    };
+
+    fetchUserData();
+  }, [userId]);
 
   return (
     <>
@@ -138,6 +147,76 @@ const SettingsPage = () => {
                     <p className="text-gray-300 mb-6">
                       This applies across your account.
                     </p>
+                  </div>
+
+                  <div className="flex items-center gap-4 mb-8 relative">
+                    <div className="relative group w-24 h-24">
+                      <img
+                        src={
+                          user.profilePicture ||
+                          `https://eu.ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&size=250`
+                        }
+                        alt="Profile Picture"
+                        className="w-24 h-24 rounded-full object-cover border border-gray-300 dark:border-gray-600"
+                      />
+
+                      {user.profilePicture && (
+                        <div className="absolute inset-0 bg-transparent flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button
+                            onClick={() =>
+                              setUser((prev) => ({
+                                ...prev,
+                                profilePicture: "",
+                              }))
+                            }
+                            className="rounded-full p-2"
+                            aria-label="Remove profile picture"
+                          >
+                            <FontAwesomeIcon
+                              icon={faTimes}
+                              className="size-12 text-red-200"
+                            />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* File Upload Section */}
+                    <div className="flex flex-col">
+                      <label className="text-sm font-medium text-dark dark:text-light">
+                        Upload Profile Picture
+                      </label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        id="profile-upload"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+
+                          if (file) {
+                            if (file.size > 2 * 1024 * 1024) {
+                              // 2MB limit
+                              alert("File size must be less than 2MB");
+                              return;
+                            }
+
+                            const imageUrl = URL.createObjectURL(file);
+                            setUser((prev) => ({
+                              ...prev,
+                              profilePicture: imageUrl,
+                            }));
+                          }
+                        }}
+                      />
+
+                      <label
+                        htmlFor="profile-upload"
+                        className="cursor-pointer bg-green-200 text-white px-3 py-1 rounded text-sm mt-1 text-center w-fit hover:bg-green-100"
+                      >
+                        Choose File
+                      </label>
+                    </div>
                   </div>
 
                   <div className="flex flex-col gap-4 max-w-lg">
@@ -192,17 +271,17 @@ const SettingsPage = () => {
                     />
                   </div>
 
-                  {/* Save Changes Button */}
                   <div className="mt-6">
                     <Button
-                      text="Save Changes"
                       style="primary"
+                      text="Save Changes"
                       onClick={handleSaveChanges}
                     />
                   </div>
 
+                  {/* Success Message */}
                   {successMessage && (
-                    <p className="text-green-200 mt-2">{successMessage}</p>
+                    <p className="text-green-500 mt-2">{successMessage}</p>
                   )}
                 </div>
               )}
@@ -217,6 +296,55 @@ const SettingsPage = () => {
                     <p className="text-gray-300 mb-6">
                       This applies across your account.
                     </p>
+                  </div>
+
+                  {/* Weather Settings Form */}
+                  <div className="flex flex-col gap-4 max-w-lg">
+                    {/* Set Location */}
+                    <TextField
+                      label="Set Location"
+                      placeholder="Enter your location"
+                      value={weatherSettings.location}
+                      onChange={(val) =>
+                        setWeatherSettings((prev) => ({
+                          ...prev,
+                          location: val,
+                        }))
+                      }
+                      width="large"
+                    />
+
+                    {/* Scale Selection */}
+                    <DropdownSmall
+                      label="Scale"
+                      items={["Celsius", "Fahrenheit"]}
+                      selected={weatherSettings.scale}
+                      onSelect={(val) =>
+                        setWeatherSettings((prev) => ({ ...prev, scale: val }))
+                      }
+                    />
+
+                    {/* Enable / Disable AI Suggestions */}
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="ai-suggestions"
+                        checked={weatherSettings.aiSuggestions}
+                        onChange={() =>
+                          setWeatherSettings((prev) => ({
+                            ...prev,
+                            aiSuggestions: !prev.aiSuggestions,
+                          }))
+                        }
+                        className="w-5 h-5"
+                      />
+                      <label
+                        htmlFor="ai-suggestions"
+                        className="text-sm dark:text-light"
+                      >
+                        Enable AI Suggestions
+                      </label>
+                    </div>
                   </div>
                 </div>
               )}
@@ -240,4 +368,4 @@ const SettingsPage = () => {
   );
 };
 
-export default SettingsPage;
+export default GeneralPage;
