@@ -43,23 +43,23 @@ const Sidebar: React.FC<SidebarProps> = ({
       subItems: [
         {
           label: "Contacts",
-          route: `/platform/${userId}/contacts`,
+          route: `/platform/${userId}/crm?view=contacts`,
         },
         {
           label: "Companies",
-          route: `/platform/${userId}/contacts?view=companies`,
+          route: `/platform/${userId}/crm?view=companies`,
         },
         {
-          label: "Deals",
-          route: `/platform/${userId}/contacts?view=deals`,
+          label: "Contracts",
+          route: `/platform/${userId}/crm?view=contracts`,
         },
         {
           label: "Invoices",
-          route: `/platform/${userId}/contacts?view=invoices`,
+          route: `/platform/${userId}/crm?view=invoices`,
         },
         {
           label: "Tickets",
-          route: `/platform/${userId}/contacts?view=tickets`,
+          route: `/platform/${userId}/crm?view=tickets`,
         },
       ],
     },

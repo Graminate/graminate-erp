@@ -1,23 +1,21 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 
 interface SearchBarProps {
-  query: string;
+  value: string;
   placeholder?: string;
   mode?: "table" | "type";
-  onSearch: (searchQuery: string) => void;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 const SearchBar: React.FC<SearchBarProps> = ({
-  query: initialQuery,
+  value,
   placeholder = "",
   mode = "",
-  onSearch,
+  onChange,
 }) => {
-  const [query, setQuery] = useState(initialQuery);
 
-  // Validate placeholder for 'table' mode
   if (mode === "table" && !placeholder) {
     throw new Error(
       "The 'placeholder' parameter is mandatory when 'mode' is set to 'table'."
@@ -28,29 +26,17 @@ const SearchBar: React.FC<SearchBarProps> = ({
     placeholder = "Search";
   }
 
-  const handleSearch = () => {
-    onSearch(query);
-  };
-
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "Enter") {
-      handleSearch();
-    }
-  };
-
   return (
     <div className="relative">
       <input
         type="text"
-        value={query}
+        value={value}
         placeholder={placeholder}
         className="w-full px-4 py-1 border border-gray-300 dark:border-gray-200 focus:border-green-200 rounded-md dark:bg-gray-700 focus:outline-none dark:text-gray-500"
-        onChange={(e) => setQuery(e.target.value)}
-        onKeyDown={handleKeyDown}
+        onChange={onChange}
       />
       <button
         className="absolute inset-y-0 right-4 flex items-center"
-        onClick={handleSearch}
         aria-label="Search"
       >
         <svg

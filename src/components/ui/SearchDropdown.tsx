@@ -22,12 +22,12 @@ const SearchDropdown: React.FC<SearchDropdownProps> = ({
   return (
     <div className="absolute left-0 mt-5 bg-white dark:bg-dark border border-gray-300 dark:border-gray-200 rounded-md shadow-sm w-96 h-48 z-10 overflow-hidden">
       {/* Search Bar */}
-      <div className="bg-gray-400 dark:bg-dark py-1">
+      <div className="bg-light dark:bg-dark py-1">
         <div className="mx-3 my-1">
           <SearchBar
             mode="type"
-            query={searchQuery}
-            onSearch={setSearchQuery}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
       </div>
