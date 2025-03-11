@@ -7,7 +7,7 @@ import Table from "@/components/tables/Table";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
 
-type View = "contacts" | "companies" | "contracts" | "invoices" | "tickets";
+type View = "contacts" | "companies" | "contracts" | "receipts" | "tickets";
 
 const ContactsPage: React.FC = () => {
   const router = useRouter();
@@ -18,7 +18,7 @@ const ContactsPage: React.FC = () => {
   const [contactsData, setContactsData] = useState<any[]>([]);
   const [companiesData, setCompaniesData] = useState<any[]>([]);
   const [contractsData, setContractsData] = useState<any[]>([]);
-  const [invoicesData, setInvoicesData] = useState<any[]>([]);
+  const [receiptsData, setReceiptsData] = useState<any[]>([]);
   const [ticketsData, setTicketsData] = useState<any[]>([]);
   // Data to display based on the view
   const [fetchedData, setFetchedData] = useState<any[]>([]);
@@ -30,7 +30,7 @@ const ContactsPage: React.FC = () => {
     { label: "Contacts", view: "contacts" },
     { label: "Companies", view: "companies" },
     { label: "Contracts", view: "contracts" },
-    { label: "Invoices", view: "invoices" },
+    { label: "Receipts", view: "receipts" },
     { label: "Tickets", view: "tickets" },
   ];
 
@@ -48,7 +48,7 @@ const ContactsPage: React.FC = () => {
       fetch(`/api/contacts/${user_id}`),
       fetch(`/api/companies/${user_id}`),
       fetch(`/api/contracts/${user_id}`),
-      fetch(`/api/invoices/${user_id}`),
+      fetch(`/api/receipts/${user_id}`),
       fetch(`/api/tickets/${user_id}`),
     ])
       .then(
@@ -56,7 +56,7 @@ const ContactsPage: React.FC = () => {
           contactsRes,
           companiesRes,
           contractsRes,
-          invoicesRes,
+          receiptsRes,
           ticketsRes,
         ]) => {
           if (contactsRes.ok) {
@@ -71,9 +71,9 @@ const ContactsPage: React.FC = () => {
             const data = await contractsRes.json();
             setContractsData(data.contracts || []);
           }
-          if (invoicesRes.ok) {
-            const data = await invoicesRes.json();
-            setInvoicesData(data.invoices || []);
+          if (receiptsRes.ok) {
+            const data = await receiptsRes.json();
+            setReceiptsData(data.receipts || []);
           }
           if (ticketsRes.ok) {
             const data = await ticketsRes.json();
@@ -98,8 +98,8 @@ const ContactsPage: React.FC = () => {
       case "contracts":
         setFetchedData(contractsData);
         break;
-      case "invoices":
-        setFetchedData(invoicesData);
+      case "receipts":
+        setFetchedData(receiptsData);
         break;
       case "tickets":
         setFetchedData(ticketsData);
@@ -112,7 +112,7 @@ const ContactsPage: React.FC = () => {
     contactsData,
     companiesData,
     contractsData,
-    invoicesData,
+    receiptsData,
     ticketsData,
   ]);
 
@@ -190,7 +190,7 @@ const ContactsPage: React.FC = () => {
             new Date(item.end_date).toDateString(),
           ]),
         };
-      case "invoices":
+      case "receipts":
         if (fetchedData.length === 0) {
           return { columns: [], rows: [] };
         }
@@ -291,7 +291,7 @@ const ContactsPage: React.FC = () => {
         pathname: `/platform/${user_id}/contracts/${id}`,
         query: { data: rowData },
       });
-    } else if (view === "invoices") {
+    } else if (view === "receipts") {
       router.push({
         pathname: `/platform/${user_id}/invoice/${id}`,
         query: { data: rowData },
@@ -333,7 +333,7 @@ const ContactsPage: React.FC = () => {
               {view === "contacts" && "Contacts"}
               {view === "companies" && "Companies"}
               {view === "contracts" && "Contracts"}
-              {view === "invoices" && "Invoices"}
+              {view === "receipts" && "Receipts"}
               {view === "tickets" && "Tickets"}
               <svg
                 className="ml-2 w-4 h-4 transform transition-transform"

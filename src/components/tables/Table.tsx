@@ -151,6 +151,8 @@ const Table: React.FC<TableProps> = ({
           ? "companies"
           : view === "contacts"
           ? "contacts"
+          : view === "labours"
+          ? "labours"
           : "contracts"
       }?`,
       icon: "warning",
@@ -162,12 +164,11 @@ const Table: React.FC<TableProps> = ({
 
     if (result.isConfirmed) {
       try {
-        const endpoint =
-          view === "companies"
-            ? "companies"
-            : view === "contacts"
-            ? "contacts"
-            : "contracts";
+        let endpoint = "";
+        if (view === "companies") endpoint = "companies";
+        else if (view === "contacts") endpoint = "contacts";
+        else if (view === "labours") endpoint = "labour";
+        else endpoint = "contracts";
 
         await Promise.all(
           rowsToDelete.map(async (id) => {
@@ -312,7 +313,8 @@ const Table: React.FC<TableProps> = ({
                 </td>
                 {view === "contacts" ||
                 view === "companies" ||
-                view === "contracts"
+                view === "contracts" ||
+                view === "labours"
                   ? row.slice(1).map((cell, cellIndex) => (
                       <td
                         key={cellIndex}

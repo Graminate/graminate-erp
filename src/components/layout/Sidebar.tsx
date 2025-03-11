@@ -84,7 +84,7 @@ const Sidebar: React.FC<SidebarProps> = ({
       subItems: [
         {
           label: "Labour Database",
-          route: `/platform/${userId}/database`,
+          route: `/platform/${userId}/labour_database`,
         },
         {
           label: "Payment",
