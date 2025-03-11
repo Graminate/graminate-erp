@@ -1,22 +1,20 @@
-"use client";
+import { useState, useEffect } from "react";
 
-import React, { useState, useEffect } from "react";
-
-interface CustomTextAreaProps {
+type Props = {
   placeholder?: string;
   value: string;
   rows?: number;
   onInput: (value: string) => void;
   descriptionId?: string | null;
-}
+};
 
-const CustomTextArea: React.FC<CustomTextAreaProps> = ({
+const CustomTextArea = ({
   placeholder = "Add a description...",
   value,
   rows = 4,
   onInput,
   descriptionId = null,
-}) => {
+}: Props) => {
   const [isFocused, setIsFocused] = useState(false);
   const [tempValue, setTempValue] = useState(value);
 
@@ -37,8 +35,8 @@ const CustomTextArea: React.FC<CustomTextAreaProps> = ({
     }, 200);
   };
 
-  const handleInput = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setTempValue(event.target.value);
+  const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setTempValue(e.target.value);
   };
 
   const handleSave = async () => {
@@ -110,9 +108,9 @@ const CustomTextArea: React.FC<CustomTextAreaProps> = ({
           tabIndex={0}
           aria-label="Edit description"
           onClick={handleFocus}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
               setIsFocused(true);
             }
           }}

@@ -1,26 +1,21 @@
-"use client";
-
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import NotificationBar from "../NotificationBar";
 import ThemeSwitch from "@/components/ui/Switch/ThemeSwitch";
 
-interface User {
+type User = {
   name: string;
   email: string;
   business: string;
   imageUrl: string;
-}
+};
 
-interface NavbarProps {
+type Props = {
   imageSrc?: string;
   userId: string;
-}
+};
 
-const Navbar: React.FC<NavbarProps> = ({
-  imageSrc = "/images/logo.png",
-  userId,
-}) => {
+const Navbar = ({ imageSrc = "/images/logo.png", userId }: Props) => {
   const router = useRouter();
 
   const [user, setUser] = useState<User>({
@@ -46,7 +41,7 @@ const Navbar: React.FC<NavbarProps> = ({
     async function fetchUserDetails() {
       try {
         const response = await fetch(`/api/user/${userId}`, {
-          credentials: "include", 
+          credentials: "include",
         });
 
         if (response.ok) {

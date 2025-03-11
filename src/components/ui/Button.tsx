@@ -1,5 +1,3 @@
-import React from "react";
-
 type Props = {
   text?: string;
   arrow?: "" | "up" | "down" | "left" | "right";
@@ -11,7 +9,7 @@ type Props = {
   onClick?: () => void;
 };
 
-const Button: React.FC<Props> = ({
+const Button = ({
   text = "Button",
   arrow = "",
   style = "primary",
@@ -20,7 +18,7 @@ const Button: React.FC<Props> = ({
   add = false,
   type = "button",
   onClick,
-}) => {
+}: Props) => {
   const getWidth = (): string => {
     switch (width) {
       case "small":

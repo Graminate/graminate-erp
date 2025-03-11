@@ -2,19 +2,19 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { IconDefinition } from "@fortawesome/free-solid-svg-icons";
 import Button from "../ui/Button";
 
-interface DownloadTableProps {
+type Props = {
   version: string;
   platformIcons: (string | IconDefinition)[];
   platforms: string[];
   mobile?: boolean;
-}
+};
 
-const DownloadTable: React.FC<DownloadTableProps> = ({
+const DownloadTable = ({
   version,
   platformIcons,
   platforms,
   mobile = false,
-}) => {
+}: Props) => {
   return (
     <>
       <div className="w-full rounded-lg">

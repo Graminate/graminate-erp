@@ -1,15 +1,11 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
 
-interface HomeNavBarProps {
+type Props = {
   imageSrc?: string;
-}
+};
 
-const HomeNavbar: React.FC<HomeNavBarProps> = ({
-  imageSrc = "/images/logo.png",
-}) => {
+const HomeNavbar = ({ imageSrc = "/images/logo.png" }: Props) => {
   return (
     <header className="bg-gray-800 py-2">
       <div className="mx-auto max-w-7xl px-2 sm:px-4 lg:divide-y lg:divide-gray-700 lg:px-8">

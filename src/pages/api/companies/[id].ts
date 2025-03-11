@@ -5,7 +5,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const { id } = req.query; // 'id' acts as userId in this case
+  const { id } = req.query;
 
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method Not Allowed" });

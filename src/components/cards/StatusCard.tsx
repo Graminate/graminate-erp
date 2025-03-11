@@ -10,14 +10,14 @@ import NavPanel from "../layout/NavPanel";
 
 Chart.register(DoughnutController, ArcElement, Tooltip, Legend);
 
-interface StatusCardProps {
+type Props = {
   steps: string[];
   currentStep: number;
-}
+};
 
 type ButtonType = { name: string; view: string };
 
-const StatusCard: React.FC<StatusCardProps> = ({ steps, currentStep }) => {
+const StatusCard = ({ steps, currentStep }: Props) => {
   const [activeView, setActiveView] = useState<string>("");
   const [allocated, setAllocated] = useState<number>(0);
   const [spent, setSpent] = useState<number>(0);
@@ -53,7 +53,6 @@ const StatusCard: React.FC<StatusCardProps> = ({ steps, currentStep }) => {
     { name: "Storage", view: "Storage" },
   ];
 
-  // Whenever currentStep changes, update buttons and set default activeView to the first button in the group.
   useEffect(() => {
     if (currentStep === 1) {
       setButtons(buttonsForStep1);

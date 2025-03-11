@@ -1,17 +1,15 @@
-"use client";
-
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faDroplet } from "@fortawesome/free-solid-svg-icons";
 import Chart from "chart.js/auto";
 import type { ChartConfiguration, Chart as ChartJS } from "chart.js";
 
-interface PrecipitationCardProps {
+type Props = {
   lat?: number;
   lon?: number;
-}
+};
 
-const PrecipitationCard: React.FC<PrecipitationCardProps> = ({ lat, lon }) => {
+const PrecipitationCard = ({ lat, lon }: Props) => {
   const [error, setError] = useState<string | null>(null);
   const [displayMode, setDisplayMode] = useState<"Small" | "Large">("Small");
   const [weatherData, setWeatherData] = useState<any>(null);

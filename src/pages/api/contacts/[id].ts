@@ -9,7 +9,6 @@ export default async function handler(
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  // Correctly extract the `id` from req.query instead of `userId`
   const { id } = req.query;
 
   try {

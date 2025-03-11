@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
 import Button from "@/components/ui/Button";
 import SearchDropdown from "@/components/ui/SearchDropdown";
@@ -9,7 +9,7 @@ import Head from "next/head";
 
 type View = "contacts" | "companies" | "contracts" | "receipts" | "tickets";
 
-const ContactsPage: React.FC = () => {
+const ContactsPage = () => {
   const router = useRouter();
   const { user_id, view: queryView } = router.query;
   const view: View =

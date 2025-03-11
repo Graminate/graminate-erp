@@ -1,24 +1,20 @@
-"use client";
-
-import React from "react";
-
-interface TextAreaProps {
+type Props = {
   label?: string;
   isDisabled?: boolean;
   type?: "disabled" | "";
   placeholder?: string;
   value: string;
   onChange: (val: string) => void;
-}
+};
 
-const TextArea: React.FC<TextAreaProps> = ({
+const TextArea = ({
   label = "",
   isDisabled = false,
   type = "",
   placeholder = "",
   value,
   onChange,
-}) => {
+}: Props) => {
   const getFieldClass = () => {
     switch (type) {
       case "disabled":

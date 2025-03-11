@@ -3,7 +3,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-// Create a new pool instance
+// Main Database pool instance
 const pool = new Pool({
   user: process.env.DB_USER,
   host: process.env.DB_HOST,
@@ -16,7 +16,6 @@ const pool = new Pool({
       : false, // Enable SSL for production
 });
 
-// Log connection success/failure
 pool.connect((err) => {
   if (err) {
     console.error("Error connecting to PostgreSQL:", err);

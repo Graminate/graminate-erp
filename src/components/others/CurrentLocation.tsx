@@ -1,11 +1,11 @@
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 
 const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
 const LATITUDE = 26.13584410412397;
 const LONGITUDE = 91.81508731307306;
 
-const CurrentLocation: React.FC = () => {
+const CurrentLocation = () => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {

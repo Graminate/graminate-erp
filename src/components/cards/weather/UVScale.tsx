@@ -1,10 +1,8 @@
-"use client";
-
 import React from "react";
 
-interface UVScaleProps {
+type Props = {
   uvIndex: number;
-}
+};
 
 const uvLevels = [
   { label: "Low", min: 0, max: 2, color: "from-green-500 to-yellow-200" },
@@ -26,7 +24,7 @@ function getUVPosition(uv: number): string {
   return `${Math.min(100, Math.max(0, percentage))}%`;
 }
 
-const UVScale: React.FC<UVScaleProps> = ({ uvIndex }) => {
+const UVScale = ({ uvIndex }: Props) => {
   return (
     <div className="flex flex-col items-center w-full max-w-md mx-auto py-3 relative">
       <div className="relative w-full h-2 flex rounded-md overflow-hidden bg-gradient-to-r">

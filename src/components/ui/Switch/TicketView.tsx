@@ -1,13 +1,11 @@
-"use client";
-
 import React from "react";
 
-interface TicketViewProps {
+type Props = {
   isListView: boolean;
   toggleView: (view: boolean) => void;
-}
+};
 
-const TicketView: React.FC<TicketViewProps> = ({ isListView, toggleView }) => {
+const TicketView = ({ isListView, toggleView }: Props) => {
   return (
     <div className="flex items-center space-x-2 hover:bg-gray-400 rounded-md">
       {/* Kanban View Icon */}

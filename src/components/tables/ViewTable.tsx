@@ -2,36 +2,31 @@
 
 import React, { useState, useEffect, JSX } from "react";
 
-interface Task {
+type Task = {
   id: string;
   title: string;
   type: string;
-}
+};
 
-interface Column {
+type Column = {
   id: string;
   title: string;
   tasks: Task[];
-}
+};
 
-interface Header {
+type Header = {
   label: string;
   key?: string;
-}
+};
 
-interface ViewTableProps {
+type Props = {
   columns: Column[];
   filterTasks: (column: Column) => Task[];
   searchQuery: string;
   headers: Header[];
-}
+};
 
-const ViewTable: React.FC<ViewTableProps> = ({
-  columns,
-  filterTasks,
-  searchQuery,
-  headers,
-}) => {
+const ViewTable = ({ columns, filterTasks, searchQuery, headers }: Props) => {
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [isAllSelected, setIsAllSelected] = useState(false);
 
@@ -45,7 +40,7 @@ const ViewTable: React.FC<ViewTableProps> = ({
     return (
       <span
         dangerouslySetInnerHTML={{
-          __html: text.replace(regex, '<mark class="bg-green-300">$1</mark>'),
+          __html: text.replace(regex, '<mark class="bg-yellow-200">$1</mark>'),
         }}
       />
     );
@@ -63,8 +58,8 @@ const ViewTable: React.FC<ViewTableProps> = ({
     });
   };
 
-  const toggleSelectAll = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const checked = event.target.checked;
+  const toggleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked;
     setIsAllSelected(checked);
 
     if (checked) {

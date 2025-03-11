@@ -1,4 +1,4 @@
-const Loader: React.FC = () => {
+const Loader = () => {
   return (
     <div className="max-w-md p-12 text-center">
       <svg

@@ -20,7 +20,6 @@ export default async function handler(
   }
 
   try {
-    // Check if contact exists
     const existingContact = await pool.query(
       "SELECT * FROM contacts WHERE contact_id = $1",
       [parsedId]

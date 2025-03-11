@@ -1,18 +1,12 @@
-"use client";
+import { useState } from "react";
 
-import React, { useState } from "react";
-
-interface ClockPickerProps {
+type Props = {
   selectedTime?: string;
   onTimeSelected: (time: string) => void;
   onCancel: () => void;
-}
+};
 
-const ClockPicker: React.FC<ClockPickerProps> = ({
-  selectedTime = "12:00 PM",
-  onTimeSelected,
-  onCancel,
-}) => {
+const ClockPicker = ({ onTimeSelected, onCancel }: Props) => {
   const [hours, setHours] = useState<number>(12);
   const [minutes, setMinutes] = useState<number>(0);
   const [period, setPeriod] = useState<"AM" | "PM">("AM");

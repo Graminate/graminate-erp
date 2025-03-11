@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import { useState } from "react";
 
 const t = (key: string) => key;
 
@@ -8,17 +7,13 @@ type ButtonData = {
   view: string;
 };
 
-interface NavPanelProps {
+type Props = {
   buttons: ButtonData[];
   activeView: string;
   onNavigate: (view: string) => void;
-}
+};
 
-const NavPanel: React.FC<NavPanelProps> = ({
-  buttons,
-  activeView,
-  onNavigate,
-}) => {
+const NavPanel = ({ buttons, activeView, onNavigate }: Props) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (

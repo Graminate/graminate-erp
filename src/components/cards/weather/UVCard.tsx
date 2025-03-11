@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSun } from "@fortawesome/free-solid-svg-icons";
@@ -9,23 +7,20 @@ import UVScale from "./UVScale";
 
 const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
-interface UVCardProps {
+type Props = {
   lat?: number;
   lon?: number;
-}
+};
 
 type UVHourly = { time: Date; uv: number };
 
-const UVCard: React.FC<UVCardProps> = ({ lat, lon }) => {
+const UVCard = ({ lat, lon }: Props) => {
   const [lowestRiskLevel, setLowestRiskLevel] = useState<string>("");
   const [highestRiskLevel, setHighestRiskLevel] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [displayMode, setDisplayMode] = useState<"Small" | "Large">("Small");
   const [weatherData, setWeatherData] = useState<any>(null);
   const [uvIndexToday, setUvIndexToday] = useState<number | null>(null);
-  const [uvIndexArray, setUvIndexArray] = useState<
-    { date: Date; uvIndex: number }[]
-  >([]);
   const [hourlyUVDataByDay, setHourlyUVDataByDay] = useState<
     { day: Date; uvHours: UVHourly[] }[]
   >([]);
@@ -37,8 +32,6 @@ const UVCard: React.FC<UVCardProps> = ({ lat, lon }) => {
   const [hoveredTime, setHoveredTime] = useState<string>("");
   const [hoveredUV, setHoveredUV] = useState<number>(0);
   const [hoveredRisk, setHoveredRisk] = useState<string>("");
-  const graphWidth = 300;
-  const graphHeight = 150;
 
   const chartCanvas = useRef<HTMLCanvasElement | null>(null);
   const chartRef = useRef<ChartJS | null>(null);

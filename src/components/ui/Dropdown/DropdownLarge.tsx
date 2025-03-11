@@ -1,24 +1,22 @@
-"use client";
+import { useState, useRef, useEffect } from "react";
 
-import React, { useState, useRef, useEffect } from "react";
-
-interface DropdownLargeProps {
+type Props = {
   items: string[];
   selectedItem: string;
   onSelect: (item: string) => void;
   type?: "form" | "";
   label?: string;
   width?: "full" | "half" | "auto";
-}
+};
 
-const DropdownLarge: React.FC<DropdownLargeProps> = ({
+const DropdownLarge = ({
   items,
   selectedItem,
   onSelect,
   type = "",
   label = "",
   width = "auto",
-}) => {
+}: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
 

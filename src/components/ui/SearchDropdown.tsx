@@ -1,17 +1,12 @@
-"use client";
-
-import React, { useState } from "react";
+import { useState } from "react";
 import SearchBar from "./SearchBar";
 
-interface SearchDropdownProps {
+type Props = {
   items: { label: string; view: string }[];
   navigateTo: (view: string) => void;
-}
+};
 
-const SearchDropdown: React.FC<SearchDropdownProps> = ({
-  items,
-  navigateTo,
-}) => {
+const SearchDropdown = ({ items, navigateTo }: Props) => {
   const [searchQuery, setSearchQuery] = useState("");
 
   // Filter items based on search query

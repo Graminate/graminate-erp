@@ -7,21 +7,21 @@ import TextArea from "../ui/TextArea";
 
 const genderOptions = ["Male", "Female", "Other"];
 
-interface FormElementProps {
+type Props = {
   view: string;
   onClose: () => void;
   onSubmit?: (values: Record<string, string>) => void;
   formTitle?: string;
-}
+};
 
-const FormElement: React.FC<FormElementProps> = ({
+const FormElement = ({
   view,
   onClose,
-  onSubmit = (values) => {
+  onSubmit = () => {
     console.warn("onSubmit is not provided");
   },
   formTitle,
-}) => {
+}: Props) => {
   const router = useRouter();
   const { user_id } = router.query;
 
@@ -63,7 +63,7 @@ const FormElement: React.FC<FormElementProps> = ({
 
   const [labourValues, setLabourValues] = useState({
     fullName: "",
-    guardianName: "", // Added guardian name
+    guardianName: "",
     dateOfBirth: "",
     gender: "",
     role: "",
@@ -72,7 +72,6 @@ const FormElement: React.FC<FormElementProps> = ({
     address: "",
   });
 
-  // Dropdown options
   const contactTypes = [
     "Supplier",
     "Distributor",
@@ -83,7 +82,6 @@ const FormElement: React.FC<FormElementProps> = ({
   const companyType = ["Supplier", "Distributor", "Factories", "Buyer"];
   const ticketStatus = ["Active", "Completed", "On Hold"];
 
-  // Simulate fly transition (from x: 500px to 0)
   const [animate, setAnimate] = useState(false);
   useEffect(() => {
     setAnimate(true);

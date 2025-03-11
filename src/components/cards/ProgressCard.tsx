@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from "react";
 
-interface ProgressCardProps {
+type Props = {
   steps: string[];
   currentStep?: number;
   onStepChange?: (event: { step: number }) => void;
-}
+};
 
-const ProgressCard: React.FC<ProgressCardProps> = ({
+const ProgressCard = ({
   steps,
   currentStep: initialStep = 1,
   onStepChange = () => {},
-}) => {
+}: Props) => {
   const [currentStep, setCurrentStep] = useState<number>(initialStep);
   const [limitedSteps, setLimitedSteps] = useState<string[]>([]);
   const [progress, setProgress] = useState<number>(0);

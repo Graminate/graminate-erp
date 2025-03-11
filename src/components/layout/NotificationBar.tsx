@@ -1,29 +1,27 @@
-"use client";
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { faChevronUp, faChevronDown } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Button from "../ui/Button";
 
-interface Notification {
+type Notification = {
   title: string;
   description: string;
-}
+};
 
-interface NotificationBarProps {
+type Props = {
   notifications: Notification[];
   isOpen: boolean;
   closeNotificationBar: () => void;
   userId: string;
-}
+};
 
-const NotificationBar: React.FC<NotificationBarProps> = ({
+const NotificationBar = ({
   notifications,
   isOpen,
   closeNotificationBar,
   userId,
-}) => {
+}: Props) => {
   const [isFilterDropdownOpen, setFilterDropdownOpen] = useState(false);
   const [isActionsDropdownOpen, setActionsDropdownOpen] = useState(false);
   const router = useRouter();

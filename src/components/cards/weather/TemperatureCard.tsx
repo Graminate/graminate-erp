@@ -1,14 +1,10 @@
-"use client";
+import { useState, useEffect } from "react";
 
-import React, { useState, useEffect } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faSun } from "@fortawesome/free-solid-svg-icons";
-
-interface TemperatureCardProps {
+type Props = {
   lat?: number;
   lon?: number;
   fahrenheit: boolean;
-}
+};
 
 type HourlyForecast = {
   time: string;
@@ -24,11 +20,7 @@ type DailyForecast = {
   icon: string;
 };
 
-const TemperatureCard: React.FC<TemperatureCardProps> = ({
-  lat,
-  lon,
-  fahrenheit,
-}) => {
+const TemperatureCard = ({ lat, lon, fahrenheit }: Props) => {
   const [temperature, setTemperature] = useState<number | null>(null);
   const [apparentTemperature, setApparentTemperature] = useState<number | null>(
     null
@@ -272,7 +264,11 @@ const TemperatureCard: React.FC<TemperatureCardProps> = ({
               </div>
               <div className="text-center">
                 <p className="text-5xl">
-                  {getHourlyWeatherIcon(rain ?? undefined, snowfall ?? undefined, cloudCover ?? undefined)}
+                  {getHourlyWeatherIcon(
+                    rain ?? undefined,
+                    snowfall ?? undefined,
+                    cloudCover ?? undefined
+                  )}
                 </p>
                 <p className="mt-2 text-sm">
                   H: {formatTemperature(maxTemp)} L:{" "}

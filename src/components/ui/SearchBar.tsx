@@ -2,14 +2,14 @@
 
 import React from "react";
 
-interface SearchBarProps {
+type Props = {
   value: string;
   placeholder?: string;
   mode?: "table" | "type";
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({
+const SearchBar: React.FC<Props> = ({
   value,
   placeholder = "",
   mode = "",

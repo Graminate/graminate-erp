@@ -1,16 +1,14 @@
-"use client";
-
-import React, { useState } from "react";
+import { useState } from "react";
 import Button from "../ui/Button";
 
-interface Item {
+type Item = {
   description: string;
   quantity: number;
   rate: number;
   amount: number;
-}
+};
 
-const CustomTable: React.FC = () => {
+const CustomTable = () => {
   const [items, setItems] = useState<Item[]>([
     { description: "", quantity: 1, rate: 0, amount: 0 },
   ]);

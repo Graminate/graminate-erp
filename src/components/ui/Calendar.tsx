@@ -1,19 +1,17 @@
-"use client";
-
 import React, { useState, useEffect } from "react";
 import Swal from "sweetalert2";
 import ClockPicker from "./ClockPicker";
 import TextField from "./TextField";
 import DropdownSmall from "./Dropdown/DropdownSmall";
 
-interface Task {
+type Task = {
   name: string;
   time: string;
-}
+};
 
-interface Tasks {
+type Tasks = {
   [key: string]: Task[];
-}
+};
 
 const reminderOptions = [
   "At time of event",
@@ -28,7 +26,7 @@ const reminderOptions = [
   "1 week before",
 ];
 
-const Calendar: React.FC = () => {
+const Calendar = () => {
   // State for tasks, selected date, and task form
   const [tasks, setTasks] = useState<Tasks>({});
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -241,7 +239,8 @@ const Calendar: React.FC = () => {
       ) {
         classes += "text-red-200 ";
       } else {
-        classes += "hover:bg-gray-300 dark:hover:bg-blue-100 ";
+        classes +=
+          "hover:bg-gray-300 dark:hover:bg-blue-100 text-dark dark:text-white";
       }
     }
     return classes;

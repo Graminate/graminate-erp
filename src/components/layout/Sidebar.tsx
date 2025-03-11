@@ -1,5 +1,3 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -13,17 +11,13 @@ import {
   faDollar,
 } from "@fortawesome/free-solid-svg-icons";
 
-interface SidebarProps {
+type Props = {
   isOpen: boolean;
   userId?: string;
   onSectionChange?: (section: string) => void;
-}
+};
 
-const Sidebar: React.FC<SidebarProps> = ({
-  isOpen,
-  userId,
-  onSectionChange,
-}) => {
+const Sidebar = ({ isOpen, userId, onSectionChange }: Props) => {
   const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);

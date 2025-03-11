@@ -1,9 +1,8 @@
-"use client";
 import ProgressCard from "@/components/cards/ProgressCard";
 import StatusCard from "@/components/cards/StatusCard";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
-import React, { useState, useEffect } from "react";
+import { useState } from "react";
 
 const BudgetPage = () => {
   const steps = [

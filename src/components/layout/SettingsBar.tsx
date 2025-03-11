@@ -1,4 +1,3 @@
-import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/router";
 
@@ -10,7 +9,7 @@ type MenuItem = {
   subItems?: MenuItem[];
 };
 
-const SettingsBar: React.FC = () => {
+const SettingsBar = () => {
   const router = useRouter();
   const { user_id } = router.query;
   const userId = Array.isArray(user_id) ? user_id[0] : user_id;

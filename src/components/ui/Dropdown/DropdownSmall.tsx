@@ -1,24 +1,22 @@
-"use client";
+import { useState, useRef, useEffect } from "react";
 
-import React, { useState, useRef, useEffect } from "react";
-
-interface DropdownSmallProps {
+type Props = {
   items: string[];
   selected: string;
   onSelect: (item: string) => void;
   direction?: "up" | "down";
   label?: string | null;
   placeholder?: string;
-}
+};
 
-const DropdownSmall: React.FC<DropdownSmallProps> = ({
+const DropdownSmall = ({
   items,
   selected,
   onSelect,
   direction = "down",
   label = null,
   placeholder = "Select an option",
-}) => {
+}: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
   const dropdownId = `dropdown-${Math.random().toString(36).substring(2, 15)}`;
@@ -64,7 +62,11 @@ const DropdownSmall: React.FC<DropdownSmallProps> = ({
         id={dropdownId}
         className="w-full border border-gray-300 text-dark dark:text-light dark:bg-gray-700 text-sm p-1 rounded flex justify-between items-center"
         onClick={toggleDropdown}
-        style={{ minWidth: "180px", maxWidth: "90%", boxSizing: "border-box" }}
+        style={{
+          minWidth: "180px",
+          maxWidth: "90%",
+          boxSizing: "border-box",
+        }}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
       >

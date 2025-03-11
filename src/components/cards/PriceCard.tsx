@@ -1,7 +1,4 @@
-import React from "react";
-import { useTranslation } from "next-i18next";
-
-interface PriceCardProps {
+type Props = {
   label: string;
   description: string;
   price: string;
@@ -11,11 +8,11 @@ interface PriceCardProps {
   popular?: boolean;
   isSelected: boolean;
   onClick: () => void;
-}
+};
 
 const classNames = (...classes: string[]) => classes.filter(Boolean).join(" ");
 
-const PriceCard: React.FC<PriceCardProps> = ({
+const PriceCard = ({
   label,
   description,
   price,
@@ -25,7 +22,7 @@ const PriceCard: React.FC<PriceCardProps> = ({
   popular = false,
   isSelected,
   onClick,
-}) => {
+}: Props) => {
   return (
     <div
       onClick={onClick}

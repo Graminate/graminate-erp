@@ -1,13 +1,11 @@
-"use client";
+import { useState } from "react";
 
-import React, { useState } from "react";
-
-interface UploadProps {
+type Props = {
   label: string;
   onFileSelect?: (file: File | null) => void;
-}
+};
 
-const Upload: React.FC<UploadProps> = ({ label, onFileSelect }) => {
+const Upload = ({ label, onFileSelect }: Props) => {
   const [file, setFile] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string>("");
 

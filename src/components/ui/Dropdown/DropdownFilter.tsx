@@ -1,22 +1,20 @@
-"use client";
-
 import React, { useState, useRef, useEffect } from "react";
 
-interface DropdownFilterProps {
+type Props = {
   items: string[];
   direction?: "up" | "down";
   placeholder?: string;
   selectedItems: string[];
   onChange: (selected: string[]) => void;
-}
+};
 
-const DropdownFilter: React.FC<DropdownFilterProps> = ({
+const DropdownFilter = ({
   items,
   direction = "down",
   placeholder = "Select",
   selectedItems,
   onChange,
-}) => {
+}: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
 
@@ -24,7 +22,8 @@ const DropdownFilter: React.FC<DropdownFilterProps> = ({
     setIsOpen(!isOpen);
   };
 
-  const isItemSelected = (item: string): boolean => selectedItems.includes(item);
+  const isItemSelected = (item: string): boolean =>
+    selectedItems.includes(item);
 
   const toggleItem = (item: string) => {
     if (isItemSelected(item)) {
@@ -36,7 +35,10 @@ const DropdownFilter: React.FC<DropdownFilterProps> = ({
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
@@ -99,7 +101,9 @@ const DropdownFilter: React.FC<DropdownFilterProps> = ({
                 checked={isItemSelected(item)}
                 onChange={() => toggleItem(item)}
               />
-              <span className="ml-2 text-sm text-dark dark:text-light">{item}</span>
+              <span className="ml-2 text-sm text-dark dark:text-light">
+                {item}
+              </span>
             </label>
           ))}
         </div>

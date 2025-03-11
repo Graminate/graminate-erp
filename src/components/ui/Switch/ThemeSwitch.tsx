@@ -1,12 +1,11 @@
-"use client";
 
 import React, { useEffect, useState } from "react";
 
-interface ThemeSwitchProps {
+type Props = {
   switchAction?: () => void;
-}
+};
 
-const ThemeSwitch: React.FC<ThemeSwitchProps> = ({ switchAction }) => {
+const ThemeSwitch = ({ switchAction }: Props) => {
   const [isDarkMode, setIsDarkMode] = useState(false);
 
   useEffect(() => {

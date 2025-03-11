@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { showToast, toastMessage } from "@/stores/toast";
 
-const Toast: React.FC = () => {
+const Toast = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [message, setMessage] = useState("");
 

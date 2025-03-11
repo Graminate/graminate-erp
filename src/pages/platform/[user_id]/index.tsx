@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import PlatformLayout from "@/layout/PlatformLayout";
 import TemperatureCard from "@/components/cards/weather/TemperatureCard";
 import Calendar from "@/components/ui/Calendar";
@@ -7,12 +7,12 @@ import ProgressCard from "@/components/cards/ProgressCard";
 import StatusCard from "@/components/cards/StatusCard";
 import Head from "next/head";
 
-interface Coordinates {
+type Coordinates = {
   lat: number;
   lon: number;
 }
 
-const UserPlatformPage: React.FC = () => {
+const UserPlatformPage = () => {
   const [location, setLocation] = useState<Coordinates | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [locationServiceEnabled, setLocationServiceEnabled] = useState(true);

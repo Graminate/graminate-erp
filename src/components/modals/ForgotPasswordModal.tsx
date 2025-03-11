@@ -5,15 +5,12 @@ import Swal from "sweetalert2";
 import TextField from "../ui/TextField";
 import Button from "../ui/Button";
 
-interface ForgotPasswordModalProps {
+type Props = {
   isOpen: boolean;
   closeModal: () => void;
-}
+};
 
-const ForgotPasswordModal: React.FC<ForgotPasswordModalProps> = ({
-  isOpen,
-  closeModal,
-}) => {
+const ForgotPasswordModal = ({ isOpen, closeModal }: Props) => {
   const [email, setEmail] = useState("");
 
   const handleResetPassword = async (e: React.FormEvent) => {

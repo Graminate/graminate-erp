@@ -1,17 +1,15 @@
-"use client";
-
 import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSun } from "@fortawesome/free-solid-svg-icons";
 
-interface SunCardProps {
+type Props = {
   lat?: number;
   lon?: number;
-}
+};
 
 const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
-const SunCard: React.FC<SunCardProps> = ({ lat, lon }) => {
+const SunCard = ({ lat, lon }: Props) => {
   const [sunriseTime, setSunriseTime] = useState<string | null>(null);
   const [sunsetTime, setSunsetTime] = useState<string | null>(null);
   const [locationName, setLocationName] = useState<string | null>(null);

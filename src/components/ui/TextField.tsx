@@ -1,8 +1,6 @@
-"use client";
+import { useState } from "react";
 
-import React, { useState } from "react";
-
-interface TextFieldProps {
+type Props = {
   label?: string;
   placeholder?: string;
   errorMessage?: string;
@@ -14,9 +12,9 @@ interface TextFieldProps {
   value: string;
   onChange: (val: string) => void;
   width?: "small" | "medium" | "large" | "";
-}
+};
 
-const TextField: React.FC<TextFieldProps> = ({
+const TextField = ({
   label = "",
   placeholder = "",
   errorMessage = "This cannot be left blank",
@@ -28,7 +26,7 @@ const TextField: React.FC<TextFieldProps> = ({
   value,
   onChange,
   width = "",
-}) => {
+}: Props) => {
   const [showPassword, setShowPassword] = useState(false);
 
   const getFieldClass = () => {

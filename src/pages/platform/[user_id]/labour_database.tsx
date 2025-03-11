@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
 import Button from "@/components/ui/Button";
 import FormElement from "@/components/form/FormElement";
@@ -8,7 +8,7 @@ import Head from "next/head";
 
 type View = "labours";
 
-const LabourDatabase: React.FC = () => {
+const LabourDatabase = () => {
   const router = useRouter();
   const { user_id, view: queryView } = router.query;
   const parsedUserId = Array.isArray(user_id) ? user_id[0] : user_id;
@@ -54,10 +54,10 @@ const LabourDatabase: React.FC = () => {
       return {
         columns: [
           "Full Name",
-          "DOB",
+          "Date of Birth",
           "Gender",
           "Role",
-          "Contact Number",
+          "Phone Number",
           "Aadhar Card",
           "Address",
           "Created On",
@@ -87,15 +87,18 @@ const LabourDatabase: React.FC = () => {
         {/* Header */}
         <div className="flex justify-between items-center dark:bg-dark relative mb-4">
           <div>
-            <h1 className="text-lg font-semibold dark:text-white">Labours</h1>
+            <h1 className="text-lg font-semibold dark:text-white">
+              Worker Database
+            </h1>
             <p className="text-xs text-gray-100">
               {labourRecords.length} Record(s)
             </p>
           </div>
           <div className="flex gap-2">
             <Button
-              text="Create Labour"
+              text="Add Worker"
               style="primary"
+              add
               onClick={() => setIsSidebarOpen(true)}
             />
           </div>

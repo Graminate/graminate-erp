@@ -1,13 +1,11 @@
-"use client";
-
 import React from "react";
 import ScheduleCard from "../cards/ScheduleCard";
 
-interface MeetingModalProps {
+type Props = {
   onClose: () => void;
-}
+};
 
-const MeetingModal: React.FC<MeetingModalProps> = ({ onClose }) => {
+const MeetingModal = ({ onClose }: Props) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-100 bg-opacity-75">
       <div className="bg-white rounded-lg shadow-lg p-6 max-w-full max-h-full overflow-auto">

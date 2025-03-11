@@ -4,7 +4,7 @@ import SearchBar from "../ui/SearchBar";
 import Button from "../ui/Button";
 import DropdownLarge from "../ui/Dropdown/DropdownLarge";
 
-interface TableProps {
+type Props = {
   onRowClick: (row: any[]) => void;
   data: { columns: string[]; rows: any[][] };
   filteredRows: any[][];
@@ -18,9 +18,9 @@ interface TableProps {
   totalRecordCount: number;
   view?: string;
   exportEnabled?: boolean;
-}
+};
 
-const Table: React.FC<TableProps> = ({
+const Table = ({
   onRowClick,
   data,
   filteredRows,
@@ -34,7 +34,7 @@ const Table: React.FC<TableProps> = ({
   totalRecordCount,
   view = "",
   exportEnabled = true,
-}) => {
+}: Props) => {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [sortColumn, setSortColumn] = useState<number | null>(null);
   const [selectAll, setSelectAll] = useState(false);
@@ -88,7 +88,7 @@ const Table: React.FC<TableProps> = ({
       return;
     }
     const csvContent = [
-      data.columns.join(","), // Header row
+      data.columns.join(","),
       ...sortedAndPaginatedRows.map((row) => row.join(",")),
     ].join("\n");
 
@@ -219,7 +219,7 @@ const Table: React.FC<TableProps> = ({
         <div className="flex gap-2">
           <SearchBar
             mode="table"
-            placeholder="Search anything"
+            placeholder="Search data"
             value={searchQuery}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               setSearchQuery(e.target.value)

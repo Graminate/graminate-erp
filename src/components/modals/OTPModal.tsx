@@ -1,21 +1,15 @@
-"use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import Button from "@/components/ui/Button";
 
-interface OTPModalProps {
+type Props = {
   isOpen: boolean;
   email: string;
   onValidate: (otp: string) => void;
   onClose: () => void;
-}
+};
 
-const OTPModal: React.FC<OTPModalProps> = ({
-  isOpen,
-  email,
-  onValidate,
-  onClose,
-}) => {
+const OTPModal = ({ isOpen, email, onValidate, onClose }: Props) => {
   const [otpDigits, setOtpDigits] = useState<string[]>([
     "",
     "",
