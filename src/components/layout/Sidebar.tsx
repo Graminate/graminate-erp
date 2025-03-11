@@ -64,17 +64,10 @@ const Sidebar: React.FC<SidebarProps> = ({
       ],
     },
     {
-      icon: faChartPie,
-      label: "Finder",
-      section: "Finder",
-      route: `/platform/${userId}/finder`,
-      subItems: [],
-    },
-    {
       icon: faChartLine,
-      label: "Commodity Prices",
-      section: "Commodity Prices",
-      route: `/platform/${userId}/commodity`,
+      label: "Price Tracker",
+      section: "Price Tracker",
+      route: `/platform/${userId}/price_tracker`,
       subItems: [],
     },
     {
@@ -86,12 +79,20 @@ const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       icon: faUsers,
-      label: "Employees",
-      section: "Employees",
+      label: "Labour Management",
+      section: "Labour",
       subItems: [
         {
-          label: "Meetings",
-          route: `/platform/${userId}/meetings`,
+          label: "Labour Database",
+          route: `/platform/${userId}/database`,
+        },
+        {
+          label: "Payment",
+          route: `/platform/${userId}/payment`,
+        },
+        {
+          label: "Productivity",
+          route: `/platform/${userId}/productivity`,
         },
       ],
     },
@@ -100,6 +101,13 @@ const Sidebar: React.FC<SidebarProps> = ({
       label: "Budget & Finances",
       section: "Budget & Finances",
       route: `/platform/${userId}/budget`,
+      subItems: [],
+    },
+    {
+      icon: faChartPie,
+      label: "Find Partners",
+      section: "Find Partners",
+      route: `/platform/${userId}/partner_finder`,
       subItems: [],
     },
   ];

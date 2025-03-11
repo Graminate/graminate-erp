@@ -17,7 +17,7 @@ const ContactsPage: React.FC = () => {
 
   const [contactsData, setContactsData] = useState<any[]>([]);
   const [companiesData, setCompaniesData] = useState<any[]>([]);
-  const [contractsData, setcontractsData] = useState<any[]>([]);
+  const [contractsData, setContractsData] = useState<any[]>([]);
   const [invoicesData, setInvoicesData] = useState<any[]>([]);
   const [ticketsData, setTicketsData] = useState<any[]>([]);
   // Data to display based on the view
@@ -69,7 +69,7 @@ const ContactsPage: React.FC = () => {
           }
           if (contractsRes.ok) {
             const data = await contractsRes.json();
-            setContactsData(data.contracts || []);
+            setContractsData(data.contracts || []);
           }
           if (invoicesRes.ok) {
             const data = await invoicesRes.json();
@@ -120,6 +120,9 @@ const ContactsPage: React.FC = () => {
   const tableData = useMemo(() => {
     switch (view) {
       case "contacts":
+        if (fetchedData.length === 0) {
+          return { columns: [], rows: [] };
+        }
         return {
           columns: [
             "First Name",
@@ -142,6 +145,9 @@ const ContactsPage: React.FC = () => {
           ]),
         };
       case "companies":
+        if (fetchedData.length === 0) {
+          return { columns: [], rows: [] };
+        }
         return {
           columns: [
             "Company Name",
@@ -162,25 +168,32 @@ const ContactsPage: React.FC = () => {
           ]),
         };
       case "contracts":
+        if (fetchedData.length === 0) {
+          return { columns: [], rows: [] };
+        }
         return {
           columns: [
             "Deal Name",
             "Partner / Client",
             "Amount",
-            "Stage",
+            "Status",
             "Start Date",
-            "Close Date",
+            "End Date",
           ],
           rows: fetchedData.map((item) => [
             item.deal_id,
             item.deal_name,
             item.partner,
             item.amount,
+            item.stage,
             new Date(item.start_date).toDateString(),
             new Date(item.end_date).toDateString(),
           ]),
         };
       case "invoices":
+        if (fetchedData.length === 0) {
+          return { columns: [], rows: [] };
+        }
         return {
           columns: [
             "ID",

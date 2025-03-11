@@ -46,7 +46,7 @@ const FormElement: React.FC<FormElementProps> = ({
     dealName: "",
     dealPartner: "",
     amountPaid: "",
-    contractStage: "",
+    status: "",
     contractStartDate: "",
     contractEndDate: "",
   });
@@ -167,7 +167,7 @@ const FormElement: React.FC<FormElementProps> = ({
       contract_name: contractsValues.dealName,
       partner: contractsValues.dealPartner,
       amount: contractsValues.amountPaid,
-      stage: contractsValues.contractStage,
+      stage: contractsValues.status,
       start_date: contractsValues.contractStartDate,
       end_date: contractsValues.contractEndDate,
     });
@@ -177,15 +177,25 @@ const FormElement: React.FC<FormElementProps> = ({
         headers: {
           "Content-Type": "application/json",
         },
-        body,
+        body: JSON.stringify({
+          user_id,
+          deal_name: contractsValues.dealName,
+          partner: contractsValues.dealPartner,
+          amount: contractsValues.amountPaid,
+          stage: contractsValues.status,
+          start_date: contractsValues.contractStartDate,
+          end_date: contractsValues.contractEndDate,
+        }),
       });
+
       const result = await response.json();
+      console.log("API Response:", result); // Debugging
       if (response.ok) {
         setContractsValues({
           dealName: "",
           dealPartner: "",
           amountPaid: "",
-          contractStage: "",
+          status: "",
           contractStartDate: "",
           contractEndDate: "",
         });
@@ -408,15 +418,15 @@ const FormElement: React.FC<FormElementProps> = ({
               <TextField
                 label="State of Contract"
                 placeholder="e.g. Initialised, In Process, Completed"
-                value={contractsValues.contractStage}
+                value={contractsValues.status}
                 onChange={(val: string) =>
-                  setContractsValues({ ...contractsValues, contractStage: val })
+                  setContractsValues({ ...contractsValues, status: val })
                 }
               />
             </div>
             <div className="flex flex-col gap-2">
               <TextField
-                label="Contract Start Date"
+                label="Start Date"
                 placeholder="YYYY-MM-DD"
                 value={contractsValues.contractStartDate}
                 onChange={(val: string) =>
@@ -425,6 +435,8 @@ const FormElement: React.FC<FormElementProps> = ({
                     contractStartDate: val,
                   })
                 }
+                width="large"
+                calendar
               />
               <TextField
                 label="Contract End Date"
@@ -436,6 +448,8 @@ const FormElement: React.FC<FormElementProps> = ({
                     contractEndDate: val,
                   })
                 }
+                width="large"
+                calendar
               />
             </div>
             <div className="flex justify-end gap-4 mt-2">
