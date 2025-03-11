@@ -77,7 +77,6 @@ const LabourDetails = () => {
     if (!queryData) return;
     try {
       const parsedLabour = JSON.parse(queryData);
-      console.log("Work Duration:", parsedLabour.work_duration);
       setLabour(parsedLabour);
 
       // Mandatory fields
@@ -93,19 +92,19 @@ const LabourDetails = () => {
       setRole(parsedLabour.role || "");
 
       // Optional fields
-      setVoterId(parsedLabour.voter_id || "");
-      setRationCard(parsedLabour.ration_card || "");
-      setPanCard(parsedLabour.pan_card || "");
-      setDrivingLicense(parsedLabour.driving_license || "");
-      setMnregaJobCardNumber(parsedLabour.mnrega_job_card_number || "");
-      setBankAccountNumber(parsedLabour.bank_account_number || "");
-      setIfscCode(parsedLabour.ifsc_code || "");
-      setBankName(parsedLabour.bank_name || "");
-      setBankBranch(parsedLabour.bank_branch || "");
-      setDisabilityStatus(parsedLabour.disability_status ? "Yes" : "No");
-      setEpfo(parsedLabour.epfo || "");
-      setEsic(parsedLabour.esic || "");
-      setPmKisan(parsedLabour.pm_kisan ? "Yes" : "No");
+      setVoterId(parsedLabour.voter_id ?? ""); // Use nullish coalescing operator
+      setRationCard(parsedLabour.ration_card ?? "");
+      setPanCard(parsedLabour.pan_card ?? "");
+      setDrivingLicense(parsedLabour.driving_license ?? "");
+      setMnregaJobCardNumber(parsedLabour.mnrega_job_card_number ?? "");
+      setBankAccountNumber(parsedLabour.bank_account_number ?? "");
+      setIfscCode(parsedLabour.ifsc_code ?? "");
+      setBankName(parsedLabour.bank_name ?? "");
+      setBankBranch(parsedLabour.bank_branch ?? "");
+      setDisabilityStatus(parsedLabour.disability_status ? "Yes" : "No"); // Convert boolean to string
+      setEpfo(parsedLabour.epfo ?? "");
+      setEsic(parsedLabour.esic ?? "");
+      setPmKisan(parsedLabour.pm_kisan ? "Yes" : "No"); // Convert boolean to string
 
       // Set initial form data for change detection
       setInitialFormData({
@@ -163,8 +162,14 @@ const LabourDetails = () => {
   const handleSave = async () => {
     setSaving(true);
 
+    if (!labour || !labour.labour_id) {
+      Swal.fire("Error", "Labour ID is missing. Cannot update.", "error");
+      setSaving(false);
+      return;
+    }
+
     const payload = {
-      id: labour[0],
+      labour_id: labour.labour_id,
       full_name: fullName,
       date_of_birth: dateOfBirth,
       gender: gender,
@@ -172,15 +177,21 @@ const LabourDetails = () => {
       contact_number: contactNumber,
       aadhar_card_number: aadharCardNumber,
       address: address,
+
+      // Government Data
       voter_id: voterId,
       ration_card: rationCard,
       pan_card: panCard,
       driving_license: drivingLicense,
       mnrega_job_card_number: mnregaJobCardNumber,
+
+      // Bank Data
       bank_account_number: bankAccountNumber,
       ifsc_code: ifscCode,
       bank_name: bankName,
       bank_branch: bankBranch,
+
+      // Other optional fields
       disability_status: disabilityStatus === "Yes",
       role: role,
       epfo: epfo,
@@ -204,29 +215,29 @@ const LabourDetails = () => {
 
       if (response.ok) {
         Swal.fire("Success", "Labour updated successfully", "success");
-        setLabour(result.labour);
+        setLabour(result.updatedLabour);
         setInitialFormData({
-          fullName,
-          dateOfBirth,
-          gender,
-          guardianName,
-          contactNumber,
-          aadharCardNumber,
-          address,
-          voterId,
-          rationCard,
-          panCard,
-          drivingLicense,
-          mnregaJobCardNumber,
-          bankAccountNumber,
-          ifscCode,
-          bankName,
-          bankBranch,
-          disabilityStatus,
-          role,
-          epfo,
-          esic,
-          pmKisan,
+          fullName: payload.full_name,
+          dateOfBirth: payload.date_of_birth,
+          gender: payload.gender,
+          guardianName: payload.guardian_name,
+          contactNumber: payload.contact_number,
+          aadharCardNumber: payload.aadhar_card_number,
+          address: payload.address,
+          voterId: payload.voter_id,
+          rationCard: payload.ration_card,
+          panCard: payload.pan_card,
+          drivingLicense: payload.driving_license,
+          mnregaJobCardNumber: payload.mnrega_job_card_number,
+          bankAccountNumber: payload.bank_account_number,
+          ifscCode: payload.ifsc_code,
+          bankName: payload.bank_name,
+          bankBranch: payload.bank_branch,
+          disabilityStatus: payload.disability_status ? "Yes" : "No",
+          role: payload.role,
+          epfo: payload.epfo,
+          esic: payload.esic,
+          pmKisan: payload.pm_kisan ? "Yes" : "No",
         });
       } else {
         Swal.fire("Error", result.error || "Failed to update labour", "error");
@@ -324,54 +335,62 @@ const LabourDetails = () => {
               <div className="grid grid-cols-2 gap-4">
                 <TextField
                   label="Voter ID"
-                  value={voterId}
+                  value={voterId} // Now voterId will always be set (either actual data or "")
                   onChange={(val) => setVoterId(val)}
                   width="large"
                 />
+
                 <TextField
                   label="Ration Card"
                   value={rationCard}
                   onChange={(val) => setRationCard(val)}
                   width="large"
                 />
+
                 <TextField
                   label="PAN Card"
                   value={panCard}
                   onChange={(val) => setPanCard(val)}
                   width="large"
                 />
+
                 <TextField
                   label="Driving License"
                   value={drivingLicense}
                   onChange={(val) => setDrivingLicense(val)}
                   width="large"
                 />
+
                 <TextField
                   label="MNREGA Job Card Number"
                   value={mnregaJobCardNumber}
                   onChange={(val) => setMnregaJobCardNumber(val)}
                   width="large"
                 />
+
                 <DropdownLarge
                   items={yesNoOptions}
-                  selectedItem={disabilityStatus}
+                  selectedItem={disabilityStatus} // Will default to "" if no data is found
                   onSelect={(value: string) => setDisabilityStatus(value)}
                   type="form"
                   label="Disability Status"
                   width="full"
                 />
+
                 <TextField
                   label="EPFO"
                   value={epfo}
                   onChange={(val) => setEpfo(val)}
                   width="large"
                 />
+
                 <TextField
                   label="ESIC"
                   value={esic}
                   onChange={(val) => setEsic(val)}
                   width="large"
                 />
+
                 <DropdownLarge
                   items={yesNoOptions}
                   selectedItem={pmKisan}

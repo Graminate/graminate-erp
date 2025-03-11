@@ -5,6 +5,8 @@ import DropdownLarge from "../ui/Dropdown/DropdownLarge";
 import Button from "../ui/Button";
 import TextArea from "../ui/TextArea";
 
+const genderOptions = ["Male", "Female", "Other"];
+
 interface FormElementProps {
   view: string;
   onClose: () => void;
@@ -57,6 +59,17 @@ const FormElement: React.FC<FormElementProps> = ({
     status: "",
     industry: "",
     type: "",
+  });
+
+  const [labourValues, setLabourValues] = useState({
+    fullName: "",
+    guardianName: "", // Added guardian name
+    dateOfBirth: "",
+    gender: "",
+    role: "",
+    contactNumber: "",
+    aadharCardNumber: "",
+    address: "",
   });
 
   // Dropdown options
@@ -213,6 +226,52 @@ const FormElement: React.FC<FormElementProps> = ({
   const handleSubmitTickets = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(ticketValues);
+  };
+
+  const handleSubmitLabour = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const body = JSON.stringify({
+      user_id: user_id,
+      full_name: labourValues.fullName,
+      guardian_name: labourValues.guardianName, // Added guardian_name field
+      date_of_birth: labourValues.dateOfBirth,
+      gender: labourValues.gender,
+      role: labourValues.role,
+      contact_number: labourValues.contactNumber,
+      aadhar_card_number: labourValues.aadharCardNumber,
+      address: labourValues.address,
+    });
+
+    try {
+      const response = await fetch("/api/labour/add", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body,
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        setLabourValues({
+          fullName: "",
+          guardianName: "",
+          dateOfBirth: "",
+          gender: "",
+          role: "",
+          contactNumber: "",
+          aadharCardNumber: "",
+          address: "",
+        });
+        handleClose();
+        window.location.reload();
+      } else {
+        alert(result.error || "Failed to add labour");
+      }
+    } catch (error) {
+      console.error("Error adding labour:", error);
+      alert("An unexpected error occurred");
+    }
   };
 
   return (
@@ -508,6 +567,86 @@ const FormElement: React.FC<FormElementProps> = ({
               type="form"
               label="Type"
               width="full"
+            />
+            <div className="flex justify-end gap-4 mt-2">
+              <Button text="Create" style="primary" type="submit" />
+              <Button text="Cancel" style="secondary" onClick={handleClose} />
+            </div>
+          </form>
+        )}
+
+        {/* Form for Labours */}
+        {view === "labours" && (
+          <form
+            className="flex flex-col gap-4 w-full flex-grow"
+            onSubmit={handleSubmitLabour}
+          >
+            <TextField
+              label="Full Name"
+              placeholder="e.g. John Doe"
+              value={labourValues.fullName}
+              onChange={(val: string) =>
+                setLabourValues({ ...labourValues, fullName: val })
+              }
+            />
+            <TextField
+              label="Guardian Name"
+              placeholder="e.g. Parent/Guardian Name"
+              value={labourValues.guardianName}
+              onChange={(val: string) =>
+                setLabourValues({ ...labourValues, guardianName: val })
+              }
+            />
+            <TextField
+              label="Date of Birth"
+              placeholder="YYYY-MM-DD"
+              value={labourValues.dateOfBirth}
+              onChange={(val: string) =>
+                setLabourValues({ ...labourValues, dateOfBirth: val })
+              }
+              calendar
+            />
+            <DropdownLarge
+              items={genderOptions}
+              selectedItem={labourValues.gender}
+              onSelect={(value: string) =>
+                setLabourValues({ ...labourValues, gender: value })
+              }
+              type="form"
+              label="Gender"
+              width="full"
+            />
+            <TextField
+              label="Role"
+              placeholder="e.g. Farmer, Labourer"
+              value={labourValues.role}
+              onChange={(val: string) =>
+                setLabourValues({ ...labourValues, role: val })
+              }
+            />
+            <TextField
+              label="Contact Number"
+              placeholder="e.g. +91 XXXXX XXX XX"
+              value={labourValues.contactNumber}
+              onChange={(val: string) =>
+                setLabourValues({ ...labourValues, contactNumber: val })
+              }
+            />
+            <TextField
+              label="Aadhar Card Number"
+              placeholder="e.g. 1234 5678 9012"
+              value={labourValues.aadharCardNumber}
+              onChange={(val: string) =>
+                setLabourValues({ ...labourValues, aadharCardNumber: val })
+              }
+            />
+            <TextArea
+              label="Address"
+              placeholder="Enter full address"
+              value={labourValues.address}
+              onChange={(val: string) =>
+                setLabourValues({ ...labourValues, address: val })
+              }
             />
             <div className="flex justify-end gap-4 mt-2">
               <Button text="Create" style="primary" type="submit" />

@@ -1,6 +1,5 @@
 import Button from "@/components/ui/Button";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
-import TextArea from "@/components/ui/TextArea";
 import TextField from "@/components/ui/TextField";
 import PlatformLayout from "@/layout/PlatformLayout";
 import { useRouter } from "next/router";

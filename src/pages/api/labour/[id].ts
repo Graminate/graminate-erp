@@ -13,13 +13,11 @@ export default async function handler(
     const { id } = req.query;
     console.log("API: Received id:", id);
 
-    // Validate that an id is provided and is a valid number.
     if (!id || isNaN(Number(id))) {
       return res.status(400).json({ error: "Invalid or missing id parameter" });
     }
     const userId = Number(id);
 
-    // Query the labours table for all records belonging to this user.
     const query = `SELECT * FROM labours WHERE user_id = $1 ORDER BY created_at DESC;`;
     const result = await pool.query(query, [userId]);
 
