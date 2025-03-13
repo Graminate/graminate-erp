@@ -8,13 +8,18 @@ type Item = {
   amount: number;
 };
 
-const CustomTable = () => {
-  const [items, setItems] = useState<Item[]>([
-    { description: "", quantity: 1, rate: 0, amount: 0 },
-  ]);
+type CustomTableProps = {
+  items: Item[];
+  onItemsChange: (newItems: Item[]) => void;
+};
 
+const CustomTable: React.FC<CustomTableProps> = ({ items, onItemsChange }) => {
   const addItem = () => {
-    setItems([...items, { description: "", quantity: 1, rate: 0, amount: 0 }]);
+    const newItems = [
+      ...items,
+      { description: "", quantity: 1, rate: 0, amount: 0 },
+    ];
+    onItemsChange(newItems);
   };
 
   const updateItem = (
@@ -31,7 +36,7 @@ const CustomTable = () => {
           ? updatedItems[index].quantity * updatedItems[index].rate
           : updatedItems[index].amount,
     };
-    setItems(updatedItems);
+    onItemsChange(updatedItems);
   };
 
   return (

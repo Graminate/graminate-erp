@@ -293,7 +293,7 @@ const ContactsPage = () => {
       });
     } else if (view === "receipts") {
       router.push({
-        pathname: `/platform/${user_id}/invoice/${id}`,
+        pathname: `/platform/${user_id}/receipts/${id}`,
         query: { data: rowData },
       });
     } else if (view === "tickets") {
@@ -313,6 +313,7 @@ const ContactsPage = () => {
   const formTitle = useMemo(() => {
     if (view === "contacts") return "Create Contact";
     if (view === "companies") return "Create Company";
+    if (view === "receipts") return "Create Company";
     if (view === "tickets") return "Create Ticket";
     return "";
   }, [view]);
