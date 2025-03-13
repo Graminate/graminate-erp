@@ -6,18 +6,15 @@ import {
   Tooltip,
   Legend,
 } from "chart.js";
-import NavPanel from "../layout/NavPanel";
+import NavPanel from "@/components/layout/NavPanel";
 
 Chart.register(DoughnutController, ArcElement, Tooltip, Legend);
 
-type Props = {
-  steps: string[];
-  currentStep: number;
-};
+import { StatusCardProps } from "@/types/card-props";
 
 type ButtonType = { name: string; view: string };
 
-const StatusCard = ({ steps, currentStep }: Props) => {
+const StatusCard = ({ steps, currentStep }: StatusCardProps) => {
   const [activeView, setActiveView] = useState<string>("");
   const [allocated, setAllocated] = useState<number>(0);
   const [spent, setSpent] = useState<number>(0);

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
 import Button from "@/components/ui/Button";
 import SearchDropdown from "@/components/ui/SearchDropdown";
-import FormElement from "@/components/form/FormElement";
+import DataForm from "@/components/form/DataForm";
 import Table from "@/components/tables/Table";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
@@ -386,7 +386,7 @@ const ContactsPage = () => {
 
         {/* Sidebar form for creating new entries */}
         {isSidebarOpen && (
-          <FormElement
+          <DataForm
             view={view}
             onClose={() => setIsSidebarOpen(false)}
             onSubmit={handleFormSubmit}

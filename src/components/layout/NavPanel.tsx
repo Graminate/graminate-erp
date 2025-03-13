@@ -1,7 +1,5 @@
 import { useState } from "react";
 
-const t = (key: string) => key;
-
 type ButtonData = {
   name: string;
   view: string;
@@ -32,7 +30,7 @@ const NavPanel = ({ buttons, activeView, onNavigate }: Props) => {
               }`}
             onClick={() => onNavigate(view)}
           >
-            {t(name)}
+            {name}
           </button>
         ))}
       </div>
@@ -74,7 +72,7 @@ const NavPanel = ({ buttons, activeView, onNavigate }: Props) => {
                     setIsMenuOpen(false);
                   }}
                 >
-                  {t(name)}
+                  {name}
                 </button>
               ))}
             </div>

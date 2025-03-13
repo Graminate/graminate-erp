@@ -1,8 +1,8 @@
 import React, { useState, useMemo, useEffect } from "react";
 import Swal from "sweetalert2";
-import SearchBar from "../ui/SearchBar";
-import Button from "../ui/Button";
-import DropdownLarge from "../ui/Dropdown/DropdownLarge";
+import SearchBar from "@/components/ui/SearchBar";
+import Button from "@/components/ui/Button";
+import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 
 type Props = {
   onRowClick: (row: any[]) => void;

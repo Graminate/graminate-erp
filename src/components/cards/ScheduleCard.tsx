@@ -1,12 +1,7 @@
 import React from "react";
+import { ScheduleCardProps } from "@/types/card-props";
 
-type Props = {
-  title: string;
-  description: string;
-  imageSrc: string;
-};
-
-const ScheduleCard = ({ title, description, imageSrc }: Props) => {
+const ScheduleCard = ({ title, description, imageSrc }: ScheduleCardProps) => {
   return (
     <div className="border rounded-lg p-6 flex flex-col items-center text-center max-w-sm mx-auto">
       <img src={imageSrc} alt={title} className="w-20 h-20 mb-4 rounded-full" />

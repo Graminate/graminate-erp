@@ -8,27 +8,7 @@ import {
 } from "@fortawesome/free-brands-svg-icons";
 import { faPhone } from "@fortawesome/free-solid-svg-icons";
 
-const navigation = {
-  services: [
-    { key: "Software Development", href: "/company/services#consultation" },
-    { key: "Design Solutions", href: "/company/services#design" },
-    { key: "IT Operations", href: "/company/services#ops" },
-    { key: "Quality Assurance", href: "/company/services#qa" },
-  ],
-  industries: [
-    { key: "Logistics", href: "/company/industries#logistics" },
-    { key: "Healthcare", href: "/company/" },
-    { key: "Finance", href: "http://localhost:5174/become-partner" },
-    { key: "B2B Solution", href: "http://localhost:5174/support" },
-    { key: "Education", href: "http://localhost:5174/support" },
-    { key: "Public Sector", href: "http://localhost:5174/support" },
-  ],
-  ourProducts: [
-    { key: "Get Started", href: "/products/graminate" },
-    { key: "Pricing", href: "/pricing" },
-    { key: "Downloads", href: "/company/downloads" },
-  ],
-};
+import { FOOTER_LINKS } from "@/constants/options";
 
 const Footer = () => {
   return (
@@ -100,7 +80,7 @@ const Footer = () => {
             <div className="col-span-1">
               <h3 className="text-sm font-semibold text-white">Services</h3>
               <ul role="list" className="mt-2 space-y-2">
-                {navigation.services.map((item) => (
+                {FOOTER_LINKS.services.map((item) => (
                   <li key={item.key}>
                     <a
                       href={item.href}
@@ -116,7 +96,7 @@ const Footer = () => {
             <div className="col-span-1">
               <h3 className="text-sm font-semibold text-white">Industries</h3>
               <ul role="list" className="mt-2 space-y-2">
-                {navigation.industries.map((item) => (
+                {FOOTER_LINKS.industries.map((item) => (
                   <li key={item.key}>
                     <a
                       href={item.href}
@@ -134,7 +114,7 @@ const Footer = () => {
                 Graminate AgroERP
               </h3>
               <ul role="list" className="mt-2 space-y-2">
-                {navigation.ourProducts.map((item) => (
+                {FOOTER_LINKS.ourProducts.map((item) => (
                   <li key={item.key}>
                     <a
                       href={item.href}

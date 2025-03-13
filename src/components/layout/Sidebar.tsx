@@ -11,13 +11,9 @@ import {
   faDollar,
 } from "@fortawesome/free-solid-svg-icons";
 
-type Props = {
-  isOpen: boolean;
-  userId?: string;
-  onSectionChange?: (section: string) => void;
-};
+import { SidebarProps } from "@/types/card-props";
 
-const Sidebar = ({ isOpen, userId, onSectionChange }: Props) => {
+const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
   const router = useRouter();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);

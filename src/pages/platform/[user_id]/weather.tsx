@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState, useEffect } from "react";
 import SunCard from "@/components/cards/weather/SunCard";
 import UVCard from "@/components/cards/weather/UVCard";
@@ -77,13 +75,25 @@ const WeatherPage = () => {
                 />
               </div>
               <div className="w-full">
-                <UVCard lat={location.lat} lon={location.lon} />
+                <UVCard
+                  lat={location.lat}
+                  lon={location.lon}
+                  fahrenheit={false}
+                />
               </div>
               <div className="w-full">
-                <SunCard lat={location.lat} lon={location.lon} />
+                <SunCard
+                  lat={location.lat}
+                  lon={location.lon}
+                  fahrenheit={false}
+                />
               </div>
               <div className="w-full">
-                <PrecipitationCard lat={location.lat} lon={location.lon} />
+                <PrecipitationCard
+                  lat={location.lat}
+                  lon={location.lon}
+                  fahrenheit={false}
+                />
               </div>
             </div>
           )}

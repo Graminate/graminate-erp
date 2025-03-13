@@ -4,12 +4,9 @@ import { faDroplet } from "@fortawesome/free-solid-svg-icons";
 import Chart from "chart.js/auto";
 import type { ChartConfiguration, Chart as ChartJS } from "chart.js";
 
-type Props = {
-  lat?: number;
-  lon?: number;
-};
+import { Coordinates } from "@/types/card-props";
 
-const PrecipitationCard = ({ lat, lon }: Props) => {
+const PrecipitationCard = ({ lat, lon }: Coordinates) => {
   const [error, setError] = useState<string | null>(null);
   const [displayMode, setDisplayMode] = useState<"Small" | "Large">("Small");
   const [weatherData, setWeatherData] = useState<any>(null);

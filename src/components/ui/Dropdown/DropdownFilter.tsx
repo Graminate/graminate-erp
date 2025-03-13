@@ -1,12 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 
-type Props = {
-  items: string[];
-  direction?: "up" | "down";
-  placeholder?: string;
-  selectedItems: string[];
-  onChange: (selected: string[]) => void;
-};
+import type { DropdownFilter } from "@/types/card-props";
 
 const DropdownFilter = ({
   items,
@@ -14,7 +8,7 @@ const DropdownFilter = ({
   placeholder = "Select",
   selectedItems,
   onChange,
-}: Props) => {
+}: DropdownFilter) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
 

@@ -1,15 +1,9 @@
-
 import React, { useState, useEffect, useRef } from "react";
 import Button from "@/components/ui/Button";
 
-type Props = {
-  isOpen: boolean;
-  email: string;
-  onValidate: (otp: string) => void;
-  onClose: () => void;
-};
+import { OTPModalProps } from "@/types/card-props";
 
-const OTPModal = ({ isOpen, email, onValidate, onClose }: Props) => {
+const OTPModal = ({ isOpen, email, onValidate, onClose }: OTPModalProps) => {
   const [otpDigits, setOtpDigits] = useState<string[]>([
     "",
     "",

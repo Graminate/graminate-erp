@@ -1,14 +1,4 @@
-type Props = {
-  label: string;
-  description: string;
-  price: string;
-  priceSuffix: string;
-  points: string[];
-  href: string;
-  popular?: boolean;
-  isSelected: boolean;
-  onClick: () => void;
-};
+import { PriceCardProps } from "@/types/card-props";
 
 const classNames = (...classes: string[]) => classes.filter(Boolean).join(" ");
 
@@ -22,7 +12,7 @@ const PriceCard = ({
   popular = false,
   isSelected,
   onClick,
-}: Props) => {
+}: PriceCardProps) => {
   return (
     <div
       onClick={onClick}

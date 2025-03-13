@@ -2,14 +2,11 @@ import React, { useState, useEffect } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSun } from "@fortawesome/free-solid-svg-icons";
 
-type Props = {
-  lat?: number;
-  lon?: number;
-};
+import { Coordinates } from "@/types/card-props";
 
 const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
-const SunCard = ({ lat, lon }: Props) => {
+const SunCard = ({ lat, lon }: Coordinates) => {
   const [sunriseTime, setSunriseTime] = useState<string | null>(null);
   const [sunsetTime, setSunsetTime] = useState<string | null>(null);
   const [locationName, setLocationName] = useState<string | null>(null);

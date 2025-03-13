@@ -1,5 +1,3 @@
-"use client";
-
 import React, { useState, useEffect, JSX } from "react";
 
 type Task = {

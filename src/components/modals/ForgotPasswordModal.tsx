@@ -1,9 +1,7 @@
-"use client";
-
 import React, { useState } from "react";
 import Swal from "sweetalert2";
-import TextField from "../ui/TextField";
-import Button from "../ui/Button";
+import TextField from "@/components/ui/TextField";
+import Button from "@/components/ui/Button";
 
 type Props = {
   isOpen: boolean;

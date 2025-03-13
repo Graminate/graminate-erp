@@ -1,10 +1,5 @@
 import { useState, useEffect } from "react";
-
-type Props = {
-  lat?: number;
-  lon?: number;
-  fahrenheit: boolean;
-};
+import { Coordinates } from "@/types/card-props";
 
 type HourlyForecast = {
   time: string;
@@ -20,7 +15,7 @@ type DailyForecast = {
   icon: string;
 };
 
-const TemperatureCard = ({ lat, lon, fahrenheit }: Props) => {
+const TemperatureCard = ({ lat, lon, fahrenheit }: Coordinates) => {
   const [temperature, setTemperature] = useState<number | null>(null);
   const [apparentTemperature, setApparentTemperature] = useState<number | null>(
     null

@@ -1,5 +1,5 @@
 import React from "react";
-import ScheduleCard from "../cards/ScheduleCard";
+import ScheduleCard from "@/components/cards/ScheduleCard";
 
 type Props = {
   onClose: () => void;

@@ -1,11 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
-type Props = {
-  imageSrc?: string;
-};
-
-const HomeNavbar = ({ imageSrc = "/images/logo.png" }: Props) => {
+const HomeNavbar = (image: string) => {
+  image = "/images/logo.png";
   return (
     <header className="bg-gray-800 py-2">
       <div className="mx-auto max-w-7xl px-2 sm:px-4 lg:divide-y lg:divide-gray-700 lg:px-8">
@@ -15,7 +12,7 @@ const HomeNavbar = ({ imageSrc = "/images/logo.png" }: Props) => {
             <div className="flex flex-shrink-0 items-center">
               <Link href="/" className="flex flex-row items-center gap-4">
                 <Image
-                  src={imageSrc}
+                  src={image}
                   alt="Graminate Logo"
                   width={40}
                   height={40}

@@ -5,16 +5,13 @@ import Chart from "chart.js/auto";
 import type { ChartConfiguration, Chart as ChartJS } from "chart.js";
 import UVScale from "./UVScale";
 
-const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+const KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
-type Props = {
-  lat?: number;
-  lon?: number;
-};
+import { Coordinates } from "@/types/card-props";
 
 type UVHourly = { time: Date; uv: number };
 
-const UVCard = ({ lat, lon }: Props) => {
+const UVCard = ({ lat, lon }: Coordinates) => {
   const [lowestRiskLevel, setLowestRiskLevel] = useState<string>("");
   const [highestRiskLevel, setHighestRiskLevel] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
@@ -80,7 +77,7 @@ const UVCard = ({ lat, lon }: Props) => {
   async function fetchCityName(latitude: number, longitude: number) {
     try {
       const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`
+        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${KEY}`
       );
       if (!response.ok) {
         throw new Error(`Error fetching location data: ${response.statusText}`);

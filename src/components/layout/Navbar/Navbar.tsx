@@ -10,12 +10,9 @@ type User = {
   imageUrl: string;
 };
 
-type Props = {
-  imageSrc?: string;
-  userId: string;
-};
+import { NavbarProps } from "@/types/card-props";
 
-const Navbar = ({ imageSrc = "/images/logo.png", userId }: Props) => {
+const Navbar = ({ imageSrc = "/images/logo.png", userId }: NavbarProps) => {
   const router = useRouter();
 
   const [user, setUser] = useState<User>({

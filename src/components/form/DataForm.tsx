@@ -1,27 +1,21 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-import TextField from "../ui/TextField";
-import DropdownLarge from "../ui/Dropdown/DropdownLarge";
-import Button from "../ui/Button";
-import TextArea from "../ui/TextArea";
+import TextField from "@/components/ui/TextField";
+import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
+import Button from "@/components/ui/Button";
+import TextArea from "@/components/ui/TextArea";
+import { DataFormProps } from "@/types/card-props";
 
-const genderOptions = ["Male", "Female", "Other"];
+import { GENDER } from "@/constants/options";
 
-type Props = {
-  view: string;
-  onClose: () => void;
-  onSubmit?: (values: Record<string, string>) => void;
-  formTitle?: string;
-};
-
-const FormElement = ({
+const DataForm = ({
   view,
   onClose,
   onSubmit = () => {
     console.warn("onSubmit is not provided");
   },
   formTitle,
-}: Props) => {
+}: DataFormProps) => {
   const router = useRouter();
   const { user_id } = router.query;
 
@@ -605,7 +599,7 @@ const FormElement = ({
               calendar
             />
             <DropdownLarge
-              items={genderOptions}
+              items={GENDER}
               selectedItem={labourValues.gender}
               onSelect={(value: string) =>
                 setLabourValues({ ...labourValues, gender: value })
@@ -657,4 +651,4 @@ const FormElement = ({
   );
 };
 
-export default FormElement;
+export default DataForm;

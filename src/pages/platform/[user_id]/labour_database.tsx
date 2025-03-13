@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
 import Button from "@/components/ui/Button";
-import FormElement from "@/components/form/FormElement";
+import DataForm from "@/components/form/DataForm";
 import Table from "@/components/tables/Table";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
@@ -134,7 +134,7 @@ const LabourDatabase = () => {
 
         {/* Sidebar form for creating a new labour record */}
         {isSidebarOpen && (
-          <FormElement
+          <DataForm
             view={view}
             onClose={() => setIsSidebarOpen(false)}
             onSubmit={(values: Record<string, string>) => {
