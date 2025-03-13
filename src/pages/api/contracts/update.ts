@@ -5,7 +5,6 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  // Extract data from request body
   const { id, deal_name, partner, amount, stage, start_date, end_date } =
     req.body;
 
@@ -20,7 +19,6 @@ export default async function handler(
   }
 
   try {
-    // Check if contract exists in the deals table
     const existingContract = await pool.query(
       "SELECT * FROM deals WHERE deal_id = $1",
       [parsedId]
@@ -30,7 +28,6 @@ export default async function handler(
       return res.status(404).json({ error: "Contract not found" });
     }
 
-    // Update contract details
     const result = await pool.query(
       `UPDATE deals 
        SET deal_name = COALESCE($1, deal_name),

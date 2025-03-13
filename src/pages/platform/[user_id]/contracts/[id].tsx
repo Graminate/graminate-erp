@@ -21,6 +21,7 @@ const ContractDetails = () => {
 
   // Editable fields state
   const [contractName, setContractName] = useState("");
+  const [displayContractName, setDisplayContractName] = useState("");
   const [partnerClient, setPartnerClient] = useState("");
   const [amount, setAmount] = useState("");
   const [status, setStatus] = useState("");
@@ -40,6 +41,15 @@ const ContractDetails = () => {
   // Saving state for update request
   const [saving, setSaving] = useState(false);
 
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) return "";
+    const year = date.getFullYear();
+    const month = ("0" + (date.getMonth() + 1)).slice(-2);
+    const day = ("0" + date.getDate()).slice(-2);
+    return `${year}-${month}-${day}`;
+  };
+
   useEffect(() => {
     if (data) {
       try {
@@ -49,14 +59,19 @@ const ContractDetails = () => {
         const initPartnerClient = parsedContract[2] || "";
         const initAmount = parsedContract[3] || "";
         const initStatus = parsedContract[4] || "";
-        const initStartDate = parsedContract[5] || "";
-        const initEndDate = parsedContract[6] || "";
+        const initStartDate = parsedContract[5]
+          ? formatDate(parsedContract[5])
+          : "";
+        const initEndDate = parsedContract[6]
+          ? formatDate(parsedContract[6])
+          : "";
         setContractName(initDealName);
         setPartnerClient(initPartnerClient);
         setAmount(initAmount);
         setStatus(initStatus);
         setStartDate(initStartDate);
         setEndDate(initEndDate);
+        setDisplayContractName(initDealName);
         setInitialFormData({
           contractName: initDealName,
           partnerClient: initPartnerClient,
@@ -82,14 +97,24 @@ const ContractDetails = () => {
     endDate !== initialFormData.endDate;
 
   const handleSave = async () => {
+    // Validate that the start date is not after the end date
+    if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
+      Swal.fire(
+        "Error",
+        "End Date of Contract cannot be before Start Date",
+        "error"
+      );
+      return;
+    }
+
     setSaving(true);
 
     const payload = {
       id: contract[0],
-      contract_name: contractName,
-      partner_client: partnerClient,
+      deal_name: contractName,
+      partner: partnerClient,
       amount: amount,
-      status: status,
+      stage: status,
       start_date: startDate,
       end_date: endDate,
     };
@@ -106,11 +131,10 @@ const ContractDetails = () => {
       });
 
       const result = await response.json();
-      console.log("Response from API:", result);
 
       if (response.ok) {
         Swal.fire("Success", "Contract updated successfully", "success");
-        setContract(result.contract);
+        setDisplayContractName(contractName);
         setInitialFormData({
           contractName,
           partnerClient,
@@ -148,7 +172,7 @@ const ContractDetails = () => {
           onClick={() => router.push(`/platform/${user_id}/crm?view=contracts`)}
         />
         <div className="pt-4">
-          <h1 className="text-2xl font-bold mb-4">{contractName}</h1>
+          <h1 className="text-2xl font-bold mb-4">{displayContractName}</h1>
           <div className="grid grid-cols-2 gap-4 text-gray-600">
             <TextField
               label="Contract Name"
