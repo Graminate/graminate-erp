@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { ProgressCardProps } from "@/types/card-props";
+import type { ProgressCard } from "@/types/card-props";
 
 const ProgressCard = ({
   steps,
   currentStep: initialStep = 1,
   onStepChange = () => {},
-}: ProgressCardProps) => {
+}: ProgressCard) => {
   const [currentStep, setCurrentStep] = useState<number>(initialStep);
   const [limitedSteps, setLimitedSteps] = useState<string[]>([]);
   const [progress, setProgress] = useState<number>(0);

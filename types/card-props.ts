@@ -1,5 +1,5 @@
 // Card Props section here
-export type PriceCardProps = {
+export type PriceCard = {
   label: string;
   description: string;
   price: string;
@@ -11,19 +11,19 @@ export type PriceCardProps = {
   onClick: () => void;
 };
 
-export type ProgressCardProps = {
+export type ProgressCard = {
   steps: string[];
   currentStep?: number;
   onStepChange?: (event: { step: number }) => void;
 };
 
-export type ScheduleCardProps = {
+export type ScheduleCard = {
   title: string;
   description: string;
   imageSrc: string;
 };
 
-export type StatusCardProps = {
+export type StatusCard = {
   steps: string[];
   currentStep: number;
 };
@@ -37,7 +37,7 @@ export type DropdownFilter = {
   onChange: (selected: string[]) => void;
 };
 
-export type MapProps = {
+export type Maps = {
   apiKey: string;
   initialCenter?: { lat: number; lng: number };
   initialZoom?: number;
@@ -56,7 +56,7 @@ export type Coordinates = {
 
 // Layout component Props
 
-export type DataFormProps = {
+export type DataForm = {
   view: string;
   onClose: () => void;
   onSubmit?: (values: Record<string, string>) => void;
@@ -64,7 +64,7 @@ export type DataFormProps = {
 };
 
 // Left sidebar
-export type SidebarProps = {
+export type Sidebar = {
   isOpen: boolean;
   userId?: string;
   onSectionChange?: (section: string) => void;
@@ -76,20 +76,40 @@ type Notification = {
   description: string;
 };
 
-export type NotificationBarProps = {
+export type NotificationBar = {
   notifications: Notification[];
   isOpen: boolean;
   closeNotificationBar: () => void;
   userId: string;
 };
 
-export type NavbarProps = {
+// Navbar component props
+export type User = {
+  name: string;
+  email: string;
+  business: string;
+  imageUrl: string;
+};
+
+export type Navbar = {
   imageSrc?: string;
   userId: string;
 };
 
+// NavPanel component Props
+type ButtonData = {
+  name: string;
+  view: string;
+};
+
+export type NavPanel = {
+  buttons: ButtonData[];
+  activeView: string;
+  onNavigate: (view: string) => void;
+};
+
 // Modal Props
-export type OTPModalProps = {
+export type OTPModal = {
   isOpen: boolean;
   email: string;
   onValidate: (otp: string) => void;

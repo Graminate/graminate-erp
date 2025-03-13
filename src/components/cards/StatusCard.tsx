@@ -10,11 +10,11 @@ import NavPanel from "@/components/layout/NavPanel";
 
 Chart.register(DoughnutController, ArcElement, Tooltip, Legend);
 
-import { StatusCardProps } from "@/types/card-props";
+import type { StatusCard } from "@/types/card-props";
 
 type ButtonType = { name: string; view: string };
 
-const StatusCard = ({ steps, currentStep }: StatusCardProps) => {
+const StatusCard = ({ steps, currentStep }: StatusCard) => {
   const [activeView, setActiveView] = useState<string>("");
   const [allocated, setAllocated] = useState<number>(0);
   const [spent, setSpent] = useState<number>(0);

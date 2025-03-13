@@ -1,17 +1,7 @@
 import { useState } from "react";
+import type { NavPanel } from "@/types/card-props";
 
-type ButtonData = {
-  name: string;
-  view: string;
-};
-
-type Props = {
-  buttons: ButtonData[];
-  activeView: string;
-  onNavigate: (view: string) => void;
-};
-
-const NavPanel = ({ buttons, activeView, onNavigate }: Props) => {
+const NavPanel = ({ buttons, activeView, onNavigate }: NavPanel) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (

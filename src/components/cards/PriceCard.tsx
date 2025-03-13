@@ -1,4 +1,4 @@
-import { PriceCardProps } from "@/types/card-props";
+import type { PriceCard } from "@/types/card-props";
 
 const classNames = (...classes: string[]) => classes.filter(Boolean).join(" ");
 
@@ -12,7 +12,7 @@ const PriceCard = ({
   popular = false,
   isSelected,
   onClick,
-}: PriceCardProps) => {
+}: PriceCard) => {
   return (
     <div
       onClick={onClick}

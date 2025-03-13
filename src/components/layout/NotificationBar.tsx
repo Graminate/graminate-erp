@@ -4,14 +4,14 @@ import { faChevronUp, faChevronDown } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Button from "../ui/Button";
 
-import { NotificationBarProps } from "@/types/card-props";
+import type { NotificationBar } from "@/types/card-props";
 
 const NotificationBar = ({
   notifications,
   isOpen,
   closeNotificationBar,
   userId,
-}: NotificationBarProps) => {
+}: NotificationBar) => {
   const [isFilterDropdownOpen, setFilterDropdownOpen] = useState(false);
   const [isActionsDropdownOpen, setActionsDropdownOpen] = useState(false);
   const router = useRouter();

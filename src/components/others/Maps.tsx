@@ -1,14 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { loadGoogleMaps } from "@/lib/utils/loadGoogleMaps";
 
-import { MapProps } from "@/types/card-props";
+import type { Maps } from "@/types/card-props";
 
 const Maps = ({
   apiKey,
   initialCenter = { lat: 26.244156, lng: 92.537842 }, // Default center to Assam
   initialZoom = 8,
   onStateChange,
-}: MapProps) => {
+}: Maps) => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
 

@@ -3,16 +3,10 @@ import { useRouter } from "next/navigation";
 import NotificationBar from "../NotificationBar";
 import ThemeSwitch from "@/components/ui/Switch/ThemeSwitch";
 
-type User = {
-  name: string;
-  email: string;
-  business: string;
-  imageUrl: string;
-};
+import type { User } from "@/types/card-props";
+import type { Navbar } from "@/types/card-props";
 
-import { NavbarProps } from "@/types/card-props";
-
-const Navbar = ({ imageSrc = "/images/logo.png", userId }: NavbarProps) => {
+const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
   const router = useRouter();
 
   const [user, setUser] = useState<User>({

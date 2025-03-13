@@ -4,7 +4,7 @@ import TextField from "@/components/ui/TextField";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import Button from "@/components/ui/Button";
 import TextArea from "@/components/ui/TextArea";
-import { DataFormProps } from "@/types/card-props";
+import type { DataForm } from "@/types/card-props";
 
 import { GENDER } from "@/constants/options";
 
@@ -15,7 +15,7 @@ const DataForm = ({
     console.warn("onSubmit is not provided");
   },
   formTitle,
-}: DataFormProps) => {
+}: DataForm) => {
   const router = useRouter();
   const { user_id } = router.query;
 
