@@ -7,7 +7,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 
-const companyTypeOptions = ["Supplier", "Distributor", "Factories", "Buyer"];
+import { COMPANY_TYPES } from "@/constants/options";
 
 const CompanyDetails = () => {
   const router = useRouter();
@@ -175,7 +175,7 @@ const CompanyDetails = () => {
               onChange={(val: string) => setAddress(val)}
             />
             <DropdownLarge
-              items={companyTypeOptions}
+              items={COMPANY_TYPES}
               selectedItem={type}
               onSelect={(value: string) => setType(value)}
               type="form"

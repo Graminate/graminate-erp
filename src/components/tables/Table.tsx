@@ -165,10 +165,11 @@ const Table = ({
     if (result.isConfirmed) {
       try {
         let endpoint = "";
-        if (view === "companies") endpoint = "companies";
-        else if (view === "contacts") endpoint = "contacts";
-        else if (view === "labours") endpoint = "labour";
-        else endpoint = "contracts";
+        if (view === "contacts") endpoint = "contacts";
+        else if (view === "companies") endpoint = "companies";
+        else if (view === "contracts") endpoint = "contracts";
+        else if (view === "receipts") endpoint = "receipts";
+        else endpoint = "labour";
 
         await Promise.all(
           rowsToDelete.map(async (id) => {

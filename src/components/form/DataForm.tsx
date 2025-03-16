@@ -6,7 +6,7 @@ import Button from "@/components/ui/Button";
 import TextArea from "@/components/ui/TextArea";
 import type { DataForm } from "@/types/card-props";
 
-import { GENDER } from "@/constants/options";
+import { CONTACT_TYPES, GENDER } from "@/constants/options";
 
 const DataForm = ({
   view,
@@ -47,6 +47,16 @@ const DataForm = ({
     contractEndDate: "",
   });
 
+  const [receiptsValues, setReceiptsValues] = useState({
+    title: "",
+    billTo: "",
+    date: "",
+    amount_paid: "",
+    amount_due: "",
+    due_date: "",
+    status: "",
+  });
+
   const [ticketValues, setTicketValues] = useState({
     ticketName: "",
     category: "",
@@ -66,13 +76,6 @@ const DataForm = ({
     address: "",
   });
 
-  const contactTypes = [
-    "Supplier",
-    "Distributor",
-    "Factory",
-    "Buyer",
-    "Client",
-  ];
   const companyType = ["Supplier", "Distributor", "Factories", "Buyer"];
   const ticketStatus = ["Active", "Completed", "On Hold"];
 
@@ -215,6 +218,59 @@ const DataForm = ({
     }
   };
 
+  const handleSubmitReceipts = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const body = JSON.stringify({
+      user_id: user_id,
+      title: receiptsValues.title,
+      bill_to: receiptsValues.billTo,
+      date: receiptsValues.date,
+      amount_paid: receiptsValues.amount_paid,
+      amount_due: receiptsValues.amount_due,
+      due_date: receiptsValues.due_date,
+      status: receiptsValues.status,
+    });
+    try {
+      const response = await fetch("/api/invoices/add", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_id,
+          title: receiptsValues.title,
+          bill_to: receiptsValues.billTo,
+          date: receiptsValues.date,
+          amount_paid: receiptsValues.amount_paid,
+          amount_due: receiptsValues.amount_due,
+          due_date: receiptsValues.due_date,
+          status: receiptsValues.status,
+        }),
+      });
+
+      const result = await response.json();
+      console.log("API Response:", result);
+      if (response.ok) {
+        setReceiptsValues({
+          title: "",
+          billTo: "",
+          date: "",
+          amount_paid: "",
+          amount_due: "",
+          due_date: "",
+          status: "",
+        });
+        handleClose();
+        window.location.reload();
+      } else {
+        alert(result.error || "Failed to add new Receipt");
+      }
+    } catch (error) {
+      console.error("Error adding new receipt:", error);
+      alert("An unexpected error occurred");
+    }
+  };
+
   const handleSubmitTickets = (e: React.FormEvent) => {
     e.preventDefault();
     onSubmit(ticketValues);
@@ -225,7 +281,7 @@ const DataForm = ({
     const body = JSON.stringify({
       user_id: user_id,
       full_name: labourValues.fullName,
-      guardian_name: labourValues.guardianName, // Added guardian_name field
+      guardian_name: labourValues.guardianName,
       date_of_birth: labourValues.dateOfBirth,
       gender: labourValues.gender,
       role: labourValues.role,
@@ -339,7 +395,7 @@ const DataForm = ({
               }
             />
             <DropdownLarge
-              items={contactTypes}
+              items={CONTACT_TYPES}
               selectedItem={contactValues.type}
               onSelect={(value: string) =>
                 setContactValues({ ...contactValues, type: value })
@@ -510,6 +566,99 @@ const DataForm = ({
           </form>
         )}
 
+        {/* Form for Receipts */}
+        {view === "receipts" && (
+          <form
+            className="flex flex-col gap-4 w-full flex-grow"
+            onSubmit={handleSubmitReceipts}
+          >
+            {/* Title */}
+            <TextField
+              label="Receipt Title"
+              placeholder="Name of your receipt / invoice"
+              value={receiptsValues.title}
+              onChange={(val: string) =>
+                setReceiptsValues({ ...receiptsValues, title: val })
+              }
+            />
+            {/* Bill To */}
+            <TextField
+              label="Bill To"
+              placeholder="Customer Details"
+              value={receiptsValues.billTo}
+              onChange={(val: string) =>
+                setReceiptsValues({ ...receiptsValues, billTo: val })
+              }
+            />
+
+            {/*  Date */}
+            <TextField
+              label=" Date"
+              placeholder="YYYY-MM-DD"
+              value={receiptsValues.date}
+              onChange={(val: string) =>
+                setReceiptsValues({
+                  ...receiptsValues,
+                  date: val,
+                })
+              }
+              calendar
+            />
+
+            {/* Amount Paid */}
+            <div className="flex flex-col gap-2">
+              <TextField
+                label="Paid (₹)"
+                placeholder="Amount Paid"
+                value={receiptsValues.amount_paid}
+                onChange={(val: string) =>
+                  setReceiptsValues({ ...receiptsValues, amount_paid: val })
+                }
+              />
+              {/* Amount Due */}
+              <TextField
+                label="Amount Due (₹)"
+                placeholder="Amount yet to be paid"
+                value={receiptsValues.amount_due}
+                onChange={(val: string) =>
+                  setReceiptsValues({ ...receiptsValues, amount_due: val })
+                }
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              {/* Due Date */}
+              <TextField
+                label="Due Date"
+                placeholder="YYYY-MM-DD"
+                value={receiptsValues.due_date}
+                onChange={(val: string) =>
+                  setReceiptsValues({
+                    ...receiptsValues,
+                    due_date: val,
+                  })
+                }
+                calendar
+              />
+
+              {/*  Receipt Status*/}
+              <DropdownLarge
+                items={CONTACT_TYPES}
+                selectedItem={receiptsValues.status}
+                onSelect={(value: string) =>
+                  setReceiptsValues({ ...receiptsValues, status: value })
+                }
+                type="form"
+                label="Status"
+                width="full"
+              />
+            </div>
+            <div className="flex justify-end gap-4 mt-2">
+              <Button text="Create" style="primary" type="submit" />
+              <Button text="Cancel" style="secondary" onClick={handleClose} />
+            </div>
+          </form>
+        )}
+
         {/* Form for Tickets */}
         {view === "tickets" && (
           <form
@@ -551,7 +700,7 @@ const DataForm = ({
               }
             />
             <DropdownLarge
-              items={contactTypes}
+              items={CONTACT_TYPES}
               selectedItem={ticketValues.type}
               onSelect={(value: string) =>
                 setTicketValues({ ...ticketValues, type: value })

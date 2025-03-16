@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 
-const HomeNavbar = (image: string) => {
+
+const HomeNavbar = (image?: string) => {
   image = "/images/logo.png";
   return (
     <header className="bg-gray-800 py-2">

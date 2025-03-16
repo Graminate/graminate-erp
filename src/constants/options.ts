@@ -1,4 +1,7 @@
 export const GENDER = ["Male", "Female", "Other"];
+export const YESNO = ["Yes", "No"];
+export const LANGUAGES = ["English", "Hindi", "Assamese"];
+export const TIME_FORMAT = ["12-hour", "24-hour"];
 
 export const FOOTER_LINKS = {
   services: [
@@ -21,3 +24,34 @@ export const FOOTER_LINKS = {
     { key: "Downloads", href: "/company/downloads" },
   ],
 };
+
+export const REMINDER_OPTIONS = [
+  "At time of event",
+  "5 minutes before",
+  "10 minutes before",
+  "15 minutes before",
+  "30 minutes before",
+  "1 hour before",
+  "2 hours before",
+  "1 day before",
+  "2 days before",
+  "1 week before",
+];
+
+
+export const COMPANY_TYPES = ["Supplier", "Distributor", "Factories", "Buyer"];
+export const CONTACT_TYPES = [
+  "Supplier",
+  "Distributor",
+  "Factory",
+  "Buyer",
+  "Client",
+];
+
+export const CONTRACT_STATUS = [
+  "Negotiation",
+  "Pending Approval",
+  "Signed",
+  "Completed",
+  "Terminated",
+];

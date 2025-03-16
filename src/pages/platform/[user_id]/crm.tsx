@@ -86,7 +86,6 @@ const ContactsPage = () => {
       });
   }, [router.isReady, user_id]);
 
-  // Update the displayed data based on the current view
   useEffect(() => {
     switch (view) {
       case "contacts":
@@ -205,18 +204,16 @@ const ContactsPage = () => {
             "Due Date",
             "Status",
           ],
-          rows: [
-            [
-              "001",
-              "Fertilizer Subscription",
-              "Jensen Fertilizers",
-              "2024-11-01",
-              "$200",
-              "$50",
-              "2024-12-01",
-              "Unpaid",
-            ],
-          ],
+          rows: fetchedData.map((item) => [
+            item.invoice_id,
+            item.title,
+            item.bill_to,
+            new Date(item.date).toDateString(),
+            item.amount_paid,
+            item.amount_due,
+            item.status,
+            new Date(item.due_date).toDateString(),
+          ]),
         };
       case "tickets":
         return {
@@ -313,7 +310,7 @@ const ContactsPage = () => {
   const formTitle = useMemo(() => {
     if (view === "contacts") return "Create Contact";
     if (view === "companies") return "Create Company";
-    if (view === "receipts") return "Create Company";
+    if (view === "receipts") return "Create Receipts";
     if (view === "tickets") return "Create Ticket";
     return "";
   }, [view]);

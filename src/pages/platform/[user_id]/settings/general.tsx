@@ -9,6 +9,7 @@ import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
 import { faTimes } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Button from "@/components/ui/Button";
+import { LANGUAGES, TIME_FORMAT } from "@/constants/options";
 
 const GeneralPage = () => {
   const router = useRouter();
@@ -30,12 +31,9 @@ const GeneralPage = () => {
 
   const [isSaving, setIsSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
-  const languageOptions = ["English", "Hindi", "Assamese"];
-  const timeFormatOptions = ["12-hour", "24-hour"];
-  const [selectedLanguage, setSelectedLanguage] = useState(languageOptions[0]);
-  const [selectedTimeFormat, setSelectedTimeFormat] = useState(
-    timeFormatOptions[0]
-  );
+
+  const [selectedLanguage, setSelectedLanguage] = useState(LANGUAGES[0]);
+  const [selectedTimeFormat, setSelectedTimeFormat] = useState(TIME_FORMAT[0]);
 
   // User state
   const [user, setUser] = useState({
@@ -243,7 +241,7 @@ const GeneralPage = () => {
                     <div className="flex gap-4">
                       <DropdownSmall
                         label="Language"
-                        items={languageOptions}
+                        items={LANGUAGES}
                         selected={user.language}
                         onSelect={(val) =>
                           setUser((prev) => ({ ...prev, language: val }))
@@ -252,7 +250,7 @@ const GeneralPage = () => {
 
                       <DropdownSmall
                         label="Time Format"
-                        items={timeFormatOptions}
+                        items={TIME_FORMAT}
                         selected={user.timeFormat}
                         onSelect={(val) =>
                           setUser((prev) => ({ ...prev, timeFormat: val }))

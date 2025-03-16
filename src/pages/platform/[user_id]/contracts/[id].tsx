@@ -1,18 +1,11 @@
 import Button from "@/components/ui/Button";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import TextField from "@/components/ui/TextField";
+import { CONTRACT_STATUS } from "@/constants/options";
 import PlatformLayout from "@/layout/PlatformLayout";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
-
-const contractStatusOptions = [
-  "Negotiation",
-  "Pending Approval",
-  "Signed",
-  "Completed",
-  "Terminated",
-];
 
 const ContractDetails = () => {
   const router = useRouter();
@@ -193,7 +186,7 @@ const ContractDetails = () => {
               width="large"
             />
             <DropdownLarge
-              items={contractStatusOptions}
+              items={CONTRACT_STATUS}
               selectedItem={status}
               onSelect={(value: string) => setStatus(value)}
               type="form"

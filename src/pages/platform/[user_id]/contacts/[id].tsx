@@ -7,13 +7,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 
-const contactTypeOptions = [
-  "Supplier",
-  "Distributor",
-  "Factory",
-  "Buyer",
-  "Client",
-];
+import { CONTACT_TYPES } from "@/constants/options";
 
 const ContactDetails = () => {
   const router = useRouter();
@@ -174,7 +168,7 @@ const ContactDetails = () => {
               width="large"
             />
             <DropdownLarge
-              items={contactTypeOptions}
+              items={CONTACT_TYPES}
               selectedItem={type}
               onSelect={(value: string) => setType(value)}
               type="form"

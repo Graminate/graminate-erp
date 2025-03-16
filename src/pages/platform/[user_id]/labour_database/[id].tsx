@@ -8,8 +8,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 
-const genderOptions = ["Male", "Female", "Other"];
-const yesNoOptions = ["Yes", "No"];
+import { GENDER, YESNO } from "@/constants/options";
 
 const LabourDetails = () => {
   const router = useRouter();
@@ -291,7 +290,7 @@ const LabourDetails = () => {
                   width="large"
                 />
                 <DropdownLarge
-                  items={genderOptions}
+                  items={GENDER}
                   selectedItem={gender}
                   onSelect={(value: string) => setGender(value)}
                   type="form"
@@ -369,7 +368,7 @@ const LabourDetails = () => {
                 />
 
                 <DropdownLarge
-                  items={yesNoOptions}
+                  items={YESNO}
                   selectedItem={disabilityStatus} // Will default to "" if no data is found
                   onSelect={(value: string) => setDisabilityStatus(value)}
                   type="form"
@@ -392,7 +391,7 @@ const LabourDetails = () => {
                 />
 
                 <DropdownLarge
-                  items={yesNoOptions}
+                  items={YESNO}
                   selectedItem={pmKisan}
                   onSelect={(value: string) => setPmKisan(value)}
                   type="form"

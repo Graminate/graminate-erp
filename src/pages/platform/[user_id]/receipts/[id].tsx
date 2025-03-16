@@ -19,7 +19,6 @@ const ReceiptDetails = () => {
   const router = useRouter();
   const { user_id, data } = router.query;
   const [receipt, setReceipt] = useState<any | null>(null);
-
   const [receiptNumber, setReceiptNumber] = useState("");
   const [customer, setCustomer] = useState("");
   const [shipTo, setShipTo] = useState("");

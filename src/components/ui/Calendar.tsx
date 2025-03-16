@@ -3,6 +3,7 @@ import Swal from "sweetalert2";
 import ClockPicker from "./ClockPicker";
 import TextField from "./TextField";
 import DropdownSmall from "./Dropdown/DropdownSmall";
+import { REMINDER_OPTIONS } from "@/constants/options";
 
 type Task = {
   name: string;
@@ -12,19 +13,6 @@ type Task = {
 type Tasks = {
   [key: string]: Task[];
 };
-
-const reminderOptions = [
-  "At time of event",
-  "5 minutes before",
-  "10 minutes before",
-  "15 minutes before",
-  "30 minutes before",
-  "1 hour before",
-  "2 hours before",
-  "1 day before",
-  "2 days before",
-  "1 week before",
-];
 
 const Calendar = () => {
   // State for tasks, selected date, and task form
@@ -278,7 +266,7 @@ const Calendar = () => {
               />
             )}
             <DropdownSmall
-              items={reminderOptions}
+              items={REMINDER_OPTIONS}
               label="Alert"
               placeholder="None"
               selected={""}
