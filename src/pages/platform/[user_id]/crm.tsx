@@ -198,7 +198,7 @@ const ContactsPage = () => {
             "ID",
             "Title",
             "Bill To",
-            "Date Created",
+            "Date Initiated",
             "Amount Paid",
             "Amount Due",
             "Due Date",
@@ -211,8 +211,8 @@ const ContactsPage = () => {
             new Date(item.date).toDateString(),
             item.amount_paid,
             item.amount_due,
-            item.status,
             new Date(item.due_date).toDateString(),
+            item.status
           ]),
         };
       case "tickets":

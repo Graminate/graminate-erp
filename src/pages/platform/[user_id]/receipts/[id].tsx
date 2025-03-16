@@ -233,7 +233,7 @@ const ReceiptDetails = () => {
               width="large"
             />
             <TextField
-              label="Date Created"
+              label="Date Initiated"
               value={dateCreated}
               onChange={setDateCreated}
               width="large"
