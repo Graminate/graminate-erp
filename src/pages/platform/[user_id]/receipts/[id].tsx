@@ -7,6 +7,8 @@ import CustomTable from "@/components/tables/CustomTable";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Swal from "sweetalert2";
 import Head from "next/head";
+import domtoimage from "dom-to-image";
+import jsPDF from "jspdf";
 
 type Item = {
   description: string;
@@ -42,7 +44,6 @@ const ReceiptDetails = () => {
     receiptTitle: "",
     customer: "",
     shipTo: "",
-
     paymentTerms: "",
     dueDate: "",
     poNumber: "",
@@ -195,18 +196,47 @@ const ReceiptDetails = () => {
     }
   };
 
+  const handleDownload = async () => {
+    const element = document.getElementById("receipt-container");
+    if (!element) return;
+
+    // Temporarily hide buttons before capturing the image
+    const buttons = document.querySelectorAll(".exclude-from-pdf");
+    buttons.forEach((btn) => ((btn as HTMLElement).style.display = "none"));
+
+    try {
+      const imgData = await domtoimage.toPng(element);
+      const pdf = new jsPDF("p", "pt", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (element.offsetHeight * pdfWidth) / element.offsetWidth;
+
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save("receipt.pdf");
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      Swal.fire("Error", "Could not generate PDF", "error");
+    } finally {
+      // Restore the buttons after the snapshot
+      buttons.forEach((btn) => ((btn as HTMLElement).style.display = ""));
+    }
+  };
   return (
     <PlatformLayout>
       <Head>
         <title>Receipts | CRM</title>
       </Head>
       <div className="px-6" id="receipt-container">
-        <Button
-          text="Back"
-          style="ghost"
-          arrow="left"
-          onClick={() => router.push(`/platform/${user_id}/crm?view=receipts`)}
-        />
+        <div className="exclude-from-pdf">
+          <Button
+            text="Back"
+            style="ghost"
+            arrow="left"
+            onClick={() =>
+              router.push(`/platform/${user_id}/crm?view=receipts`)
+            }
+          />
+        </div>
+
         <div className="pt-4">
           <div className="flex justify-between items-start pb-6">
             <h1 className="text-2xl font-bold mb-4">{receiptTitle}</h1>
@@ -278,13 +308,14 @@ const ReceiptDetails = () => {
               <span>₹{calculateAmounts().balanceDue.toFixed(2)}</span>
             </div>
           </div>
-          <div className="flex flex-row mt-6 space-x-4">
+          <div className="flex flex-row mt-6 space-x-4 exclude-from-pdf">
             <Button
               text={saving ? "Updating..." : "Update"}
               style="primary"
               onClick={handleSave}
               isDisabled={!hasChanges || saving}
             />
+            <Button text="Download Receipt" style="primary" onClick={handleDownload} />
             <Button
               text="Cancel"
               style="secondary"
