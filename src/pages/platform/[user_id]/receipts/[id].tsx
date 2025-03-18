@@ -20,9 +20,9 @@ const ReceiptDetails = () => {
   const { user_id, data } = router.query;
   const [receipt, setReceipt] = useState<any | null>(null);
   const [receiptNumber, setReceiptNumber] = useState("");
+  const [receiptTitle, setReceiptTitle] = useState("");
   const [customer, setCustomer] = useState("");
   const [shipTo, setShipTo] = useState("");
-  const [dateCreated, setDateCreated] = useState("");
   const [paymentTerms, setPaymentTerms] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [poNumber, setPoNumber] = useState("");
@@ -39,9 +39,10 @@ const ReceiptDetails = () => {
   // Keep a copy of the initial form data for change detection
   const [initialFormData, setInitialFormData] = useState({
     receiptNumber: "",
+    receiptTitle: "",
     customer: "",
     shipTo: "",
-    dateCreated: "",
+
     paymentTerms: "",
     dueDate: "",
     poNumber: "",
@@ -61,19 +62,18 @@ const ReceiptDetails = () => {
       try {
         const parsedReceipt = JSON.parse(data as string);
         setReceipt(parsedReceipt);
-        // Map the database fields to the local state.
-        // Use invoice_id as the Receipt Number.
+        setReceiptTitle(parsedReceipt.title || "");
         setReceiptNumber(parsedReceipt.invoice_id?.toString() || "");
+        const formattedDueDate = parsedReceipt.due_date
+          ? new Date(parsedReceipt.due_date).toISOString().split("T")[0]
+          : "";
+        setDueDate(formattedDueDate);
         setCustomer(parsedReceipt.bill_to || "");
-        // If your table stores a shipping address, use it; otherwise default to an empty string.
         setShipTo(parsedReceipt.ship_to || "");
-        setDateCreated(parsedReceipt.date_created || "");
         setPaymentTerms(parsedReceipt.payment_terms || "");
-        setDueDate(parsedReceipt.due_date || "");
         setPoNumber(parsedReceipt.po_number || "");
         setNotes(parsedReceipt.notes || "");
         setTerms(parsedReceipt.terms || "");
-        // If your table doesn't store line items, you may be using defaults.
         setItems(
           parsedReceipt.items || [
             { description: "", quantity: 1, rate: 0, amount: 0 },
@@ -83,13 +83,14 @@ const ReceiptDetails = () => {
         setDiscount(parsedReceipt.discount || 0);
         setShipping(parsedReceipt.shipping || 0);
         setAmountPaid(parsedReceipt.amount_paid || 0);
+
         setInitialFormData({
           receiptNumber: parsedReceipt.invoice_id?.toString() || "",
+          receiptTitle: parsedReceipt.title || "",
           customer: parsedReceipt.bill_to || "",
           shipTo: parsedReceipt.ship_to || "",
-          dateCreated: parsedReceipt.date_created || "",
           paymentTerms: parsedReceipt.payment_terms || "",
-          dueDate: parsedReceipt.due_date || "",
+          dueDate: formattedDueDate,
           poNumber: parsedReceipt.po_number || "",
           notes: parsedReceipt.notes || "",
           terms: parsedReceipt.terms || "",
@@ -107,12 +108,10 @@ const ReceiptDetails = () => {
 
   if (!receipt) return <p>Loading...</p>;
 
-  // Check if any field has changed from the initial values
   const hasChanges =
     receiptNumber !== initialFormData.receiptNumber ||
     customer !== initialFormData.customer ||
     shipTo !== initialFormData.shipTo ||
-    dateCreated !== initialFormData.dateCreated ||
     paymentTerms !== initialFormData.paymentTerms ||
     dueDate !== initialFormData.dueDate ||
     poNumber !== initialFormData.poNumber ||
@@ -139,15 +138,14 @@ const ReceiptDetails = () => {
     setSaving(true);
 
     const payload = {
-      invoice_id: receipt.invoice_id, // using invoice_id as the receipt ID
+      invoice_id: receipt.invoice_id,
       user_id,
-      title: receiptNumber, // you may update this mapping as needed
+      title: receiptNumber,
       bill_to: customer,
-      date_created: dateCreated,
       amount_paid: amountPaid,
-      amount_due: calculateAmounts().balanceDue, // recalc amount due
+      amount_due: calculateAmounts().balanceDue,
       due_date: dueDate,
-      status: "Pending", // adjust status if required
+      status: "Pending",
       notes,
       terms,
       items,
@@ -168,9 +166,9 @@ const ReceiptDetails = () => {
         Swal.fire("Success", "Receipt updated successfully", "success");
         setInitialFormData({
           receiptNumber,
+          receiptTitle,
           customer,
           shipTo,
-          dateCreated,
           paymentTerms,
           dueDate,
           poNumber,
@@ -202,7 +200,7 @@ const ReceiptDetails = () => {
       <Head>
         <title>Receipts | CRM</title>
       </Head>
-      <div className="px-6">
+      <div className="px-6" id="receipt-container">
         <Button
           text="Back"
           style="ghost"
@@ -210,16 +208,23 @@ const ReceiptDetails = () => {
           onClick={() => router.push(`/platform/${user_id}/crm?view=receipts`)}
         />
         <div className="pt-4">
-          <h1 className="text-2xl font-bold mb-4">
-            {receiptNumber || "Receipt"}
-          </h1>
+          <div className="flex justify-between items-start pb-6">
+            <h1 className="text-2xl font-bold mb-4">{receiptTitle}</h1>
+            <div className="text-right text-gray-600">
+              <h1 className="text-sm">
+                Receipt Number:{" "}
+                <span className="font-semibold">#{receiptNumber}</span>
+              </h1>
+              <h1 className="text-sm">
+                Date Created:{" "}
+                <span className="font-semibold">
+                  {new Date(receipt.created_at).toLocaleDateString()}
+                </span>
+              </h1>
+            </div>
+          </div>
+
           <div className="grid grid-cols-2 gap-4 text-gray-600">
-            <TextField
-              label="Receipt Number"
-              value={receiptNumber}
-              onChange={setReceiptNumber}
-              width="large"
-            />
             <TextField
               label="Bill To"
               value={customer}
@@ -233,14 +238,7 @@ const ReceiptDetails = () => {
               width="large"
             />
             <TextField
-              label="Date Initiated"
-              value={dateCreated}
-              onChange={setDateCreated}
-              width="large"
-              calendar
-            />
-            <TextField
-              label="Payment Terms"
+              label="Payment Installments"
               value={paymentTerms}
               onChange={setPaymentTerms}
               width="large"
@@ -258,6 +256,7 @@ const ReceiptDetails = () => {
               onChange={setPoNumber}
               width="large"
             />
+
             <TextArea label="Notes" value={notes} onChange={setNotes} />
             <TextArea label="Terms" value={terms} onChange={setTerms} />
             <CustomTable

@@ -28,6 +28,13 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
     },
   ];
 
+  const userNavigation = [
+    { name: "Account & Billing", href: `/platform/${userId}/account-billing` },
+    { name: "Pricing", href: `/platform/${userId}/pricing`, external: true },
+    { name: "News Updates", href: `/news` },
+    { name: "Training & Services", href: "/training-services", external: true },
+  ];
+
   useEffect(() => {
     async function fetchUserDetails() {
       try {
@@ -256,12 +263,43 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
                       </div>
                     </div>
                     <div className="px-4 py-3 border-t border-gray-300">
+                      {userNavigation.map((item) => (
+                        <a
+                          key={item.name}
+                          href={item.href}
+                          className="flex items-center mb-2 text-sm font-medium text-gray-200 dark:text-gray-500 hover:underline"
+                          target={item.external ? "_blank" : "_self"}
+                        >
+                          {item.name}
+                          {item.external && (
+                            <svg
+                              className="h-4 w-4 text-gray-500 ml-1"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                d="M13 5l7 7m0 0l-7 7m7-7H6"
+                              />
+                            </svg>
+                          )}
+                        </a>
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-between px-4 py-3 text-sm text-gray-200 dark:text-gray-500 border-t border-gray-300">
                       <button
                         className="text-sm font-medium text-gray-200 hover:underline"
                         onClick={handleLogout}
                       >
                         Sign Out
                       </button>
+                      <a href="/privacy-policy" className="hover:underline">
+                        Privacy Policy
+                      </a>
                     </div>
                   </div>
                 )}

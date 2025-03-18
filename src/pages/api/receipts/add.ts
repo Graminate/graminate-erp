@@ -9,32 +9,19 @@ export default async function handler(
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  const {
-    user_id,
-    title,
-    bill_to,
-    date_created,
-    amount_paid,
-    amount_due,
-    due_date,
-    status,
-  } = req.body;
+  console.log("Received request body:", req.body);
+
+  const { user_id, title, bill_to, amount_paid, amount_due, due_date, status } =
+    req.body;
 
   try {
     const result = await pool.query(
-      `INSERT INTO invoices (user_id, title, bill_to, date_created, amount_paid, amount_due, due_date, status) 
+      `INSERT INTO invoices (user_id, title, bill_to, amount_paid, amount_due, due_date, status) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
-      [
-        user_id,
-        title,
-        bill_to,
-        date_created,
-        amount_paid,
-        amount_due,
-        due_date,
-        status,
-      ]
+      [user_id, title, bill_to, amount_paid || 0, amount_due, due_date, status]
     );
+
+    console.log("Database insert result:", result.rows[0]); // Debugging log
 
     return res.status(201).json({
       message: "Receipt added successfully",

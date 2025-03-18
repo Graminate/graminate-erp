@@ -45,7 +45,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
         },
         {
           label: "Invoices",
-          route: `/platform/${userId}/crm?view=invoices`,
+          route: `/platform/${userId}/crm?view=receipts`,
         },
         {
           label: "Tickets",
