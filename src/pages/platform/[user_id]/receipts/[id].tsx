@@ -9,6 +9,8 @@ import Swal from "sweetalert2";
 import Head from "next/head";
 import domtoimage from "dom-to-image";
 import jsPDF from "jspdf";
+import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
+import { PAYMENT_STATUS } from "@/constants/options";
 
 type Item = {
   description: string;
@@ -29,6 +31,8 @@ const ReceiptDetails = () => {
   const [dueDate, setDueDate] = useState("");
   const [poNumber, setPoNumber] = useState("");
   const [notes, setNotes] = useState("");
+  const [amountDue, setAmountDue] = useState("");
+  const [status, setStatus] = useState("");
   const [terms, setTerms] = useState("");
   const [items, setItems] = useState<Item[]>([
     { description: "", quantity: 1, rate: 0, amount: 0 },
@@ -37,6 +41,8 @@ const ReceiptDetails = () => {
   const [discount, setDiscount] = useState(0);
   const [shipping, setShipping] = useState(0);
   const [amountPaid, setAmountPaid] = useState(0);
+
+
 
   // Keep a copy of the initial form data for change detection
   const [initialFormData, setInitialFormData] = useState({
@@ -70,9 +76,10 @@ const ReceiptDetails = () => {
           : "";
         setDueDate(formattedDueDate);
         setCustomer(parsedReceipt.bill_to || "");
-        setShipTo(parsedReceipt.ship_to || "");
+        setReceiptTitle(parsedReceipt.title || "");
         setPaymentTerms(parsedReceipt.payment_terms || "");
         setPoNumber(parsedReceipt.po_number || "");
+        setShipTo(parsedReceipt.ship_to || "");
         setNotes(parsedReceipt.notes || "");
         setTerms(parsedReceipt.terms || "");
         setItems(
@@ -84,6 +91,9 @@ const ReceiptDetails = () => {
         setDiscount(parsedReceipt.discount || 0);
         setShipping(parsedReceipt.shipping || 0);
         setAmountPaid(parsedReceipt.amount_paid || 0);
+        setAmountPaid(parsedReceipt.amount_paid || 0);
+        setAmountDue(parsedReceipt.amount_due || 0);
+        setStatus(parsedReceipt.status || "");
 
         setInitialFormData({
           receiptNumber: parsedReceipt.invoice_id?.toString() || "",
@@ -286,6 +296,28 @@ const ReceiptDetails = () => {
               onChange={setPoNumber}
               width="large"
             />
+            <TextField
+              label="Amount Paid"
+              value={amountPaid.toString()}
+              onChange={(val) => setAmountPaid(Number(val))}
+              width="large"
+            />
+
+            <TextField
+              label="Amount Due"
+              value={amountDue}
+              onChange={setAmountDue}
+              width="large"
+            />
+
+            <DropdownLarge
+              label="Status"
+              items={PAYMENT_STATUS}
+              selectedItem={status}
+              onSelect={setStatus}
+              type="form"
+              width="full"
+            />
 
             <TextArea label="Notes" value={notes} onChange={setNotes} />
             <TextArea label="Terms" value={terms} onChange={setTerms} />
@@ -315,7 +347,11 @@ const ReceiptDetails = () => {
               onClick={handleSave}
               isDisabled={!hasChanges || saving}
             />
-            <Button text="Download Receipt" style="primary" onClick={handleDownload} />
+            <Button
+              text="Download Receipt"
+              style="primary"
+              onClick={handleDownload}
+            />
             <Button
               text="Cancel"
               style="secondary"

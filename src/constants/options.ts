@@ -55,8 +55,4 @@ export const CONTRACT_STATUS = [
   "Terminated",
 ];
 
-export const RECEIPT_TYPES = [
-  "To be Initiated",
-  "Pending Payment",
-  "Completed",
-];
+export const PAYMENT_STATUS = ["Pending", "Paid", "Overdue", "Cancelled"];

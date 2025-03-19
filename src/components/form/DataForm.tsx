@@ -6,7 +6,7 @@ import Button from "@/components/ui/Button";
 import TextArea from "@/components/ui/TextArea";
 import type { DataForm } from "@/types/card-props";
 
-import { CONTACT_TYPES, RECEIPT_TYPES, GENDER } from "@/constants/options";
+import { CONTACT_TYPES, PAYMENT_STATUS, GENDER } from "@/constants/options";
 
 const DataForm = ({
   view,
@@ -587,7 +587,6 @@ const DataForm = ({
               }
             />
 
-
             {/* Amount Paid */}
             <div className="flex flex-col gap-2">
               <TextField
@@ -625,7 +624,7 @@ const DataForm = ({
 
               {/*  Receipt Status*/}
               <DropdownLarge
-                items={RECEIPT_TYPES}
+                items={PAYMENT_STATUS}
                 selectedItem={receiptsValues.status}
                 onSelect={(value: string) =>
                   setReceiptsValues({ ...receiptsValues, status: value })
