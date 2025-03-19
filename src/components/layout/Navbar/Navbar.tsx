@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import NotificationBar from "../NotificationBar";
-import ThemeSwitch from "@/components/ui/Switch/ThemeSwitch";
 
 import type { User } from "@/types/card-props";
 import type { Navbar } from "@/types/card-props";
@@ -91,10 +90,6 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
 
   const toUserPreferences = () => {
     router.push(`/platform/${userId}/settings/general`);
-  };
-
-  const toggleThemeHandler = () => {
-    console.log("Theme toggled");
   };
 
   return (
@@ -241,7 +236,7 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
                           alt={user.name}
                         />
                         <div className="ml-3 flex-1 flex-col gap-1">
-                          <p className="text-lg font-semibold text-gray-100">
+                          <p className="text-lg font-semibold text-dark dark:text-light">
                             {user.name}
                           </p>
                           <p className="text-sm text-gray-300">{user.email}</p>
@@ -257,7 +252,6 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
                             >
                               Profile Preferences
                             </a>
-                            <ThemeSwitch switchAction={toggleThemeHandler} />
                           </div>
                         </div>
                       </div>
@@ -292,7 +286,7 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
                     </div>
                     <div className="flex items-center justify-between px-4 py-3 text-sm text-gray-200 dark:text-gray-500 border-t border-gray-300">
                       <button
-                        className="text-sm font-medium text-gray-200 hover:underline"
+                        className="text-sm font-medium text-dark dark:text-white hover:underline"
                         onClick={handleLogout}
                       >
                         Sign Out

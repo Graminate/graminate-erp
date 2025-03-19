@@ -42,8 +42,6 @@ const ReceiptDetails = () => {
   const [shipping, setShipping] = useState(0);
   const [amountPaid, setAmountPaid] = useState(0);
 
-
-
   // Keep a copy of the initial form data for change detection
   const [initialFormData, setInitialFormData] = useState({
     receiptNumber: "",
@@ -151,33 +149,39 @@ const ReceiptDetails = () => {
     const payload = {
       invoice_id: receipt.invoice_id,
       user_id,
-      title: receiptNumber,
+      title: receiptTitle, // Ensure the correct title is sent
       bill_to: customer,
-      amount_paid: amountPaid,
-      amount_due: calculateAmounts().balanceDue,
+      ship_to: shipTo,
+      payment_terms: paymentTerms,
       due_date: dueDate,
-      status: "Pending",
+      po_number: poNumber,
       notes,
       terms,
-      items,
+      amount_paid: amountPaid,
+      amount_due: calculateAmounts().balanceDue,
+      status,
       tax,
       discount,
       shipping,
+      items, // Invoice items array
     };
 
     try {
-      const response = await fetch("/api/receipts/update", {
+      const response = await fetch(`/api/receipts/update`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+
       const result = await response.json();
 
       if (response.ok) {
         Swal.fire("Success", "Receipt updated successfully", "success");
+
+        // Ensure receiptTitle is stored correctly and fields are updated
         setInitialFormData({
-          receiptNumber,
-          receiptTitle,
+          receiptNumber, // This should remain invoice_id
+          receiptTitle, // Retain correct title
           customer,
           shipTo,
           paymentTerms,
@@ -191,6 +195,9 @@ const ReceiptDetails = () => {
           shipping,
           amountPaid,
         });
+
+        // Reload data to reflect changes
+        setReceipt(result.invoice);
       } else {
         Swal.fire("Error", result.error || "Failed to update receipt", "error");
       }
@@ -205,7 +212,6 @@ const ReceiptDetails = () => {
       setSaving(false);
     }
   };
-
   const handleDownload = async () => {
     const element = document.getElementById("receipt-container");
     if (!element) return;

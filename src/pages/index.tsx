@@ -281,7 +281,7 @@ const SignInPage: React.FC = () => {
         <div className="min-h-screen dark:bg-gray-900 flex flex-col md:flex-row">
           {/* Left Image Section */}
           <div
-            className="hidden md:block md:w-3/4 h-screen bg-cover bg-center"
+            className="hidden md:flex md:w-1/2 h-screen bg-cover bg-center"
             style={{ backgroundImage: "url('/images/cover.png')" }}
           ></div>
           {/* Right Form Section */}

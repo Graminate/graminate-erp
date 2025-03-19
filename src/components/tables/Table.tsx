@@ -144,17 +144,19 @@ const Table = ({
       return;
     }
 
+    const entityNames: Record<string, string> = {
+      companies: "company",
+      contacts: "contact",
+      labours: "labour",
+      contracts: "contract",
+      receipts: "receipt",
+    };
+
+    const entityToDelete = entityNames[view] || "contracts";
+
     const result = await Swal.fire({
       title: "Are you sure?",
-      text: `Do you want to delete ${
-        view === "companies"
-          ? "companies"
-          : view === "contacts"
-          ? "contacts"
-          : view === "labours"
-          ? "labours"
-          : "contracts"
-      }?`,
+      text: `Do you want to delete the ${entityToDelete} data?`,
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "Yes",

@@ -86,11 +86,11 @@ const NotificationBar = ({
               </button>
 
               {isFilterDropdownOpen && (
-                <div className="absolute mt-2 w-56 bg-white shadow-lg rounded-md border p-4">
+                <div className="absolute mt-2 w-56 bg-white shadow-lg rounded-md p-4">
                   <p className="text-sm font-semibold text-gray-700 mb-2">
                     Filter By
                   </p>
-                  <label className="flex items-center space-x-2">
+                  <label className="flex items-center space-x-2 dark:text-dark">
                     <input type="checkbox" className="form-checkbox" />
                     <span>Archived</span>
                   </label>
@@ -98,7 +98,7 @@ const NotificationBar = ({
                   <p className="text-sm font-semibold text-gray-700 mb-2">
                     Notifications
                   </p>
-                  <label className="flex items-center space-x-2">
+                  <label className="flex items-center space-x-2 dark:text-dark">
                     <input type="checkbox" className="form-checkbox" />
                     <span>Select all</span>
                   </label>
@@ -127,15 +127,15 @@ const NotificationBar = ({
               </button>
 
               {isActionsDropdownOpen && (
-                <div className="absolute mt-2 w-56 bg-white shadow-lg rounded-md border p-3">
+                <div className="absolute mt-2 w-56 bg-white shadow-lg rounded-md">
                   <ul className="space-y-2">
                     <li>
-                      <button className="text-gray-800 hover:bg-gray-200 w-full text-left flex items-center px-3 py-2 cursor-pointer transition-all duration-200 rounded-md">
+                      <button className="text-dark hover:bg-gray-500 dark:hover:bg-gray-400 w-full text-left flex items-center px-3 py-2 cursor-pointer transition-all duration-200 rounded-md">
                         Archive All
                       </button>
                     </li>
                     <li>
-                      <button className="text-gray-800 hover:bg-gray-200 w-full text-left flex items-center px-3 py-2 cursor-pointer transition-all duration-200 rounded-md">
+                      <button className="text-dark hover:bg-gray-500 dark:hover:bg-gray-400 w-full text-left flex items-center px-3 py-2 cursor-pointer transition-all duration-200 rounded-md">
                         Mark All as Read
                       </button>
                     </li>
@@ -147,7 +147,7 @@ const NotificationBar = ({
 
           {/* Settings Icon */}
           <button
-            className="text-green-200 hover:text-green-800 mb-2 focus:outline-none"
+            className="text-light hover:text-gray-300 mb-2 focus:outline-none"
             aria-label="settings icon"
             onClick={navigateToSettings}
           >
@@ -182,7 +182,7 @@ const NotificationBar = ({
           notifications.map((notification, index) => (
             <div
               key={index}
-              className="p-3 border rounded-md mb-2 bg-gray-50 dark:bg-gray-700"
+              className="p-3 shadow-md rounded-md mb-2 bg-gray-50 dark:bg-gray-700"
             >
               <p className="font-semibold text-gray-800 dark:text-light">
                 {notification.title}

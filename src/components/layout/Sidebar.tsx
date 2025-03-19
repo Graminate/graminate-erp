@@ -48,8 +48,8 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
           route: `/platform/${userId}/crm?view=receipts`,
         },
         {
-          label: "Tickets",
-          route: `/platform/${userId}/crm?view=tickets`,
+          label: "Tasks",
+          route: `/platform/${userId}/crm?view=tasks`,
         },
       ],
     },

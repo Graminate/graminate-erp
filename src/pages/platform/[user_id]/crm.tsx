@@ -52,7 +52,7 @@ const ContactsPage = () => {
           companiesRes,
           contractsRes,
           receiptsRes,
-          ticketsRes,
+          tasksRes,
         ]) => {
           if (contactsRes.ok) {
             const data = await contactsRes.json();
@@ -70,9 +70,9 @@ const ContactsPage = () => {
             const data = await receiptsRes.json();
             setReceiptsData(data.receipts || []);
           }
-          if (ticketsRes.ok) {
-            const data = await ticketsRes.json();
-            setTasksData(data.tickets || []);
+          if (tasksRes.ok) {
+            const data = await tasksRes.json();
+            setTasksData(data.tasks || []);
           }
         }
       )
