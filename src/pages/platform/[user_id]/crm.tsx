@@ -21,8 +21,6 @@ const ContactsPage = () => {
   const [receiptsData, setReceiptsData] = useState<any[]>([]);
   const [tasksData, setTasksData] = useState<any[]>([]);
   const [fetchedData, setFetchedData] = useState<any[]>([]);
-
-  // UI state
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const dropdownItems = [
@@ -33,13 +31,11 @@ const ContactsPage = () => {
     { label: "Tasks", view: "tasks" },
   ];
 
-  // Pagination and search states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(25);
   const paginationItems = ["25 per page", "50 per page", "100 per page"];
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch all data on mount (once the router is ready)
   useEffect(() => {
     if (!router.isReady || !user_id) return;
 
@@ -114,7 +110,6 @@ const ContactsPage = () => {
     tasksData,
   ]);
 
-  // Derive table data based on the view and fetched data
   const tableData = useMemo(() => {
     switch (view) {
       case "contacts":
@@ -202,7 +197,7 @@ const ContactsPage = () => {
             "Due Date",
             "Status",
           ],
-          // Note: we display only selected fields, but the full receipt object is still in fetchedData
+
           rows: fetchedData.map((item) => [
             item.invoice_id,
             item.title,
@@ -241,7 +236,6 @@ const ContactsPage = () => {
     }
   }, [fetchedData, view]);
 
-  // Filter rows based on the search query
   const filteredRows = useMemo(() => {
     if (!searchQuery) return tableData.rows;
     return tableData.rows.filter((row) =>
@@ -251,15 +245,12 @@ const ContactsPage = () => {
     );
   }, [tableData, searchQuery]);
 
-  // Apply pagination to the filtered rows
   const paginatedRows = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredRows.slice(start, start + itemsPerPage);
   }, [filteredRows, currentPage, itemsPerPage]);
 
   const totalRecordCount = filteredRows.length;
-
-  // Function to update the URL with a new view parameter
   const navigateTo = (newView: string) => {
     const currentUrl = new URL(window.location.href);
     currentUrl.searchParams.set("view", newView);
@@ -269,42 +260,28 @@ const ContactsPage = () => {
 
   const handleRowClick = (row: any[]) => {
     const id = row[0];
-    // For receipts, find the full record from fetchedData based on invoice_id.
     const fullData =
       view === "receipts"
         ? fetchedData.find((item) => item.invoice_id === id)
         : null;
     const rowData = JSON.stringify(fullData || row);
 
-    if (view === "contacts") {
+    const validViews = [
+      "contacts",
+      "companies",
+      "contracts",
+      "receipts",
+      "tasks",
+    ];
+
+    if (validViews.includes(view)) {
       router.push({
-        pathname: `/platform/${user_id}/contacts/${id}`,
-        query: { data: rowData },
-      });
-    } else if (view === "companies") {
-      router.push({
-        pathname: `/platform/${user_id}/companies/${id}`,
-        query: { data: rowData },
-      });
-    } else if (view === "contracts") {
-      router.push({
-        pathname: `/platform/${user_id}/contracts/${id}`,
-        query: { data: rowData },
-      });
-    } else if (view === "receipts") {
-      router.push({
-        pathname: `/platform/${user_id}/receipts/${id}`,
-        query: { data: rowData },
-      });
-    } else if (view === "tasks") {
-      router.push({
-        pathname: `/platform/${user_id}/tasks/${id}`,
+        pathname: `/platform/${user_id}/${view}/${id}`,
         query: { data: rowData },
       });
     }
   };
 
-  // Handle form submission (for create actions)
   const handleFormSubmit = (values: Record<string, string>) => {
     console.log("Form submitted:", values);
     setIsSidebarOpen(false);
@@ -324,7 +301,6 @@ const ContactsPage = () => {
         <title>Graminate | CRM</title>
       </Head>
       <div className="min-h-screen container mx-auto p-4">
-        {/* Header with dropdown and create button */}
         <div className="flex justify-between items-center dark:bg-dark relative mb-4">
           <div className="relative">
             <button
@@ -385,7 +361,6 @@ const ContactsPage = () => {
           setSearchQuery={setSearchQuery}
         />
 
-        {/* Sidebar form for creating new entries */}
         {isSidebarOpen && (
           <DataForm
             view={view}

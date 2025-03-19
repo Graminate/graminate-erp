@@ -564,7 +564,7 @@ const TasksPage: React.FC = () => {
                                     )}
                                 </div>
                               </div>
-                              {/* Task ID displayed at bottom right */}
+
                               <div className="flex justify-end">
                                 <span className="text-xs text-gray-500">
                                   {task.id}
@@ -573,16 +573,13 @@ const TasksPage: React.FC = () => {
                             </div>
                           ))}
                         </div>
-                        {/* Create Issue Button / Task Form */}
                         {addingTask === colIndex ? (
                           <div className="mt-2 p-3 rounded-lg bg-gray-100 dark:bg-gray-800 shadow">
-                            {/* Text Area for Task Input */}
                             <TextArea
                               placeholder="What needs to be done?"
                               value={newTaskTitle}
                               onChange={setNewTaskTitle}
                             />
-                            {/* Task Type Dropdown & Create Button */}
                             <div className="mt-3 flex flex-col md:flex-row items-center gap-3">
                               <DropdownSmall
                                 items={dropdownItems}
@@ -614,7 +611,6 @@ const TasksPage: React.FC = () => {
                       </div>
                     </SortableItem>
                   ))}
-                  {/* Add Column Button */}
                   <div className="flex flex-col items-center justify-center">
                     {isAddingColumn ? (
                       <div className="w-[280px] bg-gray-500 dark:bg-gray-800 shadow rounded-lg p-3">
@@ -629,7 +625,6 @@ const TasksPage: React.FC = () => {
                             className="bg-green-500 text-white p-1 rounded"
                             onClick={addNewColumn}
                           >
-                            {/* Tick Icon */}
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               fill="none"
@@ -650,7 +645,6 @@ const TasksPage: React.FC = () => {
                             className="bg-red-500 text-white p-1 rounded"
                             onClick={cancelColumn}
                           >
-                            {/* Cancel Icon */}
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               fill="none"
@@ -674,7 +668,6 @@ const TasksPage: React.FC = () => {
                         className="bg-gray-300 dark:bg-gray-700 text-white p-2 rounded-lg"
                         onClick={() => setIsAddingColumn(true)}
                       >
-                        {/* Plus Icon */}
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
                           fill="none"
