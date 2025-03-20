@@ -3,18 +3,18 @@ import BusinessCard from "../cards/BusinessCard";
 
 type View = "distributor" | "exporter" | "factories";
 
-interface Business {
+type Business = {
   name: string;
   stars: number;
   address: string;
   open: boolean;
   imageUrl: string;
   price: number;
-}
+};
 
-interface FinderBarProps {
+type Props = {
   activeView: View;
-}
+};
 
 const businessData: Record<View, Business[]> = {
   distributor: [
@@ -121,7 +121,7 @@ const businessData: Record<View, Business[]> = {
   ],
 };
 
-const FinderBar: React.FC<FinderBarProps> = ({ activeView }) => {
+const FinderBar = ({ activeView }: Props) => {
   const [sortedData, setSortedData] = useState<Business[]>([]);
   const [sortOption, setSortOption] = useState<
     "relevance" | "rating" | "price"

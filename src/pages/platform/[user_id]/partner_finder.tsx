@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/router";
-import FinderBar from "@/components/layout/Finderbar";
+import FinderBar from "@/components/layout/FinderBar";
 import NavPanel from "@/components/layout/NavPanel";
 import Maps from "@/components/others/Maps";
 import PlatformLayout from "@/layout/PlatformLayout";
@@ -8,7 +7,7 @@ import Head from "next/head";
 
 type View = "distributor" | "exporter" | "factories";
 
-interface Button {
+type Button = {
   name: string;
   view: View;
 }
@@ -19,15 +18,10 @@ const buttons: Button[] = [
   { name: "Factories", view: "factories" },
 ];
 
-const FinderPage: React.FC = () => {
-  // Grab the user_id param from the URL (if needed)
-  const router = useRouter();
-  const { user_id } = router.query;
+const FinderPage = () => {
 
-  // Manage the active view state
   const [activeView, setActiveView] = useState<View>("distributor");
 
-  // Manage the map state
   const [mapState, setMapState] = useState<{
     center: { lat: number; lng: number };
     zoom: number;
@@ -37,15 +31,12 @@ const FinderPage: React.FC = () => {
   });
   const [error, setError] = useState<string | null>(null);
 
-  // Retrieve the API key from environment variables
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
 
-  // Handle navigation events from NavPanel
   const handleNavigation = (newView: View) => {
     setActiveView(newView);
   };
 
-  // Helper function to get the current geolocation
   const getCurrentLocation = (): Promise<{ lat: number; lon: number }> => {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
@@ -66,7 +57,6 @@ const FinderPage: React.FC = () => {
     });
   };
 
-  // On mount, try to get the user's current location
   useEffect(() => {
     (async () => {
       try {
@@ -95,7 +85,6 @@ const FinderPage: React.FC = () => {
         <title>Finder | Graminate</title>
       </Head>
       <div className="relative h-screen">
-        {/* Map Content */}
         <div className="absolute inset-0">
           {error ? (
             <p className="text-red-500 text-center mt-4">{error}</p>
@@ -109,12 +98,10 @@ const FinderPage: React.FC = () => {
           )}
         </div>
 
-        {/* Finderbar (visible on larger screens) */}
         <div className="absolute top-12 left-0 h-[calc(100%-4rem)] w-64 z-30 hidden lg:block">
           <FinderBar activeView={activeView} />
         </div>
 
-        {/* NavPanel (responsive) */}
         <div className="absolute top-2 left-2 w-72 sm:w-96 z-40">
           <NavPanel
             buttons={buttons}

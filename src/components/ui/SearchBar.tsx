@@ -1,5 +1,3 @@
-
-
 import React from "react";
 
 type Props = {
@@ -7,7 +5,7 @@ type Props = {
   placeholder?: string;
   mode?: "table" | "type";
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-}
+};
 
 const SearchBar: React.FC<Props> = ({
   value,
@@ -15,7 +13,6 @@ const SearchBar: React.FC<Props> = ({
   mode = "",
   onChange,
 }) => {
-
   if (mode === "table" && !placeholder) {
     throw new Error(
       "The 'placeholder' parameter is mandatory when 'mode' is set to 'table'."
@@ -32,7 +29,9 @@ const SearchBar: React.FC<Props> = ({
         type="text"
         value={value}
         placeholder={placeholder}
-        className="w-full px-4 py-1 border border-gray-300 dark:border-gray-200 focus:border-green-200 rounded-md dark:bg-gray-700 focus:outline-none dark:text-gray-500"
+        className="w-full px-4 py-1 border border-gray-300 dark:border-gray-200 focus:border-green-200 
+                   rounded-md dark:bg-gray-700 focus:outline-none 
+                   text-dark dark:text-light placeholder-gray-300 dark:placeholder-gray-500"
         onChange={onChange}
       />
       <button
