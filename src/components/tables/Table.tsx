@@ -19,7 +19,7 @@ type Props = {
   totalRecordCount: number;
   view?: string;
   exportEnabled?: boolean;
-  loading: boolean;
+  loading?: boolean;
 };
 
 const Table = ({

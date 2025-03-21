@@ -113,9 +113,9 @@ const LabourDatabase = () => {
           paginationItems={paginationItems}
           searchQuery={searchQuery}
           totalRecordCount={tableData.rows.length}
+     
           onRowClick={(row) => {
             const labourId = row[0];
-            // Find the full labour record from labourRecords using labour_id
             const labour = labourRecords.find(
               (item) => item.labour_id === labourId
             );
@@ -132,7 +132,6 @@ const LabourDatabase = () => {
           setSearchQuery={setSearchQuery}
         />
 
-        {/* Sidebar form for creating a new labour record */}
         {isSidebarOpen && (
           <DataForm
             view={view}

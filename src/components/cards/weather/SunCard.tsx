@@ -346,7 +346,9 @@ const SunCard = ({ lat, lon }: Coordinates) => {
       {!error &&
         displayMode === "Large" &&
         sunriseTime !== null &&
-        sunsetTime !== null && (
+        sunsetTime !== null &&
+        sunTimesArray.length > 0 &&
+        sunTimesArray[0] !== undefined && (
           <div className="mt-1 w-full max-w-2xl">
             <div className="flex flex-row justify-between border-b border-gray-300 py-2">
               <div className="text-sm text-dark dark:text-light">

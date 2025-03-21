@@ -10,7 +10,7 @@ import Head from "next/head";
 type Coordinates = {
   lat: number;
   lon: number;
-}
+};
 
 const UserPlatformPage = () => {
   const [location, setLocation] = useState<Coordinates | null>(null);
@@ -85,11 +85,11 @@ const UserPlatformPage = () => {
       <PlatformLayout>
         <main className="min-h-screen text-white relative">
           <header className="px-6 py-4">
-            <h1 className="text-3xl font-bold text-dark dark:text-light">
+            <h1 className="text-2xl font-bold text-dark dark:text-light">
               Dashboard
             </h1>
-            <hr className="mt-4 border-gray-600" />
           </header>
+          <hr className="mb-6 border-gray-300" />
 
           {isLoading ? (
             <div className="flex justify-center items-center min-h-screen">

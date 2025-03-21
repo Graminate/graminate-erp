@@ -9,6 +9,7 @@ import {
   faAddressBook,
   faCloud,
   faDollar,
+  faWarehouse,
 } from "@fortawesome/free-solid-svg-icons";
 
 import type { Sidebar } from "@/types/card-props";
@@ -69,7 +70,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
     },
     {
       icon: faUsers,
-      label: "Labour Management",
+      label: "Worker Management",
       section: "Labour",
       subItems: [
         {
@@ -88,9 +89,16 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
     },
     {
       icon: faDollar,
-      label: "Budget & Finances",
-      section: "Budget & Finances",
+      label: "Finance Tracker",
+      section: "Finance Tracker",
       route: `/platform/${userId}/budget`,
+      subItems: [],
+    },
+    {
+      icon: faWarehouse,
+      label: "Inventory",
+      section: "Inventory",
+      route: `/platform/${userId}/inventory`,
       subItems: [],
     },
     {

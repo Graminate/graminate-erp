@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import dynamic from "next/dynamic";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -17,6 +16,8 @@ import "chartjs-adapter-date-fns";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
 import SearchBar from "@/components/ui/SearchBar";
+import Button from "@/components/ui/Button";
+import router from "next/router";
 
 ChartJS.register(
   CategoryScale,
@@ -146,8 +147,7 @@ const PriceTracker = () => {
   };
 
   const [selectedTimeframe, setSelectedTimeframe] =
-    useState<keyof typeof timeframes>("1Y");
-
+    useState<keyof typeof timeframes>("1D");
   const labels = fullLabels[selectedTimeframe as keyof typeof fullLabels];
   const priceData =
     selected && commodityData[selected]
@@ -239,19 +239,27 @@ const PriceTracker = () => {
     },
   };
 
+  const goBack = () => {
+    router.back();
+  };
+
   return (
     <PlatformLayout>
       <Head>
         <title>Commodity Price Tracker | Graminate</title>
       </Head>
+
       <main className="min-h-screen text-white px-4 sm:px-6 md:px-8 py-4">
         <div className="w-full min-h-screen">
-          <header className="text-center md:text-left mb-4">
-            <h1 className="text-3xl font-bold text-dark dark:text-light">
-              Commodity Prices
-            </h1>
-            <hr className="mt-4 border-gray-600" />
+          <header className="flex text-center md:text-left mb-4 -ml-8">
+            <div className="flex items-center gap-2 pt-4">
+              <Button text="" style="ghost" arrow="left" onClick={goBack} />
+              <h1 className="text-2xl font-bold text-dark dark:text-light">
+                Commodity Prices
+              </h1>
+            </div>
           </header>
+          <hr className="mb-6 border-gray-300" />
 
           <div className="flex justify-between items-center mx-auto w-full">
             <div className="text-sm text-dark dark:text-light flex flex-wrap items-center gap-3 my-2">

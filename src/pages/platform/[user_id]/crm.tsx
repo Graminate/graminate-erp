@@ -40,7 +40,7 @@ const ContactsPage = () => {
   useEffect(() => {
     if (!router.isReady || !user_id) return;
 
-    setLoading(true); // Start loading before fetching
+    setLoading(true);
 
     Promise.all([
       fetch(`/api/contacts/${user_id}`),
@@ -83,7 +83,7 @@ const ContactsPage = () => {
         console.error("Error fetching data:", error);
       })
       .finally(() => {
-        setLoading(false); // Always stop loading after fetch completes or fails
+        setLoading(false);
       });
   }, [router.isReady, user_id]);
 
