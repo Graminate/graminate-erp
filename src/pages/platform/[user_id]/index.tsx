@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import PlatformLayout from "@/layout/PlatformLayout";
 import TemperatureCard from "@/components/cards/weather/TemperatureCard";
-import Calendar from "@/components/ui/Calendar";
+import Calendar from "@/components/ui/Calendar/Calendar";
 import Loader from "@/components/ui/Loader";
 import ProgressCard from "@/components/cards/ProgressCard";
 import StatusCard from "@/components/cards/StatusCard";
