@@ -12,7 +12,7 @@ const NavPanel = ({ buttons, activeView, onNavigate }: NavPanel) => {
           <button
             key={view}
             className={`flex-1 px-4 py-2 text-center text-sm font-medium
-               dark:border-gray-200 hover:bg-gray-500 dark:hover:bg-gray-700 bg-neutral-100 dark:bg-gray-600 dark:text-light focus:outline-none
+               dark:border-gray-200 hover:bg-gray-500 dark:hover:bg-gray-700 bg-neutral-100 dark:bg-gray-600 dark:text-light focus:outline-none shadow-md
               ${
                 activeView === view
                   ? "border-b-transparent bg-white font-semibold"

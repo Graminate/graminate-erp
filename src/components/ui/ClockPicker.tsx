@@ -6,18 +6,12 @@ type Props = {
   onCancel: () => void;
 };
 
-const ClockPicker = ({ onTimeSelected, onCancel }: Props) => {
+const ClockPicker = ({ selectedTime, onTimeSelected, onCancel }: Props) => {
   const [hours, setHours] = useState<number>(12);
   const [minutes, setMinutes] = useState<number>(0);
   const [period, setPeriod] = useState<"AM" | "PM">("AM");
 
-  const setTime = () => {
-    // Ensure all selections are made
-    if (hours === null || minutes === null) {
-      alert("Please select hours and minutes before submitting.");
-      return;
-    }
-
+  const handleSetTime = () => {
     const formattedTime = `${hours.toString().padStart(2, "0")}:${minutes
       .toString()
       .padStart(2, "0")} ${period}`;
@@ -29,7 +23,6 @@ const ClockPicker = ({ onTimeSelected, onCancel }: Props) => {
       <h3 className="text-lg font-bold mb-4 text-gray-200 dark:text-light break-words">
         Select Time
       </h3>
-
       <div className="flex justify-center items-center mb-4">
         <div className="flex items-center space-x-2">
           {/* Hours */}
@@ -44,7 +37,6 @@ const ClockPicker = ({ onTimeSelected, onCancel }: Props) => {
               </option>
             ))}
           </select>
-
           {/* Minutes */}
           <select
             value={minutes}
@@ -57,7 +49,6 @@ const ClockPicker = ({ onTimeSelected, onCancel }: Props) => {
               </option>
             ))}
           </select>
-
           {/* AM/PM */}
           <select
             value={period}
@@ -69,13 +60,12 @@ const ClockPicker = ({ onTimeSelected, onCancel }: Props) => {
           </select>
         </div>
       </div>
-
       {/* Action Buttons */}
       <div className="mt-4 flex justify-center space-x-4">
         <button
           className="bg-green-200 text-white py-2 px-4 rounded hover:bg-green-100"
           aria-label="set"
-          onClick={setTime}
+          onClick={handleSetTime}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -92,7 +82,6 @@ const ClockPicker = ({ onTimeSelected, onCancel }: Props) => {
             />
           </svg>
         </button>
-
         <button
           className="bg-red-200 text-white py-2 px-4 rounded hover:bg-red-100"
           aria-label="cancel"
@@ -109,7 +98,7 @@ const ClockPicker = ({ onTimeSelected, onCancel }: Props) => {
             <path
               strokeLinecap="round"
               strokeLinejoin="round"
-              d="M6 18 18 6M6 6l12 12"
+              d="M6 18L18 6M6 6l12 12"
             />
           </svg>
         </button>
