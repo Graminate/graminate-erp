@@ -72,7 +72,7 @@ const NotificationBar = ({
             {/* Filter Dropdown */}
             <div className="relative">
               <button
-                className="bg-gray-400 dark:bg-gray-700 px-3 py-1 text-sm rounded-md dark:text-gray-300 hover:bg-gray-300 flex items-center"
+                className="bg-gray-400 dark:bg-gray-700 px-3 py-1 text-sm rounded-md dark:text-light hover:bg-gray-600 flex items-center"
                 onClick={toggleFilterDropdown}
               >
                 Filter
@@ -86,21 +86,23 @@ const NotificationBar = ({
               </button>
 
               {isFilterDropdownOpen && (
-                <div className="absolute mt-2 w-56 bg-white shadow-lg rounded-md p-4">
-                  <p className="text-sm font-semibold text-gray-700 mb-2">
+                <div className="absolute mt-2 w-56 bg-white dark:bg-gray-600 shadow-lg rounded-md p-4">
+                  <p className="text-sm font-semibold text-dark dark:text-light mb-2">
                     Filter By
                   </p>
                   <label className="flex items-center space-x-2 dark:text-dark">
                     <input type="checkbox" className="form-checkbox" />
-                    <span>Archived</span>
+                    <span className="text-dark dark:text-light">Archived</span>
                   </label>
                   <hr className="my-3" />
-                  <p className="text-sm font-semibold text-gray-700 mb-2">
+                  <p className="text-sm font-semibold text-dark dark:text-light mb-2">
                     Notifications
                   </p>
                   <label className="flex items-center space-x-2 dark:text-dark">
                     <input type="checkbox" className="form-checkbox" />
-                    <span>Select all</span>
+                    <span className="text-dark dark:text-light">
+                      Select all
+                    </span>
                   </label>
                   <div className="flex justify-between mt-4">
                     <Button style="primary" text="Done" />
@@ -113,7 +115,7 @@ const NotificationBar = ({
             {/* Actions Dropdown */}
             <div className="relative">
               <button
-                className="bg-gray-400 px-3 py-1 text-sm rounded-md text-gray-700 hover:bg-gray-300 flex items-center"
+                className="bg-gray-400 dark:bg-gray-700 px-3 py-1 text-sm rounded-md text-dark dark:text-light hover:bg-gray-600 flex items-center"
                 onClick={toggleActionsDropdown}
               >
                 Actions
