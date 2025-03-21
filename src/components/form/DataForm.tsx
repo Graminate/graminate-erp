@@ -229,7 +229,7 @@ const DataForm = ({
       status: receiptsValues.status,
     });
     try {
-      const response = await fetch("/api/invoices/add", {
+      const response = await fetch("/api/receipts/add", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -320,7 +320,7 @@ const DataForm = ({
 
   return (
     <div
-      className="fixed top-0 right-0 h-full w-full md:w-1/3 bg-light dark:bg-dark shadow-lg z-50"
+      className="fixed top-0 right-0 h-full w-full md:w-1/3 bg-light dark:bg-gray-800 shadow-lg dark:border-l border-gray-200 z-50"
       style={{
         transform: animate ? "translateX(0)" : "translateX(500px)",
         transition: "transform 300ms",

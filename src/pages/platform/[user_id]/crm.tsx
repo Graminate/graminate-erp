@@ -15,6 +15,7 @@ const ContactsPage = () => {
   const view: View =
     typeof queryView === "string" ? (queryView as View) : "contacts";
 
+  const [loading, setLoading] = useState(true);
   const [contactsData, setContactsData] = useState<any[]>([]);
   const [companiesData, setCompaniesData] = useState<any[]>([]);
   const [contractsData, setContractsData] = useState<any[]>([]);
@@ -38,6 +39,8 @@ const ContactsPage = () => {
 
   useEffect(() => {
     if (!router.isReady || !user_id) return;
+
+    setLoading(true); // Start loading before fetching
 
     Promise.all([
       fetch(`/api/contacts/${user_id}`),
@@ -78,6 +81,9 @@ const ContactsPage = () => {
       )
       .catch((error) => {
         console.error("Error fetching data:", error);
+      })
+      .finally(() => {
+        setLoading(false); // Always stop loading after fetch completes or fails
       });
   }, [router.isReady, user_id]);
 
@@ -333,7 +339,7 @@ const ContactsPage = () => {
             {dropdownOpen && (
               <SearchDropdown items={dropdownItems} navigateTo={navigateTo} />
             )}
-            <p className="text-xs text-gray-100">
+            <p className="text-xs text-dark dark:text-light">
               {totalRecordCount} Record(s)
             </p>
           </div>
@@ -359,6 +365,7 @@ const ContactsPage = () => {
           setCurrentPage={setCurrentPage}
           setItemsPerPage={() => {}}
           setSearchQuery={setSearchQuery}
+          loading={loading}
         />
 
         {isSidebarOpen && (

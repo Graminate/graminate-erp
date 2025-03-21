@@ -10,7 +10,7 @@ type View = "distributor" | "exporter" | "factories";
 type Button = {
   name: string;
   view: View;
-}
+};
 
 const buttons: Button[] = [
   { name: "Distributor", view: "distributor" },
@@ -18,8 +18,7 @@ const buttons: Button[] = [
   { name: "Factories", view: "factories" },
 ];
 
-const FinderPage = () => {
-
+const Finder = () => {
   const [activeView, setActiveView] = useState<View>("distributor");
 
   const [mapState, setMapState] = useState<{
@@ -114,4 +113,4 @@ const FinderPage = () => {
   );
 };
 
-export default FinderPage;
+export default Finder;

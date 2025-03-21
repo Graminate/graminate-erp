@@ -14,14 +14,9 @@ const pool = new Pool({
     process.env.NODE_ENV === "production"
       ? { rejectUnauthorized: false }
       : false, // Enable SSL for production
-});
-
-pool.connect((err) => {
-  if (err) {
-    console.error("Error connecting to PostgreSQL:", err);
-  } else {
-    console.log(" Connected to PostgreSQL database");
-  }
+  max: 10,
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 2000,
 });
 
 export default pool;

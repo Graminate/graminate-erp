@@ -235,7 +235,7 @@ const Calendar = () => {
   };
 
   return (
-    <div className="bg-gradient-to-br from-gray-500 to-gray-400 dark:from-gray-700 rounded-lg shadow-lg p-6 w-full dark:text-light relative">
+    <div className="bg-gray-400 dark:bg-gray-700 rounded-lg shadow-lg p-6 w-full dark:text-light relative">
       {showAddTask ? (
         // --- Add Task View ---
         <>

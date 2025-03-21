@@ -263,7 +263,7 @@ const StatusCard = ({ steps, currentStep }: StatusCard) => {
   }, []);
 
   return (
-    <div className="bg-gradient-to-br from-gray-500 to-gray-400 dark:from-gray-700 rounded-lg shadow-lg p-6 md:p-2 sm:p-2 text-gray-800">
+    <div className="bg-gray-500 dark:bg-gray-700 dark:from-gray-700 rounded-lg shadow-lg p-6 md:p-2 sm:p-2 text-gray-800">
       {([1, 2, 3, 4, 5] as number[]).includes(currentStep) ? (
         <>
           <p className="dark:text-light text-xl font-semibold flex justify-center items-center h-full my-2">

@@ -11,7 +11,6 @@ import {
   Legend,
   TimeScale,
   ChartOptions,
-  ChartData,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 import "chartjs-adapter-date-fns";
@@ -33,52 +32,37 @@ ChartJS.register(
 const PriceTracker = () => {
   const now = new Date();
   const midnight = new Date(now);
-  midnight.setHours(0, 0, 0, 0); // Set time to 12:00 AM
-  const currentHour = now.getHours(); // Get the current hour (0-23)
+  midnight.setHours(0, 0, 0, 0);
 
   const fullLabels = {
     "1D": Array.from({ length: 24 }, (_, i) => {
       const midnight = new Date();
-      midnight.setHours(0, 0, 0, 0); // Set to 12:00 AM
-      return new Date(midnight.getTime() + i * 60 * 60 * 1000).getTime(); // Generate hourly timestamps
+      midnight.setHours(0, 0, 0, 0);
+      return new Date(midnight.getTime() + i * 60 * 60 * 1000).getTime();
     }),
     "7D": Array.from({ length: 8 * 7 + 1 }, (_, i) => {
-      const dayOffset = Math.floor(i / 8); // Which day this belongs to (0 to 6)
-      const hourOffset = (i % 8) * 3; // Which hour (0, 3, 6, 9, 12, 15, 18, 21)
+      const dayOffset = Math.floor(i / 8);
+      const hourOffset = (i % 8) * 3;
 
       const timestamp = new Date();
-      timestamp.setDate(timestamp.getDate() - 6 + dayOffset); // Go back 6 days
-      timestamp.setHours(hourOffset, 0, 0, 0); // Set the hour based on offset
+      timestamp.setDate(timestamp.getDate() - 6 + dayOffset);
+      timestamp.setHours(hourOffset, 0, 0, 0);
 
       return timestamp.getTime();
     }),
     "1M": Array.from({ length: 30 }, (_, i) => {
       const date = new Date();
-      date.setDate(date.getDate() - (29 - i)); // Generate last 30 days
-      date.setHours(0, 0, 0, 0); // Set time to midnight
+      date.setDate(date.getDate() - (29 - i));
+      date.setHours(0, 0, 0, 0);
       return date.getTime();
     }),
     "1Y": Array.from({ length: 365 }, (_, i) => {
       const date = new Date();
-      date.setDate(date.getDate() - (364 - i)); // Generate last 365 days
-      date.setHours(0, 0, 0, 0); // Set time to midnight
+      date.setDate(date.getDate() - (364 - i));
+      date.setHours(0, 0, 0, 0);
       return date.getTime();
     }),
   };
-
-  // Ensure data is only available until the current hour for 1D
-  const generateData = (base: number, range: number) =>
-    Array.from(
-      { length: 24 },
-      (_, i) =>
-        i <= currentHour ? Math.floor(Math.random() * range) + base : null // Show data only until the current hour
-    );
-
-  const generate7DData = (base: number, range: number) =>
-    Array.from(
-      { length: 8 * 7 + 1 },
-      () => Math.floor(Math.random() * range) + base
-    );
 
   const commodityData: {
     [key: string]: {
@@ -125,7 +109,6 @@ const PriceTracker = () => {
     },
   };
 
-  // State for selected commodity, search query, and list of commodities
   const [selected, setSelected] =
     useState<keyof typeof commodityData>("Cabbage");
   const [searchQuery, setSearchQuery] = useState("");
@@ -135,7 +118,6 @@ const PriceTracker = () => {
     "Rice",
   ]);
 
-  // Remove a commodity from the list; if the removed one was selected, update the selection.
   const removeItem = (itemToRemove: keyof typeof commodityData) => {
     setItems((prevItems) => prevItems.filter((item) => item !== itemToRemove));
     if (selected === itemToRemove) {
@@ -145,7 +127,6 @@ const PriceTracker = () => {
     }
   };
 
-  // Timeframe settings for x-axis units
   const timeframes: {
     [key: string]:
       | "millisecond"
@@ -167,7 +148,6 @@ const PriceTracker = () => {
   const [selectedTimeframe, setSelectedTimeframe] =
     useState<keyof typeof timeframes>("1Y");
 
-  // Safely get labels and price data (empty array if no valid selection)
   const labels = fullLabels[selectedTimeframe as keyof typeof fullLabels];
   const priceData =
     selected && commodityData[selected]
@@ -176,7 +156,6 @@ const PriceTracker = () => {
         ]
       : [];
 
-  // Ensure a valid dataset is selected based on the selected commodity and timeframe
   const selectedData =
     selected && commodityData[selected] && selectedTimeframe
       ? commodityData[selected][
@@ -184,12 +163,10 @@ const PriceTracker = () => {
         ]
       : [];
 
-  // Ensure the selected data exists and filter out any `null` values (for 1D case)
   const validData = Array.isArray(selectedData)
     ? selectedData.filter((data): data is number => data !== null)
     : [];
 
-  // Calculate statistics based on the filtered data
   const lowest = validData.length > 0 ? Math.min(...validData) : 0;
   const highest = validData.length > 0 ? Math.max(...validData) : 0;
   const current = validData.length > 0 ? validData[validData.length - 1] : 0;
@@ -211,20 +188,20 @@ const PriceTracker = () => {
   const options: ChartOptions<"line"> = {
     responsive: true,
     plugins: {
-      legend: { display: false }, // Hide legend for a cleaner look
+      legend: { display: false },
       title: { display: true, text: `${selected} Price Over Time` },
     },
     scales: {
       x: {
         type: "time",
         time: {
-          unit: selectedTimeframe === "1D" ? "hour" : "day", // Use "day" for 1Y
+          unit: selectedTimeframe === "1D" ? "hour" : "day",
         },
         ticks: {
           callback: function (value, index, values) {
             const date = new Date(value as number);
             if (selectedTimeframe === "1D") {
-              return date.getHours() % 2 === 0 ? date.getHours() + ":00" : ""; // Show only even hours
+              return date.getHours() % 2 === 0 ? date.getHours() + ":00" : "";
             }
             if (selectedTimeframe === "7D") {
               return date.getHours() === 0
@@ -237,13 +214,13 @@ const PriceTracker = () => {
               return date.getDate() % 3 === 0
                 ? `${date.getDate()} ${date.toLocaleString("default", {
                     month: "short",
-                  })}` // Show "3 Mar", "6 Mar", etc.
+                  })}`
                 : "";
             }
             if (selectedTimeframe === "1Y") {
               return date.getDate() === 1 && date.getMonth() === 0
                 ? `${date.getFullYear()}`
-                : ""; // Show only "2023", "2024", etc.
+                : "";
             }
             return "";
           },
@@ -252,12 +229,12 @@ const PriceTracker = () => {
           display: true,
           text: selectedTimeframe === "1D" ? "Hour" : "Date",
         },
-        grid: { display: false }, // Hide x-axis grid lines
+        grid: { display: false },
       },
       y: {
-        title: { display: true, text: "Price (USDT)" },
+        title: { display: true, text: "Price (₹)" },
         beginAtZero: false,
-        grid: { color: "rgba(200,200,200,0.3)" }, // Light grid lines
+        grid: { color: "rgba(200,200,200,0.3)" },
       },
     },
   };
@@ -279,13 +256,13 @@ const PriceTracker = () => {
           <div className="flex justify-between items-center mx-auto w-full">
             <div className="text-sm text-dark dark:text-light flex flex-wrap items-center gap-3 my-2">
               <span>
-                Lowest: <strong>{lowest}</strong>
+                Lowest: <strong>₹{lowest}</strong>
               </span>
               <span>
-                Highest: <strong>{highest}</strong>
+                Highest: <strong>₹{highest}</strong>
               </span>
               <span>
-                Current: <strong>{current}</strong>
+                Current: <strong>₹{current}</strong>
               </span>
             </div>
 
@@ -359,7 +336,7 @@ const PriceTracker = () => {
           </div>
 
           {items.length === 0 || !selected || !commodityData[selected] ? (
-            <h1 className="text-center text-xl font-semibold text-gray-500 mt-6">
+            <h1 className="text-center text-xl font-semibold text-dark dark:text-light mt-6">
               Select a Commodity to track prices
             </h1>
           ) : (
@@ -378,7 +355,7 @@ const PriceTracker = () => {
                 }}
                 options={options}
               />
-              {/* <div className="mt-8">
+              <div className="mt-8">
                 <h2 className="text-lg font-semibold text-dark dark:text-light mb-4">
                   More Details
                 </h2>
@@ -388,9 +365,9 @@ const PriceTracker = () => {
                       <tr>
                         <th className="px-4 py-3">Type</th>
                         <th className="px-4 py-3">Size</th>
-                        <th className="px-4 py-3">Entry Price</th>
-                        <th className="px-4 py-3">Margin(USDT)</th>
-                        <th className="px-4 py-3">PNL</th>
+                        <th className="px-4 py-3">Entry Price (₹)</th>
+                        <th className="px-4 py-3">Margin (₹)</th>
+                        <th className="px-4 py-3">PNL (₹)</th>
                         <th className="px-4 py-3">PNL %</th>
                       </tr>
                     </thead>
@@ -398,23 +375,24 @@ const PriceTracker = () => {
                       <tr className="border-b border-gray-400">
                         <td className="px-4 py-3 text-red-500">Short</td>
                         <td className="px-4 py-3">10.0</td>
-                        <td className="px-4 py-3">2540</td>
-                        <td className="px-4 py-3">1700.00</td>
-                        <td className="px-4 py-3 text-red-500">-87</td>
+                        <td className="px-4 py-3">₹2540</td>{" "}
+                        {/* Add ₹ symbol */}
+                        <td className="px-4 py-3">₹1700.00</td>
+                        <td className="px-4 py-3 text-red-500">₹-87</td>
                         <td className="px-4 py-3 text-red-500">-5.12%</td>
                       </tr>
                       <tr>
                         <td className="px-4 py-3 text-green-500">Long</td>
                         <td className="px-4 py-3">2.0</td>
-                        <td className="px-4 py-3">2350</td>
-                        <td className="px-4 py-3">900.00</td>
-                        <td className="px-4 py-3 text-green-500">+45</td>
+                        <td className="px-4 py-3">₹2350</td>
+                        <td className="px-4 py-3">₹900.00</td>
+                        <td className="px-4 py-3 text-green-500">₹+45</td>
                         <td className="px-4 py-3 text-green-500">+5.26%</td>
                       </tr>
                     </tbody>
                   </table>
                 </div>
-              </div> */}
+              </div>
             </div>
           )}
         </div>
@@ -423,4 +401,4 @@ const PriceTracker = () => {
   );
 };
 
-export default dynamic(() => Promise.resolve(PriceTracker), { ssr: false });
+export default PriceTracker;

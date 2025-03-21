@@ -4,7 +4,7 @@ import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
 import { useState } from "react";
 
-const BudgetPage = () => {
+const Budget = () => {
   const steps = [
     "Procurement",
     "Preparation",
@@ -58,4 +58,4 @@ const BudgetPage = () => {
   );
 };
 
-export default BudgetPage;
+export default Budget;

@@ -151,7 +151,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
         {sections.map(({ icon, label, section, route, subItems }) => (
           <div key={section} className="relative group">
             <div
-              className="flex items-center mx-2 p-3 rounded-lg cursor-pointer hover:bg-blue-100 transition-all duration-200 group"
+              className="flex items-center mx-2 p-3 rounded-lg cursor-pointer hover:bg-gray-700 transition-all duration-200 group"
               role="button"
               tabIndex={0}
               onClick={() =>
@@ -199,7 +199,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
                 {subItems.map(({ label, route }) => (
                   <div
                     key={label}
-                    className="text-gray-400 text-sm py-2 px-4 mx-2 cursor-pointer hover:bg-blue-100 rounded-md"
+                    className="text-gray-400 text-sm py-2 px-4 mx-2 cursor-pointer hover:bg-gray-700 rounded-md"
                     role="button"
                     tabIndex={0}
                     onClick={() => navigateTo(route)}

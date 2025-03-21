@@ -90,7 +90,7 @@ const LabourDatabase = () => {
             <h1 className="text-lg font-semibold dark:text-white">
               Worker Database
             </h1>
-            <p className="text-xs text-gray-100">
+            <p className="text-xs text-dark dark:text-light">
               {labourRecords.length} Record(s)
             </p>
           </div>

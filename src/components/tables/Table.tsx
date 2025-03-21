@@ -3,6 +3,7 @@ import Swal from "sweetalert2";
 import SearchBar from "@/components/ui/SearchBar";
 import Button from "@/components/ui/Button";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
+import Loader from "@/components/ui/Loader";
 
 type Props = {
   onRowClick: (row: any[]) => void;
@@ -18,6 +19,7 @@ type Props = {
   totalRecordCount: number;
   view?: string;
   exportEnabled?: boolean;
+  loading: boolean;
 };
 
 const Table = ({
@@ -34,6 +36,7 @@ const Table = ({
   totalRecordCount,
   view = "",
   exportEnabled = true,
+  loading,
 }: Props) => {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [sortColumn, setSortColumn] = useState<number | null>(null);
@@ -256,7 +259,11 @@ const Table = ({
         </div>
       </div>
 
-      {sortedAndPaginatedRows.length > 0 ? (
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <Loader />
+        </div>
+      ) : sortedAndPaginatedRows.length > 0 ? (
         <table className="table-auto w-full border">
           <thead>
             <tr>
@@ -344,48 +351,50 @@ const Table = ({
         </div>
       )}
 
-      <nav
-        className="flex items-center justify-between px-4 py-3 sm:px-6"
-        aria-label="Pagination"
-      >
-        <div className="flex mx-auto px-5 items-center">
-          <Button
-            text="Previous"
-            style="ghost"
-            arrow="left"
-            isDisabled={currentPage === 1}
-            onClick={() => {
-              if (currentPage > 1) setCurrentPage(currentPage - 1);
-            }}
-          />
+      {!loading && (
+        <nav
+          className="flex items-center justify-between px-4 py-3 sm:px-6"
+          aria-label="Pagination"
+        >
+          <div className="flex mx-auto px-5 items-center">
+            <Button
+              text="Previous"
+              style="ghost"
+              arrow="left"
+              isDisabled={currentPage === 1}
+              onClick={() => {
+                if (currentPage > 1) setCurrentPage(currentPage - 1);
+              }}
+            />
 
-          <p className="mx-3 text-sm dark:text-light text-dark">
-            <span className="px-2 py-1 border border-gray-300 rounded-sm">
-              {currentPage}
-            </span>
-          </p>
+            <p className="mx-3 text-sm dark:text-light text-dark">
+              <span className="px-2 py-1 border border-gray-300 rounded-sm">
+                {currentPage}
+              </span>
+            </p>
 
-          <Button
-            text="Next"
-            style="ghost"
-            arrow="right"
-            isDisabled={
-              currentPage === Math.ceil(totalRecordCount / itemsPerPage)
-            }
-            onClick={() => {
-              if (currentPage < Math.ceil(totalRecordCount / itemsPerPage))
-                setCurrentPage(currentPage + 1);
-            }}
-          />
-        </div>
-        <div className="relative">
-          <DropdownLarge
-            items={paginationItems}
-            selectedItem="25 per page"
-            onSelect={handleSelect}
-          />
-        </div>
-      </nav>
+            <Button
+              text="Next"
+              style="ghost"
+              arrow="right"
+              isDisabled={
+                currentPage === Math.ceil(totalRecordCount / itemsPerPage)
+              }
+              onClick={() => {
+                if (currentPage < Math.ceil(totalRecordCount / itemsPerPage))
+                  setCurrentPage(currentPage + 1);
+              }}
+            />
+          </div>
+          <div className="relative">
+            <DropdownLarge
+              items={paginationItems}
+              selectedItem="25 per page"
+              onSelect={handleSelect}
+            />
+          </div>
+        </nav>
+      )}
     </div>
   );
 };

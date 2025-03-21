@@ -58,7 +58,7 @@ const ProgressCard = ({
 
   return (
     <div
-      className={`bg-gradient-to-br from-gray-500 to-gray-400 dark:from-gray-700 p-6 shadow-lg rounded-lg relative ${
+      className={`bg-gray-500 dark:bg-gray-700 p-6 shadow-lg rounded-lg relative ${
         viewMode === "Small" ? "w-1/2" : "w-full"
       } my-3`}
     >
