@@ -5,7 +5,6 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  // Extract data from request body
   const { id, company_name, owner_name, email, phone_number, address, type } =
     req.body;
 
@@ -20,7 +19,6 @@ export default async function handler(
   }
 
   try {
-    // Check if company exists
     const existingCompany = await pool.query(
       "SELECT * FROM companies WHERE company_id = $1",
       [parsedId]
@@ -30,7 +28,6 @@ export default async function handler(
       return res.status(404).json({ error: "Company not found" });
     }
 
-    // Update company details
     const result = await pool.query(
       `UPDATE companies 
        SET company_name = COALESCE($1, company_name),

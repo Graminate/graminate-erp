@@ -9,7 +9,6 @@ export default async function handler(
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  // Extract data from request body
   const {
     user_id,
     company_name,
@@ -20,7 +19,6 @@ export default async function handler(
     type,
   } = req.body;
 
-  // Validate required fields
   if (
     !user_id ||
     !company_name ||

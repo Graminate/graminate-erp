@@ -5,7 +5,6 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  // Extract data from request body
   const { id, first_name, last_name, email, phone_number, address, type } =
     req.body;
 
@@ -29,7 +28,6 @@ export default async function handler(
       return res.status(404).json({ error: "Contact not found" });
     }
 
-    // Update contact details using fixed query syntax
     const result = await pool.query(
       `UPDATE contacts 
        SET first_name = COALESCE($1, first_name),

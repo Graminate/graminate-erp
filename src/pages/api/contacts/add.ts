@@ -12,7 +12,6 @@ export default async function handler(
   const { user_id, first_name, last_name, email, phone_number, type, address } =
     req.body;
 
-  // Validate required fields
   if (
     !user_id ||
     !first_name ||
