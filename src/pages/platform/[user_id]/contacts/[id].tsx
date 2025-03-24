@@ -94,13 +94,16 @@ const ContactDetails = () => {
     console.log("Sending update request with payload:", payload);
 
     try {
-      const response = await fetch("/api/contacts/update", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        "http://localhost:3001/api/contacts/update",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(payload),
+        }
+      );
 
       const result = await response.json();
       console.log("Response from API:", result);

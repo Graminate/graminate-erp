@@ -99,7 +99,7 @@ const DataForm = ({
       address: contactValues.address,
     });
     try {
-      const response = await fetch("/api/contacts/add", {
+      const response = await fetch("http://localhost:3001/api/contacts/add", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -139,7 +139,7 @@ const DataForm = ({
       address: companyValues.address,
     });
     try {
-      const response = await fetch("/api/companies/add", {
+      const response = await fetch("http://localhost:3001/api/companies/add", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -179,7 +179,7 @@ const DataForm = ({
       end_date: contractsValues.contractEndDate,
     });
     try {
-      const response = await fetch("/api/contracts/add", {
+      const response = await fetch("http://localhost:3001/api/contracts/add", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -229,7 +229,7 @@ const DataForm = ({
       status: receiptsValues.status,
     });
     try {
-      const response = await fetch("/api/receipts/add", {
+      const response = await fetch("http://localhost:3001/api/receipts/add", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -287,7 +287,7 @@ const DataForm = ({
     });
 
     try {
-      const response = await fetch("/api/labour/add", {
+      const response = await fetch("http://localhost:3001/api/labour/add", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

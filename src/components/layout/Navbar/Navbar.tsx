@@ -37,9 +37,12 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
   useEffect(() => {
     async function fetchUserDetails() {
       try {
-        const response = await fetch(`/api/user/${userId}`, {
-          credentials: "include",
-        });
+        const response = await fetch(
+          `http://localhost:3001/api/user/${userId}`,
+          {
+            credentials: "include",
+          }
+        );
 
         if (response.ok) {
           const data = await response.json();

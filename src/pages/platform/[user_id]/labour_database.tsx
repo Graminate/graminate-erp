@@ -30,7 +30,7 @@ const LabourDatabase = () => {
       try {
         console.log("Fetching labour data for user:", parsedUserId);
         const response = await fetch(
-          `/api/labour/${encodeURIComponent(parsedUserId)}`
+          `http://localhost:3001/api/labour/${encodeURIComponent(parsedUserId)}`
         );
         const data = await response.json();
         console.log("Fetched Labour Data:", data);

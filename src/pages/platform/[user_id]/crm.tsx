@@ -43,10 +43,10 @@ const ContactsPage = () => {
     setLoading(true);
 
     Promise.all([
-      fetch(`/api/contacts/${user_id}`),
-      fetch(`/api/companies/${user_id}`),
-      fetch(`/api/contracts/${user_id}`),
-      fetch(`/api/receipts/${user_id}`),
+      fetch(`http://localhost:3001/api/contacts/${user_id}`),
+      fetch(`http://localhost:3001/api/companies/${user_id}`),
+      fetch(`http://localhost:3001/api/contracts/${user_id}`),
+      fetch(`http://localhost:3001/api/receipts/${user_id}`),
       fetch(`/api/tasks/${user_id}`),
     ])
       .then(

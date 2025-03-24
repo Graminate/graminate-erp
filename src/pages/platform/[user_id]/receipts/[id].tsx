@@ -167,11 +167,14 @@ const ReceiptDetails = () => {
     };
 
     try {
-      const response = await fetch(`/api/receipts/update`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        `http://localhost:3001/api/receipts/update`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }
+      );
 
       const result = await response.json();
 

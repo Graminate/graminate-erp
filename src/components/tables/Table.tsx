@@ -178,9 +178,12 @@ const Table = ({
 
         await Promise.all(
           rowsToDelete.map(async (id) => {
-            const response = await fetch(`/api/${endpoint}/delete?id=${id}`, {
-              method: "DELETE",
-            });
+            const response = await fetch(
+              `http://localhost:3001/api/${endpoint}/delete/${id}`,
+              {
+                method: "DELETE",
+              }
+            );
             if (!response.ok) {
               throw new Error(
                 `Failed to delete ${endpoint.slice(0, -1)} with id ${id}`

@@ -201,7 +201,7 @@ const LabourDetails = () => {
     console.log("Sending update request with payload:", payload);
 
     try {
-      const response = await fetch("/api/labour/update", {
+      const response = await fetch("http://localhost:3001/api/labour/update", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
