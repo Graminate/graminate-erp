@@ -64,6 +64,7 @@ const GeneralPage = () => {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
           first_name: user.firstName,
           last_name: user.lastName,

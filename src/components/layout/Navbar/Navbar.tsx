@@ -69,7 +69,7 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
 
   const handleLogout = async () => {
     try {
-      const response = await fetch("http://localhost:3000/api/user/logout", {
+      const response = await fetch("http://localhost:3001/api/user/logout", {
         method: "POST",
         credentials: "include",
       });

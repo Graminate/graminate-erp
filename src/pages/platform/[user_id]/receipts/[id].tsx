@@ -163,7 +163,7 @@ const ReceiptDetails = () => {
       tax,
       discount,
       shipping,
-      items, // Invoice items array
+      items,
     };
 
     try {
