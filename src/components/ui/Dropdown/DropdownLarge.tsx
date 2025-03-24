@@ -66,7 +66,7 @@ const DropdownLarge = ({
       >
         {/* Selected Item Button */}
         <button
-          className="flex text-dark dark:text-light items-center justify-between px-4 py-2 text-sm hover:underline w-full"
+          className="flex text-dark dark:text-light items-center justify-between px-4 py-2 text-sm w-full"
           onClick={toggleDropdown}
           type="button"
         >

@@ -51,11 +51,11 @@ const WeatherPage = () => {
       <PlatformLayout>
         <main className="min-h-screen text-white px-4 sm:px-6 md:px-8 py-4">
           <header className="text-center md:text-left">
-            <h1 className="text-3xl font-bold text-dark dark:text-light">
+            <h1 className="text-2xl font-bold text-dark dark:text-light">
               Weather
             </h1>
-            <hr className="mt-4 border-gray-600" />
           </header>
+          <hr className="mt-4 border-gray-300" />
 
           {error ? (
             <p className="flex items-center justify-center text-red-500 mt-6">

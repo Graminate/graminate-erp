@@ -115,7 +115,7 @@ const ContractDetails = () => {
     console.log("Sending update request with payload:", payload);
 
     try {
-      const response = await fetch("/api/contracts/update", {
+      const response = await fetch("http://localhost:3001/api/contracts/update", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

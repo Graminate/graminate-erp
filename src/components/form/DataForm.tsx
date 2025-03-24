@@ -6,7 +6,7 @@ import Button from "@/components/ui/Button";
 import TextArea from "@/components/ui/TextArea";
 import type { DataForm } from "@/types/card-props";
 
-import { CONTACT_TYPES, GENDER } from "@/constants/options";
+import { CONTACT_TYPES, PAYMENT_STATUS, GENDER } from "@/constants/options";
 
 const DataForm = ({
   view,
@@ -50,15 +50,14 @@ const DataForm = ({
   const [receiptsValues, setReceiptsValues] = useState({
     title: "",
     billTo: "",
-    date: "",
     amount_paid: "",
     amount_due: "",
     due_date: "",
     status: "",
   });
 
-  const [ticketValues, setTicketValues] = useState({
-    ticketName: "",
+  const [taskValues, setTaskValues] = useState({
+    taskName: "",
     category: "",
     status: "",
     industry: "",
@@ -77,7 +76,7 @@ const DataForm = ({
   });
 
   const companyType = ["Supplier", "Distributor", "Factories", "Buyer"];
-  const ticketStatus = ["Active", "Completed", "On Hold"];
+  const taskStatus = ["Active", "Completed", "On Hold"];
 
   const [animate, setAnimate] = useState(false);
   useEffect(() => {
@@ -100,7 +99,7 @@ const DataForm = ({
       address: contactValues.address,
     });
     try {
-      const response = await fetch("/api/contacts/add", {
+      const response = await fetch("http://localhost:3001/api/contacts/add", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -140,7 +139,7 @@ const DataForm = ({
       address: companyValues.address,
     });
     try {
-      const response = await fetch("/api/companies/add", {
+      const response = await fetch("http://localhost:3001/api/companies/add", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -180,7 +179,7 @@ const DataForm = ({
       end_date: contractsValues.contractEndDate,
     });
     try {
-      const response = await fetch("/api/contracts/add", {
+      const response = await fetch("http://localhost:3001/api/contracts/add", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -221,17 +220,16 @@ const DataForm = ({
   const handleSubmitReceipts = async (e: React.FormEvent) => {
     e.preventDefault();
     const body = JSON.stringify({
-      user_id: user_id,
+      user_id,
       title: receiptsValues.title,
       bill_to: receiptsValues.billTo,
-      date: receiptsValues.date,
       amount_paid: receiptsValues.amount_paid,
       amount_due: receiptsValues.amount_due,
       due_date: receiptsValues.due_date,
       status: receiptsValues.status,
     });
     try {
-      const response = await fetch("/api/invoices/add", {
+      const response = await fetch("http://localhost:3001/api/receipts/add", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -240,7 +238,6 @@ const DataForm = ({
           user_id,
           title: receiptsValues.title,
           bill_to: receiptsValues.billTo,
-          date: receiptsValues.date,
           amount_paid: receiptsValues.amount_paid,
           amount_due: receiptsValues.amount_due,
           due_date: receiptsValues.due_date,
@@ -254,7 +251,6 @@ const DataForm = ({
         setReceiptsValues({
           title: "",
           billTo: "",
-          date: "",
           amount_paid: "",
           amount_due: "",
           due_date: "",
@@ -271,9 +267,9 @@ const DataForm = ({
     }
   };
 
-  const handleSubmitTickets = (e: React.FormEvent) => {
+  const handleSubmitTasks = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(ticketValues);
+    onSubmit(taskValues);
   };
 
   const handleSubmitLabour = async (e: React.FormEvent) => {
@@ -291,7 +287,7 @@ const DataForm = ({
     });
 
     try {
-      const response = await fetch("/api/labour/add", {
+      const response = await fetch("http://localhost:3001/api/labour/add", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -324,7 +320,7 @@ const DataForm = ({
 
   return (
     <div
-      className="fixed top-0 right-0 h-full w-full md:w-1/3 bg-light dark:bg-dark shadow-lg z-50"
+      className="fixed top-0 right-0 h-full w-full md:w-1/3 bg-light dark:bg-gray-800 shadow-lg dark:border-l border-gray-200 z-50"
       style={{
         transform: animate ? "translateX(0)" : "translateX(500px)",
         transition: "transform 300ms",
@@ -591,20 +587,6 @@ const DataForm = ({
               }
             />
 
-            {/*  Date */}
-            <TextField
-              label=" Date"
-              placeholder="YYYY-MM-DD"
-              value={receiptsValues.date}
-              onChange={(val: string) =>
-                setReceiptsValues({
-                  ...receiptsValues,
-                  date: val,
-                })
-              }
-              calendar
-            />
-
             {/* Amount Paid */}
             <div className="flex flex-col gap-2">
               <TextField
@@ -642,7 +624,7 @@ const DataForm = ({
 
               {/*  Receipt Status*/}
               <DropdownLarge
-                items={CONTACT_TYPES}
+                items={PAYMENT_STATUS}
                 selectedItem={receiptsValues.status}
                 onSelect={(value: string) =>
                   setReceiptsValues({ ...receiptsValues, status: value })
@@ -659,51 +641,51 @@ const DataForm = ({
           </form>
         )}
 
-        {/* Form for Tickets */}
-        {view === "tickets" && (
+        {/* Form for Tasks */}
+        {view === "tasks" && (
           <form
             className="flex flex-col gap-4 w-full flex-grow"
-            onSubmit={handleSubmitTickets}
+            onSubmit={handleSubmitTasks}
           >
             <TextField
               label="Farming Project"
               placeholder="Green Tea Production"
-              value={ticketValues.ticketName}
+              value={taskValues.taskName}
               onChange={(val: string) =>
-                setTicketValues({ ...ticketValues, ticketName: val })
+                setTaskValues({ ...taskValues, taskName: val })
               }
             />
             <TextField
               label="Work Category"
               placeholder="e.g. Your work"
-              value={ticketValues.category}
+              value={taskValues.category}
               onChange={(val: string) =>
-                setTicketValues({ ...ticketValues, category: val })
+                setTaskValues({ ...taskValues, category: val })
               }
             />
             <DropdownLarge
-              items={ticketStatus}
-              selectedItem={ticketValues.status}
+              items={taskStatus}
+              selectedItem={taskValues.status}
               onSelect={(value: string) =>
-                setTicketValues({ ...ticketValues, status: value })
+                setTaskValues({ ...taskValues, status: value })
               }
               type="form"
-              label="Ticket Status"
+              label="Task Status"
               width="full"
             />
             <TextField
               label="Industry"
               placeholder="Enter industry"
-              value={ticketValues.industry}
+              value={taskValues.industry}
               onChange={(val: string) =>
-                setTicketValues({ ...ticketValues, industry: val })
+                setTaskValues({ ...taskValues, industry: val })
               }
             />
             <DropdownLarge
               items={CONTACT_TYPES}
-              selectedItem={ticketValues.type}
+              selectedItem={taskValues.type}
               onSelect={(value: string) =>
-                setTicketValues({ ...ticketValues, type: value })
+                setTaskValues({ ...taskValues, type: value })
               }
               type="form"
               label="Type"

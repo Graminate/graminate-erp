@@ -9,6 +9,7 @@ import {
   faAddressBook,
   faCloud,
   faDollar,
+  faWarehouse,
 } from "@fortawesome/free-solid-svg-icons";
 
 import type { Sidebar } from "@/types/card-props";
@@ -45,11 +46,11 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
         },
         {
           label: "Invoices",
-          route: `/platform/${userId}/crm?view=invoices`,
+          route: `/platform/${userId}/crm?view=receipts`,
         },
         {
-          label: "Tickets",
-          route: `/platform/${userId}/crm?view=tickets`,
+          label: "Tasks",
+          route: `/platform/${userId}/crm?view=tasks`,
         },
       ],
     },
@@ -69,7 +70,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
     },
     {
       icon: faUsers,
-      label: "Labour Management",
+      label: "Worker Management",
       section: "Labour",
       subItems: [
         {
@@ -88,9 +89,16 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
     },
     {
       icon: faDollar,
-      label: "Budget & Finances",
-      section: "Budget & Finances",
+      label: "Finance Tracker",
+      section: "Finance Tracker",
       route: `/platform/${userId}/budget`,
+      subItems: [],
+    },
+    {
+      icon: faWarehouse,
+      label: "Inventory",
+      section: "Inventory",
+      route: `/platform/${userId}/inventory`,
       subItems: [],
     },
     {
@@ -151,7 +159,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
         {sections.map(({ icon, label, section, route, subItems }) => (
           <div key={section} className="relative group">
             <div
-              className="flex items-center mx-2 p-3 rounded-lg cursor-pointer hover:bg-blue-100 transition-all duration-200 group"
+              className="flex items-center mx-2 p-3 rounded-lg cursor-pointer hover:bg-gray-700 transition-all duration-200 group"
               role="button"
               tabIndex={0}
               onClick={() =>
@@ -199,7 +207,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
                 {subItems.map(({ label, route }) => (
                   <div
                     key={label}
-                    className="text-gray-400 text-sm py-2 px-4 mx-2 cursor-pointer hover:bg-blue-100 rounded-md"
+                    className="text-gray-400 text-sm py-2 px-4 mx-2 cursor-pointer hover:bg-gray-700 rounded-md"
                     role="button"
                     tabIndex={0}
                     onClick={() => navigateTo(route)}

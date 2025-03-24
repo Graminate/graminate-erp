@@ -38,7 +38,6 @@ export const REMINDER_OPTIONS = [
   "1 week before",
 ];
 
-
 export const COMPANY_TYPES = ["Supplier", "Distributor", "Factories", "Buyer"];
 export const CONTACT_TYPES = [
   "Supplier",
@@ -55,3 +54,5 @@ export const CONTRACT_STATUS = [
   "Completed",
   "Terminated",
 ];
+
+export const PAYMENT_STATUS = ["Pending", "Paid", "Overdue", "Cancelled"];

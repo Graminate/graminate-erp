@@ -7,7 +7,7 @@ import Table from "@/components/tables/Table";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
 
-type View = "contacts" | "companies" | "contracts" | "receipts" | "tickets";
+type View = "contacts" | "companies" | "contracts" | "receipts" | "tasks";
 
 const ContactsPage = () => {
   const router = useRouter();
@@ -15,15 +15,13 @@ const ContactsPage = () => {
   const view: View =
     typeof queryView === "string" ? (queryView as View) : "contacts";
 
+  const [loading, setLoading] = useState(true);
   const [contactsData, setContactsData] = useState<any[]>([]);
   const [companiesData, setCompaniesData] = useState<any[]>([]);
   const [contractsData, setContractsData] = useState<any[]>([]);
   const [receiptsData, setReceiptsData] = useState<any[]>([]);
-  const [ticketsData, setTicketsData] = useState<any[]>([]);
-  // Data to display based on the view
+  const [tasksData, setTasksData] = useState<any[]>([]);
   const [fetchedData, setFetchedData] = useState<any[]>([]);
-
-  // UI state
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const dropdownItems = [
@@ -31,25 +29,25 @@ const ContactsPage = () => {
     { label: "Companies", view: "companies" },
     { label: "Contracts", view: "contracts" },
     { label: "Receipts", view: "receipts" },
-    { label: "Tickets", view: "tickets" },
+    { label: "Tasks", view: "tasks" },
   ];
 
-  // Pagination and search states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(25);
   const paginationItems = ["25 per page", "50 per page", "100 per page"];
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch all data on mount (once the router is ready)
   useEffect(() => {
     if (!router.isReady || !user_id) return;
 
+    setLoading(true);
+
     Promise.all([
-      fetch(`/api/contacts/${user_id}`),
-      fetch(`/api/companies/${user_id}`),
-      fetch(`/api/contracts/${user_id}`),
-      fetch(`/api/receipts/${user_id}`),
-      fetch(`/api/tickets/${user_id}`),
+      fetch(`http://localhost:3001/api/contacts/${user_id}`),
+      fetch(`http://localhost:3001/api/companies/${user_id}`),
+      fetch(`http://localhost:3001/api/contracts/${user_id}`),
+      fetch(`http://localhost:3001/api/receipts/${user_id}`),
+      fetch(`/api/tasks/${user_id}`),
     ])
       .then(
         async ([
@@ -57,7 +55,7 @@ const ContactsPage = () => {
           companiesRes,
           contractsRes,
           receiptsRes,
-          ticketsRes,
+          tasksRes,
         ]) => {
           if (contactsRes.ok) {
             const data = await contactsRes.json();
@@ -75,14 +73,17 @@ const ContactsPage = () => {
             const data = await receiptsRes.json();
             setReceiptsData(data.receipts || []);
           }
-          if (ticketsRes.ok) {
-            const data = await ticketsRes.json();
-            setTicketsData(data.tickets || []);
+          if (tasksRes.ok) {
+            const data = await tasksRes.json();
+            setTasksData(data.tasks || []);
           }
         }
       )
       .catch((error) => {
         console.error("Error fetching data:", error);
+      })
+      .finally(() => {
+        setLoading(false);
       });
   }, [router.isReady, user_id]);
 
@@ -100,8 +101,8 @@ const ContactsPage = () => {
       case "receipts":
         setFetchedData(receiptsData);
         break;
-      case "tickets":
-        setFetchedData(ticketsData);
+      case "tasks":
+        setFetchedData(tasksData);
         break;
       default:
         setFetchedData([]);
@@ -112,10 +113,9 @@ const ContactsPage = () => {
     companiesData,
     contractsData,
     receiptsData,
-    ticketsData,
+    tasksData,
   ]);
 
-  // Derive table data based on the view and fetched data
   const tableData = useMemo(() => {
     switch (view) {
       case "contacts":
@@ -198,24 +198,23 @@ const ContactsPage = () => {
             "ID",
             "Title",
             "Bill To",
-            "Date Initiated",
             "Amount Paid",
             "Amount Due",
             "Due Date",
             "Status",
           ],
+
           rows: fetchedData.map((item) => [
             item.invoice_id,
             item.title,
             item.bill_to,
-            new Date(item.date).toDateString(),
             item.amount_paid,
             item.amount_due,
             new Date(item.due_date).toDateString(),
-            item.status
+            item.status,
           ]),
         };
-      case "tickets":
+      case "tasks":
         return {
           columns: [
             "ID",
@@ -243,7 +242,6 @@ const ContactsPage = () => {
     }
   }, [fetchedData, view]);
 
-  // Filter rows based on the search query
   const filteredRows = useMemo(() => {
     if (!searchQuery) return tableData.rows;
     return tableData.rows.filter((row) =>
@@ -253,15 +251,12 @@ const ContactsPage = () => {
     );
   }, [tableData, searchQuery]);
 
-  // Apply pagination to the filtered rows
   const paginatedRows = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     return filteredRows.slice(start, start + itemsPerPage);
   }, [filteredRows, currentPage, itemsPerPage]);
 
   const totalRecordCount = filteredRows.length;
-
-  // Function to update the URL with a new view parameter
   const navigateTo = (newView: string) => {
     const currentUrl = new URL(window.location.href);
     currentUrl.searchParams.set("view", newView);
@@ -271,37 +266,28 @@ const ContactsPage = () => {
 
   const handleRowClick = (row: any[]) => {
     const id = row[0];
-    const rowData = JSON.stringify(row);
+    const fullData =
+      view === "receipts"
+        ? fetchedData.find((item) => item.invoice_id === id)
+        : null;
+    const rowData = JSON.stringify(fullData || row);
 
-    if (view === "contacts") {
+    const validViews = [
+      "contacts",
+      "companies",
+      "contracts",
+      "receipts",
+      "tasks",
+    ];
+
+    if (validViews.includes(view)) {
       router.push({
-        pathname: `/platform/${user_id}/contacts/${id}`,
-        query: { data: rowData },
-      });
-    } else if (view === "companies") {
-      router.push({
-        pathname: `/platform/${user_id}/companies/${id}`,
-        query: { data: rowData },
-      });
-    } else if (view === "contracts") {
-      router.push({
-        pathname: `/platform/${user_id}/contracts/${id}`,
-        query: { data: rowData },
-      });
-    } else if (view === "receipts") {
-      router.push({
-        pathname: `/platform/${user_id}/receipts/${id}`,
-        query: { data: rowData },
-      });
-    } else if (view === "tickets") {
-      router.push({
-        pathname: `/platform/${user_id}/ticket/${id}`,
+        pathname: `/platform/${user_id}/${view}/${id}`,
         query: { data: rowData },
       });
     }
   };
 
-  // Handle form submission (for create actions)
   const handleFormSubmit = (values: Record<string, string>) => {
     console.log("Form submitted:", values);
     setIsSidebarOpen(false);
@@ -310,8 +296,8 @@ const ContactsPage = () => {
   const formTitle = useMemo(() => {
     if (view === "contacts") return "Create Contact";
     if (view === "companies") return "Create Company";
-    if (view === "receipts") return "Create Receipts";
-    if (view === "tickets") return "Create Ticket";
+    if (view === "receipts") return "Create Receipt";
+    if (view === "tasks") return "Create Task";
     return "";
   }, [view]);
 
@@ -321,7 +307,6 @@ const ContactsPage = () => {
         <title>Graminate | CRM</title>
       </Head>
       <div className="min-h-screen container mx-auto p-4">
-        {/* Header with dropdown and create button */}
         <div className="flex justify-between items-center dark:bg-dark relative mb-4">
           <div className="relative">
             <button
@@ -332,7 +317,7 @@ const ContactsPage = () => {
               {view === "companies" && "Companies"}
               {view === "contracts" && "Contracts"}
               {view === "receipts" && "Receipts"}
-              {view === "tickets" && "Tickets"}
+              {view === "tasks" && "Tasks"}
               <svg
                 className="ml-2 w-4 h-4 transform transition-transform"
                 style={{
@@ -354,7 +339,7 @@ const ContactsPage = () => {
             {dropdownOpen && (
               <SearchDropdown items={dropdownItems} navigateTo={navigateTo} />
             )}
-            <p className="text-xs text-gray-100">
+            <p className="text-xs text-dark dark:text-light">
               {totalRecordCount} Record(s)
             </p>
           </div>
@@ -380,9 +365,9 @@ const ContactsPage = () => {
           setCurrentPage={setCurrentPage}
           setItemsPerPage={() => {}}
           setSearchQuery={setSearchQuery}
+          loading={loading}
         />
 
-        {/* Sidebar form for creating new entries */}
         {isSidebarOpen && (
           <DataForm
             view={view}

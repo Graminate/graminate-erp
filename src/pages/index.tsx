@@ -88,7 +88,7 @@ const SignInPage: React.FC = () => {
     }
 
     try {
-      const response = await fetch("/api/user/login", {
+      const response = await fetch("http://localhost:3001/api/user/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -178,11 +178,14 @@ const SignInPage: React.FC = () => {
     setUserEmailForOtp(registerData.email);
 
     try {
-      const otpResponse = await fetch("/api/otp/send-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: registerData.email }),
-      });
+      const otpResponse = await fetch(
+        "http://localhost:3001/api/otp/send-otp",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: registerData.email }),
+        }
+      );
 
       if (!otpResponse.ok) {
         Swal.fire({
@@ -208,11 +211,14 @@ const SignInPage: React.FC = () => {
 
   const handleOtpValidation = async (otp: string) => {
     try {
-      const verifyResponse = await fetch("/api/otp/verify-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: userEmailForOtp, otp }),
-      });
+      const verifyResponse = await fetch(
+        "http://localhost:3001/api/otp/verify-otp",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: userEmailForOtp, otp }),
+        }
+      );
       const verifyData = await verifyResponse.json();
 
       if (!verifyResponse.ok || !verifyData.success) {
@@ -224,12 +230,14 @@ const SignInPage: React.FC = () => {
         });
         return;
       }
-
-      const registerResponse = await fetch("/api/user/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(registerData),
-      });
+      const registerResponse = await fetch(
+        "http://localhost:3001/api/user/register",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(registerData),
+        }
+      );
 
       if (registerResponse.status === 409) {
         Swal.fire({
@@ -281,11 +289,11 @@ const SignInPage: React.FC = () => {
         <div className="min-h-screen dark:bg-gray-900 flex flex-col md:flex-row">
           {/* Left Image Section */}
           <div
-            className="hidden md:block md:w-3/4 h-screen bg-cover bg-center"
+            className="w-full md:w-3/4 bg-cover bg-center"
             style={{ backgroundImage: "url('/images/cover.png')" }}
           ></div>
           {/* Right Form Section */}
-          <div className="w-full md:w-1/2 flex items-center justify-center min-h-screen bg-cover bg-center md:bg-none">
+          <div className="w-full md:w-2/3 flex items-center justify-center min-h-screen bg-cover bg-center md:bg-none">
             <div className="bg-white dark:bg-gray-800 shadow-md rounded px-8 py-6 w-11/12 max-w-md">
               {isLogin ? (
                 <>

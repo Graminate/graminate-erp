@@ -1,10 +1,12 @@
 import ProgressCard from "@/components/cards/ProgressCard";
 import StatusCard from "@/components/cards/StatusCard";
+import Button from "@/components/ui/Button";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
+import router from "next/router";
 import { useState } from "react";
 
-const BudgetPage = () => {
+const Budget = () => {
   const steps = [
     "Procurement",
     "Preparation",
@@ -18,20 +20,28 @@ const BudgetPage = () => {
   const handleStepChange = (data: { step: number }) => {
     setCurrentStep(data.step);
   };
+
+  const goBack = () => {
+    router.back();
+  };
+
   return (
     <>
       <Head>
-        <title>Budget</title>
+        <title>Budget | Graminate</title>
         <meta name="description" content="Budget" />
       </Head>
       <PlatformLayout>
         <main className="min-h-screen text-white px-4 sm:px-6 md:px-8 py-4">
-          <header className="text-center md:text-left">
-            <h1 className="text-3xl font-bold text-dark dark:text-light">
-              Budget
-            </h1>
-            <hr className="mt-4 border-gray-600" />
+          <header className="flex text-center md:text-left mb-4 -ml-8">
+            <div className="flex items-center gap-2">
+              <Button text="" style="ghost" arrow="left" onClick={goBack} />
+              <h1 className="text-2xl font-bold text-dark dark:text-light">
+                Finance Tracker
+              </h1>
+            </div>
           </header>
+          <hr className="mt-4 border-gray-300" />
 
           {error ? (
             <p className="flex items-center justify-center text-red-500 mt-6">
@@ -39,7 +49,7 @@ const BudgetPage = () => {
             </p>
           ) : (
             <>
-              <div className=" mt-6">
+              <div className="mt-6">
                 <ProgressCard
                   steps={steps}
                   currentStep={currentStep}
@@ -47,7 +57,7 @@ const BudgetPage = () => {
                 />
               </div>
 
-              <div>
+              <div className="flex flex-col mx-auto">
                 <StatusCard steps={steps} currentStep={currentStep} />
               </div>
             </>
@@ -58,4 +68,4 @@ const BudgetPage = () => {
   );
 };
 
-export default BudgetPage;
+export default Budget;

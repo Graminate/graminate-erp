@@ -30,7 +30,7 @@ const LabourDatabase = () => {
       try {
         console.log("Fetching labour data for user:", parsedUserId);
         const response = await fetch(
-          `/api/labour/${encodeURIComponent(parsedUserId)}`
+          `http://localhost:3001/api/labour/${encodeURIComponent(parsedUserId)}`
         );
         const data = await response.json();
         console.log("Fetched Labour Data:", data);
@@ -90,7 +90,7 @@ const LabourDatabase = () => {
             <h1 className="text-lg font-semibold dark:text-white">
               Worker Database
             </h1>
-            <p className="text-xs text-gray-100">
+            <p className="text-xs text-dark dark:text-light">
               {labourRecords.length} Record(s)
             </p>
           </div>
@@ -113,9 +113,9 @@ const LabourDatabase = () => {
           paginationItems={paginationItems}
           searchQuery={searchQuery}
           totalRecordCount={tableData.rows.length}
+     
           onRowClick={(row) => {
             const labourId = row[0];
-            // Find the full labour record from labourRecords using labour_id
             const labour = labourRecords.find(
               (item) => item.labour_id === labourId
             );
@@ -132,7 +132,6 @@ const LabourDatabase = () => {
           setSearchQuery={setSearchQuery}
         />
 
-        {/* Sidebar form for creating a new labour record */}
         {isSidebarOpen && (
           <DataForm
             view={view}

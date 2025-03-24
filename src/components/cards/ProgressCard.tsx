@@ -13,11 +13,15 @@ const ProgressCard = ({
     "right"
   );
   const [viewMode, setViewMode] = useState<"Large" | "Small">("Large");
-  const [screenWidth, setScreenWidth] = useState<number>(window.innerWidth);
-
-  // Limit to first 5 steps
+  const [screenWidth, setScreenWidth] = useState<number>(0);
+  
   useEffect(() => {
     setLimitedSteps(steps.slice(0, 5));
+    setScreenWidth(window.innerWidth);
+    const handleResize = () => setScreenWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+
+    return () => window.removeEventListener("resize", handleResize);
   }, [steps]);
 
   // Calculate progress based on currentStep and total steps
@@ -29,7 +33,6 @@ const ProgressCard = ({
     setProgress(calculateProgress(currentStep, limitedSteps.length));
   }, [currentStep, limitedSteps]);
 
-  // Set viewMode based on screen width (<=1145px: Small; >1145px: Large)
   useEffect(() => {
     if (screenWidth <= 1145) {
       setViewMode("Small");
@@ -58,7 +61,7 @@ const ProgressCard = ({
 
   return (
     <div
-      className={`bg-gradient-to-br from-gray-500 to-gray-400 dark:from-gray-700 p-6 shadow-lg rounded-lg relative ${
+      className={`bg-gray-500 dark:bg-gray-700 p-6 shadow-lg rounded-lg relative ${
         viewMode === "Small" ? "w-1/2" : "w-full"
       } my-3`}
     >

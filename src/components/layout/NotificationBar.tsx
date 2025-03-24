@@ -72,7 +72,7 @@ const NotificationBar = ({
             {/* Filter Dropdown */}
             <div className="relative">
               <button
-                className="bg-gray-400 dark:bg-gray-700 px-3 py-1 text-sm rounded-md dark:text-gray-300 hover:bg-gray-300 flex items-center"
+                className="bg-gray-400 dark:bg-gray-700 px-3 py-1 text-sm rounded-md dark:text-light hover:bg-gray-600 flex items-center"
                 onClick={toggleFilterDropdown}
               >
                 Filter
@@ -86,21 +86,23 @@ const NotificationBar = ({
               </button>
 
               {isFilterDropdownOpen && (
-                <div className="absolute mt-2 w-56 bg-white shadow-lg rounded-md border p-4">
-                  <p className="text-sm font-semibold text-gray-700 mb-2">
+                <div className="absolute mt-2 w-56 bg-white dark:bg-gray-600 shadow-lg rounded-md p-4">
+                  <p className="text-sm font-semibold text-dark dark:text-light mb-2">
                     Filter By
                   </p>
-                  <label className="flex items-center space-x-2">
+                  <label className="flex items-center space-x-2 dark:text-dark">
                     <input type="checkbox" className="form-checkbox" />
-                    <span>Archived</span>
+                    <span className="text-dark dark:text-light">Archived</span>
                   </label>
                   <hr className="my-3" />
-                  <p className="text-sm font-semibold text-gray-700 mb-2">
+                  <p className="text-sm font-semibold text-dark dark:text-light mb-2">
                     Notifications
                   </p>
-                  <label className="flex items-center space-x-2">
+                  <label className="flex items-center space-x-2 dark:text-dark">
                     <input type="checkbox" className="form-checkbox" />
-                    <span>Select all</span>
+                    <span className="text-dark dark:text-light">
+                      Select all
+                    </span>
                   </label>
                   <div className="flex justify-between mt-4">
                     <Button style="primary" text="Done" />
@@ -113,7 +115,7 @@ const NotificationBar = ({
             {/* Actions Dropdown */}
             <div className="relative">
               <button
-                className="bg-gray-400 px-3 py-1 text-sm rounded-md text-gray-700 hover:bg-gray-300 flex items-center"
+                className="bg-gray-400 dark:bg-gray-700 px-3 py-1 text-sm rounded-md text-dark dark:text-light hover:bg-gray-600 flex items-center"
                 onClick={toggleActionsDropdown}
               >
                 Actions
@@ -127,15 +129,15 @@ const NotificationBar = ({
               </button>
 
               {isActionsDropdownOpen && (
-                <div className="absolute mt-2 w-56 bg-white shadow-lg rounded-md border p-3">
+                <div className="absolute mt-2 w-56 bg-white shadow-lg rounded-md">
                   <ul className="space-y-2">
                     <li>
-                      <button className="text-gray-800 hover:bg-gray-200 w-full text-left flex items-center px-3 py-2 cursor-pointer transition-all duration-200 rounded-md">
+                      <button className="text-dark hover:bg-gray-500 dark:hover:bg-gray-400 w-full text-left flex items-center px-3 py-2 cursor-pointer transition-all duration-200 rounded-md">
                         Archive All
                       </button>
                     </li>
                     <li>
-                      <button className="text-gray-800 hover:bg-gray-200 w-full text-left flex items-center px-3 py-2 cursor-pointer transition-all duration-200 rounded-md">
+                      <button className="text-dark hover:bg-gray-500 dark:hover:bg-gray-400 w-full text-left flex items-center px-3 py-2 cursor-pointer transition-all duration-200 rounded-md">
                         Mark All as Read
                       </button>
                     </li>
@@ -147,7 +149,7 @@ const NotificationBar = ({
 
           {/* Settings Icon */}
           <button
-            className="text-green-200 hover:text-green-800 mb-2 focus:outline-none"
+            className="text-light hover:text-gray-300 mb-2 focus:outline-none"
             aria-label="settings icon"
             onClick={navigateToSettings}
           >
@@ -182,7 +184,7 @@ const NotificationBar = ({
           notifications.map((notification, index) => (
             <div
               key={index}
-              className="p-3 border rounded-md mb-2 bg-gray-50 dark:bg-gray-700"
+              className="p-3 shadow-md rounded-md mb-2 bg-gray-50 dark:bg-gray-700"
             >
               <p className="font-semibold text-gray-800 dark:text-light">
                 {notification.title}

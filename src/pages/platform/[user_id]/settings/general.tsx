@@ -59,11 +59,12 @@ const GeneralPage = () => {
     setSuccessMessage("");
 
     try {
-      const response = await fetch(`/api/user/${userId}`, {
+      const response = await fetch(`http://localhost:3001/api/user/${userId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({
           first_name: user.firstName,
           last_name: user.lastName,
@@ -90,7 +91,12 @@ const GeneralPage = () => {
 
     const fetchUserData = async () => {
       try {
-        const response = await fetch(`/api/user/${userId}`);
+        const response = await fetch(
+          `http://localhost:3001/api/user/${userId}`,
+          {
+            credentials: "include",
+          }
+        );
         if (!response.ok) {
           throw new Error("Failed to fetch user data");
         }
