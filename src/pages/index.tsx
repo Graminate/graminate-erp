@@ -10,7 +10,7 @@ import ForgotPasswordModal from "@/components/modals/ForgotPasswordModal";
 import OTPModal from "@/components/modals/OTPModal";
 import axios from "axios";
 
-const SignInPage: React.FC = () => {
+const SignIn = () => {
   const router = useRouter();
 
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
@@ -201,10 +201,7 @@ const SignInPage: React.FC = () => {
         return;
       }
 
-      const registerResponse = await axios.post(
-        "http://localhost:3001/api/user/register",
-        registerData
-      );
+      await axios.post("http://localhost:3001/api/user/register", registerData);
 
       Swal.fire({
         title: "Registration Successful!",
@@ -236,7 +233,6 @@ const SignInPage: React.FC = () => {
       console.error("Error during OTP validation and registration:", error);
     }
   };
-
   return (
     <>
       <Head>
@@ -475,4 +471,4 @@ const SignInPage: React.FC = () => {
   );
 };
 
-export default SignInPage;
+export default SignIn;
