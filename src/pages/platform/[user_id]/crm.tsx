@@ -6,6 +6,7 @@ import DataForm from "@/components/form/DataForm";
 import Table from "@/components/tables/Table";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
+import axios from "axios";
 
 type View = "contacts" | "companies" | "contracts" | "receipts" | "tasks";
 
@@ -43,40 +44,19 @@ const ContactsPage = () => {
     setLoading(true);
 
     Promise.all([
-      fetch(`http://localhost:3001/api/contacts/${user_id}`),
-      fetch(`http://localhost:3001/api/companies/${user_id}`),
-      fetch(`http://localhost:3001/api/contracts/${user_id}`),
-      fetch(`http://localhost:3001/api/receipts/${user_id}`),
-      fetch(`/api/tasks/${user_id}`),
+      axios.get(`http://localhost:3001/api/contacts/${user_id}`),
+      axios.get(`http://localhost:3001/api/companies/${user_id}`),
+      axios.get(`http://localhost:3001/api/contracts/${user_id}`),
+      axios.get(`http://localhost:3001/api/receipts/${user_id}`),
+      axios.get(`/api/tasks/${user_id}`),
     ])
       .then(
-        async ([
-          contactsRes,
-          companiesRes,
-          contractsRes,
-          receiptsRes,
-          tasksRes,
-        ]) => {
-          if (contactsRes.ok) {
-            const data = await contactsRes.json();
-            setContactsData(data.contacts || []);
-          }
-          if (companiesRes.ok) {
-            const data = await companiesRes.json();
-            setCompaniesData(data.companies || []);
-          }
-          if (contractsRes.ok) {
-            const data = await contractsRes.json();
-            setContractsData(data.contracts || []);
-          }
-          if (receiptsRes.ok) {
-            const data = await receiptsRes.json();
-            setReceiptsData(data.receipts || []);
-          }
-          if (tasksRes.ok) {
-            const data = await tasksRes.json();
-            setTasksData(data.tasks || []);
-          }
+        ([contactsRes, companiesRes, contractsRes, receiptsRes, tasksRes]) => {
+          setContactsData(contactsRes.data.contacts || []);
+          setCompaniesData(companiesRes.data.companies || []);
+          setContractsData(contractsRes.data.contracts || []);
+          setReceiptsData(receiptsRes.data.receipts || []);
+          setTasksData(tasksRes.data.tasks || []);
         }
       )
       .catch((error) => {

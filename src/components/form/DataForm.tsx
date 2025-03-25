@@ -7,6 +7,7 @@ import TextArea from "@/components/ui/TextArea";
 import type { DataForm } from "@/types/card-props";
 
 import { CONTACT_TYPES, PAYMENT_STATUS, GENDER } from "@/constants/options";
+import axios from "axios";
 
 const DataForm = ({
   view,
@@ -19,7 +20,6 @@ const DataForm = ({
   const router = useRouter();
   const { user_id } = router.query;
 
-  // Form state for each view
   const [contactValues, setContactValues] = useState({
     firstName: "",
     lastName: "",
@@ -89,7 +89,8 @@ const DataForm = ({
 
   const handleSubmitContacts = async (e: React.FormEvent) => {
     e.preventDefault();
-    const body = JSON.stringify({
+
+    const payload = {
       user_id: user_id,
       first_name: contactValues.firstName,
       last_name: contactValues.lastName,
@@ -97,39 +98,35 @@ const DataForm = ({
       phone_number: contactValues.phoneNumber,
       type: contactValues.type,
       address: contactValues.address,
-    });
+    };
+
     try {
-      const response = await fetch("http://localhost:3001/api/contacts/add", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body,
+      await axios.post("http://localhost:3001/api/contacts/add", payload);
+
+      setContactValues({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phoneNumber: "",
+        type: "",
+        address: "",
       });
-      const result = await response.json();
-      if (response.ok) {
-        setContactValues({
-          firstName: "",
-          lastName: "",
-          email: "",
-          phoneNumber: "",
-          type: "",
-          address: "",
-        });
-        handleClose();
-        window.location.reload();
-      } else {
-        alert(result.error || "Failed to add contact");
-      }
-    } catch (error) {
-      console.error("Error adding contact:", error);
-      alert("An unexpected error occurred");
+      handleClose();
+      window.location.reload();
+    } catch (error: any) {
+      const message =
+        error.response?.data?.error ||
+        error.message ||
+        "An unexpected error occurred";
+      console.error("Error adding contact:", message);
+      alert(message);
     }
   };
 
   const handleSubmitCompanies = async (e: React.FormEvent) => {
     e.preventDefault();
-    const body = JSON.stringify({
+
+    const payload = {
       user_id: user_id,
       company_name: companyValues.companyName,
       owner_name: companyValues.companyOwner,
@@ -137,39 +134,35 @@ const DataForm = ({
       phone_number: companyValues.phoneNumber,
       type: companyValues.type,
       address: companyValues.address,
-    });
+    };
+
     try {
-      const response = await fetch("http://localhost:3001/api/companies/add", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body,
+      await axios.post("http://localhost:3001/api/companies/add", payload);
+
+      setCompanyValues({
+        companyName: "",
+        companyOwner: "",
+        email: "",
+        phoneNumber: "",
+        type: "",
+        address: "",
       });
-      const result = await response.json();
-      if (response.ok) {
-        setCompanyValues({
-          companyName: "",
-          companyOwner: "",
-          email: "",
-          phoneNumber: "",
-          type: "",
-          address: "",
-        });
-        handleClose();
-        window.location.reload();
-      } else {
-        alert(result.error || "Failed to add company");
-      }
-    } catch (error) {
-      console.error("Error adding company:", error);
-      alert("An unexpected error occurred");
+      handleClose();
+      window.location.reload();
+    } catch (error: any) {
+      const message =
+        error.response?.data?.error ||
+        error.message ||
+        "An unexpected error occurred";
+      console.error("Error adding company:", message);
+      alert(message);
     }
   };
 
   const handleSubmitContracts = async (e: React.FormEvent) => {
     e.preventDefault();
-    const body = JSON.stringify({
+
+    const payload = {
       user_id: user_id,
       contract_name: contractsValues.dealName,
       partner: contractsValues.dealPartner,
@@ -177,49 +170,40 @@ const DataForm = ({
       stage: contractsValues.status,
       start_date: contractsValues.contractStartDate,
       end_date: contractsValues.contractEndDate,
-    });
-    try {
-      const response = await fetch("http://localhost:3001/api/contracts/add", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          user_id,
-          deal_name: contractsValues.dealName,
-          partner: contractsValues.dealPartner,
-          amount: contractsValues.amountPaid,
-          stage: contractsValues.status,
-          start_date: contractsValues.contractStartDate,
-          end_date: contractsValues.contractEndDate,
-        }),
-      });
+    };
 
-      const result = await response.json();
-      console.log("API Response:", result); // Debugging
-      if (response.ok) {
-        setContractsValues({
-          dealName: "",
-          dealPartner: "",
-          amountPaid: "",
-          status: "",
-          contractStartDate: "",
-          contractEndDate: "",
-        });
-        handleClose();
-        window.location.reload();
-      } else {
-        alert(result.error || "Failed to add new Contract");
-      }
-    } catch (error) {
-      console.error("Error adding new contract:", error);
-      alert("An unexpected error occurred");
+    try {
+      const response = await axios.post(
+        "http://localhost:3001/api/contracts/add",
+        payload
+      );
+
+      console.log("API Response:", response.data);
+
+      setContractsValues({
+        dealName: "",
+        dealPartner: "",
+        amountPaid: "",
+        status: "",
+        contractStartDate: "",
+        contractEndDate: "",
+      });
+      handleClose();
+      window.location.reload();
+    } catch (error: any) {
+      const message =
+        error.response?.data?.error ||
+        error.message ||
+        "An unexpected error occurred";
+      console.error("Error adding new contract:", message);
+      alert(message);
     }
   };
 
   const handleSubmitReceipts = async (e: React.FormEvent) => {
     e.preventDefault();
-    const body = JSON.stringify({
+
+    const payload = {
       user_id,
       title: receiptsValues.title,
       bill_to: receiptsValues.billTo,
@@ -227,43 +211,33 @@ const DataForm = ({
       amount_due: receiptsValues.amount_due,
       due_date: receiptsValues.due_date,
       status: receiptsValues.status,
-    });
-    try {
-      const response = await fetch("http://localhost:3001/api/receipts/add", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          user_id,
-          title: receiptsValues.title,
-          bill_to: receiptsValues.billTo,
-          amount_paid: receiptsValues.amount_paid,
-          amount_due: receiptsValues.amount_due,
-          due_date: receiptsValues.due_date,
-          status: receiptsValues.status,
-        }),
-      });
+    };
 
-      const result = await response.json();
-      console.log("API Response:", result);
-      if (response.ok) {
-        setReceiptsValues({
-          title: "",
-          billTo: "",
-          amount_paid: "",
-          amount_due: "",
-          due_date: "",
-          status: "",
-        });
-        handleClose();
-        window.location.reload();
-      } else {
-        alert(result.error || "Failed to add new Receipt");
-      }
-    } catch (error) {
-      console.error("Error adding new receipt:", error);
-      alert("An unexpected error occurred");
+    try {
+      const response = await axios.post(
+        "http://localhost:3001/api/receipts/add",
+        payload
+      );
+
+      console.log("API Response:", response.data);
+
+      setReceiptsValues({
+        title: "",
+        billTo: "",
+        amount_paid: "",
+        amount_due: "",
+        due_date: "",
+        status: "",
+      });
+      handleClose();
+      window.location.reload();
+    } catch (error: any) {
+      const message =
+        error.response?.data?.error ||
+        error.message ||
+        "An unexpected error occurred";
+      console.error("Error adding new receipt:", message);
+      alert(message);
     }
   };
 
@@ -274,7 +248,8 @@ const DataForm = ({
 
   const handleSubmitLabour = async (e: React.FormEvent) => {
     e.preventDefault();
-    const body = JSON.stringify({
+
+    const payload = {
       user_id: user_id,
       full_name: labourValues.fullName,
       guardian_name: labourValues.guardianName,
@@ -284,37 +259,30 @@ const DataForm = ({
       contact_number: labourValues.contactNumber,
       aadhar_card_number: labourValues.aadharCardNumber,
       address: labourValues.address,
-    });
+    };
 
     try {
-      const response = await fetch("http://localhost:3001/api/labour/add", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body,
-      });
+      await axios.post("http://localhost:3001/api/labour/add", payload);
 
-      const result = await response.json();
-      if (response.ok) {
-        setLabourValues({
-          fullName: "",
-          guardianName: "",
-          dateOfBirth: "",
-          gender: "",
-          role: "",
-          contactNumber: "",
-          aadharCardNumber: "",
-          address: "",
-        });
-        handleClose();
-        window.location.reload();
-      } else {
-        alert(result.error || "Failed to add labour");
-      }
-    } catch (error) {
-      console.error("Error adding labour:", error);
-      alert("An unexpected error occurred");
+      setLabourValues({
+        fullName: "",
+        guardianName: "",
+        dateOfBirth: "",
+        gender: "",
+        role: "",
+        contactNumber: "",
+        aadharCardNumber: "",
+        address: "",
+      });
+      handleClose();
+      window.location.reload();
+    } catch (error: any) {
+      const message =
+        error.response?.data?.error ||
+        error.message ||
+        "An unexpected error occurred";
+      console.error("Error adding labour:", message);
+      alert(message);
     }
   };
 

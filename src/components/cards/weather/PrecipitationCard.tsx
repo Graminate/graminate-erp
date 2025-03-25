@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faDroplet } from "@fortawesome/free-solid-svg-icons";
 import Chart from "chart.js/auto";
 import type { ChartConfiguration, Chart as ChartJS } from "chart.js";
+import axios from "axios";
 
 import { Coordinates } from "@/types/card-props";
 
@@ -35,18 +36,18 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
 
   async function fetchPrecipitationData(latitude: number, longitude: number) {
     try {
-      const response = await fetch(
-        `/api/weather?lat=${latitude}&lon=${longitude}`
-      );
-      if (!response.ok) {
-        throw new Error(
-          `Error fetching precipitation data: ${response.statusText}`
-        );
-      }
-      const data = await response.json();
-      return data.hourly;
+      const response = await axios.get("/api/weather", {
+        params: {
+          lat: latitude,
+          lon: longitude,
+        },
+      });
+
+      return response.data.hourly;
     } catch (err: any) {
-      console.error(err.message);
+      console.error(
+        err.response?.data?.message || err.message || "Unknown error occurred"
+      );
       throw new Error("Failed to fetch precipitation data");
     }
   }

@@ -3,8 +3,8 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSun } from "@fortawesome/free-solid-svg-icons";
 
 import { Coordinates } from "@/types/card-props";
-
-const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+import { fetchCityName } from "@/lib/utils/loadWeather";
+import axios from "axios";
 
 const SunCard = ({ lat, lon }: Coordinates) => {
   const [sunriseTime, setSunriseTime] = useState<string | null>(null);
@@ -43,36 +43,19 @@ const SunCard = ({ lat, lon }: Coordinates) => {
 
   async function fetchSunData(latitude: number, longitude: number) {
     try {
-      const response = await fetch(
-        `/api/weather?lat=${latitude}&lon=${longitude}`
-      );
-      if (!response.ok) {
-        throw new Error(`Error fetching sun data: ${response.statusText}`);
-      }
-      const data = await response.json();
-      return data.daily;
-    } catch (err: any) {
-      console.error(err.message);
-      throw new Error("Failed to fetch sun data");
-    }
-  }
+      const response = await axios.get("/api/weather", {
+        params: {
+          lat: latitude,
+          lon: longitude,
+        },
+      });
 
-  async function fetchCityName(latitude: number, longitude: number) {
-    try {
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`
-      );
-      if (!response.ok) {
-        throw new Error(`Error fetching location data: ${response.statusText}`);
-      }
-      const data = await response.json();
-      const cityComponent = data.results[0]?.address_components.find(
-        (component: any) => component.types.includes("locality")
-      );
-      return cityComponent?.long_name || "Your Location";
+      return response.data.daily;
     } catch (err: any) {
-      console.error(err.message);
-      return "Unknown city";
+      console.error(
+        err.response?.data?.message || err.message || "Unknown error occurred"
+      );
+      throw new Error("Failed to fetch sun data");
     }
   }
 
@@ -106,7 +89,7 @@ const SunCard = ({ lat, lon }: Coordinates) => {
           setError(err.message);
         });
     } else {
-      setError("Latitude and Longitude are required to fetch sun data.");
+      setError("Latitude and Longitude are required.");
     }
   }, [lat, lon]);
 

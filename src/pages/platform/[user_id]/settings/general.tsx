@@ -10,6 +10,7 @@ import { faTimes } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Button from "@/components/ui/Button";
 import { LANGUAGES, TIME_FORMAT } from "@/constants/options";
+import axios from "axios";
 
 const GeneralPage = () => {
   const router = useRouter();
@@ -59,28 +60,26 @@ const GeneralPage = () => {
     setSuccessMessage("");
 
     try {
-      const response = await fetch(`http://localhost:3001/api/user/${userId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
+      await axios.put(
+        `http://localhost:3001/api/user/${userId}`,
+        {
           first_name: user.firstName,
           last_name: user.lastName,
           phone_number: user.phoneNumber,
           language: user.language,
           time_format: user.timeFormat,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to save changes");
-      }
+        },
+        {
+          withCredentials: true,
+        }
+      );
 
       setSuccessMessage("Profile updated successfully!");
-    } catch (error) {
-      console.error("Error updating profile:", error);
+    } catch (error: any) {
+      console.error(
+        "Error updating profile:",
+        error.response?.data?.error || error.message
+      );
     } finally {
       setIsSaving(false);
     }
@@ -91,16 +90,14 @@ const GeneralPage = () => {
 
     const fetchUserData = async () => {
       try {
-        const response = await fetch(
+        const response = await axios.get(
           `http://localhost:3001/api/user/${userId}`,
           {
-            credentials: "include",
+            withCredentials: true,
           }
         );
-        if (!response.ok) {
-          throw new Error("Failed to fetch user data");
-        }
-        const data = await response.json();
+
+        const data = response.data;
 
         setUser({
           profilePicture: data.user.profile_picture || "",
@@ -110,8 +107,11 @@ const GeneralPage = () => {
           language: data.user.language || "English",
           timeFormat: data.user.time_format || "24-hour",
         });
-      } catch (error) {
-        console.error("Error fetching user data:", error);
+      } catch (error: any) {
+        console.error(
+          "Error fetching user data:",
+          error.response?.data?.error || error.message
+        );
       }
     };
 

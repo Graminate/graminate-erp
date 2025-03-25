@@ -4,6 +4,7 @@ import NotificationBar from "../NotificationBar";
 
 import type { User } from "@/types/card-props";
 import type { Navbar } from "@/types/card-props";
+import axios from "axios";
 
 const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
   const router = useRouter();
@@ -37,28 +38,28 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
   useEffect(() => {
     async function fetchUserDetails() {
       try {
-        const response = await fetch(
+        const response = await axios.get(
           `http://localhost:3001/api/user/${userId}`,
           {
-            credentials: "include",
+            withCredentials: true,
           }
         );
 
-        if (response.ok) {
-          const data = await response.json();
-          setUser({
-            name: `${data.user.first_name} ${data.user.last_name}`,
-            email: data.user.email,
-            business: data.user.business_name,
-            imageUrl:
-              data.user.imageUrl ||
-              `https://eu.ui-avatars.com/api/?name=${data.user.first_name}+${data.user.last_name}&size=250`,
-          });
-        } else {
-          console.error("Failed to fetch user details:", response.status);
-        }
-      } catch (error) {
-        console.error("Error fetching user details:", error);
+        const data = response.data;
+
+        setUser({
+          name: `${data.user.first_name} ${data.user.last_name}`,
+          email: data.user.email,
+          business: data.user.business_name,
+          imageUrl:
+            data.user.imageUrl ||
+            `https://eu.ui-avatars.com/api/?name=${data.user.first_name}+${data.user.last_name}&size=250`,
+        });
+      } catch (error: any) {
+        console.error(
+          "Error fetching user details:",
+          error.response?.data?.error || error.message
+        );
       }
     }
 
@@ -69,17 +70,16 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
 
   const handleLogout = async () => {
     try {
-      const response = await fetch("http://localhost:3001/api/user/logout", {
-        method: "POST",
-        credentials: "include",
+      await axios.post("http://localhost:3001/api/user/logout", null, {
+        withCredentials: true,
       });
-      if (!response.ok) {
-        console.error("Logout failed.");
-        return;
-      }
+
       router.push("/");
-    } catch (error) {
-      console.error("Error during logout:", error);
+    } catch (error: any) {
+      console.error(
+        "Error during logout:",
+        error.response?.data?.error || error.message || "Logout failed."
+      );
     }
   };
 

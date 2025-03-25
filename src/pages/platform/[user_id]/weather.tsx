@@ -3,12 +3,13 @@ import SunCard from "@/components/cards/weather/SunCard";
 import UVCard from "@/components/cards/weather/UVCard";
 import TemperatureCard from "@/components/cards/weather/TemperatureCard";
 import PrecipitationCard from "@/components/cards/weather/PrecipitationCard";
+import PlatformLayout from "@/layout/PlatformLayout";
 import Loader from "@/components/ui/Loader";
 import { useTemperatureScale } from "@/lib/context/TemperatureScaleContext";
-import PlatformLayout from "@/layout/PlatformLayout";
+import { getCurrentLocation } from "@/lib/utils/loadLocation";
 import Head from "next/head";
 
-const WeatherPage = () => {
+const Weather = () => {
   const { temperatureScale } = useTemperatureScale();
   const fahrenheit = temperatureScale === "Fahrenheit";
 
@@ -22,26 +23,6 @@ const WeatherPage = () => {
       .then((coords) => setLocation(coords))
       .catch((err) => setError(err));
   }, []);
-
-  async function getCurrentLocation(): Promise<{ lat: number; lon: number }> {
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject("Geolocation is not supported by your browser.");
-        return;
-      }
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          resolve({
-            lat: position.coords.latitude,
-            lon: position.coords.longitude,
-          });
-        },
-        () => {
-          reject("Unable to fetch location. Please enable location services.");
-        }
-      );
-    });
-  }
 
   return (
     <>
@@ -103,4 +84,4 @@ const WeatherPage = () => {
   );
 };
 
-export default WeatherPage;
+export default Weather;

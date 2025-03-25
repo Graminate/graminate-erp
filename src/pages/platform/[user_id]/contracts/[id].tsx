@@ -3,6 +3,7 @@ import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import TextField from "@/components/ui/TextField";
 import { CONTRACT_STATUS } from "@/constants/options";
 import PlatformLayout from "@/layout/PlatformLayout";
+import axios from "axios";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
@@ -90,7 +91,6 @@ const ContractDetails = () => {
     endDate !== initialFormData.endDate;
 
   const handleSave = async () => {
-    // Validate that the start date is not after the end date
     if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
       Swal.fire(
         "Error",
@@ -112,42 +112,29 @@ const ContractDetails = () => {
       end_date: endDate,
     };
 
-    console.log("Sending update request with payload:", payload);
-
     try {
-      const response = await fetch("http://localhost:3001/api/contracts/update", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+      const response = await axios.put(
+        "http://localhost:3001/api/contracts/update",
+        payload
+      );
+
+      Swal.fire("Success", "Contract updated successfully", "success");
+
+      setDisplayContractName(contractName);
+      setInitialFormData({
+        contractName,
+        partnerClient,
+        amount,
+        status,
+        startDate,
+        endDate,
       });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        Swal.fire("Success", "Contract updated successfully", "success");
-        setDisplayContractName(contractName);
-        setInitialFormData({
-          contractName,
-          partnerClient,
-          amount,
-          status,
-          startDate,
-          endDate,
-        });
-      } else {
-        Swal.fire(
-          "Error",
-          result.error || "Failed to update contract",
-          "error"
-        );
-      }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating contract:", error);
       Swal.fire(
         "Error",
-        "An error occurred while updating the contract.",
+        error.response?.data?.error ||
+          "An error occurred while updating the contract.",
         "error"
       );
     } finally {

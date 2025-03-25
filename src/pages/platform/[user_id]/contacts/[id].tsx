@@ -8,6 +8,8 @@ import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 
 import { CONTACT_TYPES } from "@/constants/options";
+import Loader from "@/components/ui/Loader";
+import axios from "axios";
 
 const ContactDetails = () => {
   const router = useRouter();
@@ -33,7 +35,6 @@ const ContactDetails = () => {
     address: "",
   });
 
-  // Saving state for update request
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -68,7 +69,7 @@ const ContactDetails = () => {
     }
   }, [data]);
 
-  if (!contact) return <p>Loading...</p>;
+  if (!contact) return <Loader />;
 
   const hasChanges =
     firstName !== initialFormData.firstName ||
@@ -91,42 +92,31 @@ const ContactDetails = () => {
       address: address,
     };
 
-    console.log("Sending update request with payload:", payload);
-
     try {
-      const response = await fetch(
+      const response = await axios.put(
         "http://localhost:3001/api/contacts/update",
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        }
+        payload
       );
 
-      const result = await response.json();
-      console.log("Response from API:", result);
+      console.log("Response from API:", response.data);
 
-      if (response.ok) {
-        Swal.fire("Success", "Contact updated successfully", "success");
-        setContact(result.contact);
-        setInitialFormData({
-          firstName,
-          lastName,
-          email,
-          phoneNumber,
-          type,
-          address,
-        });
-      } else {
-        Swal.fire("Error", result.error || "Failed to update contact", "error");
-      }
-    } catch (error) {
+      Swal.fire("Success", "Contact updated successfully", "success");
+
+      setContact(response.data.contact);
+      setInitialFormData({
+        firstName,
+        lastName,
+        email,
+        phoneNumber,
+        type,
+        address,
+      });
+    } catch (error: any) {
       console.error("Error updating contact:", error);
       Swal.fire(
         "Error",
-        "An error occurred while updating the contact.",
+        error.response?.data?.error ||
+          "An error occurred while updating the contact.",
         "error"
       );
     } finally {

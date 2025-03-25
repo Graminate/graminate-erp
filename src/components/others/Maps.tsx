@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { loadGoogleMaps } from "@/lib/utils/loadGoogleMaps";
+import { loadGoogleMaps } from "@/lib/utils/loadLocation";
 
 import type { Maps } from "@/types/card-props";
 

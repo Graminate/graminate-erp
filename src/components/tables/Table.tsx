@@ -4,6 +4,7 @@ import SearchBar from "@/components/ui/SearchBar";
 import Button from "@/components/ui/Button";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import Loader from "@/components/ui/Loader";
+import axios from "axios";
 
 type Props = {
   onRowClick: (row: any[]) => void;
@@ -178,16 +179,16 @@ const Table = ({
 
         await Promise.all(
           rowsToDelete.map(async (id) => {
-            const response = await fetch(
-              `http://localhost:3001/api/${endpoint}/delete/${id}`,
-              {
-                method: "DELETE",
-              }
-            );
-            if (!response.ok) {
-              throw new Error(
-                `Failed to delete ${endpoint.slice(0, -1)} with id ${id}`
+            try {
+              await axios.delete(
+                `http://localhost:3001/api/${endpoint}/delete/${id}`
               );
+            } catch (error: any) {
+              const message =
+                error.response?.data?.error ||
+                `Failed to delete ${endpoint.slice(0, -1)} with id ${id}`;
+              console.error(message);
+              throw new Error(message);
             }
           })
         );
@@ -350,7 +351,7 @@ const Table = ({
         </table>
       ) : (
         <div className="text-center p-4 text-gray-300">
-          <span className="text-lg">⚠️</span> Record(s) not Found
+          <span className="text-lg">⚠️</span> No Data Available
         </div>
       )}
 

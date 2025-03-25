@@ -4,10 +4,9 @@ import { faSun } from "@fortawesome/free-solid-svg-icons";
 import Chart from "chart.js/auto";
 import type { ChartConfiguration, Chart as ChartJS } from "chart.js";
 import UVScale from "./UVScale";
-
-const KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-
+import { fetchCityName } from "@/lib/utils/loadWeather";
 import { Coordinates } from "@/types/card-props";
+import axios from "axios";
 
 type UVHourly = { time: Date; uv: number };
 
@@ -60,36 +59,20 @@ const UVCard = ({ lat, lon }: Coordinates) => {
 
   async function fetchUVData(latitude: number, longitude: number) {
     try {
-      const response = await fetch(
-        `/api/weather?lat=${latitude}&lon=${longitude}`
-      );
-      if (!response.ok) {
-        throw new Error(`Error fetching UV data: ${response.statusText}`);
-      }
-      const data = await response.json();
+      const response = await axios.get("/api/weather", {
+        params: {
+          lat: latitude,
+          lon: longitude,
+        },
+      });
+
+      const data = response.data;
       return { daily: data.daily, hourly: data.hourly };
     } catch (err: any) {
-      console.error(err.message);
+      console.error(
+        err.response?.data?.message || err.message || "Unknown error occurred"
+      );
       throw new Error("Failed to fetch UV data");
-    }
-  }
-
-  async function fetchCityName(latitude: number, longitude: number) {
-    try {
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${KEY}`
-      );
-      if (!response.ok) {
-        throw new Error(`Error fetching location data: ${response.statusText}`);
-      }
-      const data = await response.json();
-      const cityComponent = data.results[0]?.address_components.find(
-        (component: any) => component.types.includes("locality")
-      );
-      return cityComponent?.long_name || "Your Location";
-    } catch (err: any) {
-      console.error(err.message);
-      return "Unknown city";
     }
   }
 
@@ -131,7 +114,7 @@ const UVCard = ({ lat, lon }: Coordinates) => {
           setError(err.message);
         });
     } else {
-      setError("Latitude and Longitude are required to fetch UV data.");
+      setError("Latitude and Longitude are required.");
     }
   }, [lat, lon]);
 

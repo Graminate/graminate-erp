@@ -5,6 +5,7 @@ import DataForm from "@/components/form/DataForm";
 import Table from "@/components/tables/Table";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
+import axios from "axios";
 
 type View = "labours";
 
@@ -22,33 +23,29 @@ const LabourDatabase = () => {
   const paginationItems = ["25 per page", "50 per page", "100 per page"];
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch labour data for the given user ID.
   useEffect(() => {
     if (!router.isReady || !parsedUserId) return;
 
     const fetchLabours = async () => {
       try {
-        console.log("Fetching labour data for user:", parsedUserId);
-        const response = await fetch(
+        const response = await axios.get(
           `http://localhost:3001/api/labour/${encodeURIComponent(parsedUserId)}`
         );
-        const data = await response.json();
-        console.log("Fetched Labour Data:", data);
 
-        if (response.ok) {
-          setLabourRecords(data.labours || []);
-        } else {
-          console.error("Failed to fetch labour data:", data.error);
-        }
-      } catch (error) {
-        console.error("Error fetching labour data:", error);
+        console.log("Fetched Labour Data:", response.data);
+
+        setLabourRecords(response.data.labours || []);
+      } catch (error: any) {
+        console.error(
+          "Error fetching labour data:",
+          error.response?.data?.error || error.message
+        );
       }
     };
 
     fetchLabours();
   }, [router.isReady, parsedUserId]);
 
-  // Derive table data from the fetched labour records.
   const tableData = useMemo(() => {
     if (view === "labours" && labourRecords.length > 0) {
       return {
@@ -113,7 +110,6 @@ const LabourDatabase = () => {
           paginationItems={paginationItems}
           searchQuery={searchQuery}
           totalRecordCount={tableData.rows.length}
-     
           onRowClick={(row) => {
             const labourId = row[0];
             const labour = labourRecords.find(

@@ -11,6 +11,7 @@ import domtoimage from "dom-to-image";
 import jsPDF from "jspdf";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import { PAYMENT_STATUS } from "@/constants/options";
+import axios from "axios";
 
 type Item = {
   description: string;
@@ -149,7 +150,7 @@ const ReceiptDetails = () => {
     const payload = {
       invoice_id: receipt.invoice_id,
       user_id,
-      title: receiptTitle, // Ensure the correct title is sent
+      title: receiptTitle,
       bill_to: customer,
       ship_to: shipTo,
       payment_terms: paymentTerms,
@@ -167,48 +168,37 @@ const ReceiptDetails = () => {
     };
 
     try {
-      const response = await fetch(
+      const response = await axios.put(
         `http://localhost:3001/api/receipts/update`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
+        payload
       );
 
-      const result = await response.json();
+      Swal.fire("Success", "Receipt updated successfully", "success");
 
-      if (response.ok) {
-        Swal.fire("Success", "Receipt updated successfully", "success");
+      setInitialFormData({
+        receiptNumber,
+        receiptTitle,
+        customer,
+        shipTo,
+        paymentTerms,
+        dueDate,
+        poNumber,
+        notes,
+        terms,
+        items,
+        tax,
+        discount,
+        shipping,
+        amountPaid,
+      });
 
-        // Ensure receiptTitle is stored correctly and fields are updated
-        setInitialFormData({
-          receiptNumber, // This should remain invoice_id
-          receiptTitle, // Retain correct title
-          customer,
-          shipTo,
-          paymentTerms,
-          dueDate,
-          poNumber,
-          notes,
-          terms,
-          items,
-          tax,
-          discount,
-          shipping,
-          amountPaid,
-        });
-
-        // Reload data to reflect changes
-        setReceipt(result.invoice);
-      } else {
-        Swal.fire("Error", result.error || "Failed to update receipt", "error");
-      }
-    } catch (error) {
+      setReceipt(response.data.invoice);
+    } catch (error: any) {
       console.error("Error updating receipt:", error);
       Swal.fire(
         "Error",
-        "An error occurred while updating the receipt.",
+        error.response?.data?.error ||
+          "An error occurred while updating the receipt.",
         "error"
       );
     } finally {
@@ -219,7 +209,6 @@ const ReceiptDetails = () => {
     const element = document.getElementById("receipt-container");
     if (!element) return;
 
-    // Temporarily hide buttons before capturing the image
     const buttons = document.querySelectorAll(".exclude-from-pdf");
     buttons.forEach((btn) => ((btn as HTMLElement).style.display = "none"));
 

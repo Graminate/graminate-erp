@@ -8,6 +8,7 @@ import TextField from "@/components/ui/TextField";
 import Button from "@/components/ui/Button";
 import ForgotPasswordModal from "@/components/modals/ForgotPasswordModal";
 import OTPModal from "@/components/modals/OTPModal";
+import axios from "axios";
 
 const SignInPage: React.FC = () => {
   const router = useRouter();
@@ -88,34 +89,19 @@ const SignInPage: React.FC = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:3001/api/user/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(loginData),
-        credentials: "include",
-      });
+      const response = await axios.post(
+        "http://localhost:3001/api/user/login",
+        loginData,
+        { withCredentials: true }
+      );
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        Swal.fire({
-          title: "Login Failed",
-          text: errorData.error || "Invalid email or password.",
-          icon: "error",
-          confirmButtonText: "OK",
-        });
-        return;
-      }
-
-      const responseData = await response.json();
-      // Navigate to /platform/[user_id]
+      const responseData = response.data;
       router.push(`/platform/${responseData.user.user_id}`);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error during login:", error);
       Swal.fire({
-        title: "Error",
-        text: "An error occurred. Please try again later.",
+        title: "Login Failed",
+        text: error.response?.data?.error || "Invalid email or password.",
         icon: "error",
         confirmButtonText: "OK",
       });
@@ -125,7 +111,6 @@ const SignInPage: React.FC = () => {
   const handleRegister = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    // Reset field errors
     setFieldErrors({
       first_name: false,
       last_name: false,
@@ -178,31 +163,16 @@ const SignInPage: React.FC = () => {
     setUserEmailForOtp(registerData.email);
 
     try {
-      const otpResponse = await fetch(
-        "http://localhost:3001/api/otp/send-otp",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: registerData.email }),
-        }
-      );
-
-      if (!otpResponse.ok) {
-        Swal.fire({
-          title: "Error",
-          text: "Failed to send OTP. Please try again.",
-          icon: "error",
-          confirmButtonText: "OK",
-        });
-        return;
-      }
+      await axios.post("http://localhost:3001/api/otp/send-otp", {
+        email: registerData.email,
+      });
 
       setIsOtpModalOpen(true);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending OTP:", error);
       Swal.fire({
         title: "Error",
-        text: "An error occurred while sending OTP.",
+        text: "Failed to send OTP. Please try again.",
         icon: "error",
         confirmButtonText: "OK",
       });
@@ -211,17 +181,17 @@ const SignInPage: React.FC = () => {
 
   const handleOtpValidation = async (otp: string) => {
     try {
-      const verifyResponse = await fetch(
+      const verifyResponse = await axios.post(
         "http://localhost:3001/api/otp/verify-otp",
         {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email: userEmailForOtp, otp }),
+          email: userEmailForOtp,
+          otp,
         }
       );
-      const verifyData = await verifyResponse.json();
 
-      if (!verifyResponse.ok || !verifyData.success) {
+      const verifyData = verifyResponse.data;
+
+      if (!verifyData.success) {
         Swal.fire({
           title: "Invalid OTP",
           text: "The OTP entered is incorrect. Please try again.",
@@ -230,35 +200,11 @@ const SignInPage: React.FC = () => {
         });
         return;
       }
-      const registerResponse = await fetch(
+
+      const registerResponse = await axios.post(
         "http://localhost:3001/api/user/register",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(registerData),
-        }
+        registerData
       );
-
-      if (registerResponse.status === 409) {
-        Swal.fire({
-          title: "User already exists",
-          text: "Please use a different email or phone number.",
-          icon: "error",
-          confirmButtonText: "OK",
-        });
-        return;
-      }
-
-      if (!registerResponse.ok) {
-        const errorData = await registerResponse.json();
-        Swal.fire({
-          title: "Error",
-          text: errorData.message || "Something went wrong.",
-          icon: "error",
-          confirmButtonText: "OK",
-        });
-        return;
-      }
 
       Swal.fire({
         title: "Registration Successful!",
@@ -269,14 +215,25 @@ const SignInPage: React.FC = () => {
 
       setIsOtpModalOpen(false);
       toggleForm();
-    } catch (error) {
+    } catch (error: any) {
+      if (error.response?.status === 409) {
+        Swal.fire({
+          title: "User already exists",
+          text: "Please use a different email or phone number.",
+          icon: "error",
+          confirmButtonText: "OK",
+        });
+      } else {
+        Swal.fire({
+          title: "Error",
+          text:
+            error.response?.data?.message ||
+            "An error occurred. Please try again later.",
+          icon: "error",
+          confirmButtonText: "OK",
+        });
+      }
       console.error("Error during OTP validation and registration:", error);
-      Swal.fire({
-        title: "Error",
-        text: "An error occurred. Please try again later.",
-        icon: "error",
-        confirmButtonText: "OK",
-      });
     }
   };
 

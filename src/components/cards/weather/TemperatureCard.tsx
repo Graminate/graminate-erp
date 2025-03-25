@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { Coordinates } from "@/types/card-props";
+import { fetchCityName } from "@/lib/utils/loadWeather";
+import axios from "axios";
 
 type HourlyForecast = {
   time: string;
@@ -50,25 +52,26 @@ const TemperatureCard = ({ lat, lon, fahrenheit }: Coordinates) => {
 
   async function fetchWeather(latitude: number, longitude: number) {
     try {
-      const response = await fetch(
-        `/api/weather?lat=${latitude}&lon=${longitude}`
-      );
-      if (!response.ok) {
-        throw new Error(`Error fetching weather data: ${response.statusText}`);
-      }
-      const data = await response.json();
+      const response = await axios.get("/api/weather", {
+        params: { lat: latitude, lon: longitude },
+      });
+
+      const data = response.data;
       const todayDate = new Date(data.current.time).toISOString().split("T")[0];
+
       const dailyData: DailyForecast[] = data.daily.time
         .map((date: string, index: number): DailyForecast => {
           const day = new Date(date).toLocaleDateString("en-US", {
             weekday: "short",
           });
+
           let icon = "☀️";
           if (data.daily.snowfallSum[index] > 0) icon = "❄️";
           else if (data.daily.rainSum[index] > 0) icon = "🌧";
           else if (data.daily.showersSum[index] > 0) icon = "🌦";
           else if (data.daily.precipitationSum[index] > 0) icon = "🌧";
           else if (data.daily.cloudCover?.[index] > 0) icon = "☁️";
+
           return {
             day,
             maxTemp: Math.round(data.daily.temperature2mMax[index]),
@@ -92,6 +95,7 @@ const TemperatureCard = ({ lat, lon, fahrenheit }: Coordinates) => {
           ),
         })
       );
+
       const filteredHourlyData = hourlyData.filter(
         (hour) =>
           new Date(`${hour.date}T${hour.time}:00Z`) >=
@@ -117,26 +121,6 @@ const TemperatureCard = ({ lat, lon, fahrenheit }: Coordinates) => {
     } catch (err: any) {
       console.error(err.message);
       throw new Error("Failed to fetch weather data");
-    }
-  }
-
-  async function fetchCityName(latitude: number, longitude: number) {
-    try {
-      const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`
-      );
-      if (!response.ok) {
-        throw new Error(`Error fetching location data: ${response.statusText}`);
-      }
-      const data = await response.json();
-      const cityComponent = data.results[0]?.address_components.find(
-        (component: any) => component.types.includes("locality")
-      );
-      return cityComponent?.long_name || "Your Location";
-    } catch (err: any) {
-      console.error(err.message);
-      return "Unknown city";
     }
   }
 

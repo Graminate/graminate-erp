@@ -9,6 +9,7 @@ import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 
 import { GENDER, YESNO } from "@/constants/options";
+import axios from "axios";
 
 const LabourDetails = () => {
   const router = useRouter();
@@ -201,51 +202,45 @@ const LabourDetails = () => {
     console.log("Sending update request with payload:", payload);
 
     try {
-      const response = await fetch("http://localhost:3001/api/labour/update", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+      const response = await axios.put(
+        "http://localhost:3001/api/labour/update",
+        payload
+      );
+
+      console.log("Response from API:", response.data);
+
+      Swal.fire("Success", "Labour updated successfully", "success");
+
+      setLabour(response.data.updatedLabour);
+      setInitialFormData({
+        fullName: payload.full_name,
+        dateOfBirth: payload.date_of_birth,
+        gender: payload.gender,
+        guardianName: payload.guardian_name,
+        contactNumber: payload.contact_number,
+        aadharCardNumber: payload.aadhar_card_number,
+        address: payload.address,
+        voterId: payload.voter_id,
+        rationCard: payload.ration_card,
+        panCard: payload.pan_card,
+        drivingLicense: payload.driving_license,
+        mnregaJobCardNumber: payload.mnrega_job_card_number,
+        bankAccountNumber: payload.bank_account_number,
+        ifscCode: payload.ifsc_code,
+        bankName: payload.bank_name,
+        bankBranch: payload.bank_branch,
+        disabilityStatus: payload.disability_status ? "Yes" : "No",
+        role: payload.role,
+        epfo: payload.epfo,
+        esic: payload.esic,
+        pmKisan: payload.pm_kisan ? "Yes" : "No",
       });
-
-      const result = await response.json();
-      console.log("Response from API:", result);
-
-      if (response.ok) {
-        Swal.fire("Success", "Labour updated successfully", "success");
-        setLabour(result.updatedLabour);
-        setInitialFormData({
-          fullName: payload.full_name,
-          dateOfBirth: payload.date_of_birth,
-          gender: payload.gender,
-          guardianName: payload.guardian_name,
-          contactNumber: payload.contact_number,
-          aadharCardNumber: payload.aadhar_card_number,
-          address: payload.address,
-          voterId: payload.voter_id,
-          rationCard: payload.ration_card,
-          panCard: payload.pan_card,
-          drivingLicense: payload.driving_license,
-          mnregaJobCardNumber: payload.mnrega_job_card_number,
-          bankAccountNumber: payload.bank_account_number,
-          ifscCode: payload.ifsc_code,
-          bankName: payload.bank_name,
-          bankBranch: payload.bank_branch,
-          disabilityStatus: payload.disability_status ? "Yes" : "No",
-          role: payload.role,
-          epfo: payload.epfo,
-          esic: payload.esic,
-          pmKisan: payload.pm_kisan ? "Yes" : "No",
-        });
-      } else {
-        Swal.fire("Error", result.error || "Failed to update labour", "error");
-      }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error updating labour:", error);
       Swal.fire(
         "Error",
-        "An error occurred while updating the labour.",
+        error.response?.data?.error ||
+          "An error occurred while updating the labour.",
         "error"
       );
     } finally {

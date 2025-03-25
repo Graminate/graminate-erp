@@ -1,3 +1,4 @@
+import axios from "axios";
 import { useState, useEffect } from "react";
 
 type Props = {
@@ -41,24 +42,19 @@ const CustomTextArea = ({
 
   const handleSave = async () => {
     try {
-      const response = await fetch(
-        descriptionId
-          ? `/api/descriptions/${descriptionId}`
-          : `/api/descriptions`,
-        {
-          method: descriptionId ? "PUT" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ description: tempValue }),
-        }
-      );
+      const url = descriptionId
+        ? `/api/descriptions/${descriptionId}`
+        : `/api/descriptions`;
 
-      if (!response.ok) {
-        throw new Error("Failed to save the description");
-      }
+      const method = descriptionId ? "put" : "post";
+
+      await axios[method](url, {
+        description: tempValue,
+      });
 
       onInput(tempValue);
       setIsFocused(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving description:", error);
       alert("Endpoint doesn't exist until now.");
     }

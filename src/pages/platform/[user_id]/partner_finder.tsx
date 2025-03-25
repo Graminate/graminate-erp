@@ -3,6 +3,7 @@ import FinderBar from "@/components/layout/FinderBar";
 import NavPanel from "@/components/layout/NavPanel";
 import Maps from "@/components/others/Maps";
 import PlatformLayout from "@/layout/PlatformLayout";
+import { getCurrentLocation } from "@/lib/utils/loadLocation";
 import Head from "next/head";
 
 type View = "distributor" | "exporter" | "factories";
@@ -34,26 +35,6 @@ const Finder = () => {
 
   const handleNavigation = (newView: View) => {
     setActiveView(newView);
-  };
-
-  const getCurrentLocation = (): Promise<{ lat: number; lon: number }> => {
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject("Geolocation is not supported by your browser.");
-        return;
-      }
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          resolve({
-            lat: position.coords.latitude,
-            lon: position.coords.longitude,
-          });
-        },
-        () => {
-          reject("Unable to fetch location. Please enable location services.");
-        }
-      );
-    });
   };
 
   useEffect(() => {

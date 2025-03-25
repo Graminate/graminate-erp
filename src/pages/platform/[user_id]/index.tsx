@@ -67,7 +67,7 @@ const UserPlatformPage = () => {
           });
         },
         () => {
-          reject("Unable to fetch location. Please enable location services.");
+          reject("Unable to find location. Please enable location services.");
         }
       );
     });

@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 
 import { COMPANY_TYPES } from "@/constants/options";
+import axios from "axios";
 
 const CompanyDetails = () => {
   const router = useRouter();
@@ -32,7 +33,6 @@ const CompanyDetails = () => {
     type: "",
   });
 
-  // Saving state for update request
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -69,7 +69,6 @@ const CompanyDetails = () => {
 
   if (!company) return <p>Loading...</p>;
 
-  // Determine if any changes have been made
   const hasChanges =
     companyName !== initialFormData.companyName ||
     ownerName !== initialFormData.ownerName ||
@@ -91,43 +90,31 @@ const CompanyDetails = () => {
       type: type,
     };
 
-    console.log("Sending update request with payload:", payload);
-
     try {
-      const response = await fetch(
+      const response = await axios.put(
         "http://localhost:3001/api/companies/update",
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        }
+        payload
       );
 
-      const result = await response.json();
-      console.log("Response from API:", result);
+      console.log("Response from API:", response.data);
 
-      if (response.ok) {
-        Swal.fire("Success", "Company updated successfully", "success");
-        setCompany(result.company);
-        // Update the initial form data to reflect the new saved values
-        setInitialFormData({
-          companyName,
-          ownerName,
-          email,
-          phoneNumber,
-          address,
-          type,
-        });
-      } else {
-        Swal.fire("Error", result.error || "Failed to update company", "error");
-      }
-    } catch (error) {
+      Swal.fire("Success", "Company updated successfully", "success");
+
+      setCompany(response.data.company);
+      setInitialFormData({
+        companyName,
+        ownerName,
+        email,
+        phoneNumber,
+        address,
+        type,
+      });
+    } catch (error: any) {
       console.error("Error updating company:", error);
       Swal.fire(
         "Error",
-        "An error occurred while updating the company.",
+        error.response?.data?.error ||
+          "An error occurred while updating the company.",
         "error"
       );
     } finally {
