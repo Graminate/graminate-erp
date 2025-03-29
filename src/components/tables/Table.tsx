@@ -336,7 +336,8 @@ const Table = ({
                         key={cellIndex}
                         className="p-2 border border-gray-300 dark:border-gray-200 text-base font-light dark:text-gray-400"
                       >
-                        {data.columns[cellIndex] === "Status" ? (
+                        {view === "inventory" &&
+                        data.columns[cellIndex] === "Status" ? (
                           <div className="flex gap-[2px] text-sm">
                             {(() => {
                               const quantity =
