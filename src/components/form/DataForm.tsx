@@ -6,7 +6,12 @@ import Button from "@/components/ui/Button";
 import TextArea from "@/components/ui/TextArea";
 import type { DataForm } from "@/types/card-props";
 
-import { CONTACT_TYPES, PAYMENT_STATUS, GENDER } from "@/constants/options";
+import {
+  CONTACT_TYPES,
+  PAYMENT_STATUS,
+  GENDER,
+  UNITS,
+} from "@/constants/options";
 import axios from "axios";
 
 const DataForm = ({
@@ -815,7 +820,7 @@ const DataForm = ({
             />
             {/* Unit */}
             <DropdownLarge
-              items={GENDER}
+              items={UNITS}
               selectedItem={inventoryItem.units}
               onSelect={(value: string) =>
                 setInventoryItem({ ...inventoryItem, units: value })
