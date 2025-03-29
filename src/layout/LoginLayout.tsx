@@ -8,7 +8,7 @@ interface PlatformLayoutProps {
   children: React.ReactNode;
 }
 
-const PlatformLayout: React.FC<PlatformLayoutProps> = ({ children }) => {
+const LoginLayout: React.FC<PlatformLayoutProps> = ({ children }) => {
   const [isOpen] = useState(false);
   const [userId, setUserId] = useState<string>("");
   const router = useRouter();
@@ -51,4 +51,4 @@ const PlatformLayout: React.FC<PlatformLayoutProps> = ({ children }) => {
   );
 };
 
-export default PlatformLayout;
+export default LoginLayout;

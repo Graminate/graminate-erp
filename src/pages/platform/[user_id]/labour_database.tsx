@@ -4,6 +4,7 @@ import Button from "@/components/ui/Button";
 import DataForm from "@/components/form/DataForm";
 import Table from "@/components/tables/Table";
 import PlatformLayout from "@/layout/PlatformLayout";
+import { PAGINATION_ITEMS } from "@/constants/options";
 import Head from "next/head";
 import axios from "axios";
 
@@ -20,7 +21,6 @@ const LabourDatabase = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
-  const paginationItems = ["25 per page", "50 per page", "100 per page"];
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
@@ -107,7 +107,7 @@ const LabourDatabase = () => {
           filteredRows={tableData.rows}
           currentPage={currentPage}
           itemsPerPage={itemsPerPage}
-          paginationItems={paginationItems}
+          paginationItems={PAGINATION_ITEMS}
           searchQuery={searchQuery}
           totalRecordCount={tableData.rows.length}
           onRowClick={(row) => {

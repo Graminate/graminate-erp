@@ -75,6 +75,14 @@ const DataForm = ({
     address: "",
   });
 
+  const [inventoryItem, setInventoryItem] = useState({
+    itemName: "",
+    itemGroup: "",
+    units: "",
+    quantity: "",
+    pricePerUnit: "",
+  });
+
   const companyType = ["Supplier", "Distributor", "Factories", "Buyer"];
   const taskStatus = ["Active", "Completed", "On Hold"];
 
@@ -282,6 +290,41 @@ const DataForm = ({
         error.message ||
         "An unexpected error occurred";
       console.error("Error adding labour:", message);
+      alert(message);
+    }
+  };
+
+  const handleSubmitInventoryItem = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    const payload = {
+      user_id: user_id,
+      item_name: inventoryItem.itemName,
+      item_group: inventoryItem.itemGroup,
+      units: inventoryItem.units,
+      quantity: inventoryItem.quantity,
+      price_per_unit: inventoryItem.pricePerUnit,
+    };
+
+    try {
+      await axios.post("http://localhost:3001/api/inventory/add", payload);
+
+      setInventoryItem({
+        itemName: "",
+        itemGroup: "",
+        units: "",
+        quantity: "",
+        pricePerUnit: "",
+      });
+
+      handleClose();
+      window.location.reload();
+    } catch (error: any) {
+      const message =
+        error.response?.data?.error ||
+        error.message ||
+        "An unexpected error occurred";
+      console.error("Error adding inventory item:", message);
       alert(message);
     }
   };
@@ -739,6 +782,68 @@ const DataForm = ({
                 setLabourValues({ ...labourValues, address: val })
               }
             />
+            <div className="flex justify-end gap-4 mt-2">
+              <Button text="Create" style="primary" type="submit" />
+              <Button text="Cancel" style="secondary" onClick={handleClose} />
+            </div>
+          </form>
+        )}
+
+        {/* Form for Inventory */}
+        {view === "inventory" && (
+          <form
+            className="flex flex-col gap-4 w-full flex-grow"
+            onSubmit={handleSubmitInventoryItem}
+          >
+            {/* Item Name */}
+            <TextField
+              label="Item Name"
+              placeholder="e.g. Fertilizer"
+              value={inventoryItem.itemName}
+              onChange={(val: string) =>
+                setInventoryItem({ ...inventoryItem, itemName: val })
+              }
+            />
+            {/* Item Group */}
+            <TextField
+              label="Item Group"
+              placeholder="e.g. Farming"
+              value={inventoryItem.itemGroup}
+              onChange={(val: string) =>
+                setInventoryItem({ ...inventoryItem, itemGroup: val })
+              }
+            />
+            {/* Unit */}
+            <DropdownLarge
+              items={GENDER}
+              selectedItem={inventoryItem.units}
+              onSelect={(value: string) =>
+                setInventoryItem({ ...inventoryItem, units: value })
+              }
+              type="form"
+              label="Units"
+              width="full"
+            />
+            {/* Quantity */}
+            <TextField
+              number
+              label="Quantity"
+              value={inventoryItem.quantity}
+              onChange={(val: string) =>
+                setInventoryItem({ ...inventoryItem, quantity: val })
+              }
+            />
+
+            {/* Price Per Unit */}
+            <TextField
+              number
+              label="Price Per Unit"
+              value={inventoryItem.pricePerUnit}
+              onChange={(val: string) =>
+                setInventoryItem({ ...inventoryItem, pricePerUnit: val })
+              }
+            />
+
             <div className="flex justify-end gap-4 mt-2">
               <Button text="Create" style="primary" type="submit" />
               <Button text="Cancel" style="secondary" onClick={handleClose} />

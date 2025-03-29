@@ -6,6 +6,7 @@ import DataForm from "@/components/form/DataForm";
 import Table from "@/components/tables/Table";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
+import { PAGINATION_ITEMS } from "@/constants/options";
 
 type View = "contacts" | "companies" | "contracts" | "receipts" | "tasks";
 
@@ -34,7 +35,7 @@ const CRM = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(25);
-  const paginationItems = ["25 per page", "50 per page", "100 per page"];
+
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
@@ -357,7 +358,7 @@ const CRM = () => {
           filteredRows={filteredRows}
           currentPage={currentPage}
           itemsPerPage={itemsPerPage}
-          paginationItems={paginationItems}
+          paginationItems={PAGINATION_ITEMS}
           searchQuery={searchQuery}
           totalRecordCount={totalRecordCount}
           onRowClick={handleRowClick}

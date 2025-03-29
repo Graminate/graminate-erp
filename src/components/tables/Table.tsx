@@ -5,6 +5,8 @@ import Button from "@/components/ui/Button";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import Loader from "@/components/ui/Loader";
 import axios from "axios";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCircle } from "@fortawesome/free-solid-svg-icons";
 
 type Props = {
   onRowClick: (row: any[]) => void;
@@ -44,26 +46,22 @@ const Table = ({
   const [selectAll, setSelectAll] = useState(false);
   const [selectedRows, setSelectedRows] = useState<boolean[]>([]);
 
-  // Calculate paginated rows based on the filteredRows, currentPage and itemsPerPage.
   const paginatedRows = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     const end = start + itemsPerPage;
     return filteredRows.slice(start, end);
   }, [filteredRows, currentPage, itemsPerPage]);
 
-  // Reset the selected rows whenever the paginated rows or selectAll flag changes.
   useEffect(() => {
     if (paginatedRows.length > 0) {
       setSelectedRows(new Array(paginatedRows.length).fill(selectAll));
     }
   }, [paginatedRows, selectAll]);
 
-  // Count of selected rows
   const selectedRowCount = selectedRows.filter(
     (isSelected) => isSelected
   ).length;
 
-  // Sort the paginated rows based on the selected column and order.
   const sortedAndPaginatedRows = useMemo(() => {
     let rows = [...paginatedRows];
     if (sortColumn !== null) {
@@ -85,7 +83,6 @@ const Table = ({
     return rows;
   }, [paginatedRows, sortColumn, sortOrder]);
 
-  // Export table data as CSV.
   const exportTableData = () => {
     if (sortedAndPaginatedRows.length === 0) {
       Swal.fire("No Data", "There is no data to export.", "info");
@@ -107,14 +104,12 @@ const Table = ({
     URL.revokeObjectURL(url);
   };
 
-  // Handle "select all" checkbox change.
   const handleSelectAllChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const checked = e.target.checked;
     setSelectAll(checked);
     setSelectedRows(new Array(paginatedRows.length).fill(checked));
   };
 
-  // Handle an individual row checkbox change.
   const handleRowCheckboxChange = (
     rowIndex: number,
     e: React.ChangeEvent<HTMLInputElement>
@@ -128,7 +123,6 @@ const Table = ({
     });
   };
 
-  // Delete selected rows after user confirmation.
   const deleteSelectedRows = async () => {
     const rowsToDelete: number[] = [];
 
@@ -152,6 +146,7 @@ const Table = ({
       companies: "company",
       contacts: "contact",
       labours: "labour",
+      inventory: "inventory",
       contracts: "contract",
       receipts: "receipt",
     };
@@ -175,7 +170,8 @@ const Table = ({
         else if (view === "companies") endpoint = "companies";
         else if (view === "contracts") endpoint = "contracts";
         else if (view === "receipts") endpoint = "receipts";
-        else endpoint = "labour";
+        else if (view === "labour") endpoint = "labour";
+        else endpoint = "inventory";
 
         await Promise.all(
           rowsToDelete.map(async (id) => {
@@ -205,7 +201,6 @@ const Table = ({
     }
   };
 
-  // Toggle sort order or set a new sort column.
   const toggleSort = (columnIndex: number) => {
     if (sortColumn === columnIndex) {
       setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -216,7 +211,6 @@ const Table = ({
     setCurrentPage(1);
   };
 
-  // Handle selection change for pagination dropdown.
   const handleSelect = (item: string) => {
     if (item === "25 per page") setItemsPerPage(25);
     else if (item === "50 per page") setItemsPerPage(50);
@@ -225,7 +219,7 @@ const Table = ({
 
   return (
     <div>
-      <div className="flex p-1 justify-between items-center border-t border-l border-r border-gray-300 dark:border-gray-200">
+      <div className="flex p-1 justify-between items-center border-b border-l border-r border-gray-300 dark:border-gray-200">
         <div className="flex gap-2">
           <SearchBar
             mode="table"
@@ -342,7 +336,49 @@ const Table = ({
                         key={cellIndex}
                         className="p-2 border border-gray-300 dark:border-gray-200 text-base font-light dark:text-gray-400"
                       >
-                        {cell}
+                        {data.columns[cellIndex] === "Status" ? (
+                          <div className="flex gap-[2px] text-sm">
+                            {(() => {
+                              const quantity =
+                                row[data.columns.indexOf("Quantity")];
+                              const max = Math.max(
+                                ...filteredRows.map(
+                                  (r) => r[data.columns.indexOf("Quantity")]
+                                )
+                              );
+                              const ratio = quantity / max;
+
+                              let count = 0;
+                              let color = "";
+
+                              if (ratio < 0.25) {
+                                count = 1;
+                                color = "text-red-200";
+                              } else if (ratio < 0.5) {
+                                count = 2;
+                                color = "text-orange-200";
+                              } else if (ratio < 0.75) {
+                                count = 3;
+                                color = "text-yellow-200";
+                              } else {
+                                count = 4;
+                                color = "text-green-200";
+                              }
+
+                              return Array.from({ length: count }).map(
+                                (_, i) => (
+                                  <FontAwesomeIcon
+                                    key={i}
+                                    icon={faCircle}
+                                    className={`${color}`}
+                                  />
+                                )
+                              );
+                            })()}
+                          </div>
+                        ) : (
+                          cell
+                        )}
                       </td>
                     ))}
               </tr>
