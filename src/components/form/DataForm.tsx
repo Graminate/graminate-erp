@@ -177,7 +177,7 @@ const DataForm = ({
 
     const payload = {
       user_id: user_id,
-      contract_name: contractsValues.dealName,
+      deal_name: contractsValues.dealName,
       partner: contractsValues.dealPartner,
       amount: contractsValues.amountPaid,
       stage: contractsValues.status,
@@ -334,527 +334,547 @@ const DataForm = ({
     }
   };
 
+  const panelRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (
+        panelRef.current &&
+        !panelRef.current.contains(event.target as Node)
+      ) {
+        setAnimate(false);
+        setTimeout(() => handleClose(), 300); // delay for transition
+      }
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
+
   return (
-    <div
-      className="fixed top-0 right-0 h-full w-full md:w-1/3 bg-light dark:bg-gray-800 shadow-lg dark:border-l border-gray-200 z-50"
-      style={{
-        transform: animate ? "translateX(0)" : "translateX(500px)",
-        transition: "transform 300ms",
-      }}
-    >
-      <div className="p-6 flex flex-col h-full">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold text-dark dark:text-light">
-            {formTitle
-              ? formTitle
-              : "Create " + view.charAt(0).toUpperCase() + view.slice(1)}
-          </h2>
-          <button
-            className="text-gray-400 hover:text-gray-600"
-            onClick={handleClose}
-          >
-            ✕
-          </button>
-        </div>
+    <div className="fixed inset-0 z-50 bg-black/30">
+      <div
+        ref={panelRef}
+        className="fixed top-0 right-0 h-full w-full md:w-1/3 bg-light dark:bg-gray-800 shadow-lg dark:border-l border-gray-200"
+        style={{
+          transform: animate ? "translateX(0)" : "translateX(500px)",
+          transition: "transform 300ms",
+        }}
+      >
+        <div className="p-6 flex flex-col h-full">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold text-dark dark:text-light">
+              {formTitle
+                ? formTitle
+                : "Create " + view.charAt(0).toUpperCase() + view.slice(1)}
+            </h2>
+            <button
+              className="text-gray-300 hover:text-gray-100"
+              onClick={handleClose}
+            >
+              ✕
+            </button>
+          </div>
 
-        {/* Form for Contacts */}
-        {view === "contacts" && (
-          <form
-            className="flex flex-col gap-4 w-full flex-grow"
-            onSubmit={handleSubmitContacts}
-          >
-            <div className="flex flex-row gap-2">
+          {/* Form for Contacts */}
+          {view === "contacts" && (
+            <form
+              className="flex flex-col gap-4 w-full flex-grow"
+              onSubmit={handleSubmitContacts}
+            >
+              <div className="flex flex-row gap-2">
+                <TextField
+                  label="First Name"
+                  placeholder="e.g. John"
+                  value={contactValues.firstName}
+                  onChange={(val: string) =>
+                    setContactValues({
+                      ...contactValues,
+                      firstName: val,
+                    })
+                  }
+                />
+                <TextField
+                  label="Last Name"
+                  placeholder="e.g. Doe"
+                  value={contactValues.lastName}
+                  onChange={(val: string) =>
+                    setContactValues({
+                      ...contactValues,
+                      lastName: val,
+                    })
+                  }
+                />
+              </div>
               <TextField
-                label="First Name"
-                placeholder="e.g. John"
-                value={contactValues.firstName}
+                label="Email"
+                placeholder="e.g. john.doe@gmail.com"
+                value={contactValues.email}
+                onChange={(val: string) =>
+                  setContactValues({ ...contactValues, email: val })
+                }
+              />
+              <TextField
+                label="Phone Number"
+                placeholder="e.g. +91 XXXXX XXX XX"
+                value={contactValues.phoneNumber}
                 onChange={(val: string) =>
                   setContactValues({
                     ...contactValues,
-                    firstName: val,
+                    phoneNumber: val,
                   })
                 }
               />
-              <TextField
-                label="Last Name"
-                placeholder="e.g. Doe"
-                value={contactValues.lastName}
-                onChange={(val: string) =>
-                  setContactValues({
-                    ...contactValues,
-                    lastName: val,
-                  })
-                }
-              />
-            </div>
-            <TextField
-              label="Email"
-              placeholder="e.g. john.doe@gmail.com"
-              value={contactValues.email}
-              onChange={(val: string) =>
-                setContactValues({ ...contactValues, email: val })
-              }
-            />
-            <TextField
-              label="Phone Number"
-              placeholder="e.g. +91 XXXXX XXX XX"
-              value={contactValues.phoneNumber}
-              onChange={(val: string) =>
-                setContactValues({
-                  ...contactValues,
-                  phoneNumber: val,
-                })
-              }
-            />
-            <DropdownLarge
-              items={CONTACT_TYPES}
-              selectedItem={contactValues.type}
-              onSelect={(value: string) =>
-                setContactValues({ ...contactValues, type: value })
-              }
-              type="form"
-              label="Type"
-              width="full"
-            />
-            <TextArea
-              label="Client Address (Optional)"
-              placeholder="Address (optional)"
-              value={contactValues.address}
-              onChange={(val: string) =>
-                setContactValues({ ...contactValues, address: val })
-              }
-            />
-            <div className="flex justify-end gap-4 mt-2">
-              <Button text="Create" style="primary" type="submit" />
-              <Button text="Cancel" style="secondary" onClick={handleClose} />
-            </div>
-          </form>
-        )}
-
-        {/* Form for Companies */}
-        {view === "companies" && (
-          <form
-            className="flex flex-col gap-4 w-full flex-grow"
-            onSubmit={handleSubmitCompanies}
-          >
-            <TextField
-              label="Company Name"
-              placeholder="Enter company name"
-              value={companyValues.companyName}
-              onChange={(val: string) =>
-                setCompanyValues({
-                  ...companyValues,
-                  companyName: val,
-                })
-              }
-            />
-            <TextField
-              label="Owner Name"
-              placeholder="e.g. John Doe"
-              value={companyValues.companyOwner}
-              onChange={(val: string) =>
-                setCompanyValues({
-                  ...companyValues,
-                  companyOwner: val,
-                })
-              }
-            />
-            <TextField
-              label="Email"
-              placeholder="e.g. john.doe@gmail.com"
-              value={companyValues.email}
-              onChange={(val: string) =>
-                setCompanyValues({ ...companyValues, email: val })
-              }
-            />
-            <TextField
-              label="Phone Number"
-              placeholder="e.g. +91 XXXXX XXX XX"
-              value={companyValues.phoneNumber}
-              onChange={(val: string) =>
-                setCompanyValues({
-                  ...companyValues,
-                  phoneNumber: val,
-                })
-              }
-            />
-            <TextArea
-              label="Client Address (Optional)"
-              placeholder="Address (optional)"
-              value={companyValues.address}
-              onChange={(val: string) =>
-                setCompanyValues({ ...companyValues, address: val })
-              }
-            />
-            <DropdownLarge
-              items={companyType}
-              selectedItem={companyValues.type}
-              onSelect={(value: string) =>
-                setCompanyValues({ ...companyValues, type: value })
-              }
-              type="form"
-              label="Type"
-              width="full"
-            />
-            <div className="flex justify-end gap-4 mt-2">
-              <Button text="Create" style="primary" type="submit" />
-              <Button text="Cancel" style="secondary" onClick={handleClose} />
-            </div>
-          </form>
-        )}
-
-        {/* Form for Contract */}
-        {view === "contracts" && (
-          <form
-            className="flex flex-col gap-4 w-full flex-grow"
-            onSubmit={handleSubmitContracts}
-          >
-            <TextField
-              label="Deal Name"
-              placeholder="Name of your Contract"
-              value={contractsValues.dealName}
-              onChange={(val: string) =>
-                setContractsValues({ ...contractsValues, dealName: val })
-              }
-            />
-            <TextField
-              label="Partner Name"
-              placeholder="Company, Business owner"
-              value={contractsValues.dealPartner}
-              onChange={(val: string) =>
-                setContractsValues({ ...contractsValues, dealPartner: val })
-              }
-            />
-            <div className="flex flex-col gap-2">
-              <TextField
-                label="Amount Involved (₹)"
-                placeholder="Budget involved"
-                value={contractsValues.amountPaid}
-                onChange={(val: string) =>
-                  setContractsValues({ ...contractsValues, amountPaid: val })
-                }
-              />
-              <TextField
-                label="State of Contract"
-                placeholder="e.g. Initialised, In Process, Completed"
-                value={contractsValues.status}
-                onChange={(val: string) =>
-                  setContractsValues({ ...contractsValues, status: val })
-                }
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <TextField
-                label="Start Date"
-                placeholder="YYYY-MM-DD"
-                value={contractsValues.contractStartDate}
-                onChange={(val: string) =>
-                  setContractsValues({
-                    ...contractsValues,
-                    contractStartDate: val,
-                  })
-                }
-                width="large"
-                calendar
-              />
-              <TextField
-                label="Contract End Date"
-                placeholder="YYYY-MM-DD"
-                value={contractsValues.contractEndDate}
-                onChange={(val: string) =>
-                  setContractsValues({
-                    ...contractsValues,
-                    contractEndDate: val,
-                  })
-                }
-                width="large"
-                calendar
-              />
-            </div>
-            <div className="flex justify-end gap-4 mt-2">
-              <Button text="Create" style="primary" type="submit" />
-              <Button text="Cancel" style="secondary" onClick={handleClose} />
-            </div>
-          </form>
-        )}
-
-        {/* Form for Receipts */}
-        {view === "receipts" && (
-          <form
-            className="flex flex-col gap-4 w-full flex-grow"
-            onSubmit={handleSubmitReceipts}
-          >
-            {/* Title */}
-            <TextField
-              label="Receipt Title"
-              placeholder="Name of your receipt / invoice"
-              value={receiptsValues.title}
-              onChange={(val: string) =>
-                setReceiptsValues({ ...receiptsValues, title: val })
-              }
-            />
-            {/* Bill To */}
-            <TextField
-              label="Bill To"
-              placeholder="Customer Details"
-              value={receiptsValues.billTo}
-              onChange={(val: string) =>
-                setReceiptsValues({ ...receiptsValues, billTo: val })
-              }
-            />
-
-            {/* Amount Paid */}
-            <div className="flex flex-col gap-2">
-              <TextField
-                label="Paid (₹)"
-                placeholder="Amount Paid"
-                value={receiptsValues.amount_paid}
-                onChange={(val: string) =>
-                  setReceiptsValues({ ...receiptsValues, amount_paid: val })
-                }
-              />
-              {/* Amount Due */}
-              <TextField
-                label="Amount Due (₹)"
-                placeholder="Amount yet to be paid"
-                value={receiptsValues.amount_due}
-                onChange={(val: string) =>
-                  setReceiptsValues({ ...receiptsValues, amount_due: val })
-                }
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              {/* Due Date */}
-              <TextField
-                label="Due Date"
-                placeholder="YYYY-MM-DD"
-                value={receiptsValues.due_date}
-                onChange={(val: string) =>
-                  setReceiptsValues({
-                    ...receiptsValues,
-                    due_date: val,
-                  })
-                }
-                calendar
-              />
-
-              {/*  Receipt Status*/}
               <DropdownLarge
-                items={PAYMENT_STATUS}
-                selectedItem={receiptsValues.status}
+                items={CONTACT_TYPES}
+                selectedItem={contactValues.type}
                 onSelect={(value: string) =>
-                  setReceiptsValues({ ...receiptsValues, status: value })
+                  setContactValues({ ...contactValues, type: value })
                 }
                 type="form"
-                label="Status"
+                label="Type"
                 width="full"
               />
-            </div>
-            <div className="flex justify-end gap-4 mt-2">
-              <Button text="Create" style="primary" type="submit" />
-              <Button text="Cancel" style="secondary" onClick={handleClose} />
-            </div>
-          </form>
-        )}
+              <TextArea
+                label="Address (Optional)"
+                placeholder="Optional Complete Address"
+                value={contactValues.address}
+                onChange={(val: string) =>
+                  setContactValues({ ...contactValues, address: val })
+                }
+              />
+              <div className="flex justify-end gap-4 mt-2">
+                <Button text="Create" style="primary" type="submit" />
+                <Button text="Cancel" style="secondary" onClick={handleClose} />
+              </div>
+            </form>
+          )}
 
-        {/* Form for Tasks */}
-        {view === "tasks" && (
-          <form
-            className="flex flex-col gap-4 w-full flex-grow"
-            onSubmit={handleSubmitTasks}
-          >
-            <TextField
-              label="Farming Project"
-              placeholder="Green Tea Production"
-              value={taskValues.taskName}
-              onChange={(val: string) =>
-                setTaskValues({ ...taskValues, taskName: val })
-              }
-            />
-            <TextField
-              label="Work Category"
-              placeholder="e.g. Your work"
-              value={taskValues.category}
-              onChange={(val: string) =>
-                setTaskValues({ ...taskValues, category: val })
-              }
-            />
-            <DropdownLarge
-              items={taskStatus}
-              selectedItem={taskValues.status}
-              onSelect={(value: string) =>
-                setTaskValues({ ...taskValues, status: value })
-              }
-              type="form"
-              label="Task Status"
-              width="full"
-            />
-            <TextField
-              label="Industry"
-              placeholder="Enter industry"
-              value={taskValues.industry}
-              onChange={(val: string) =>
-                setTaskValues({ ...taskValues, industry: val })
-              }
-            />
-            <DropdownLarge
-              items={CONTACT_TYPES}
-              selectedItem={taskValues.type}
-              onSelect={(value: string) =>
-                setTaskValues({ ...taskValues, type: value })
-              }
-              type="form"
-              label="Type"
-              width="full"
-            />
-            <div className="flex justify-end gap-4 mt-2">
-              <Button text="Create" style="primary" type="submit" />
-              <Button text="Cancel" style="secondary" onClick={handleClose} />
-            </div>
-          </form>
-        )}
+          {/* Form for Companies */}
+          {view === "companies" && (
+            <form
+              className="flex flex-col gap-4 w-full flex-grow"
+              onSubmit={handleSubmitCompanies}
+            >
+              <TextField
+                label="Company Name"
+                placeholder="Enter company name"
+                value={companyValues.companyName}
+                onChange={(val: string) =>
+                  setCompanyValues({
+                    ...companyValues,
+                    companyName: val,
+                  })
+                }
+              />
+              <TextField
+                label="Owner Name"
+                placeholder="e.g. John Doe"
+                value={companyValues.companyOwner}
+                onChange={(val: string) =>
+                  setCompanyValues({
+                    ...companyValues,
+                    companyOwner: val,
+                  })
+                }
+              />
+              <TextField
+                label="Email"
+                placeholder="e.g. john.doe@gmail.com"
+                value={companyValues.email}
+                onChange={(val: string) =>
+                  setCompanyValues({ ...companyValues, email: val })
+                }
+              />
+              <TextField
+                label="Phone Number"
+                placeholder="e.g. +91 XXXXX XXX XX"
+                value={companyValues.phoneNumber}
+                onChange={(val: string) =>
+                  setCompanyValues({
+                    ...companyValues,
+                    phoneNumber: val,
+                  })
+                }
+              />
+              <TextArea
+                label="Client Address (Optional)"
+                placeholder="Address (optional)"
+                value={companyValues.address}
+                onChange={(val: string) =>
+                  setCompanyValues({ ...companyValues, address: val })
+                }
+              />
+              <DropdownLarge
+                items={companyType}
+                selectedItem={companyValues.type}
+                onSelect={(value: string) =>
+                  setCompanyValues({ ...companyValues, type: value })
+                }
+                type="form"
+                label="Type"
+                width="full"
+              />
+              <div className="flex justify-end gap-4 mt-2">
+                <Button text="Create" style="primary" type="submit" />
+                <Button text="Cancel" style="secondary" onClick={handleClose} />
+              </div>
+            </form>
+          )}
 
-        {/* Form for Labours */}
-        {view === "labours" && (
-          <form
-            className="flex flex-col gap-4 w-full flex-grow"
-            onSubmit={handleSubmitLabour}
-          >
-            <TextField
-              label="Full Name"
-              placeholder="e.g. John Doe"
-              value={labourValues.fullName}
-              onChange={(val: string) =>
-                setLabourValues({ ...labourValues, fullName: val })
-              }
-            />
-            <TextField
-              label="Guardian Name"
-              placeholder="e.g. Parent/Guardian Name"
-              value={labourValues.guardianName}
-              onChange={(val: string) =>
-                setLabourValues({ ...labourValues, guardianName: val })
-              }
-            />
-            <TextField
-              label="Date of Birth"
-              placeholder="YYYY-MM-DD"
-              value={labourValues.dateOfBirth}
-              onChange={(val: string) =>
-                setLabourValues({ ...labourValues, dateOfBirth: val })
-              }
-              calendar
-            />
-            <DropdownLarge
-              items={GENDER}
-              selectedItem={labourValues.gender}
-              onSelect={(value: string) =>
-                setLabourValues({ ...labourValues, gender: value })
-              }
-              type="form"
-              label="Gender"
-              width="full"
-            />
-            <TextField
-              label="Role"
-              placeholder="e.g. Farmer, Labourer"
-              value={labourValues.role}
-              onChange={(val: string) =>
-                setLabourValues({ ...labourValues, role: val })
-              }
-            />
-            <TextField
-              label="Contact Number"
-              placeholder="e.g. +91 XXXXX XXX XX"
-              value={labourValues.contactNumber}
-              onChange={(val: string) =>
-                setLabourValues({ ...labourValues, contactNumber: val })
-              }
-            />
-            <TextField
-              label="Aadhar Card Number"
-              placeholder="e.g. 1234 5678 9012"
-              value={labourValues.aadharCardNumber}
-              onChange={(val: string) =>
-                setLabourValues({ ...labourValues, aadharCardNumber: val })
-              }
-            />
-            <TextArea
-              label="Address"
-              placeholder="Enter full address"
-              value={labourValues.address}
-              onChange={(val: string) =>
-                setLabourValues({ ...labourValues, address: val })
-              }
-            />
-            <div className="flex justify-end gap-4 mt-2">
-              <Button text="Create" style="primary" type="submit" />
-              <Button text="Cancel" style="secondary" onClick={handleClose} />
-            </div>
-          </form>
-        )}
+          {/* Form for Contract */}
+          {view === "contracts" && (
+            <form
+              className="flex flex-col gap-4 w-full flex-grow"
+              onSubmit={handleSubmitContracts}
+            >
+              <TextField
+                label="Deal Name"
+                placeholder="Name of your Contract"
+                value={contractsValues.dealName}
+                onChange={(val: string) =>
+                  setContractsValues({ ...contractsValues, dealName: val })
+                }
+              />
+              <TextField
+                label="Partner Name"
+                placeholder="Company, Business owner"
+                value={contractsValues.dealPartner}
+                onChange={(val: string) =>
+                  setContractsValues({ ...contractsValues, dealPartner: val })
+                }
+              />
+              <div className="flex flex-col gap-2">
+                <TextField
+                  label="Amount Involved (₹)"
+                  placeholder="Budget involved"
+                  value={contractsValues.amountPaid}
+                  onChange={(val: string) =>
+                    setContractsValues({ ...contractsValues, amountPaid: val })
+                  }
+                />
+                <TextField
+                  label="State of Contract"
+                  placeholder="e.g. Initialised, In Process, Completed"
+                  value={contractsValues.status}
+                  onChange={(val: string) =>
+                    setContractsValues({ ...contractsValues, status: val })
+                  }
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <TextField
+                  label="Start Date"
+                  placeholder="YYYY-MM-DD"
+                  value={contractsValues.contractStartDate}
+                  onChange={(val: string) =>
+                    setContractsValues({
+                      ...contractsValues,
+                      contractStartDate: val,
+                    })
+                  }
+                  width="large"
+                  calendar
+                />
+                <TextField
+                  label="Contract End Date"
+                  placeholder="YYYY-MM-DD"
+                  value={contractsValues.contractEndDate}
+                  onChange={(val: string) =>
+                    setContractsValues({
+                      ...contractsValues,
+                      contractEndDate: val,
+                    })
+                  }
+                  width="large"
+                  calendar
+                />
+              </div>
+              <div className="flex justify-end gap-4 mt-2">
+                <Button text="Create" style="primary" type="submit" />
+                <Button text="Cancel" style="secondary" onClick={handleClose} />
+              </div>
+            </form>
+          )}
 
-        {/* Form for Inventory */}
-        {view === "inventory" && (
-          <form
-            className="flex flex-col gap-4 w-full flex-grow"
-            onSubmit={handleSubmitInventoryItem}
-          >
-            {/* Item Name */}
-            <TextField
-              label="Item Name"
-              placeholder="e.g. Fertilizer"
-              value={inventoryItem.itemName}
-              onChange={(val: string) =>
-                setInventoryItem({ ...inventoryItem, itemName: val })
-              }
-            />
-            {/* Item Group */}
-            <TextField
-              label="Item Group"
-              placeholder="e.g. Farming"
-              value={inventoryItem.itemGroup}
-              onChange={(val: string) =>
-                setInventoryItem({ ...inventoryItem, itemGroup: val })
-              }
-            />
-            {/* Unit */}
-            <DropdownLarge
-              items={UNITS}
-              selectedItem={inventoryItem.units}
-              onSelect={(value: string) =>
-                setInventoryItem({ ...inventoryItem, units: value })
-              }
-              type="form"
-              label="Units"
-              width="full"
-            />
-            {/* Quantity */}
-            <TextField
-              number
-              label="Quantity"
-              value={inventoryItem.quantity}
-              onChange={(val: string) =>
-                setInventoryItem({ ...inventoryItem, quantity: val })
-              }
-            />
+          {/* Form for Receipts */}
+          {view === "receipts" && (
+            <form
+              className="flex flex-col gap-4 w-full flex-grow"
+              onSubmit={handleSubmitReceipts}
+            >
+              {/* Title */}
+              <TextField
+                label="Receipt Title"
+                placeholder="Name of your receipt / invoice"
+                value={receiptsValues.title}
+                onChange={(val: string) =>
+                  setReceiptsValues({ ...receiptsValues, title: val })
+                }
+              />
+              {/* Bill To */}
+              <TextField
+                label="Bill To"
+                placeholder="Customer Details"
+                value={receiptsValues.billTo}
+                onChange={(val: string) =>
+                  setReceiptsValues({ ...receiptsValues, billTo: val })
+                }
+              />
 
-            {/* Price Per Unit */}
-            <TextField
-              number
-              label="Price Per Unit"
-              value={inventoryItem.pricePerUnit}
-              onChange={(val: string) =>
-                setInventoryItem({ ...inventoryItem, pricePerUnit: val })
-              }
-            />
+              {/* Amount Paid */}
+              <div className="flex flex-col gap-2">
+                <TextField
+                  label="Paid (₹)"
+                  placeholder="Amount Paid"
+                  value={receiptsValues.amount_paid}
+                  onChange={(val: string) =>
+                    setReceiptsValues({ ...receiptsValues, amount_paid: val })
+                  }
+                />
+                {/* Amount Due */}
+                <TextField
+                  label="Amount Due (₹)"
+                  placeholder="Amount yet to be paid"
+                  value={receiptsValues.amount_due}
+                  onChange={(val: string) =>
+                    setReceiptsValues({ ...receiptsValues, amount_due: val })
+                  }
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                {/* Due Date */}
+                <TextField
+                  label="Due Date"
+                  placeholder="YYYY-MM-DD"
+                  value={receiptsValues.due_date}
+                  onChange={(val: string) =>
+                    setReceiptsValues({
+                      ...receiptsValues,
+                      due_date: val,
+                    })
+                  }
+                  calendar
+                />
 
-            <div className="flex justify-end gap-4 mt-2">
-              <Button text="Create" style="primary" type="submit" />
-              <Button text="Cancel" style="secondary" onClick={handleClose} />
-            </div>
-          </form>
-        )}
+                {/*  Receipt Status*/}
+                <DropdownLarge
+                  items={PAYMENT_STATUS}
+                  selectedItem={receiptsValues.status}
+                  onSelect={(value: string) =>
+                    setReceiptsValues({ ...receiptsValues, status: value })
+                  }
+                  type="form"
+                  label="Status"
+                  width="full"
+                />
+              </div>
+              <div className="flex justify-end gap-4 mt-2">
+                <Button text="Create" style="primary" type="submit" />
+                <Button text="Cancel" style="secondary" onClick={handleClose} />
+              </div>
+            </form>
+          )}
+
+          {/* Form for Tasks */}
+          {view === "tasks" && (
+            <form
+              className="flex flex-col gap-4 w-full flex-grow"
+              onSubmit={handleSubmitTasks}
+            >
+              <TextField
+                label="Farming Project"
+                placeholder="Green Tea Production"
+                value={taskValues.taskName}
+                onChange={(val: string) =>
+                  setTaskValues({ ...taskValues, taskName: val })
+                }
+              />
+              <TextField
+                label="Work Category"
+                placeholder="e.g. Your work"
+                value={taskValues.category}
+                onChange={(val: string) =>
+                  setTaskValues({ ...taskValues, category: val })
+                }
+              />
+              <DropdownLarge
+                items={taskStatus}
+                selectedItem={taskValues.status}
+                onSelect={(value: string) =>
+                  setTaskValues({ ...taskValues, status: value })
+                }
+                type="form"
+                label="Task Status"
+                width="full"
+              />
+              <TextField
+                label="Industry"
+                placeholder="Enter industry"
+                value={taskValues.industry}
+                onChange={(val: string) =>
+                  setTaskValues({ ...taskValues, industry: val })
+                }
+              />
+              <DropdownLarge
+                items={CONTACT_TYPES}
+                selectedItem={taskValues.type}
+                onSelect={(value: string) =>
+                  setTaskValues({ ...taskValues, type: value })
+                }
+                type="form"
+                label="Type"
+                width="full"
+              />
+              <div className="flex justify-end gap-4 mt-2">
+                <Button text="Create" style="primary" type="submit" />
+                <Button text="Cancel" style="secondary" onClick={handleClose} />
+              </div>
+            </form>
+          )}
+
+          {/* Form for Labours */}
+          {view === "labours" && (
+            <form
+              className="flex flex-col gap-4 w-full flex-grow"
+              onSubmit={handleSubmitLabour}
+            >
+              <TextField
+                label="Full Name"
+                placeholder="e.g. John Doe"
+                value={labourValues.fullName}
+                onChange={(val: string) =>
+                  setLabourValues({ ...labourValues, fullName: val })
+                }
+              />
+              <TextField
+                label="Guardian Name"
+                placeholder="e.g. Parent/Guardian Name"
+                value={labourValues.guardianName}
+                onChange={(val: string) =>
+                  setLabourValues({ ...labourValues, guardianName: val })
+                }
+              />
+              <TextField
+                label="Date of Birth"
+                placeholder="YYYY-MM-DD"
+                value={labourValues.dateOfBirth}
+                onChange={(val: string) =>
+                  setLabourValues({ ...labourValues, dateOfBirth: val })
+                }
+                calendar
+              />
+              <DropdownLarge
+                items={GENDER}
+                selectedItem={labourValues.gender}
+                onSelect={(value: string) =>
+                  setLabourValues({ ...labourValues, gender: value })
+                }
+                type="form"
+                label="Gender"
+                width="full"
+              />
+              <TextField
+                label="Role"
+                placeholder="e.g. Farmer, Labourer"
+                value={labourValues.role}
+                onChange={(val: string) =>
+                  setLabourValues({ ...labourValues, role: val })
+                }
+              />
+              <TextField
+                label="Contact Number"
+                placeholder="e.g. +91 XXXXX XXX XX"
+                value={labourValues.contactNumber}
+                onChange={(val: string) =>
+                  setLabourValues({ ...labourValues, contactNumber: val })
+                }
+              />
+              <TextField
+                label="Aadhar Card Number"
+                placeholder="e.g. 1234 5678 9012"
+                value={labourValues.aadharCardNumber}
+                onChange={(val: string) =>
+                  setLabourValues({ ...labourValues, aadharCardNumber: val })
+                }
+              />
+              <TextArea
+                label="Address"
+                placeholder="Enter full address"
+                value={labourValues.address}
+                onChange={(val: string) =>
+                  setLabourValues({ ...labourValues, address: val })
+                }
+              />
+              <div className="flex justify-end gap-4 mt-2">
+                <Button text="Create" style="primary" type="submit" />
+                <Button text="Cancel" style="secondary" onClick={handleClose} />
+              </div>
+            </form>
+          )}
+
+          {/* Form for Inventory */}
+          {view === "inventory" && (
+            <form
+              className="flex flex-col gap-4 w-full flex-grow"
+              onSubmit={handleSubmitInventoryItem}
+            >
+              {/* Item Name */}
+              <TextField
+                label="Item Name"
+                placeholder="e.g. Fertilizer"
+                value={inventoryItem.itemName}
+                onChange={(val: string) =>
+                  setInventoryItem({ ...inventoryItem, itemName: val })
+                }
+              />
+              {/* Item Group */}
+              <TextField
+                label="Item Group"
+                placeholder="e.g. Farming"
+                value={inventoryItem.itemGroup}
+                onChange={(val: string) =>
+                  setInventoryItem({ ...inventoryItem, itemGroup: val })
+                }
+              />
+              {/* Unit */}
+              <DropdownLarge
+                items={UNITS}
+                selectedItem={inventoryItem.units}
+                onSelect={(value: string) =>
+                  setInventoryItem({ ...inventoryItem, units: value })
+                }
+                type="form"
+                label="Units"
+                width="full"
+              />
+              {/* Quantity */}
+              <TextField
+                number
+                label="Quantity"
+                value={inventoryItem.quantity}
+                onChange={(val: string) =>
+                  setInventoryItem({ ...inventoryItem, quantity: val })
+                }
+              />
+
+              {/* Price Per Unit */}
+              <TextField
+                number
+                label="Price Per Unit"
+                value={inventoryItem.pricePerUnit}
+                onChange={(val: string) =>
+                  setInventoryItem({ ...inventoryItem, pricePerUnit: val })
+                }
+              />
+
+              <div className="flex justify-end gap-4 mt-2">
+                <Button text="Create" style="primary" type="submit" />
+                <Button text="Cancel" style="secondary" onClick={handleClose} />
+              </div>
+            </form>
+          )}
+        </div>
       </div>
     </div>
   );

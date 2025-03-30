@@ -120,11 +120,10 @@ const CRM = () => {
   const tableData = useMemo(() => {
     switch (view) {
       case "contacts":
-        if (fetchedData.length === 0) {
-          return { columns: [], rows: [] };
-        }
+        if (fetchedData.length === 0) return { columns: [], rows: [] };
         return {
           columns: [
+            "ID",
             "First Name",
             "Last Name",
             "Email",
@@ -145,11 +144,10 @@ const CRM = () => {
           ]),
         };
       case "companies":
-        if (fetchedData.length === 0) {
-          return { columns: [], rows: [] };
-        }
+        if (fetchedData.length === 0) return { columns: [], rows: [] };
         return {
           columns: [
+            "ID",
             "Company Name",
             "Owner Name",
             "Email",
@@ -168,11 +166,10 @@ const CRM = () => {
           ]),
         };
       case "contracts":
-        if (fetchedData.length === 0) {
-          return { columns: [], rows: [] };
-        }
+        if (fetchedData.length === 0) return { columns: [], rows: [] };
         return {
           columns: [
+            "ID",
             "Deal Name",
             "Partner / Client",
             "Amount",
@@ -191,9 +188,7 @@ const CRM = () => {
           ]),
         };
       case "receipts":
-        if (fetchedData.length === 0) {
-          return { columns: [], rows: [] };
-        }
+        if (fetchedData.length === 0) return { columns: [], rows: [] };
         return {
           columns: [
             "ID",
@@ -204,7 +199,6 @@ const CRM = () => {
             "Due Date",
             "Status",
           ],
-
           rows: fetchedData.map((item) => [
             item.invoice_id,
             item.title,

@@ -7,6 +7,9 @@ import Loader from "@/components/ui/Loader";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircle } from "@fortawesome/free-solid-svg-icons";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 type Props = {
   onRowClick: (row: any[]) => void;
@@ -45,6 +48,7 @@ const Table = ({
   const [sortColumn, setSortColumn] = useState<number | null>(null);
   const [selectAll, setSelectAll] = useState(false);
   const [selectedRows, setSelectedRows] = useState<boolean[]>([]);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
 
   const paginatedRows = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
@@ -83,27 +87,53 @@ const Table = ({
     return rows;
   }, [paginatedRows, sortColumn, sortOrder]);
 
-  const exportTableData = () => {
-    if (sortedAndPaginatedRows.length === 0) {
+  const getExportRows = () => {
+    const selected = selectedRows
+      .map((isSelected, idx) =>
+        isSelected ? sortedAndPaginatedRows[idx] : null
+      )
+      .filter((row) => row !== null);
+
+    return selected.length > 0 ? selected : sortedAndPaginatedRows;
+  };
+
+  const exportTableData = (format: "pdf" | "xlsx") => {
+    const exportRows = getExportRows();
+
+    if (exportRows.length === 0) {
       Swal.fire("No Data", "There is no data to export.", "info");
       return;
     }
-    const csvContent = [
-      data.columns.join(","),
-      ...sortedAndPaginatedRows.map((row) => row.join(",")),
-    ].join("\n");
 
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${view}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    if (format === "pdf") {
+      const doc = new jsPDF();
+      autoTable(doc, {
+        head: [data.columns],
+        body: exportRows,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [52, 73, 94] },
+      });
+      doc.save(`${view}.pdf`);
+    }
+
+    if (format === "xlsx") {
+      const worksheet = XLSX.utils.aoa_to_sheet([data.columns, ...exportRows]);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+      const wbout = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+      const blob = new Blob([wbout], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${view}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
   };
-
   const handleSelectAllChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const checked = e.target.checked;
     setSelectAll(checked);
@@ -246,13 +276,33 @@ const Table = ({
             </div>
           )}
         </div>
-        <div className="flex gap-2">
-          {exportEnabled && (
-            <Button
-              style="secondary"
-              text="Export Data"
-              onClick={exportTableData}
-            />
+        <div className="relative inline-block">
+          <Button
+            style="secondary"
+            text="Download Data"
+            onClick={() => setShowExportDropdown(!showExportDropdown)}
+          />
+          {showExportDropdown && (
+            <div className="absolute left-0 mt-2 w-36 bg-white border border-gray-200 rounded shadow z-50">
+              <button
+                className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                onClick={() => {
+                  exportTableData("pdf");
+                  setShowExportDropdown(false);
+                }}
+              >
+                Export as PDF
+              </button>
+              <button
+                className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                onClick={() => {
+                  exportTableData("xlsx");
+                  setShowExportDropdown(false);
+                }}
+              >
+                Export as XLSX
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -319,69 +369,54 @@ const Table = ({
                     onChange={(e) => handleRowCheckboxChange(rowIndex, e)}
                   />
                 </td>
-                {view === "contacts" ||
-                view === "companies" ||
-                view === "contracts" ||
-                view === "labours"
-                  ? row.slice(1).map((cell, cellIndex) => (
-                      <td
-                        key={cellIndex}
-                        className="p-2 border border-gray-300 dark:border-gray-200 text-base font-light dark:text-gray-400"
-                      >
-                        {cell}
-                      </td>
-                    ))
-                  : row.map((cell, cellIndex) => (
-                      <td
-                        key={cellIndex}
-                        className="p-2 border border-gray-300 dark:border-gray-200 text-base font-light dark:text-gray-400"
-                      >
-                        {view === "inventory" &&
-                        data.columns[cellIndex] === "Status" ? (
-                          <div className="flex gap-[2px] text-sm">
-                            {(() => {
-                              const quantity =
-                                row[data.columns.indexOf("Quantity")];
-                              const max = Math.max(
-                                ...filteredRows.map(
-                                  (r) => r[data.columns.indexOf("Quantity")]
-                                )
-                              );
-                              const ratio = quantity / max;
+                {row.map((cell, cellIndex) => (
+                  <td
+                    key={cellIndex}
+                    className="p-2 border border-gray-300 dark:border-gray-200 text-base font-light dark:text-gray-400"
+                  >
+                    {view === "inventory" &&
+                    data.columns[cellIndex] === "Status" ? (
+                      <div className="flex gap-[2px] text-sm">
+                        {(() => {
+                          const quantity =
+                            row[data.columns.indexOf("Quantity")];
+                          const max = Math.max(
+                            ...filteredRows.map(
+                              (r) => r[data.columns.indexOf("Quantity")]
+                            )
+                          );
+                          const ratio = quantity / max;
+                          let count = 0;
+                          let color = "";
 
-                              let count = 0;
-                              let color = "";
+                          if (ratio < 0.25) {
+                            count = 1;
+                            color = "text-red-200";
+                          } else if (ratio < 0.5) {
+                            count = 2;
+                            color = "text-orange-200";
+                          } else if (ratio < 0.75) {
+                            count = 3;
+                            color = "text-yellow-200";
+                          } else {
+                            count = 4;
+                            color = "text-green-200";
+                          }
 
-                              if (ratio < 0.25) {
-                                count = 1;
-                                color = "text-red-200";
-                              } else if (ratio < 0.5) {
-                                count = 2;
-                                color = "text-orange-200";
-                              } else if (ratio < 0.75) {
-                                count = 3;
-                                color = "text-yellow-200";
-                              } else {
-                                count = 4;
-                                color = "text-green-200";
-                              }
-
-                              return Array.from({ length: count }).map(
-                                (_, i) => (
-                                  <FontAwesomeIcon
-                                    key={i}
-                                    icon={faCircle}
-                                    className={`${color}`}
-                                  />
-                                )
-                              );
-                            })()}
-                          </div>
-                        ) : (
-                          cell
-                        )}
-                      </td>
-                    ))}
+                          return Array.from({ length: count }).map((_, i) => (
+                            <FontAwesomeIcon
+                              key={i}
+                              icon={faCircle}
+                              className={color}
+                            />
+                          ));
+                        })()}
+                      </div>
+                    ) : (
+                      cell
+                    )}
+                  </td>
+                ))}
               </tr>
             ))}
           </tbody>

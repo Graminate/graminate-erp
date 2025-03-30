@@ -100,14 +100,25 @@ const CompanyDetails = () => {
 
       Swal.fire("Success", "Company updated successfully", "success");
 
-      setCompany(response.data.company);
+      const updated = response.data.company;
+
+      setCompany([
+        updated.company_id,
+        updated.company_name,
+        updated.owner_name,
+        updated.email,
+        updated.phone_number,
+        updated.address,
+        updated.type,
+      ]);
+
       setInitialFormData({
-        companyName,
-        ownerName,
-        email,
-        phoneNumber,
-        address,
-        type,
+        companyName: updated.company_name,
+        ownerName: updated.owner_name,
+        email: updated.email,
+        phoneNumber: updated.phone_number,
+        address: updated.address || "",
+        type: updated.type,
       });
     } catch (error: any) {
       console.error("Error updating company:", error);

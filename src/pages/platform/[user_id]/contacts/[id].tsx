@@ -102,14 +102,25 @@ const ContactDetails = () => {
 
       Swal.fire("Success", "Contact updated successfully", "success");
 
-      setContact(response.data.contact);
+      const updated = response.data.contact;
+
+      setContact([
+        updated.contact_id,
+        updated.first_name,
+        updated.last_name,
+        updated.email,
+        updated.phone_number,
+        updated.type,
+        updated.address,
+      ]);
+
       setInitialFormData({
-        firstName,
-        lastName,
-        email,
-        phoneNumber,
-        type,
-        address,
+        firstName: updated.first_name,
+        lastName: updated.last_name,
+        email: updated.email,
+        phoneNumber: updated.phone_number,
+        type: updated.type,
+        address: updated.address || "",
       });
     } catch (error: any) {
       console.error("Error updating contact:", error);
