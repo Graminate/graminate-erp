@@ -239,160 +239,94 @@ const SignIn = () => {
         <title>Welcome to Graminate: Manage your Agricultural Budget</title>
       </Head>
       <LoginLayout>
-        <div className="min-h-screen dark:bg-gray-900 flex flex-col md:flex-row">
-          {/* Left Image Section */}
-          <div
-            className="w-full md:w-3/4 bg-cover bg-center"
-            style={{ backgroundImage: "url('/images/cover.png')" }}
-          ></div>
-          {/* Right Form Section */}
-          <div className="w-full md:w-2/3 flex items-center justify-center min-h-screen bg-cover bg-center md:bg-none">
-            <div className="bg-white dark:bg-gray-800 shadow-md rounded px-8 py-6 w-11/12 max-w-md">
-              {isLogin ? (
-                <>
-                  <h2 className="text-2xl font-semibold mb-6 text-center dark:text-light">
-                    Login
-                  </h2>
-                  <form onSubmit={handleLogin}>
-                    <div className="mb-4">
-                      <TextField
-                        label="Email"
-                        placeholder="Enter your email"
-                        value={loginData.email}
-                        onChange={(val: string) =>
-                          setLoginData({ ...loginData, email: val })
-                        }
-                        width="large"
-                      />
-                    </div>
-                    <div className="mb-6">
-                      <TextField
-                        label="Password"
-                        placeholder="Enter your password"
-                        password
-                        value={loginData.password}
-                        onChange={(val: string) =>
-                          setLoginData({
-                            ...loginData,
-                            password: val,
-                          })
-                        }
-                        width="large"
-                      />
-                    </div>
-                    {loginErrorMessage && (
-                      <p className="text-red-500 text-sm mb-4">
-                        {loginErrorMessage}
-                      </p>
-                    )}
-                    <div className="mx-auto flex flex-row justify-center">
-                      <Button
-                        text="Login"
-                        width="large"
-                        style="primary"
-                        type="submit"
-                      />
-                    </div>
-                    <p className="text-center mt-4 text-sm text-gray-600 dark:text-gray-300">
-                      <button
-                        className="text-blue-500 hover:underline focus:outline-none"
-                        type="button"
-                        onClick={openForgotPasswordModal}
-                      >
-                        Forgot Password?
-                      </button>
+        <div
+          className="min-h-screen flex items-center justify-center bg-cover bg-center p-4"
+          style={{ backgroundImage: "url('/images/cover.png')" }}
+        >
+          <div className="bg-white dark:bg-gray-800 shadow-xl rounded-lg px-8 py-6 w-full max-w-md">
+            {isLogin ? (
+              <>
+                <h2 className="text-2xl font-semibold mb-6 text-center dark:text-light">
+                  Login
+                </h2>
+                <form onSubmit={handleLogin}>
+                  <div className="mb-4">
+                    <TextField
+                      label="Email"
+                      placeholder="Enter your email"
+                      value={loginData.email}
+                      onChange={(val) =>
+                        setLoginData({ ...loginData, email: val })
+                      }
+                      width="large"
+                    />
+                  </div>
+                  <div className="mb-6">
+                    <TextField
+                      label="Password"
+                      placeholder="Enter your password"
+                      password
+                      value={loginData.password}
+                      onChange={(val) =>
+                        setLoginData({
+                          ...loginData,
+                          password: val,
+                        })
+                      }
+                      width="large"
+                    />
+                  </div>
+                  {loginErrorMessage && (
+                    <p className="text-red-500 text-sm mb-4">
+                      {loginErrorMessage}
                     </p>
-                  </form>
+                  )}
+                  <div className="mx-auto flex flex-row justify-center">
+                    <Button
+                      text="Login"
+                      width="large"
+                      style="primary"
+                      type="submit"
+                    />
+                  </div>
                   <p className="text-center mt-4 text-sm text-gray-600 dark:text-gray-300">
-                    Don't have an account?{" "}
                     <button
                       className="text-blue-500 hover:underline focus:outline-none"
                       type="button"
-                      onClick={toggleForm}
+                      onClick={openForgotPasswordModal}
                     >
-                      Sign Up
+                      Forgot Password?
                     </button>
                   </p>
-                </>
-              ) : (
-                <>
-                  <h2 className="text-2xl font-semibold mb-6 text-center">
+                </form>
+                <p className="text-center mt-4 text-sm text-gray-600 dark:text-gray-300">
+                  Don't have an account?{" "}
+                  <button
+                    className="text-blue-500 hover:underline focus:outline-none"
+                    type="button"
+                    onClick={toggleForm}
+                  >
                     Sign Up
-                  </h2>
-                  <form onSubmit={handleRegister}>
-                    <div className="flex flex-row gap-2">
-                      <div className="mb-4">
-                        <TextField
-                          label="First Name"
-                          placeholder="Enter your First Name"
-                          type={fieldErrors.first_name ? "error" : ""}
-                          value={registerData.first_name}
-                          onChange={(val: string) =>
-                            setRegisterData({
-                              ...registerData,
-                              first_name: val,
-                            })
-                          }
-                          width="large"
-                        />
-                      </div>
-                      <div className="mb-4">
-                        <TextField
-                          label="Last Name"
-                          placeholder="Enter your Last Name"
-                          type={fieldErrors.last_name ? "error" : ""}
-                          value={registerData.last_name}
-                          onChange={(val: string) =>
-                            setRegisterData({
-                              ...registerData,
-                              last_name: val,
-                            })
-                          }
-                          width="large"
-                        />
-                      </div>
-                    </div>
+                  </button>
+                </p>
+              </>
+            ) : (
+              <>
+                <h2 className="text-2xl font-semibold mb-6 text-center">
+                  Sign Up
+                </h2>
+                <form onSubmit={handleRegister}>
+                  <div className="flex flex-row gap-2">
                     <div className="mb-4">
                       <TextField
-                        label="Email"
-                        placeholder="Enter your Email"
-                        type={fieldErrors.email ? "error" : ""}
-                        value={registerData.email}
-                        onChange={(val: string) =>
+                        label="First Name"
+                        placeholder="Enter your First Name"
+                        type={fieldErrors.first_name ? "error" : ""}
+                        value={registerData.first_name}
+                        onChange={(val) =>
                           setRegisterData({
                             ...registerData,
-                            email: val,
-                          })
-                        }
-                        errorMessage={emailErrorMessage}
-                        width="large"
-                      />
-                    </div>
-                    <div className="mb-4">
-                      <TextField
-                        label="Phone Number"
-                        placeholder="Enter your Phone Number"
-                        type={fieldErrors.phone_number ? "error" : ""}
-                        value={registerData.phone_number}
-                        onChange={(val: string) =>
-                          setRegisterData({
-                            ...registerData,
-                            phone_number: val,
-                          })
-                        }
-                        errorMessage={phoneErrorMessage}
-                        width="large"
-                      />
-                    </div>
-                    <div className="mb-4">
-                      <TextField
-                        label="Business Name (optional)"
-                        placeholder="Enter name of your Farm Business"
-                        value={registerData.business_name}
-                        onChange={(val: string) =>
-                          setRegisterData({
-                            ...registerData,
-                            business_name: val,
+                            first_name: val,
                           })
                         }
                         width="large"
@@ -400,59 +334,120 @@ const SignIn = () => {
                     </div>
                     <div className="mb-4">
                       <TextField
-                        label="Date of Birth"
-                        placeholder="YYYY-MM-DD"
-                        type={fieldErrors.date_of_birth ? "error" : ""}
-                        value={registerData.date_of_birth}
-                        onChange={(val: string) =>
+                        label="Last Name"
+                        placeholder="Enter your Last Name"
+                        type={fieldErrors.last_name ? "error" : ""}
+                        value={registerData.last_name}
+                        onChange={(val) =>
                           setRegisterData({
                             ...registerData,
-                            date_of_birth: val,
+                            last_name: val,
                           })
                         }
                         width="large"
-                        calendar
                       />
                     </div>
-                    <div className="mb-4">
-                      <TextField
-                        label="Password"
-                        placeholder="Enter your password"
-                        password
-                        type={fieldErrors.password ? "error" : ""}
-                        value={registerData.password}
-                        onChange={(val: string) =>
-                          setRegisterData({
-                            ...registerData,
-                            password: val,
-                          })
-                        }
-                        errorMessage={passwordErrorMessage}
-                        width="large"
-                      />
-                    </div>
-                    <div className="mx-auto flex flex-row justify-center">
-                      <Button
-                        text="Sign Up"
-                        width="large"
-                        style="primary"
-                        type="submit"
-                      />
-                    </div>
-                  </form>
-                  <p className="text-center mt-4 text-sm text-gray-600">
-                    Already have an account?{" "}
-                    <button
-                      className="text-blue-500 hover:underline focus:outline-none"
-                      type="button"
-                      onClick={toggleForm}
-                    >
-                      Login
-                    </button>
-                  </p>
-                </>
-              )}
-            </div>
+                  </div>
+                  <div className="mb-4">
+                    <TextField
+                      label="Email"
+                      placeholder="Enter your Email"
+                      type={fieldErrors.email ? "error" : ""}
+                      value={registerData.email}
+                      onChange={(val) =>
+                        setRegisterData({
+                          ...registerData,
+                          email: val,
+                        })
+                      }
+                      errorMessage={emailErrorMessage}
+                      width="large"
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <TextField
+                      label="Phone Number"
+                      placeholder="Enter your Phone Number"
+                      type={fieldErrors.phone_number ? "error" : ""}
+                      value={registerData.phone_number}
+                      onChange={(val) =>
+                        setRegisterData({
+                          ...registerData,
+                          phone_number: val,
+                        })
+                      }
+                      errorMessage={phoneErrorMessage}
+                      width="large"
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <TextField
+                      label="Business Name (optional)"
+                      placeholder="Enter name of your Farm Business"
+                      value={registerData.business_name}
+                      onChange={(val) =>
+                        setRegisterData({
+                          ...registerData,
+                          business_name: val,
+                        })
+                      }
+                      width="large"
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <TextField
+                      label="Date of Birth"
+                      placeholder="YYYY-MM-DD"
+                      type={fieldErrors.date_of_birth ? "error" : ""}
+                      value={registerData.date_of_birth}
+                      onChange={(val) =>
+                        setRegisterData({
+                          ...registerData,
+                          date_of_birth: val,
+                        })
+                      }
+                      width="large"
+                      calendar
+                    />
+                  </div>
+                  <div className="mb-4">
+                    <TextField
+                      label="Password"
+                      placeholder="Enter your password"
+                      password
+                      type={fieldErrors.password ? "error" : ""}
+                      value={registerData.password}
+                      onChange={(val) =>
+                        setRegisterData({
+                          ...registerData,
+                          password: val,
+                        })
+                      }
+                      errorMessage={passwordErrorMessage}
+                      width="large"
+                    />
+                  </div>
+                  <div className="mx-auto flex flex-row justify-center">
+                    <Button
+                      text="Sign Up"
+                      width="large"
+                      style="primary"
+                      type="submit"
+                    />
+                  </div>
+                </form>
+                <p className="text-center mt-4 text-sm text-gray-600">
+                  Already have an account?{" "}
+                  <button
+                    className="text-blue-500 hover:underline focus:outline-none"
+                    type="button"
+                    onClick={toggleForm}
+                  >
+                    Login
+                  </button>
+                </p>
+              </>
+            )}
           </div>
         </div>
       </LoginLayout>

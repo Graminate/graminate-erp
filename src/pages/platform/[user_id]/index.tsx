@@ -194,11 +194,9 @@ const Dashboard = () => {
                 onStepChange={handleStepChange}
               />
               <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                {!error && (
-                  <div>
-                    <StatusCard steps={steps} currentStep={currentStep} />
-                  </div>
-                )}
+                <div>
+                  <StatusCard steps={steps} currentStep={currentStep} />
+                </div>
                 <div>
                   <Calendar />
                 </div>

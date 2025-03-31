@@ -45,7 +45,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
           route: `/platform/${userId}/crm?view=contracts`,
         },
         {
-          label: "Invoices",
+          label: "Receipts",
           route: `/platform/${userId}/crm?view=receipts`,
         },
         {
@@ -92,8 +92,8 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
     },
     {
       icon: faWarehouse,
-      label: "Inventory",
-      section: "Inventory",
+      label: "Inventory Management",
+      section: "Inventory Management",
       route: `/platform/${userId}/inventory`,
       subItems: [],
     },

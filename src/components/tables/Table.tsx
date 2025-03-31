@@ -276,7 +276,47 @@ const Table = ({
             </div>
           )}
         </div>
-        <div className="relative inline-block">
+        <div className="flex flex-row">
+          <Button
+            style="ghost"
+            text="Reset Table"
+            onClick={async () => {
+              const entityNames: Record<string, string> = {
+                contacts: "contacts",
+                companies: "companies",
+                contracts: "deals",
+                receipts: "invoices",
+                labour: "labours",
+                inventory: "inventory",
+              };
+
+              const entityToTruncate = entityNames[view] || "contracts";
+
+              const result = await Swal.fire({
+                title: "Are you sure?",
+                text: `This will reset your ${entityToTruncate} database.`,
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Yes, Reset!",
+                cancelButtonText: "Cancel",
+              });
+
+              if (result.isConfirmed) {
+                try {
+                  const userId = localStorage.getItem("userId");
+                  await axios.post(`http://localhost:3001/api/${view}/reset`, {
+                    userId,
+                  });
+                  Swal.fire("Reset!", "Table has been reset.", "success").then(
+                    () => location.reload()
+                  );
+                } catch (err) {
+                  console.error(err);
+                  Swal.fire("Error", "Failed to reset table.", "error");
+                }
+              }
+            }}
+          />
           <Button
             style="secondary"
             text="Download Data"

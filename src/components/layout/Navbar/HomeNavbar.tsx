@@ -1,9 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
-
-const HomeNavbar = (image?: string) => {
-  image = "/images/logo.png";
+const HomeNavbar = () => {
   return (
     <header className="bg-gray-800 py-2">
       <div className="mx-auto max-w-7xl px-2 sm:px-4 lg:divide-y lg:divide-gray-700 lg:px-8">
@@ -13,14 +11,14 @@ const HomeNavbar = (image?: string) => {
             <div className="flex flex-shrink-0 items-center">
               <Link href="/" className="flex flex-row items-center gap-4">
                 <Image
-                  src={image}
+                  src={"/images/logo.png"}
                   alt="Graminate Logo"
                   width={40}
                   height={40}
                   className="h-10 w-auto"
                 />
                 <span className="text-bold text-3xl text-white">Graminate</span>
-                <sup className="text-bold text-lg text-white">ERP</sup>
+                <sub className="text-bold text-sm text-white">AgroERP</sub>
               </Link>
             </div>
           </div>

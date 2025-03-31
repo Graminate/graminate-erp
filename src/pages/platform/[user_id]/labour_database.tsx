@@ -50,6 +50,7 @@ const LabourDatabase = () => {
     if (view === "labours" && labourRecords.length > 0) {
       return {
         columns: [
+          "ID",
           "Full Name",
           "Date of Birth",
           "Gender",
