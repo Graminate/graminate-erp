@@ -8,6 +8,7 @@ import Loader from "@/components/ui/Loader";
 import Head from "next/head";
 import Swal from "sweetalert2";
 
+// --- Type Definitions ---
 type Coordinates = {
   lat: number;
   lon: number;
@@ -25,165 +26,229 @@ type User = {
   time_format?: string;
 };
 
+// --- Constants ---
+// Base URL for API requests - consider moving to environment variables
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
+
+// --- Component ---
 const Dashboard = () => {
   const router = useRouter();
   const userId = router.isReady ? (router.query.user_id as string) : undefined;
-  const [isAuthorized, setIsAuthorized] = useState(false);
+
+  // --- State ---
   const [userData, setUserData] = useState<User | null>(null);
   const [location, setLocation] = useState<Coordinates | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [locationServiceEnabled, setLocationServiceEnabled] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentStep, setCurrentStep] = useState<number>(1);
-  const [temperatureScale, setTemperatureScale] =
-    useState<string>("Fahrenheit");
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [isLocationLoading, setIsLocationLoading] = useState<boolean>(true);
+  const [isUserDataLoading, setIsUserDataLoading] = useState<boolean>(true);
+  // Note: isAuthorized state was present but not used for rendering control, removed for simplicity unless needed elsewhere.
+  // Note: currentStep and steps array were present but not used in the UI, removed for simplicity unless needed elsewhere.
+  // Note: temperatureScale state was present but only used to derive 'fahrenheit', simplified.
+  const [isFahrenheit, setIsFahrenheit] = useState<boolean>(true); // Default to Fahrenheit
 
-  const fahrenheit = temperatureScale === "Fahrenheit";
+  // --- Effects ---
 
-  const steps = [
-    "Procurement",
-    "Preparation",
-    "Farming",
-    "Recurring Cost",
-    "Harvest",
-  ];
-
+  // Fetch User Data
   useEffect(() => {
-    const fetchUserData = async () => {
-      if (!router.isReady || !userId) return;
+    if (!router.isReady || !userId) return;
 
+    let isMounted = true;
+    setIsUserDataLoading(true);
+
+    const fetchUserData = async () => {
       try {
-        const response = await axios.get(
-          `http://localhost:3001/api/user/${userId}`,
-          {
-            withCredentials: true,
-            timeout: 10000,
-          }
-        );
-        setUserData(response.data.user);
+        const response = await axios.get(`${API_BASE_URL}/user/${userId}`, {
+          withCredentials: true,
+          timeout: 10000, // 10 second timeout
+        });
+        if (isMounted) {
+          setUserData(response.data.user);
+        }
       } catch (error: any) {
-        let errorText = "Failed to fetch user data.";
+        if (!isMounted) return;
+
+        let errorTitle = "Error";
+        let errorText = "Failed to fetch user data. Please try again later.";
 
         if (axios.isAxiosError(error)) {
           if (error.response?.status === 401) {
+            errorTitle = "Access Denied";
             errorText = "Session expired. Please log in again.";
           } else if (error.response?.status === 404) {
-            errorText = `User not found for ID '${userId}'.`;
+            errorTitle = "Not Found";
+            errorText = `User not found.`; // Avoid echoing user ID back directly
+          } else if (error.code === "ECONNABORTED") {
+            errorText =
+              "Request timed out. Please check your connection and try again.";
           }
+        } else {
+          console.error("Non-Axios error fetching user data:", error);
         }
 
+        // Show error modal and redirect
         await Swal.fire({
-          title: "Access Denied",
+          title: errorTitle,
           text: errorText,
           icon: "error",
           confirmButtonText: "OK",
           allowOutsideClick: false,
           allowEscapeKey: false,
         });
-        router.push("/");
-      }
-    };
-
-    fetchUserData().catch(() => {});
-  }, [router.isReady, userId]);
-
-  useEffect(() => {
-    if (!router.isReady || !userId) return;
-
-    const savedStep = localStorage.getItem("currentStep");
-    if (savedStep) {
-      const stepNum = parseInt(savedStep, 10);
-      if (!isNaN(stepNum) && stepNum >= 1 && stepNum <= steps.length) {
-        setCurrentStep(stepNum);
-      } else {
-        localStorage.removeItem("currentStep");
-      }
-    }
-
-    const checkLocationService = (): Promise<Coordinates> => {
-      return new Promise((resolve, reject) => {
-        if (!navigator.geolocation) {
-          setLocationServiceEnabled(false);
-          reject("Geolocation is not supported by your browser.");
-          return;
+        router.push("/"); // Redirect to home or login page
+      } finally {
+        if (isMounted) {
+          setIsUserDataLoading(false);
         }
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            setLocationServiceEnabled(true);
-            resolve({
-              lat: position.coords.latitude,
-              lon: position.coords.longitude,
-            });
-          },
-          (error) => {
-            setLocationServiceEnabled(false);
-            reject(
-              `Unable to retrieve location: ${error.message}. Please enable location services.`
-            );
-          },
-          { timeout: 10000 }
-        );
-      });
+      }
     };
 
-    setIsLoading(true);
-    checkLocationService()
-      .then((coords) => {
-        setLocation(coords);
-        setError(null);
-      })
-      .catch((err) => {
-        setLocation(null);
-        setError(err);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, [router.isReady, userId]);
+    fetchUserData();
 
+    return () => {
+      isMounted = false; // Cleanup function to prevent state updates on unmounted component
+    };
+  }, [router.isReady, userId, router]); // Added router to dependency array as it's used for push
+
+  // Get Location
   useEffect(() => {
-    if (isAuthorized && currentStep >= 1 && currentStep <= steps.length) {
-      localStorage.setItem("currentStep", currentStep.toString());
-    }
-  }, [currentStep, isAuthorized, steps.length]);
+    // No need to wait for userId for location
+    let isMounted = true;
+    setIsLocationLoading(true);
+    setLocationError(null); // Reset error on new attempt
 
-  const handleStepChange = (data: { step: number }) => {
-    setCurrentStep(data.step);
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by your browser.");
+      setIsLocationLoading(false);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        if (isMounted) {
+          setLocation({
+            lat: position.coords.latitude,
+            lon: position.coords.longitude,
+          });
+          setLocationError(null); // Clear any previous error
+        }
+      },
+      (error) => {
+        if (isMounted) {
+          let errorMessage = "Unable to retrieve location.";
+          switch (error.code) {
+            case error.PERMISSION_DENIED:
+              errorMessage =
+                "Location access denied. Please enable location services in your browser settings.";
+              break;
+            case error.POSITION_UNAVAILABLE:
+              errorMessage = "Location information is unavailable.";
+              break;
+            case error.TIMEOUT:
+              errorMessage = "Request to get user location timed out.";
+              break;
+            default:
+              errorMessage = `An unknown error occurred: ${error.message}`;
+              break;
+          }
+          setLocationError(errorMessage);
+          setLocation(null); // Ensure location is null on error
+        }
+      },
+      { timeout: 10000 }
+    );
+
+    const checkLoading = () => {
+      if (isMounted) {
+        setIsLocationLoading(false);
+      }
+    };
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        checkLoading();
+      },
+      (error) => {
+        checkLoading();
+      },
+      { timeout: 10000 }
+    );
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const renderWeatherContent = () => {
+    if (isLocationLoading) {
+      return (
+        <div className="h-48 flex items-center justify-center p-4 rounded-lg bg-gray-500 dark:bg-gray-800">
+          <Loader />
+        </div>
+      );
+    }
+
+    if (locationError) {
+      return (
+        <div className="h-48 flex flex-col items-center justify-center text-center p-4 rounded-lg bg-gray-500 dark:bg-gray-900 text-dark dark:text-light">
+          <p className="font-semibold mb-1">Weather Unavailable</p>
+          <p className="text-sm">{locationError}</p>
+        </div>
+      );
+    }
+
+    if (location) {
+      return (
+        <TemperatureCard
+          lat={location.lat}
+          lon={location.lon}
+          fahrenheit={!isFahrenheit}
+        />
+      );
+    }
+
+    return (
+      <div className="h-48 flex items-center justify-center p-4 rounded-lg bg-gray-500 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+        <p>Could not load weather data.</p>
+      </div>
+    );
   };
 
   return (
     <>
       <Head>
-        <title>Graminate | Platform</title>
+        <title>{`Dashboard ${
+          userData ? `- ${userData.first_name}` : ""
+        } | Graminate Platform`}</title>
       </Head>
       <PlatformLayout>
-        <main className="min-h-screen text-white relative">
-          <header className="px-6 py-4">
-            <h1 className="text-2xl font-bold text-dark dark:text-light">
-              Hello {userData?.first_name},
+        <div className="p-4 sm:p-6">
+          <header className="mb-4">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-gray-100">
+              {isUserDataLoading
+                ? "Loading..."
+                : `Hello ${userData?.first_name || "User"},`}
             </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Welcome to your dashboard.
+            </p>
           </header>
-          <hr className="mb-6 border-gray-300" />
 
-          <div className="flex flex-col lg:flex-row gap-6 px-6 items-start">
-            <div className="w-full lg:w-1/3 flex-shrink-0">
-              {isLoading ? (
-                <Loader />
-              ) : locationServiceEnabled && location ? (
-                <TemperatureCard
-                  lat={location.lat}
-                  lon={location.lon}
-                  fahrenheit={!fahrenheit}
-                />
-              ) : (
-                <div className="p-4 rounded bg-gray-500 dark:bg-gray-700  text-dark dark:text-light">
-                  <p className="font-medium">Could not retrieve weather</p>
-                </div>
-              )}
+          <hr className="mb-6 border-gray-200 dark:border-gray-700" />
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-1 space-y-6">
+              {renderWeatherContent()}
             </div>
-            <Calendar />
+
+            <div className="lg:col-span-2 space-y-6">
+              <h2 className="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-200">
+                Calendar
+              </h2>
+              <Calendar />
+            </div>
           </div>
-        </main>
+        </div>
       </PlatformLayout>
     </>
   );
