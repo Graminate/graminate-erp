@@ -17,7 +17,6 @@ const LabourDetails = () => {
   const [fullName, setFullName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [gender, setGender] = useState("");
-  const [guardianName, setGuardianName] = useState("");
   const [contactNumber, setContactNumber] = useState("");
   const [aadharCardNumber, setAadharCardNumber] = useState("");
   const [address, setAddress] = useState("");
@@ -25,7 +24,6 @@ const LabourDetails = () => {
   const [role, setRole] = useState("");
 
   // Optional fields
-  const [voterId, setVoterId] = useState("");
   const [rationCard, setRationCard] = useState("");
   const [panCard, setPanCard] = useState("");
   const [drivingLicense, setDrivingLicense] = useState("");
@@ -44,11 +42,9 @@ const LabourDetails = () => {
     fullName: "",
     dateOfBirth: "",
     gender: "",
-    guardianName: "",
     contactNumber: "",
     aadharCardNumber: "",
     address: "",
-    voterId: "",
     rationCard: "",
     panCard: "",
     drivingLicense: "",
@@ -85,14 +81,12 @@ const LabourDetails = () => {
         new Date(parsedLabour.date_of_birth).toLocaleDateString() || ""
       );
       setGender(parsedLabour.gender || "");
-      setGuardianName(parsedLabour.guardian_name || "");
       setContactNumber(parsedLabour.contact_number || "");
       setAadharCardNumber(parsedLabour.aadhar_card_number || "");
       setAddress(parsedLabour.address || "");
       setRole(parsedLabour.role || "");
 
       // Optional fields
-      setVoterId(parsedLabour.voter_id ?? ""); // Use nullish coalescing operator
       setRationCard(parsedLabour.ration_card ?? "");
       setPanCard(parsedLabour.pan_card ?? "");
       setDrivingLicense(parsedLabour.driving_license ?? "");
@@ -101,10 +95,10 @@ const LabourDetails = () => {
       setIfscCode(parsedLabour.ifsc_code ?? "");
       setBankName(parsedLabour.bank_name ?? "");
       setBankBranch(parsedLabour.bank_branch ?? "");
-      setDisabilityStatus(parsedLabour.disability_status ? "Yes" : "No"); // Convert boolean to string
+      setDisabilityStatus(parsedLabour.disability_status ? "Yes" : "No");
       setEpfo(parsedLabour.epfo ?? "");
       setEsic(parsedLabour.esic ?? "");
-      setPmKisan(parsedLabour.pm_kisan ? "Yes" : "No"); // Convert boolean to string
+      setPmKisan(parsedLabour.pm_kisan ? "Yes" : "No");
 
       // Set initial form data for change detection
       setInitialFormData({
@@ -112,11 +106,9 @@ const LabourDetails = () => {
         dateOfBirth:
           new Date(parsedLabour.date_of_birth).toLocaleDateString() || "",
         gender: parsedLabour.gender || "",
-        guardianName: parsedLabour.guardian_name || "",
         contactNumber: parsedLabour.contact_number || "",
         aadharCardNumber: parsedLabour.aadhar_card_number || "",
         address: parsedLabour.address || "",
-        voterId: parsedLabour.voter_id || "",
         rationCard: parsedLabour.ration_card || "",
         panCard: parsedLabour.pan_card || "",
         drivingLicense: parsedLabour.driving_license || "",
@@ -140,11 +132,9 @@ const LabourDetails = () => {
     fullName !== initialFormData.fullName ||
     dateOfBirth !== initialFormData.dateOfBirth ||
     gender !== initialFormData.gender ||
-    guardianName !== initialFormData.guardianName ||
     contactNumber !== initialFormData.contactNumber ||
     aadharCardNumber !== initialFormData.aadharCardNumber ||
     address !== initialFormData.address ||
-    voterId !== initialFormData.voterId ||
     rationCard !== initialFormData.rationCard ||
     panCard !== initialFormData.panCard ||
     drivingLicense !== initialFormData.drivingLicense ||
@@ -173,13 +163,11 @@ const LabourDetails = () => {
       full_name: fullName,
       date_of_birth: dateOfBirth,
       gender: gender,
-      guardian_name: guardianName,
       contact_number: contactNumber,
       aadhar_card_number: aadharCardNumber,
       address: address,
 
       // Government Data
-      voter_id: voterId,
       ration_card: rationCard,
       pan_card: panCard,
       driving_license: drivingLicense,
@@ -216,11 +204,9 @@ const LabourDetails = () => {
         fullName: payload.full_name,
         dateOfBirth: payload.date_of_birth,
         gender: payload.gender,
-        guardianName: payload.guardian_name,
         contactNumber: payload.contact_number,
         aadharCardNumber: payload.aadhar_card_number,
         address: payload.address,
-        voterId: payload.voter_id,
         rationCard: payload.ration_card,
         panCard: payload.pan_card,
         drivingLicense: payload.driving_license,
@@ -251,7 +237,7 @@ const LabourDetails = () => {
   return (
     <>
       <Head>
-        <title>Graminate | Labour Database</title>
+        <title>Graminate | Employee Database</title>
       </Head>
       <PlatformLayout>
         <div className="px-6">
@@ -292,12 +278,7 @@ const LabourDetails = () => {
                   label="Gender"
                   width="full"
                 />
-                <TextField
-                  label="Guardian Name"
-                  value={guardianName}
-                  onChange={(val) => setGuardianName(val)}
-                  width="large"
-                />
+
                 <TextField
                   label="Contact Number"
                   value={contactNumber}
@@ -327,13 +308,6 @@ const LabourDetails = () => {
                 Government Data (Optional)
               </h2>
               <div className="grid grid-cols-2 gap-4">
-                <TextField
-                  label="Voter ID"
-                  value={voterId} // Now voterId will always be set (either actual data or "")
-                  onChange={(val) => setVoterId(val)}
-                  width="large"
-                />
-
                 <TextField
                   label="Ration Card"
                   value={rationCard}

@@ -5,8 +5,6 @@ import PlatformLayout from "@/layout/PlatformLayout";
 import TemperatureCard from "@/components/cards/weather/TemperatureCard";
 import Calendar from "@/components/ui/Calendar/Calendar";
 import Loader from "@/components/ui/Loader";
-import ProgressCard from "@/components/cards/ProgressCard";
-import StatusCard from "@/components/cards/StatusCard";
 import Head from "next/head";
 import Swal from "sweetalert2";
 
@@ -183,25 +181,7 @@ const Dashboard = () => {
                 </div>
               )}
             </div>
-
-            <div className="flex-grow">
-              <h2 className="text-xl font-semibold text-dark dark:text-light mb-2">
-                Budget Tracker
-              </h2>
-              <ProgressCard
-                steps={steps}
-                currentStep={currentStep}
-                onStepChange={handleStepChange}
-              />
-              <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <StatusCard steps={steps} currentStep={currentStep} />
-                </div>
-                <div>
-                  <Calendar />
-                </div>
-              </div>
-            </div>
+            <Calendar />
           </div>
         </main>
       </PlatformLayout>

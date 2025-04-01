@@ -323,9 +323,9 @@ const Table = ({
             onClick={() => setShowExportDropdown(!showExportDropdown)}
           />
           {showExportDropdown && (
-            <div className="absolute left-0 mt-2 w-36 bg-white border border-gray-200 rounded shadow z-50">
+            <div className="relative left-0 mt-2 w-36 bg-white border border-gray-200 rounded shadow z-50">
               <button
-                className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                className="w-full text-left px-4 py-2 hover:bg-gray-400"
                 onClick={() => {
                   exportTableData("pdf");
                   setShowExportDropdown(false);
@@ -334,7 +334,7 @@ const Table = ({
                 Export as PDF
               </button>
               <button
-                className="w-full text-left px-4 py-2 hover:bg-gray-100"
+                className="w-full text-left px-4 py-2 hover:bg-gray-400"
                 onClick={() => {
                   exportTableData("xlsx");
                   setShowExportDropdown(false);

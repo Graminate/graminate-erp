@@ -74,7 +74,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
       section: "Labour",
       subItems: [
         {
-          label: "Labour Database",
+          label: "Employee Database",
           route: `/platform/${userId}/labour_database`,
         },
         {

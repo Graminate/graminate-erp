@@ -71,7 +71,6 @@ const DataForm = ({
 
   const [labourValues, setLabourValues] = useState({
     fullName: "",
-    guardianName: "",
     dateOfBirth: "",
     gender: "",
     role: "",
@@ -265,7 +264,6 @@ const DataForm = ({
     const payload = {
       user_id: user_id,
       full_name: labourValues.fullName,
-      guardian_name: labourValues.guardianName,
       date_of_birth: labourValues.dateOfBirth,
       gender: labourValues.gender,
       role: labourValues.role,
@@ -279,7 +277,6 @@ const DataForm = ({
 
       setLabourValues({
         fullName: "",
-        guardianName: "",
         dateOfBirth: "",
         gender: "",
         role: "",
@@ -745,14 +742,6 @@ const DataForm = ({
                 value={labourValues.fullName}
                 onChange={(val: string) =>
                   setLabourValues({ ...labourValues, fullName: val })
-                }
-              />
-              <TextField
-                label="Guardian Name"
-                placeholder="e.g. Parent/Guardian Name"
-                value={labourValues.guardianName}
-                onChange={(val: string) =>
-                  setLabourValues({ ...labourValues, guardianName: val })
                 }
               />
               <TextField

@@ -29,7 +29,6 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
   ];
 
   const userNavigation = [
-    { name: "Account & Billing", href: `/platform/${userId}/account-billing` },
     { name: "Pricing", href: `/platform/${userId}/pricing`, external: true },
     { name: "News Updates", href: `/news` },
     { name: "Training & Services", href: "/training-services", external: true },

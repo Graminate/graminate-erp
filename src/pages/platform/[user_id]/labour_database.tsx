@@ -79,14 +79,14 @@ const LabourDatabase = () => {
   return (
     <PlatformLayout>
       <Head>
-        <title>Graminate | Labour Database</title>
+        <title>Graminate | Employee Database</title>
       </Head>
       <div className="min-h-screen container mx-auto p-4">
         {/* Header */}
         <div className="flex justify-between items-center dark:bg-dark relative mb-4">
           <div>
             <h1 className="text-lg font-semibold dark:text-white">
-              Worker Database
+              Employee Database
             </h1>
             <p className="text-xs text-dark dark:text-light">
               {labourRecords.length} Record(s)
@@ -137,7 +137,7 @@ const LabourDatabase = () => {
               console.log("Form submitted:", values);
               setIsSidebarOpen(false);
             }}
-            formTitle="Create Labour"
+            formTitle="Add New Employee"
           />
         )}
       </div>
