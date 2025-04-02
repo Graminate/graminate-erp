@@ -4,7 +4,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faHome,
   faChartPie,
-  faChartLine,
   faUsers,
   faAddressBook,
   faCloud,
@@ -58,13 +57,6 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
           route: `/platform/${userId}/crm?view=tasks`,
         },
       ],
-    },
-    {
-      icon: faChartLine,
-      label: "Price Tracker",
-      section: "Price Tracker",
-      route: `/platform/${userId}/price_tracker`,
-      subItems: [],
     },
     {
       icon: faCloud,

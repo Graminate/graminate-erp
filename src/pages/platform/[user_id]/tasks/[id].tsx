@@ -34,12 +34,12 @@ type Column = {
   tasks: Task[];
 };
 
-type SortableItemProps = {
+type NotificationProps = {
   id: string;
   children: React.ReactNode;
 };
 
-const SortableItem: React.FC<SortableItemProps> = ({ id, children }) => {
+const Notification = ({ id, children }: NotificationProps) => {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id });
   const style = {
@@ -414,7 +414,7 @@ const TasksPage: React.FC = () => {
               >
                 <div className="flex gap-6 overflow-x-auto pb-2 relative">
                   {columns.map((column, colIndex) => (
-                    <SortableItem key={column.id} id={column.id}>
+                    <Notification key={column.id} id={column.id}>
                       <div className="bg-gray-500 dark:bg-gray-800 shadow rounded-lg p-3 w-[280px] flex-shrink-0 relative">
                         {/* Column Header */}
                         <div className="flex justify-between items-center mb-3">
@@ -609,7 +609,7 @@ const TasksPage: React.FC = () => {
                           </div>
                         )}
                       </div>
-                    </SortableItem>
+                    </Notification>
                   ))}
                   <div className="flex flex-col items-center justify-center">
                     {isAddingColumn ? (

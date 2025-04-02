@@ -44,14 +44,9 @@ const Weather = () => {
         />
       </Head>
       <PlatformLayout>
-        <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <header className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Current Weather
-            </h1>
-            <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
-              Displaying weather information based on your current location.
-            </p>
+        <main className="min-h-screen container mx-auto p-4">
+          <header className="mb-2">
+            <h1 className="text-lg font-semibold dark:text-white">Weather</h1>
           </header>
 
           <hr className="border-gray-200 dark:border-gray-700 mb-8" />
@@ -68,7 +63,7 @@ const Weather = () => {
                 <Loader />
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 lg:gap-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
                 <div className="w-full">
                   <TemperatureCard
                     lat={location.lat}

@@ -94,7 +94,7 @@ const LabourDatabase = () => {
           </div>
           <div className="flex gap-2">
             <Button
-              text="Add Worker"
+              text="Add Employee"
               style="primary"
               add
               onClick={() => setIsSidebarOpen(true)}

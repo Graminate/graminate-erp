@@ -1,70 +1,143 @@
-import { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { loadGoogleMaps } from "@/lib/utils/loadLocation";
 
-import type { Maps } from "@/types/card-props";
+export interface MarkerData {
+  id: string;
+  position: google.maps.LatLngLiteral;
+  title?: string;
+}
+
+interface MapsProps {
+  apiKey: string;
+  initialCenter?: google.maps.LatLngLiteral;
+  initialZoom?: number;
+  markers?: MarkerData[];
+  onStateChange?: (state: {
+    center: google.maps.LatLngLiteral;
+    zoom: number;
+  }) => void;
+}
+
+const DEFAULT_CENTER = { lat: 51.1657, lng: 10.4515 }; 
+const DEFAULT_ZOOM = 6;
 
 const Maps = ({
   apiKey,
-  initialCenter = { lat: 26.244156, lng: 92.537842 }, // Default center to Assam
-  initialZoom = 8,
+  initialCenter = DEFAULT_CENTER,
+  initialZoom = DEFAULT_ZOOM,
+  markers = [],
   onStateChange,
-}: Maps) => {
+}: MapsProps) => {
   const mapContainerRef = useRef<HTMLDivElement | null>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
 
+  const markerInstancesRef = useRef<Map<string, google.maps.Marker>>(new Map());
+
   useEffect(() => {
+    let isMounted = true;
+
     const initializeMap = async () => {
+      if (!mapContainerRef.current) return;
+
       try {
         await loadGoogleMaps(apiKey);
+        if (!isMounted) return;
 
-        const getUserLocation = () => {
-          if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-              (position) => {
-                const { latitude, longitude } = position.coords;
-                createMap({ lat: latitude, lng: longitude }, 12);
-              },
-              () => createMap(initialCenter, initialZoom)
-            );
-          } else {
-            console.warn("Geolocation is not supported by this browser.");
-            createMap(initialCenter, initialZoom);
+        const newMap = new google.maps.Map(mapContainerRef.current, {
+          center: initialCenter,
+          zoom: initialZoom,
+          mapTypeControl: false,
+          fullscreenControl: false,
+          streetViewControl: false,
+          zoomControl: true,
+        });
+
+        newMap.addListener("idle", () => {
+          if (onStateChange && isMounted) {
+            const center = newMap.getCenter();
+            const zoom = newMap.getZoom();
+            if (center && zoom !== undefined) {
+              onStateChange({
+                center: center.toJSON(),
+                zoom: zoom,
+              });
+            }
           }
-        };
+        });
 
-        const createMap = (center: google.maps.LatLngLiteral, zoom: number) => {
-          if (mapContainerRef.current) {
-            const newMap = new google.maps.Map(mapContainerRef.current, {
-              center,
-              zoom,
-              mapTypeControl: false,
-              fullscreenControl: false,
-              streetViewControl: false,
-            });
-
-            newMap.addListener("idle", () => {
-              if (onStateChange) {
-                onStateChange({
-                  center: newMap.getCenter()?.toJSON() || center,
-                  zoom: newMap.getZoom() || zoom,
-                });
-              }
-            });
-
-            setMap(newMap);
-          }
-        };
-
-        getUserLocation();
+        setMap(newMap);
       } catch (error) {
-        console.error("Error loading Google Maps:", error);
+        console.error("Error loading or initializing Google Maps:", error);
+
+        if (mapContainerRef.current) {
+          mapContainerRef.current.innerHTML =
+            '<p class="text-red-500 text-center p-4">Could not load map.</p>';
+        }
       }
     };
 
     initializeMap();
+
+    return () => {
+      isMounted = false;
+    };
   }, [apiKey, initialCenter, initialZoom, onStateChange]);
 
-  return <div ref={mapContainerRef} id="map" className="w-full h-screen"></div>;
+  useEffect(() => {
+    if (!map) return;
+
+    const currentMarkerInstances = markerInstancesRef.current;
+    const newMarkerInstances = new Map<string, google.maps.Marker>();
+    const incomingMarkerIds = new Set(markers.map((m) => m.id));
+
+    markers.forEach((markerData) => {
+      if (currentMarkerInstances.has(markerData.id)) {
+      
+        const existingMarker = currentMarkerInstances.get(markerData.id)!;
+
+        newMarkerInstances.set(markerData.id, existingMarker);
+        currentMarkerInstances.delete(markerData.id); 
+      } else {
+ 
+        const newMarker = new google.maps.Marker({
+          position: markerData.position,
+          map: map,
+          title: markerData.title,
+      
+        });
+        newMarkerInstances.set(markerData.id, newMarker);
+      }
+    });
+
+    
+    currentMarkerInstances.forEach((markerToRemove) => {
+      markerToRemove.setMap(null); 
+    });
+
+    markerInstancesRef.current = newMarkerInstances;
+
+    return () => {};
+  }, [map, markers]);
+
+  useEffect(() => {
+    return () => {
+      if (markerInstancesRef.current) {
+        markerInstancesRef.current.forEach((marker) => {
+          marker.setMap(null);
+        });
+        markerInstancesRef.current.clear();
+      }
+    };
+  }, []);
+
+  return (
+    <div
+      ref={mapContainerRef}
+      id="map"
+      className="w-full h-full"
+      style={{ minHeight: "300px" }}
+    />
+  );
 };
 
 export default Maps;

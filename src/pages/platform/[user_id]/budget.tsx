@@ -1,15 +1,13 @@
-// src/pages/platform/[user_id]/budget.tsx
 import { useState, useEffect, useMemo } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 
 import PlatformLayout from "@/layout/PlatformLayout";
-import Button from "@/components/ui/Button"; // Import your Button component
+import Button from "@/components/ui/Button";
 import ProgressCard from "@/components/cards/ProgressCard";
 import StatusCard from "@/components/cards/StatusCard";
 import Loader from "@/components/ui/Loader";
 
-// --- Define Types directly within the page file ---
 interface BudgetItem {
   id: string;
   name: string;
@@ -156,7 +154,6 @@ const initialBudgetData: BudgetData = [
 ];
 
 const fetchBudgetData = (): Promise<BudgetData> => {
-  /* ... (fetch logic remains same) ... */
   console.log("Simulating budget data fetch...");
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -171,7 +168,6 @@ const updateBudgetItemSpent = (
   itemId: string,
   newSpent: number
 ): BudgetData => {
-  /* ... (update logic remains same) ... */
   return currentData.map((step) => {
     if (step.id === stepId) {
       return {
@@ -191,9 +187,7 @@ const updateBudgetItemSpent = (
     return step;
   });
 };
-// --- End of Integrated Data Logic ---
 
-// --- Overall Summary Component Logic (Integrated) ---
 interface OverallSummaryProps {
   budgetData: BudgetData;
   currencySymbol?: string;
@@ -202,7 +196,6 @@ const IntegratedOverallSummary = ({
   budgetData,
   currencySymbol = "₹",
 }: OverallSummaryProps) => {
-  /* ... (summary logic remains same) ... */
   const totals = useMemo(() => {
     return budgetData.reduce(
       (acc, step) => {
@@ -290,9 +283,7 @@ const IntegratedOverallSummary = ({
     </div>
   );
 };
-// --- End of Integrated Overall Summary ---
 
-// --- Main Budget Page Component ---
 const Budget = () => {
   const router = useRouter();
   const [budgetData, setBudgetData] = useState<BudgetData>([]);
@@ -301,9 +292,7 @@ const Budget = () => {
   const [error, setError] = useState<string | null>(null);
   const currencySymbol = "₹";
 
-  // Fetch data on mount
   useEffect(() => {
-    /* ... (fetch effect remains same) ... */
     setLoading(true);
     setError(null);
     fetchBudgetData()
@@ -329,22 +318,18 @@ const Budget = () => {
       });
   }, []);
 
-  // Handler for step changes
   const handleStepChange = (newIndex: number) => {
-    /* ... (step change logic remains same) ... */
     if (newIndex >= 0 && newIndex < budgetData.length) {
       setCurrentStepIndex(newIndex);
       localStorage.setItem("budgetCurrentStepIndex", newIndex.toString());
     }
   };
 
-  // Handler for updating spent amount
   const handleUpdateSpent = (
     stepId: string,
     itemId: string,
     newSpent: number
   ) => {
-    /* ... (update spent logic remains same) ... */
     setBudgetData((prevData) =>
       updateBudgetItemSpent(prevData, stepId, itemId, newSpent)
     );
@@ -354,7 +339,6 @@ const Budget = () => {
     router.back();
   };
 
-  // Prepare data for child components
   const stepsForProgressCard = useMemo(
     () => budgetData.map((step) => ({ id: step.id, name: step.name })),
     [budgetData]
@@ -371,34 +355,27 @@ const Budget = () => {
         />
       </Head>
       <PlatformLayout>
-        <main className="min-h-screen px-4 sm:px-6 lg:px-8 py-6 bg-light dark:bg-gray-900">
-          {/* Header */}
+        <main className="min-h-screen bg-light dark:bg-gray-900">
           <header className="flex flex-col sm:flex-row justify-between items-center mb-6 pb-4 border-b border-gray-300 dark:border-gray-700">
-            <div className="flex items-center gap-1 sm:gap-3 mb-3 sm:mb-0">
-              {" "}
-              {/* Reduced gap for potentially larger ghost button padding */}
-              {/* Corrected Back Button Usage */}
+            <div className="flex items-center mb-3 sm:mb-0">
               <Button
-                text="" // Empty text as icon provides meaning
+                text=""
                 arrow="left"
                 style="ghost"
                 onClick={goBack}
-                // Removed size, icon props
-                // Add aria-label for accessibility
                 aria-label="Go back"
               />
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-800 dark:text-gray-100">
+              <h1 className="text-lg font-semibold dark:text-white">
                 Finance Tracker
               </h1>
             </div>
-            {/* Placeholder */}
           </header>
 
           {loading ? (
             <div className="flex justify-center items-center min-h-[60vh]">
               <Loader />
             </div>
-          ) : error /* ... (error state remains same) ... */ ? (
+          ) : error ? (
             <div className="flex justify-center items-center min-h-[60vh] text-center">
               {" "}
               <div
@@ -410,8 +387,7 @@ const Budget = () => {
                 <span className="block sm:inline ml-2">{error}</span>{" "}
               </div>{" "}
             </div>
-          ) : budgetData.length === 0 &&
-            !loading /* ... (no data state remains same) ... */ ? (
+          ) : budgetData.length === 0 && !loading ? (
             <div className="flex justify-center items-center min-h-[60vh] text-center">
               {" "}
               <p className="text-lg text-gray-500 dark:text-gray-400">
@@ -419,9 +395,7 @@ const Budget = () => {
               </p>{" "}
             </div>
           ) : (
-            // Main layout when data is loaded
             <div className="space-y-6 md:space-y-8">
-              {/* Progress Stepper */}
               {stepsForProgressCard.length > 0 && (
                 <ProgressCard
                   steps={stepsForProgressCard}
@@ -429,9 +403,8 @@ const Budget = () => {
                   onStepChange={handleStepChange}
                 />
               )}
-              {/* Main Content Grid */}
+
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8 lg:items-start">
-                {/* Status Card */}
                 <div className="lg:col-span-2 h-full">
                   <StatusCard
                     stepData={currentStepData}
@@ -439,7 +412,6 @@ const Budget = () => {
                     currencySymbol={currencySymbol}
                   />
                 </div>
-                {/* Overall Summary Card */}
                 <div className="lg:col-span-1 h-full">
                   <IntegratedOverallSummary
                     budgetData={budgetData}

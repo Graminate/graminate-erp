@@ -224,7 +224,7 @@ const Dashboard = () => {
       <PlatformLayout>
         <div className="p-4 sm:p-6">
           <header className="mb-4">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800 dark:text-gray-100">
+            <h1 className="text-lg font-semibold text-dark dark:text-light">
               {isUserDataLoading
                 ? "Loading..."
                 : `Hello ${userData?.first_name || "User"},`}

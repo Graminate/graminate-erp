@@ -7,6 +7,7 @@ import UVScale from "./UVScale";
 import { fetchCityName } from "@/lib/utils/loadWeather";
 import { Coordinates } from "@/types/card-props";
 import axios from "axios";
+import Loader from "@/components/ui/Loader";
 
 type UVHourly = { time: Date; uv: number };
 
@@ -109,6 +110,7 @@ const UVCard = ({ lat, lon }: Coordinates) => {
             (d: string) => new Date(d)
           );
           setWeatherData(fetchedData);
+          setError(null);
         })
         .catch((err: any) => {
           setError(err.message);
@@ -125,22 +127,51 @@ const UVCard = ({ lat, lon }: Coordinates) => {
         (d: Date) => d.toISOString().split("T")[0] >= today
       );
       if (startIndex === -1 || startIndex === undefined) startIndex = 0;
+
       const maxUV = weatherData.daily.uvIndexMax?.[startIndex] ?? 0;
       const minUV = weatherData.daily.uvIndexMin?.[startIndex] ?? maxUV;
-      const daylightSeconds =
-        weatherData.daily.daylightDuration?.[startIndex] ?? 0;
-      const { sunrise, sunset } = calculateSunriseSunset(daylightSeconds);
+
+      const hourlyTimes = weatherData.hourly.time as Date[];
+      const hourlyUVs = weatherData.hourly.uvIndexHourly as number[];
+
       const now = new Date();
-      const nowMinutes = now.getHours() * 60 + now.getMinutes();
-      const sunriseMins = parseTimeToMinutes(sunrise);
-      const sunsetMins = parseTimeToMinutes(sunset);
-      let currentUV = 0;
-      if (nowMinutes >= sunriseMins && nowMinutes <= sunsetMins) {
-        const fraction =
-          (nowMinutes - sunriseMins) / (sunsetMins - sunriseMins);
-        currentUV = maxUV * Math.sin(Math.PI * fraction);
+      let closestUV = 0;
+
+      const todayHourlyData = hourlyTimes
+        .map((time, index) => ({ time, uv: hourlyUVs[index] }))
+        .filter((data) => data.time.toDateString() === now.toDateString());
+
+      if (todayHourlyData.length > 0) {
+        let closestTimeDiff = Infinity;
+        let currentUV = 0;
+        todayHourlyData.forEach((data) => {
+          const timeDiff = Math.abs(now.getTime() - data.time.getTime());
+          if (timeDiff < closestTimeDiff) {
+            closestTimeDiff = timeDiff;
+            currentUV = data.uv;
+          }
+        });
+
+        if (closestTimeDiff < 60 * 60 * 1000) {
+          closestUV = currentUV;
+        } else {
+          const daylightSeconds =
+            weatherData.daily.daylightDuration?.[startIndex] ?? 0;
+          const { sunrise, sunset } = calculateSunriseSunset(daylightSeconds);
+          const nowMinutes = now.getHours() * 60 + now.getMinutes();
+          const sunriseMins = parseTimeToMinutes(sunrise);
+          const sunsetMins = parseTimeToMinutes(sunset);
+          if (nowMinutes >= sunriseMins && nowMinutes <= sunsetMins) {
+            closestUV = 0;
+          } else {
+            closestUV = 0;
+          }
+        }
+      } else {
+        closestUV = 0;
       }
-      setUvIndexToday(currentUV);
+
+      setUvIndexToday(closestUV < 0 ? 0 : closestUV);
       setError(null);
       setLowestRiskLevel(getUVRiskLevel(minUV).label);
       setHighestRiskLevel(getUVRiskLevel(maxUV).label);
@@ -150,24 +181,21 @@ const UVCard = ({ lat, lon }: Coordinates) => {
   useEffect(() => {
     if (weatherData) {
       const uvData = weatherData.daily.time.map((day: Date, i: number) => {
-        const daylightSeconds = weatherData.daily.daylightDuration[i];
-        const { sunrise, sunset } = calculateSunriseSunset(daylightSeconds);
-        const sunriseMins = parseTimeToMinutes(sunrise);
-        const sunsetMins = parseTimeToMinutes(sunset);
         const uvHours: UVHourly[] = weatherData.hourly.time
           .map((hour: Date, idx: number) => {
             if (hour.toDateString() === day.toDateString()) {
-              const hMins = hour.getHours() * 60 + hour.getMinutes();
-              if (hMins >= sunriseMins && hMins <= sunsetMins) {
-                return {
-                  time: hour,
-                  uv: weatherData.hourly.uvIndexHourly[idx],
-                };
-              }
+              const uvValue = weatherData.hourly.uvIndexHourly[idx];
+
+              return {
+                time: hour,
+                uv: uvValue < 0 ? 0 : uvValue,
+              };
             }
             return null;
           })
-          .filter((x: UVHourly | null): x is UVHourly => x !== null);
+          .filter(
+            (x: UVHourly | null): x is UVHourly => x !== null && x.uv > 0
+          );
         return { day, uvHours };
       });
       setHourlyUVDataByDay(uvData);
@@ -176,7 +204,17 @@ const UVCard = ({ lat, lon }: Coordinates) => {
 
   useEffect(() => {
     if (weatherData && displayMode === "Large" && !selectedDate) {
-      setSelectedDate(weatherData.daily.time[0] ?? new Date());
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const firstAvailableDate =
+        weatherData.daily.time.find((d: Date) => {
+          const dateOnly = new Date(d);
+          dateOnly.setHours(0, 0, 0, 0);
+          return dateOnly >= today;
+        }) ||
+        weatherData.daily.time[0] ||
+        new Date();
+      setSelectedDate(firstAvailableDate);
     }
   }, [weatherData, displayMode, selectedDate]);
 
@@ -185,7 +223,7 @@ const UVCard = ({ lat, lon }: Coordinates) => {
       const sel = hourlyUVDataByDay.find(
         (dayData) => dayData.day.toDateString() === selectedDate.toDateString()
       );
-      setSelectedHourlyData(sel || { day: new Date(), uvHours: [] });
+      setSelectedHourlyData(sel || { day: selectedDate, uvHours: [] });
     }
   }, [selectedDate, hourlyUVDataByDay]);
 
@@ -196,6 +234,9 @@ const UVCard = ({ lat, lon }: Coordinates) => {
       const maxUV = Math.max(...uvValues);
       setLowestRiskLevel(getUVRiskLevel(minUV).label);
       setHighestRiskLevel(getUVRiskLevel(maxUV).label);
+    } else if (selectedHourlyData && selectedHourlyData.uvHours.length === 0) {
+      setLowestRiskLevel("Low");
+      setHighestRiskLevel("Low");
     }
   }, [selectedHourlyData]);
 
@@ -205,10 +246,16 @@ const UVCard = ({ lat, lon }: Coordinates) => {
         chartRef.current.destroy();
         chartRef.current = null;
       }
+
+      if (selectedHourlyData.uvHours.length === 0) {
+        return;
+      }
+
       const labels = selectedHourlyData.uvHours.map((pt) =>
         pt.time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
       );
       const dataValues = selectedHourlyData.uvHours.map((pt) => pt.uv);
+
       const verticalLinePlugin = {
         id: "verticalLinePlugin",
         afterDatasetsDraw: (chart: ChartJS) => {
@@ -223,8 +270,8 @@ const UVCard = ({ lat, lon }: Coordinates) => {
               ctx.moveTo(x, chart.chartArea.top);
               ctx.lineTo(x, chart.chartArea.bottom);
               ctx.lineWidth = 1;
-              ctx.strokeStyle = "red";
-              ctx.setLineDash([2, 2]);
+              ctx.strokeStyle = "rgba(255, 0, 0, 0.5)";
+              ctx.setLineDash([3, 3]);
               ctx.stroke();
               ctx.restore();
             }
@@ -238,23 +285,29 @@ const UVCard = ({ lat, lon }: Coordinates) => {
           labels,
           datasets: [
             {
+              label: "UV Index",
               data: dataValues,
               borderColor: "#04AD79",
+              backgroundColor: "rgba(4, 173, 121, 0.1)",
               borderWidth: 2,
-              fill: false,
-              pointRadius: 3,
+              fill: true,
+              pointRadius: 0,
               pointHoverRadius: 5,
+              tension: 0.4,
             },
           ],
         },
         options: {
+          responsive: true,
           maintainAspectRatio: false,
           plugins: {
             tooltip: {
               enabled: true,
               mode: "index",
               intersect: false,
+              displayColors: false,
               callbacks: {
+                title: () => "",
                 label: function (context) {
                   const uv = context.parsed.y;
                   setHoveredUV(uv);
@@ -275,28 +328,29 @@ const UVCard = ({ lat, lon }: Coordinates) => {
           scales: {
             x: {
               grid: { display: false },
-              ticks: { display: false },
-              border: { color: "gray" },
+              ticks: {
+                display: true,
+                autoSkip: true,
+                maxTicksLimit: 6,
+                font: { size: 10 },
+              },
+              border: { display: false },
             },
             y: {
               beginAtZero: true,
               min: 0,
-              max: 11,
-              grid: { display: false, drawTicks: false },
-              ticks: {
-                stepSize: 1,
-                callback: function (tickValue: string | number) {
-                  if (typeof tickValue === "number") {
-                    return tickValue === 0 ? "" : tickValue;
-                  }
-                  return ""; // Ensures no type mismatch
-                },
+              max: Math.max(11, ...dataValues) + 1,
+              grid: {
+                drawTicks: false,
+                color: "rgba(200, 200, 200, 0.2)",
               },
-              border: { color: "gray" },
+              ticks: {
+                stepSize: 2,
+                padding: 5,
+                font: { size: 10 },
+              },
+              border: { display: false },
             },
-          },
-          elements: {
-            line: { borderWidth: 0 },
           },
         },
         plugins: [verticalLinePlugin],
@@ -306,6 +360,7 @@ const UVCard = ({ lat, lon }: Coordinates) => {
     return () => {
       if (chartRef.current) {
         chartRef.current.destroy();
+        chartRef.current = null;
       }
     };
   }, [displayMode, selectedHourlyData]);
@@ -340,7 +395,7 @@ const UVCard = ({ lat, lon }: Coordinates) => {
         {dropdownOpen && (
           <div className="absolute top-8 right-0 bg-white dark:bg-gray-600 dark:text-light text-black rounded-lg shadow-lg z-20 w-32">
             <button
-              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-500 dark:hover:bg-blue-100 cursor-pointer"
+              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 dark:hover:bg-gray-500 cursor-pointer"
               type="button"
               onClick={() => {
                 setDisplayMode("Small");
@@ -350,7 +405,7 @@ const UVCard = ({ lat, lon }: Coordinates) => {
               Small
             </button>
             <button
-              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-500 dark:hover:bg-blue-100 cursor-pointer"
+              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 dark:hover:bg-gray-500 cursor-pointer"
               type="button"
               onClick={() => {
                 setDisplayMode("Large");
@@ -363,132 +418,154 @@ const UVCard = ({ lat, lon }: Coordinates) => {
         )}
       </div>
       {error ? (
-        <p className="text-red-500 text-center">Error: {error}</p>
-      ) : uvIndexToday !== null ? (
-        displayMode === "Small" ? (
-          <div className="flex flex-col items-left w-full p-1 text-center rounded-md">
-            <div className="w-full flex flex-row items-center gap-2">
-              <FontAwesomeIcon
-                icon={faSun}
-                className="w-4 h-4 text-yellow-200"
-              />
-              <p className="text-sm uppercase tracking-wide text-gray-200 dark:text-light">
-                UV Index
-              </p>
-            </div>
-            <p className="text-2xl py-2 text-left text-dark dark:text-gray-300">
-              {Math.round(uvIndexToday)}
-            </p>
-            <p className="text-sm dark:text-light text-dark text-left">
-              {getUVRiskLevel(Math.round(uvIndexToday)).label}
-            </p>
-            <UVScale uvIndex={uvIndexToday} />
-            {lowestRiskLevel === highestRiskLevel ? (
-              <p className="text-xs text-dark dark:text-light mt-1">
-                UV index {lowestRiskLevel} today
-              </p>
-            ) : (
-              <p className="text-xs text-dark dark:text-light mt-1">
-                UV index {lowestRiskLevel} to {highestRiskLevel} today
-              </p>
-            )}
-          </div>
-        ) : displayMode === "Large" ? (
-          <div className="w-full">
-            {/* Top Label */}
-            <div className="flex flex-row justify-center items-center gap-2">
-              <FontAwesomeIcon
-                icon={faSun}
-                className="w-5 h-5 text-yellow-200"
-              />
-              <p className="text-sm uppercase tracking-wide text-gray-200 dark:text-light">
-                UV Index
-              </p>
-            </div>
-            {/* Calendar */}
-            <div className="text-center text-gray-200 dark:text-light my-2 pt-2 flex justify-center">
-              {weekDates.map((dateItem, idx) => (
-                <div key={idx} className="flex flex-col items-center">
-                  <span className="text-sm font-bold">{dateItem.weekday}</span>
-                  <button
-                    type="button"
-                    className={`mx-3 flex flex-col items-center cursor-pointer px-2 py-1 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-300 ${
-                      selectedDate &&
-                      dateItem.date.toDateString() ===
-                        selectedDate.toDateString()
-                        ? "bg-green-200 text-white"
-                        : ""
-                    }`}
-                    onClick={() => setSelectedDate(dateItem.date)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        setSelectedDate(dateItem.date);
-                      }
-                    }}
-                    tabIndex={0}
-                    aria-label={`Select UV data for ${dateItem.weekday}, ${dateItem.day}`}
-                  >
-                    <span className="text-xs">{dateItem.day}</span>
-                  </button>
+        <p className="text-red-500 text-center py-10">Error: {error}</p>
+      ) : weatherData === null ? (
+        <div className="text-center py-10 text-dark dark:text-light">
+          <Loader />
+        </div>
+      ) : (
+        <>
+          {displayMode === "Small" && uvIndexToday !== null && (
+            <div className={`w-full ${displayMode === "Small" ? "pb-1" : ""}`}>
+              <div className="flex flex-col items-left w-full p-1 text-center rounded-md">
+                <div className="w-full flex flex-row items-center gap-2">
+                  <FontAwesomeIcon
+                    icon={faSun}
+                    className="w-4 h-4 text-yellow-200"
+                  />
+                  <p className="text-sm uppercase tracking-wide text-gray-200 dark:text-light">
+                    UV Index
+                  </p>
                 </div>
-              ))}
-            </div>
-            {selectedHourlyData && selectedHourlyData.uvHours.length > 0 && (
-              <div className="flex flex-row mx-auto justify-center gap-2">
-                <p className="text-center text-gray-200 dark:text-light text-lg">
-                  {Math.round(hoveredUV)}
+                <p className="text-2xl py-2 text-left text-dark dark:text-gray-300">
+                  {Math.round(uvIndexToday)}
                 </p>
-                <p className="text-center text-gray-200 dark:text-light text-lg">
-                  {hoveredRisk}
+                <p className="text-sm dark:text-light text-dark text-left">
+                  {getUVRiskLevel(Math.round(uvIndexToday)).label}
+                </p>
+                <UVScale uvIndex={uvIndexToday} />
+                {lowestRiskLevel === highestRiskLevel ? (
+                  <p className="text-xs text-dark dark:text-light mt-1">
+                    UV index {lowestRiskLevel} today
+                  </p>
+                ) : (
+                  <p className="text-xs text-dark dark:text-light mt-1">
+                    UV index {lowestRiskLevel} to {highestRiskLevel} today
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {displayMode === "Large" && (
+            <div className="w-full flex flex-col">
+              <div className="flex flex-row justify-center items-center gap-2 mb-2">
+                <FontAwesomeIcon
+                  icon={faSun}
+                  className="w-5 h-5 text-yellow-200"
+                />
+                <p className="text-sm uppercase tracking-wide text-gray-200 dark:text-light">
+                  UV Index
                 </p>
               </div>
-            )}
-            <div className="w-full max-w-[300px] h-[150px] mx-auto">
-              <canvas ref={chartCanvas} className="w-full h-full"></canvas>
-            </div>
-            {selectedHourlyData && selectedHourlyData.uvHours.length > 0 && (
-              <p className="text-xs font-semibold text-gray-200 dark:text-light mt-4">
-                {selectedDate?.toDateString() === new Date().toDateString()
-                  ? "Today"
-                  : selectedDate?.toLocaleDateString(undefined, {
-                      day: "numeric",
-                      month: "short",
-                    })}
-                ,{" "}
-                {hoveredTime
-                  ? hoveredTime
-                  : selectedHourlyData.uvHours[0].time.toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-              </p>
-            )}
-            <div>
-              {lowestRiskLevel === highestRiskLevel ? (
-                <p className="text-sm text-dark dark:text-light">
-                  UV index {lowestRiskLevel} on this day
-                </p>
-              ) : (
-                <p className="text-sm text-dark dark:text-light">
-                  UV index {lowestRiskLevel} to {highestRiskLevel} on this day
+
+              <div className="text-center text-gray-200 dark:text-light my-2 pt-2 flex justify-around">
+                {weekDates.map((dateItem, idx) => (
+                  <div key={idx} className="flex flex-col items-center">
+                    <span className="text-xs font-semibold">
+                      {dateItem.weekday}
+                    </span>
+                    <button
+                      type="button"
+                      className={`mt-1 flex flex-col items-center cursor-pointer px-2 py-1 rounded-full ${
+                        selectedDate &&
+                        dateItem.date.toDateString() ===
+                          selectedDate.toDateString()
+                          ? "bg-green-200 text-white"
+                          : "hover:bg-gray-400"
+                      }`}
+                      onClick={() => setSelectedDate(dateItem.date)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          setSelectedDate(dateItem.date);
+                        }
+                      }}
+                      tabIndex={0}
+                      aria-pressed={
+                        selectedDate &&
+                        dateItem.date.toDateString() ===
+                          selectedDate.toDateString()
+                          ? true
+                          : false
+                      }
+                      aria-label={`Select UV data for ${dateItem.weekday}, ${dateItem.day}`}
+                    >
+                      <span className="text-sm">{dateItem.day}</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {selectedHourlyData && selectedHourlyData.uvHours.length > 0 && (
+                <div className="flex flex-row mx-auto justify-center items-baseline gap-2 my-2">
+                  <p className="text-center text-gray-200 dark:text-light text-xl font-semibold">
+                    {Math.round(hoveredUV)}
+                  </p>
+                  <p className="text-center text-gray-200 dark:text-light text-sm">
+                    {hoveredRisk}
+                  </p>
+                </div>
+              )}
+
+              <div className="w-full h-[150px] mx-auto mt-1 mb-3">
+                {selectedHourlyData && selectedHourlyData.uvHours.length > 0 ? (
+                  <canvas ref={chartCanvas} className="w-full h-full"></canvas>
+                ) : (
+                  <p className="text-center text-sm text-gray-400 dark:text-gray-300 h-full flex items-center justify-center">
+                    No UV data available for this day.
+                  </p>
+                )}
+              </div>
+
+              {selectedHourlyData && selectedHourlyData.uvHours.length > 0 && (
+                <p className="text-xs text-center font-semibold text-gray-200 dark:text-light mb-2">
+                  {selectedDate?.toDateString() === new Date().toDateString()
+                    ? "Today"
+                    : selectedDate?.toLocaleDateString(undefined, {
+                        weekday: "short",
+                        day: "numeric",
+                        month: "short",
+                      })}
+                  {hoveredTime && ` at ${hoveredTime}`}
                 </p>
               )}
+
+              <div className="text-center mb-3">
+                {lowestRiskLevel === highestRiskLevel ? (
+                  <p className="text-sm text-dark dark:text-light">
+                    UV index {lowestRiskLevel} on this day
+                  </p>
+                ) : (
+                  <p className="text-sm text-dark dark:text-light">
+                    UV index {lowestRiskLevel} to {highestRiskLevel} on this day
+                  </p>
+                )}
+              </div>
+
+              <div className="border-t border-gray-400 dark:border-gray-600 my-2 pt-2">
+                <p className="text-md font-semibold text-dark dark:text-light">
+                  About the UV Index
+                </p>
+                <p className="text-xs text-dark dark:text-light mt-1">
+                  The UV index measures ultraviolet radiation. Higher values
+                  mean greater risk and faster potential for harm. Use it to
+                  plan sun protection.
+                </p>
+              </div>
             </div>
-            <div className="border-t border-gray-300 my-2 pt-2">
-              <p className="text-md font-semibold text-dark dark:text-light">
-                About the UV Index
-              </p>
-              <p className="text-sm text-dark dark:text-light">
-                The World Health Organization's UV index (UVI) measures
-                ultraviolet radiation. The higher the UVi, the greater the
-                potential for damage and the faster harm can occur. The UVI can
-                help you decide when to protect yourself from the sun and when
-                to avoid being outside.
-              </p>
-            </div>
-          </div>
-        ) : null
-      ) : null}
+          )}
+        </>
+      )}
     </div>
   );
 };

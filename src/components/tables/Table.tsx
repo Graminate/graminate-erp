@@ -264,11 +264,11 @@ const Table = ({
 
   return (
     <div>
-      <div className="flex p-4 justify-between items-center bg-gray-50 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-700 rounded-t-lg transition-colors duration-300">
+      <div className="flex py-4 justify-between items-center bg-gray-50 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-700 rounded-t-lg transition-colors duration-300">
         <div className="flex gap-2">
           <SearchBar
             mode="table"
-            placeholder="Search data"
+            placeholder="Search table"
             value={searchQuery}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               setSearchQuery(e.target.value)
@@ -304,15 +304,15 @@ const Table = ({
                 companies: "companies",
                 contracts: "deals",
                 receipts: "invoices",
-                labour: "labours",
+                labour: "employees",
                 inventory: "inventory",
               };
 
-              const entityToTruncate = entityNames[view] || "contracts";
+              const entityToTruncate = entityNames[view] || view; // Added fallback to view itself if not found
 
               const result = await Swal.fire({
                 title: "Are you sure?",
-                text: `This will reset your ${entityToTruncate} database.`,
+                text: `This will reset your ${entityToTruncate} database.`, // Now uses the correct name
                 icon: "warning",
                 showCancelButton: true,
                 confirmButtonText: "Yes, Reset!",
@@ -322,6 +322,7 @@ const Table = ({
               if (result.isConfirmed) {
                 try {
                   const userId = localStorage.getItem("userId");
+                  // Ensure the API endpoint still uses the correct 'view' value ('labour')
                   await axios.post(`http://localhost:3001/api/${view}/reset`, {
                     userId,
                   });

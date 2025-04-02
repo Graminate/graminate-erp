@@ -70,7 +70,7 @@ const TemperatureCard = ({ lat, lon, fahrenheit }: Coordinates) => {
           else if (data.daily.rainSum[index] > 0) icon = "🌧";
           else if (data.daily.showersSum[index] > 0) icon = "🌦";
           else if (data.daily.precipitationSum[index] > 0) icon = "🌧";
-          else if (data.daily.cloudCover?.[index] > 0) icon = "☁️";
+          else if (data.daily.cloudCover?.[index] > 50) icon = "☁️";
 
           return {
             day,
@@ -79,7 +79,7 @@ const TemperatureCard = ({ lat, lon, fahrenheit }: Coordinates) => {
             icon,
           };
         })
-        .filter((_: any, index: number) => data.daily.time[index] > todayDate);
+        .filter((_: any, index: number) => index < 7);
 
       const hourlyTime = data.hourly.time;
       const hourlyTemperature = Object.values(data.hourly.temperature2m);
@@ -91,20 +91,28 @@ const TemperatureCard = ({ lat, lon, fahrenheit }: Coordinates) => {
           icon: getHourlyWeatherIcon(
             data.hourly.rain?.[index],
             data.hourly.snowfall?.[index],
-            data.hourly.cloudCover?.[index]
+            data.hourly.cloudCover?.[index],
+            data.hourly.isDay?.[index]
           ),
         })
       );
 
-      const filteredHourlyData = hourlyData.filter(
-        (hour) =>
-          new Date(`${hour.date}T${hour.time}:00Z`) >=
-            new Date(data.current.time) &&
-          new Date(`${hour.date}T${hour.time}:00Z`) <
-            new Date(
-              new Date(data.current.time).getTime() + 24 * 60 * 60 * 1000
-            )
-      );
+      const now = new Date(data.current.time);
+      const endOfForecast = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+      const filteredHourlyData = hourlyData.filter((hour) => {
+        const hourDate = new Date(`${hour.date}T${hour.time}:00:00`);
+        return hourDate >= now && hourDate < endOfForecast;
+      });
+
+      const filteredDailyData = dailyData
+        .filter((dayData, index) => {
+          const dayDate = new Date(data.daily.time[index]);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          dayDate.setHours(0, 0, 0, 0);
+          return dayDate > today;
+        })
+        .slice(0, 6);
 
       return {
         temperature: Math.round(data.current.temperature2m),
@@ -116,10 +124,12 @@ const TemperatureCard = ({ lat, lon, fahrenheit }: Coordinates) => {
         maxTemp: Math.round(data.daily.temperature2mMax[0]),
         minTemp: Math.round(data.daily.temperature2mMin[0]),
         hourlyForecast: filteredHourlyData,
-        dailyForecast: dailyData,
+        dailyForecast: filteredDailyData,
       };
     } catch (err: any) {
-      console.error(err.message);
+      console.error(
+        err.response?.data?.message || err.message || "Unknown error occurred"
+      );
       throw new Error("Failed to fetch weather data");
     }
   }
@@ -127,12 +137,14 @@ const TemperatureCard = ({ lat, lon, fahrenheit }: Coordinates) => {
   function getHourlyWeatherIcon(
     rain?: number,
     snowfall?: number,
-    cloudCover?: number
+    cloudCover?: number,
+    isDayHour?: number
   ): string {
-    if (rain && rain > 0) return "🌧";
     if (snowfall && snowfall > 0) return "❄️";
-    if (cloudCover && cloudCover > 0) return "☁️";
-    return "☀️";
+    if (rain && rain > 0) return "🌧";
+    if (cloudCover && cloudCover > 50) return "☁️";
+
+    return isDayHour === 1 ? "☀️" : "🌙";
   }
 
   useEffect(() => {
@@ -150,6 +162,7 @@ const TemperatureCard = ({ lat, lon, fahrenheit }: Coordinates) => {
           setHourlyForecast(weather.hourlyForecast);
           setDailyForecast(weather.dailyForecast);
           setLocationName(city);
+          setError(null); 
         })
         .catch((err: any) => {
           setError(err.message);
@@ -157,7 +170,7 @@ const TemperatureCard = ({ lat, lon, fahrenheit }: Coordinates) => {
     } else {
       setError("Latitude and Longitude are required to fetch weather data.");
     }
-  }, [lat, lon, fahrenheit]);
+  }, [lat, lon]);
 
   return (
     <div
@@ -195,7 +208,7 @@ const TemperatureCard = ({ lat, lon, fahrenheit }: Coordinates) => {
         {dropdownOpen && (
           <div className="absolute top-8 right-0 bg-white dark:bg-gray-600 dark:text-light text-black rounded-lg shadow-lg z-20 w-32">
             <button
-              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-500 dark:hover:bg-blue-100 cursor-pointer"
+              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 hover:rounded-t-lg dark:hover:bg-gray-500 cursor-pointer"
               type="button"
               onClick={() => {
                 setDisplayMode("Small");
@@ -205,7 +218,7 @@ const TemperatureCard = ({ lat, lon, fahrenheit }: Coordinates) => {
               Small
             </button>
             <button
-              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-500 dark:hover:bg-blue-100 cursor-pointer"
+              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400  dark:hover:bg-gray-500 cursor-pointer"
               type="button"
               onClick={() => {
                 setDisplayMode("Medium");
@@ -215,7 +228,7 @@ const TemperatureCard = ({ lat, lon, fahrenheit }: Coordinates) => {
               Medium
             </button>
             <button
-              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-500 dark:hover:bg-blue-100 cursor-pointer"
+              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 hover:rounded-b-lg dark:hover:bg-gray-500 cursor-pointer"
               type="button"
               onClick={() => {
                 setDisplayMode("Large");
@@ -228,47 +241,70 @@ const TemperatureCard = ({ lat, lon, fahrenheit }: Coordinates) => {
         )}
       </div>
       {error ? (
-        <p className="text-red-500 text-center">Error: {error}</p>
+        <p className="text-red-500 text-center py-10">{error}</p> // Added padding for error message visibility
       ) : temperature !== null ? (
         <>
-          {(displayMode === "Small" ||
-            displayMode === "Medium" ||
-            displayMode === "Large") && (
-            <div className="flex justify-between w-full">
-              <div className="text-center">
-                <p className="text-lg font-bold">{locationName}</p>
-                <p className="text-4xl font-bold">
-                  {formatTemperature(temperature)}
-                </p>
+          {/* Wrapper div for main temp display - ADDED pb-8 FOR SMALL MODE */}
+          <div className={`w-full ${displayMode === "Small" ? "pb-8" : ""}`}>
+            {(displayMode === "Small" ||
+              displayMode === "Medium" ||
+              displayMode === "Large") && (
+              <div className="flex justify-between w-full items-start">
+                {" "}
+                {/* items-start to align tops */}
+                <div className="text-left">
+                  {" "}
+                  {/* Changed to text-left */}
+                  <p className="text-lg font-semibold">{locationName}</p>{" "}
+                  {/* Added font-semibold */}
+                  <p className="text-4xl font-bold mt-1">
+                    {" "}
+                    {/* Added mt-1 */}
+                    {formatTemperature(temperature)}
+                  </p>
+                  <p className="mt-1 text-sm">
+                    Feels like: {formatTemperature(apparentTemperature)}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-5xl">
+                    {getHourlyWeatherIcon(
+                      rain ?? undefined,
+                      snowfall ?? undefined,
+                      cloudCover ?? undefined,
+                      isDay ?? undefined // Pass current isDay
+                    )}
+                  </p>
+                  <p className="mt-2 text-sm">
+                    {" "}
+                    {/* Use mt-2 consistent with UVCard */}
+                    H: {formatTemperature(maxTemp)} L:{" "}
+                    {formatTemperature(minTemp)}
+                  </p>
+                </div>
               </div>
-              <div className="text-center">
-                <p className="text-5xl">
-                  {getHourlyWeatherIcon(
-                    rain ?? undefined,
-                    snowfall ?? undefined,
-                    cloudCover ?? undefined
-                  )}
-                </p>
-                <p className="mt-2 text-sm">
-                  H: {formatTemperature(maxTemp)} L:{" "}
-                  {formatTemperature(minTemp)}
-                </p>
-                <p className="mt-1 text-sm">
-                  Feels like: {formatTemperature(apparentTemperature)}
-                </p>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
+          {/* End of Wrapper div */}
+
           {(displayMode === "Medium" || displayMode === "Large") && (
             <>
-              <hr className="my-4 w-full" />
+              <hr className="my-4 w-full border-white/50" />{" "}
+              {/* Adjusted border color */}
               <div className="w-full overflow-x-auto">
-                <div className="flex space-x-4">
+                <div className="flex space-x-4 pb-2">
+                  {" "}
+                  {/* Added pb-2 */}
                   {hourlyForecast.map((hour, index) => (
-                    <div key={index} className="text-center flex-shrink-0">
+                    <div key={index} className="text-center flex-shrink-0 w-14">
+                      {" "}
+                      {/* Fixed width */}
                       <p className="text-sm">{hour.time}:00</p>
-                      <p className="text-3xl">{hour.icon}</p>
-                      <p className="text-md">
+                      <p className="text-3xl my-1">{hour.icon}</p>{" "}
+                      {/* Added my-1 */}
+                      <p className="text-md font-medium">
+                        {" "}
+                        {/* Added font-medium */}
                         {formatTemperature(hour.temperature, false)}
                       </p>
                     </div>
@@ -279,30 +315,47 @@ const TemperatureCard = ({ lat, lon, fahrenheit }: Coordinates) => {
           )}
           {displayMode === "Large" && (
             <>
-              <hr className="my-3 w-full" />
-              <div className="w-full flex flex-col items-center">
+              <hr className="my-3 w-full border-white/50" />{" "}
+              {/* Adjusted border color */}
+              <div className="w-full flex flex-col items-center space-y-1">
+                {" "}
+                {/* Added space-y-1 */}
                 {dailyForecast.map((day, index) => (
                   <div
                     key={index}
-                    className="flex justify-between items-center w-full"
+                    className="flex justify-between items-center w-full px-2" // Added padding
                   >
-                    <p className="text-lg font-semibold w-1/3 text-center">
+                    {/* Adjusted widths slightly if needed, ensure they sum close to 100% */}
+                    <p className="text-md font-medium w-1/4 text-left">
+                      {" "}
+                      {/* text-left */}
                       {day.day}
                     </p>
-                    <p className="text-3xl w-1/3 text-center">{day.icon}</p>
-                    <p className="text-lg w-1/3 text-center">
-                      {formatTemperature(day.minTemp, false)}
-                    </p>
-                    <p className="text-lg w-1/3 text-center">
-                      {formatTemperature(day.maxTemp, false)}
-                    </p>
+                    <p className="text-2xl w-1/4 text-center">{day.icon}</p>{" "}
+                    {/* Smaller icon */}
+                    {/* Combined Min/Max temps */}
+                    <div className="w-1/2 flex justify-end space-x-3">
+                      {" "}
+                      {/* justify-end */}
+                      <p className="text-md font-medium">
+                        {formatTemperature(day.minTemp, false)}
+                      </p>
+                      {/* Optional: Add a divider like a gray bar or similar */}
+                      <p className="text-md font-medium opacity-70">
+                        {" "}
+                        {/* Dim max temp slightly */}
+                        {formatTemperature(day.maxTemp, false)}
+                      </p>
+                    </div>
                   </div>
                 ))}
               </div>
             </>
           )}
         </>
-      ) : null}
+      ) : (
+        <p className="text-center py-10">Loading weather data...</p> // Loading indicator
+      )}
     </div>
   );
 };

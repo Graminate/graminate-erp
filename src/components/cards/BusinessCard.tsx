@@ -1,4 +1,3 @@
-// components/BusinessCard.tsx
 import React from "react";
 
 interface BusinessCardProps {
@@ -6,7 +5,6 @@ interface BusinessCardProps {
   stars: number;
   address: string;
   open: boolean;
-  imageUrl: string;
   price: number;
 }
 
@@ -17,14 +15,13 @@ const renderStars = (rating: number): string[] => {
   return [...Array(fullStars).fill("★"), ...Array(emptyStars).fill("☆")];
 };
 
-const BusinessCard: React.FC<BusinessCardProps> = ({
+const BusinessCard = ({
   businessName,
   stars,
   address,
   open,
-  imageUrl,
   price,
-}) => {
+}: BusinessCardProps) => {
   return (
     <div className="max-w-md flex shadow-md bg-white hover:bg-gray-50 focus:bg-gray-50 p-3 my-0.5 overflow-y-auto">
       <div className="flex-1 flex flex-col justify-between">
@@ -54,13 +51,6 @@ const BusinessCard: React.FC<BusinessCardProps> = ({
             )}
           </div>
         </div>
-      </div>
-      <div>
-        <img
-          src={imageUrl}
-          alt={businessName}
-          className="w-full h-full object-cover rounded-md"
-        />
       </div>
     </div>
   );

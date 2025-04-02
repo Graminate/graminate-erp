@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import NotificationBar from "../NotificationBar";
+import NotificationBar from "../NotificationSideBar";
 
 import type { User } from "@/types/card-props";
 import type { Navbar } from "@/types/card-props";
