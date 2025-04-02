@@ -130,7 +130,7 @@ const Dashboard = () => {
             lat: position.coords.latitude,
             lon: position.coords.longitude,
           });
-          setLocationError(null); // Clear any previous error
+          setLocationError(null);
         }
       },
       (error) => {
@@ -242,9 +242,6 @@ const Dashboard = () => {
             </div>
 
             <div className="lg:col-span-2 space-y-6">
-              <h2 className="text-lg font-semibold mb-4 text-gray-700 dark:text-gray-200">
-                Calendar
-              </h2>
               <Calendar />
             </div>
           </div>

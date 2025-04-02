@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faHome,
@@ -10,13 +10,17 @@ import {
   faCloud,
   faDollar,
   faWarehouse,
+  faChevronRight,
+  faChevronLeft,
 } from "@fortawesome/free-solid-svg-icons";
 
 import type { Sidebar } from "@/types/card-props";
 
 const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
   const router = useRouter();
+  const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const searchParams = useSearchParams();
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
   const sections = [
@@ -31,6 +35,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
       icon: faAddressBook,
       label: "CRM",
       section: "CRM",
+      basePath: `/platform/${userId}/crm`,
       subItems: [
         {
           label: "Contacts",
@@ -70,8 +75,9 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
     },
     {
       icon: faUsers,
-      label: "Worker Management",
+      label: "Workerforce",
       section: "Labour",
+      basePath: `/platform/${userId}/labour`,
       subItems: [
         {
           label: "Employee Database",
@@ -92,8 +98,8 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
     },
     {
       icon: faWarehouse,
-      label: "Inventory Management",
-      section: "Inventory Management",
+      label: "Inventory",
+      section: "Inventory",
       route: `/platform/${userId}/inventory`,
       subItems: [],
     },
@@ -108,17 +114,32 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
 
   const navigateTo = (route: string) => {
     router.push(route);
+    setExpandedSection(null);
   };
 
-  const handleSectionChange = (section: string) => {
-    setExpandedSection(expandedSection === section ? null : section);
-    if (onSectionChange) {
-      onSectionChange(section); // ✅ Notify parent component (PlatformLayout.tsx)
+  const handleSectionToggle = (
+    section: string,
+    hasSubItems: boolean,
+    route?: string
+  ) => {
+    if (route && !hasSubItems) {
+      navigateTo(route);
+      setExpandedSection(null);
+    } else if (hasSubItems) {
+      const isCurrentlyExpanded = expandedSection === section;
+      setExpandedSection(isCurrentlyExpanded ? null : section);
+      if (onSectionChange && !isCurrentlyExpanded) {
+        onSectionChange(section);
+      }
+    } else if (route) {
+      navigateTo(route);
+      setExpandedSection(null);
     }
   };
 
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
+    setExpandedSection(null);
   };
 
   const closeSubMenu = () => {
@@ -127,137 +148,132 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const sidebar = document.querySelector(".sidebar");
-      const navbar = document.querySelector(".navbar");
-
-      if (
-        (!sidebar || !sidebar.contains(event.target as Node)) &&
-        (!navbar || !navbar.contains(event.target as Node))
-      ) {
+      const sidebarElement = document.querySelector(".sidebar-container");
+      if (sidebarElement && !sidebarElement.contains(event.target as Node)) {
         closeSubMenu();
       }
     };
 
-    document.addEventListener("click", handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener("click", handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
+  useEffect(() => {
+    if (!isOpen) {
+      closeSubMenu();
+    }
+  }, [isOpen]);
+
   return (
     <div
-      className={`fixed py-3 inset-y-0 left-0 bg-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out z-50 lg:relative sidebar ${
+      className={`sidebar-container fixed inset-y-0 left-0 bg-gradient-to-b from-gray-800 to-gray-900 text-gray-300 shadow-xl transform transition-all duration-300 ease-in-out z-50 flex flex-col ${
         isOpen ? "translate-x-0" : "-translate-x-full"
-      }`}
+      } lg:translate-x-0 lg:relative lg:shadow-none`}
       style={{ width: isCollapsed ? "60px" : "230px" }}
     >
-      <nav className="space-y-2 flex flex-col relative">
-        {sections.map(({ icon, label, section, route, subItems }) => (
-          <div key={section} className="relative group">
-            <div
-              className="flex items-center mx-2 p-3 rounded-lg cursor-pointer hover:bg-gray-700 transition-all duration-200 group"
-              role="button"
-              tabIndex={0}
-              onClick={() =>
-                route ? navigateTo(route) : handleSectionChange(section)
-              }
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  route ? navigateTo(route) : handleSectionChange(section);
-                }
-              }}
-              style={{ justifyContent: isCollapsed ? "center" : "flex-start" }}
-            >
-              <div className="text-gray-400 flex justify-center items-center w-6 h-6">
-                <FontAwesomeIcon icon={icon} />
+      <nav className="flex-1 overflow-y-auto py-4 space-y-1">
+        {sections.map(({ icon, label, section, route, subItems, basePath }) => {
+          const hasSubItems = subItems.length > 0;
+          const isActive =
+            (!hasSubItems && pathname === route) ||
+            (hasSubItems && basePath && pathname.startsWith(basePath)) ||
+            expandedSection === section;
+
+          return (
+            <div key={section} className="relative px-3">
+              <div
+                className={`flex items-center p-3 rounded-lg cursor-pointer group transition-colors duration-200 ${
+                  isActive
+                    ? "bg-gray-700 text-white shadow-md"
+                    : "text-gray-400 hover:bg-gray-700 hover:text-gray-400"
+                } ${isCollapsed ? "justify-center" : ""}`}
+                role="button"
+                tabIndex={0}
+                title={isCollapsed ? label : ""}
+                onClick={() => handleSectionToggle(section, hasSubItems, route)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    handleSectionToggle(section, hasSubItems, route);
+                  }
+                }}
+              >
+                <FontAwesomeIcon
+                  icon={icon}
+                  className={`h-5 w-5 ${
+                    isCollapsed ? "" : "mr-3"
+                  } flex-shrink-0`}
+                />
+
+                {!isCollapsed && (
+                  <>
+                    <span className="flex-grow font-medium text-sm truncate">
+                      {label}
+                    </span>
+                    {hasSubItems && (
+                      <FontAwesomeIcon
+                        icon={faChevronRight}
+                        className={`h-3 w-3 transition-transform duration-200 ${
+                          expandedSection === section ? "rotate-90" : ""
+                        } ${
+                          isActive
+                            ? "text-white"
+                            : "text-gray-500 group-hover:text-gray-300"
+                        }`}
+                      />
+                    )}
+                  </>
+                )}
               </div>
-              {!isCollapsed && (
-                <>
-                  <span className="text-gray-500 font-light text-sm ml-2 flex-grow">
-                    {label}
-                  </span>
-                  {subItems.length > 0 && (
-                    <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                      <svg
-                        fill="#ffffff"
-                        height="12px"
-                        width="12px"
-                        viewBox="0 0 330 330"
-                        xmlns="http://www.w3.org/2000/svg"
+
+              {!isCollapsed && expandedSection === section && hasSubItems && (
+                <div className="mt-1 ml-5 pl-3 border-l border-gray-600 space-y-1">
+                  {subItems.map((subItem) => {
+                    const isSubActive =
+                      pathname + searchParams.toString() === subItem.route;
+                    return (
+                      <div
+                        key={subItem.label}
+                        className={`text-sm py-2 px-4 rounded-md cursor-pointer transition-colors duration-150 ${
+                          isSubActive
+                            ? "text-indigo-300 font-semibold"
+                            : "text-gray-400 hover:text-light hover:bg-gray-700"
+                        }`}
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => navigateTo(subItem.route)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            navigateTo(subItem.route);
+                          }
+                        }}
                       >
-                        <path
-                          d="M250.606,154.389l-150-149.996c-5.857-5.858-15.355-5.858-21.213,0.001
-                        c-5.857,5.858-5.857,15.355,0.001,21.213l139.393,139.39L79.393,304.394c-5.857,5.858-5.857,15.355,0.001,21.213
-                        C82.322,328.536,86.161,330,90,330s7.678-1.464,10.607-4.394l149.999-150.004c2.814-2.813,4.394-6.628,4.394-10.606
-                        C255,161.018,253.42,157.202,250.606,154.389z"
-                        />
-                      </svg>
-                    </div>
-                  )}
-                </>
+                        {subItem.label}
+                      </div>
+                    );
+                  })}
+                </div>
               )}
             </div>
-
-            {expandedSection === section && subItems.length > 0 && (
-              <div className="absolute top-0 left-full bg-gray-800 shadow-lg rounded-md py-2 w-48 space-y-2">
-                {subItems.map(({ label, route }) => (
-                  <div
-                    key={label}
-                    className="text-gray-400 text-sm py-2 px-4 mx-2 cursor-pointer hover:bg-gray-700 rounded-md"
-                    role="button"
-                    tabIndex={0}
-                    onClick={() => navigateTo(route)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" || e.key === " ") {
-                        navigateTo(route);
-                      }
-                    }}
-                  >
-                    {label}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        ))}
+          );
+        })}
       </nav>
 
-      <div className="absolute bottom-4 right-4">
+      <div className="mt-auto p-3 border-t border-gray-700">
         <button
-          className="flex items-center justify-center p-1 rounded-full bg-gray-400 text-gray-200 shadow-lg"
+          className={`w-full flex items-center p-2 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-gray-100 transition-colors duration-200 ${
+            isCollapsed ? "justify-center" : "justify-end"
+          }`}
           onClick={toggleCollapse}
+          title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
         >
-          {isCollapsed ? (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="1.5"
-              stroke="currentColor"
-              className="size-4"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="m8.25 4.5 7.5 7.5-7.5 7.5"
-              />
-            </svg>
-          ) : (
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="1.5"
-              stroke="currentColor"
-              className="size-4"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M15.75 19.5 8.25 12l7.5-7.5"
-              />
-            </svg>
-          )}
+          <FontAwesomeIcon
+            icon={isCollapsed ? faChevronRight : faChevronLeft}
+            className="h-5 w-5"
+          />
         </button>
       </div>
     </div>

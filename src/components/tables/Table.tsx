@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Swal from "sweetalert2";
 import SearchBar from "@/components/ui/SearchBar";
 import Button from "@/components/ui/Button";
@@ -6,13 +6,7 @@ import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import Loader from "@/components/ui/Loader";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCircle,
-  faSort,
-  faSortUp,
-  faSortDown,
-  faTrash,
-} from "@fortawesome/free-solid-svg-icons";
+import { faCircle } from "@fortawesome/free-solid-svg-icons";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -47,7 +41,6 @@ const Table = ({
   setSearchQuery,
   totalRecordCount,
   view = "",
-  exportEnabled = true,
   loading,
 }: Props) => {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
@@ -55,7 +48,6 @@ const Table = ({
   const [selectAll, setSelectAll] = useState(false);
   const [selectedRows, setSelectedRows] = useState<boolean[]>([]);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
-  const exportDropdownRef = useRef<HTMLDivElement>(null);
 
   const paginatedRows = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
@@ -63,38 +55,18 @@ const Table = ({
     return filteredRows.slice(start, end);
   }, [filteredRows, currentPage, itemsPerPage]);
 
-  // Calculate maxQuantity for inventory status outside the renderCellContent function
-  // This ensures useMemo is called consistently at the top level
-  const maxQuantityForInventory = useMemo(() => {
-    if (
-      view !== "inventory" ||
-      !data.columns.includes("Quantity") ||
-      filteredRows.length === 0
-    ) {
-      return 0;
+  useEffect(() => {
+    if (paginatedRows.length > 0) {
+      setSelectedRows(new Array(paginatedRows.length).fill(selectAll));
     }
-    const quantityIndex = data.columns.indexOf("Quantity");
-    if (quantityIndex === -1) return 0; // Should not happen if check above passed, but good practice
+  }, [paginatedRows, selectAll]);
 
-    return Math.max(
-      ...filteredRows.map((r) => Number(r[quantityIndex]) || 0) // Ensure values are numbers
-    );
-  }, [view, filteredRows, data.columns]);
-
-  useEffect(() => {
-    setSelectAll(false);
-    setSelectedRows(new Array(paginatedRows.length).fill(false));
-  }, [paginatedRows]);
-
-  useEffect(() => {
-    setSelectedRows((prev) => prev.map(() => selectAll));
-  }, [selectAll]);
-
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
-        exportDropdownRef.current &&
-        !exportDropdownRef.current.contains(event.target as Node)
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
       ) {
         setShowExportDropdown(false);
       }
@@ -103,7 +75,7 @@ const Table = ({
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [exportDropdownRef]);
+  }, []);
 
   const selectedRowCount = selectedRows.filter(
     (isSelected) => isSelected
@@ -116,10 +88,6 @@ const Table = ({
         const valueA = a[sortColumn];
         const valueB = b[sortColumn];
 
-        if (valueA == null && valueB == null) return 0;
-        if (valueA == null) return sortOrder === "asc" ? 1 : -1;
-        if (valueB == null) return sortOrder === "asc" ? -1 : 1;
-
         if (typeof valueA === "string" && typeof valueB === "string") {
           return sortOrder === "asc"
             ? valueA.localeCompare(valueB)
@@ -128,9 +96,6 @@ const Table = ({
         if (typeof valueA === "number" && typeof valueB === "number") {
           return sortOrder === "asc" ? valueA - valueB : valueB - valueA;
         }
-
-        if (valueA < valueB) return sortOrder === "asc" ? -1 : 1;
-        if (valueA > valueB) return sortOrder === "asc" ? 1 : -1;
         return 0;
       });
     }
@@ -138,43 +103,16 @@ const Table = ({
   }, [paginatedRows, sortColumn, sortOrder]);
 
   const getExportRows = () => {
-    const selectedCurrentPageRows = sortedAndPaginatedRows.filter(
-      (_, idx) => selectedRows[idx]
-    );
+    const selected = selectedRows
+      .map((isSelected, idx) =>
+        isSelected ? sortedAndPaginatedRows[idx] : null
+      )
+      .filter((row) => row !== null);
 
-    if (selectedCurrentPageRows.length > 0) {
-      return selectedCurrentPageRows;
-    }
-
-    let rowsToExport = [...filteredRows];
-    if (sortColumn !== null) {
-      rowsToExport.sort((a, b) => {
-        const valueA = a[sortColumn];
-        const valueB = b[sortColumn];
-
-        if (valueA == null && valueB == null) return 0;
-        if (valueA == null) return sortOrder === "asc" ? 1 : -1;
-        if (valueB == null) return sortOrder === "asc" ? -1 : 1;
-
-        if (typeof valueA === "string" && typeof valueB === "string") {
-          return sortOrder === "asc"
-            ? valueA.localeCompare(valueB)
-            : valueB.localeCompare(valueA);
-        }
-        if (typeof valueA === "number" && typeof valueB === "number") {
-          return sortOrder === "asc" ? valueA - valueB : valueB - valueA;
-        }
-        if (valueA < valueB) return sortOrder === "asc" ? -1 : 1;
-        if (valueA > valueB) return sortOrder === "asc" ? 1 : -1;
-        return 0;
-      });
-    }
-
-    return rowsToExport;
+    return selected.length > 0 ? selected : sortedAndPaginatedRows;
   };
 
   const exportTableData = (format: "pdf" | "xlsx") => {
-    setShowExportDropdown(false);
     const exportRows = getExportRows();
 
     if (exportRows.length === 0) {
@@ -182,48 +120,21 @@ const Table = ({
       return;
     }
 
-    const exportColumns = data.columns.slice(1);
-    const exportBody = exportRows.map((row) => row.slice(1));
-
-    const exportViewName = view
-      ? view.charAt(0).toUpperCase() + view.slice(1)
-      : "TableData";
-
     if (format === "pdf") {
       const doc = new jsPDF();
       autoTable(doc, {
-        head: [exportColumns],
-        body: exportBody,
+        head: [data.columns],
+        body: exportRows,
         styles: { fontSize: 8 },
-        headStyles: { fillColor: [37, 99, 235] },
-        didDrawPage: (data) => {
-          doc.setFontSize(16);
-          doc.setTextColor(40);
-          doc.text(`${exportViewName} Data`, data.settings.margin.left, 15);
-        },
+        headStyles: { fillColor: [52, 73, 94] },
       });
-      doc.save(`${exportViewName}_Export.pdf`);
+      doc.save(`${view}.pdf`);
     }
 
     if (format === "xlsx") {
-      const worksheet = XLSX.utils.aoa_to_sheet([exportColumns, ...exportBody]);
+      const worksheet = XLSX.utils.aoa_to_sheet([data.columns, ...exportRows]);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
-
-      const cols = Object.keys(worksheet)
-        .filter((key) => key.match(/[A-Z]+1$/))
-        .map((key) => {
-          const col = key.replace("1", "");
-          const maxLen = Math.max(
-            ...Object.keys(worksheet)
-              .filter((k) => k.startsWith(col) && k !== key)
-              .map((k) => (worksheet[k].v ? String(worksheet[k].v).length : 0)),
-            worksheet[key].v ? String(worksheet[key].v).length : 0
-          );
-          return { wch: maxLen + 2 };
-        });
-      worksheet["!cols"] = cols;
-
       const wbout = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
       const blob = new Blob([wbout], {
         type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
@@ -231,17 +142,17 @@ const Table = ({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${exportViewName}_Export.xlsx`;
+      a.download = `${view}.xlsx`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     }
   };
-
   const handleSelectAllChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const checked = e.target.checked;
     setSelectAll(checked);
+    setSelectedRows(new Array(paginatedRows.length).fill(checked));
   };
 
   const handleRowCheckboxChange = (
@@ -252,23 +163,22 @@ const Table = ({
     setSelectedRows((prev) => {
       const newSelected = [...prev];
       newSelected[rowIndex] = checked;
-
-      const allChecked = newSelected.every((val) => val);
-      setSelectAll(allChecked);
+      setSelectAll(newSelected.every((val) => val));
       return newSelected;
     });
   };
 
   const deleteSelectedRows = async () => {
-    const rowsToDeleteIndices = selectedRows
-      .map((isSelected, index) => (isSelected ? index : -1))
-      .filter((index) => index !== -1);
+    const rowsToDelete: number[] = [];
 
-    const rowsToDeleteIds = rowsToDeleteIndices.map(
-      (index) => sortedAndPaginatedRows[index][0]
-    );
+    paginatedRows.forEach((row, index) => {
+      if (selectedRows[index]) {
+        const id = row[0];
+        rowsToDelete.push(id);
+      }
+    });
 
-    if (rowsToDeleteIds.length === 0) {
+    if (rowsToDelete.length === 0) {
       await Swal.fire(
         "No Selection",
         "Please select at least one row to delete.",
@@ -286,32 +196,19 @@ const Table = ({
       receipts: "receipt",
     };
 
-    const entityToDelete = entityNames[view] || "record";
-    const pluralEntity =
-      rowsToDeleteIds.length > 1 ? `${entityToDelete}s` : entityToDelete;
+    const entityToDelete = entityNames[view] || "contracts";
 
     const result = await Swal.fire({
       title: "Are you sure?",
-      text: `Do you want to delete the selected ${pluralEntity}? This action cannot be undone.`,
+      text: `Do you want to delete the ${entityToDelete} data?`,
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete them!",
-      cancelButtonText: "No, cancel",
+      confirmButtonText: "Yes",
+      cancelButtonText: "No",
       reverseButtons: true,
     });
 
     if (result.isConfirmed) {
-      Swal.fire({
-        title: "Deleting...",
-        text: `Please wait while deleting the selected ${pluralEntity}.`,
-        allowOutsideClick: false,
-        didOpen: () => {
-          Swal.showLoading();
-        },
-      });
-
       try {
         let endpoint = "";
         if (view === "contacts") endpoint = "contacts";
@@ -321,25 +218,30 @@ const Table = ({
         else if (view === "labour") endpoint = "labour";
         else endpoint = "inventory";
 
-        const deletePromises = rowsToDeleteIds.map((id) =>
-          axios.delete(`http://localhost:3001/api/${endpoint}/delete/${id}`)
+        await Promise.all(
+          rowsToDelete.map(async (id) => {
+            try {
+              await axios.delete(
+                `http://localhost:3001/api/${endpoint}/delete/${id}`
+              );
+            } catch (error: any) {
+              const message =
+                error.response?.data?.error ||
+                `Failed to delete ${endpoint.slice(0, -1)} with id ${id}`;
+              console.error(message);
+              throw new Error(message);
+            }
+          })
         );
 
-        await Promise.all(deletePromises);
-
-        Swal.fire(
-          "Deleted!",
-          `The selected ${pluralEntity} have been deleted.`,
-          "success"
-        ).then(() => {
-          location.reload();
-        });
-      } catch (error: any) {
+        location.reload();
+      } catch (error) {
         console.error("Error deleting rows:", error);
-        const message =
-          error.response?.data?.error ||
-          `Failed to delete selected ${pluralEntity}. Please try again.`;
-        Swal.fire("Error", message, "error");
+        await Swal.fire(
+          "Error",
+          "Failed to delete selected rows. Please try again.",
+          "error"
+        );
       }
     }
   };
@@ -351,378 +253,248 @@ const Table = ({
       setSortColumn(columnIndex);
       setSortOrder("asc");
     }
-  };
-
-  const handleSelectItemsPerPage = (item: string) => {
-    const num = parseInt(item.split(" ")[0]);
-    setItemsPerPage(num);
     setCurrentPage(1);
   };
 
-  const getSortIcon = (columnIndex: number) => {
-    if (sortColumn !== columnIndex) {
-      return (
-        <FontAwesomeIcon
-          icon={faSort}
-          className="text-gray-400 dark:text-gray-500 ml-2"
-        />
-      );
-    }
-    if (sortOrder === "asc") {
-      return (
-        <FontAwesomeIcon
-          icon={faSortUp}
-          className="text-blue-500 dark:text-blue-400 ml-2"
-        />
-      );
-    }
-    return (
-      <FontAwesomeIcon
-        icon={faSortDown}
-        className="text-blue-500 dark:text-blue-400 ml-2"
-      />
-    );
-  };
-
-  // renderCellContent no longer needs to calculate maxQuantity
-  const renderCellContent = (
-    cell: any,
-    rowIndex: number,
-    cellIndex: number
-  ) => {
-    // Use the pre-calculated maxQuantityForInventory
-    if (view === "inventory" && data.columns[cellIndex] === "Status") {
-      const quantityIndex = data.columns.indexOf("Quantity");
-      // Ensure quantityIndex is valid before accessing row data
-      if (quantityIndex === -1)
-        return <span className="text-gray-400 italic">N/A</span>;
-
-      const quantity =
-        Number(sortedAndPaginatedRows[rowIndex][quantityIndex]) || 0;
-      // Use the pre-calculated maxQuantityForInventory
-      const maxQuantity = maxQuantityForInventory;
-      const ratio = maxQuantity > 0 ? quantity / maxQuantity : 0;
-
-      let count = 0;
-      let color = "";
-      let tooltip = "";
-
-      if (ratio <= 0) {
-        count = 0;
-        color = "text-gray-400 dark:text-gray-600";
-        tooltip = "Out of Stock";
-      } else if (ratio < 0.25) {
-        count = 1;
-        color = "text-red-500 dark:text-red-400";
-        tooltip = "Very Low Stock";
-      } else if (ratio < 0.5) {
-        count = 2;
-        color = "text-orange-500 dark:text-orange-400";
-        tooltip = "Low Stock";
-      } else if (ratio < 0.75) {
-        count = 3;
-        color = "text-yellow-500 dark:text-yellow-400";
-        tooltip = "Medium Stock";
-      } else {
-        count = 4;
-        color = "text-green-500 dark:text-green-400";
-        tooltip = "High Stock";
-      }
-
-      return (
-        <div className="flex items-center gap-1" title={tooltip}>
-          {count > 0 ? (
-            Array.from({ length: count }).map((_, i) => (
-              <FontAwesomeIcon
-                key={i}
-                icon={faCircle}
-                className={`${color} text-xs`}
-              />
-            ))
-          ) : (
-            <span className="text-xs text-gray-500 italic">{tooltip}</span>
-          )}
-        </div>
-      );
-    }
-
-    if (
-      typeof cell === "string" &&
-      /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(cell)
-    ) {
-      try {
-        return new Date(cell).toLocaleDateString();
-      } catch (e) {}
-    }
-
-    if (cell === null || typeof cell === "undefined") {
-      return <span className="text-gray-400 italic">N/A</span>;
-    }
-
-    return String(cell);
+  const handleSelect = (item: string) => {
+    if (item === "25 per page") setItemsPerPage(25);
+    else if (item === "50 per page") setItemsPerPage(50);
+    else if (item === "100 per page") setItemsPerPage(100);
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900 shadow-md rounded-lg overflow-hidden">
-      <div className="flex flex-col md:flex-row p-4 justify-between items-center gap-4 border-b border-gray-400 dark:border-gray-700">
-        <div className="flex items-center gap-4 w-full md:w-auto">
+    <div>
+      <div className="flex p-4 justify-between items-center bg-gray-50 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-700 rounded-t-lg transition-colors duration-300">
+        <div className="flex gap-2">
           <SearchBar
             mode="table"
-            placeholder={`Search ${view}...`}
+            placeholder="Search data"
             value={searchQuery}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               setSearchQuery(e.target.value)
             }
           />
           {selectedRowCount > 0 && (
-            <div className="flex items-center gap-2 flex-shrink-0">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <div className="flex items-center ml-4">
+              <span className="text-gray-200 dark:text-gray-400 text-sm font-medium">
                 {selectedRowCount} selected
               </span>
               <button
-                className="text-red-600 dark:text-red-500 hover:text-red-800 dark:hover:text-red-400 text-sm font-medium flex items-center gap-1"
-                onClick={deleteSelectedRows}
-                title="Delete Selected Rows"
+                className="ml-2 text-blue-200 text-sm hover:underline cursor-pointer"
+                onClick={(event) => {
+                  event.preventDefault();
+                  deleteSelectedRows();
+                }}
               >
-                <FontAwesomeIcon icon={faTrash} />
                 Delete
               </button>
             </div>
           )}
         </div>
+        <div className="flex flex-row">
+          <Button
+            style="secondary"
+            text="Reset"
+            isDisabled={filteredRows.length === 0}
+            onClick={async () => {
+              if (filteredRows.length === 0) return;
 
-        {exportEnabled && (
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {view &&
-              [
-                "contacts",
-                "companies",
-                "contracts",
-                "receipts",
-                "labour",
-                "inventory",
-              ].includes(view) && (
-                <Button
-                  style="secondary"
-                  text="Reset Table"
-                  onClick={async () => {
-                    const entityNames: Record<string, string> = {
-                      contacts: "contacts",
-                      companies: "companies",
-                      contracts: "contracts",
-                      receipts: "receipts",
-                      labour: "labours",
-                      inventory: "inventory",
-                    };
+              const entityNames: Record<string, string> = {
+                contacts: "contacts",
+                companies: "companies",
+                contracts: "deals",
+                receipts: "invoices",
+                labour: "labours",
+                inventory: "inventory",
+              };
 
-                    const entityToTruncate = entityNames[view] || "data";
+              const entityToTruncate = entityNames[view] || "contracts";
 
-                    const result = await Swal.fire({
-                      title: `Reset ${
-                        entityToTruncate.charAt(0).toUpperCase() +
-                        entityToTruncate.slice(1)
-                      }?`,
-                      text: `This will remove all ${entityToTruncate} and reset to default samples. This cannot be undone!`,
-                      icon: "warning",
-                      showCancelButton: true,
-                      confirmButtonColor: "#d33",
-                      cancelButtonColor: "#3085d6",
-                      confirmButtonText: "Yes, Reset!",
-                      cancelButtonText: "Cancel",
-                    });
+              const result = await Swal.fire({
+                title: "Are you sure?",
+                text: `This will reset your ${entityToTruncate} database.`,
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonText: "Yes, Reset!",
+                cancelButtonText: "Cancel",
+              });
 
-                    if (result.isConfirmed) {
-                      Swal.fire({
-                        title: "Resetting...",
-                        allowOutsideClick: false,
-                        didOpen: () => Swal.showLoading(),
-                      });
-                      try {
-                        const userId = localStorage.getItem("userId");
-                        if (!userId) {
-                          throw new Error(
-                            "User ID not found. Please log in again."
-                          );
-                        }
-                        await axios.post(
-                          `http://localhost:3001/api/${view}/reset`,
-                          { userId }
-                        );
-                        Swal.fire(
-                          "Reset!",
-                          `The ${entityToTruncate} table has been reset.`,
-                          "success"
-                        ).then(() => location.reload());
-                      } catch (err: any) {
-                        console.error(err);
-                        const errorMsg =
-                          err.response?.data?.message ||
-                          err.message ||
-                          "Failed to reset table.";
-                        Swal.fire("Error", errorMsg, "error");
-                      }
-                    }
+              if (result.isConfirmed) {
+                try {
+                  const userId = localStorage.getItem("userId");
+                  await axios.post(`http://localhost:3001/api/${view}/reset`, {
+                    userId,
+                  });
+                  Swal.fire("Reset!", "Table has been reset.", "success").then(
+                    () => location.reload()
+                  );
+                } catch (err) {
+                  console.error(err);
+                  Swal.fire("Error", "Failed to reset table.", "error");
+                }
+              }
+            }}
+          />
+
+          <div className="relative" ref={dropdownRef}>
+            <Button
+              style="secondary"
+              text="Download Data"
+              isDisabled={filteredRows.length === 0}
+              onClick={() => setShowExportDropdown(!showExportDropdown)}
+            />
+            {showExportDropdown && (
+              <div className="absolute left-0 top-full mt-2 w-40 bg-white dark:bg-gray-700 rounded-lg shadow-lg z-50 transition transform duration-200">
+                <button
+                  className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 rounded-t-lg dark:hover:bg-gray-600"
+                  onClick={() => {
+                    exportTableData("pdf");
+                    setShowExportDropdown(false);
                   }}
-                />
-              )}
-
-            <div className="relative" ref={exportDropdownRef}>
-              <Button
-                style="secondary"
-                text="Download Data"
-                onClick={() => setShowExportDropdown(!showExportDropdown)}
-              />
-              {showExportDropdown && (
-                <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 border border-gray-400 dark:border-gray-600 rounded-md shadow-lg z-50 overflow-hidden">
-                  <button
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-400 dark:hover:bg-gray-700 transition-colors duration-150 ease-in-out"
-                    onClick={() => exportTableData("pdf")}
-                  >
-                    Export as PDF
-                  </button>
-                  <button
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-400 dark:hover:bg-gray-700 transition-colors duration-150 ease-in-out"
-                    onClick={() => exportTableData("xlsx")}
-                  >
-                    Export as XLSX
-                  </button>
-                </div>
-              )}
-            </div>
+                >
+                  Export as PDF
+                </button>
+                <button
+                  className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 rounded-b-lg dark:hover:bg-gray-600"
+                  onClick={() => {
+                    exportTableData("xlsx");
+                    setShowExportDropdown(false);
+                  }}
+                >
+                  Export as XLSX
+                </button>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
-      <div className="overflow-x-auto">
-        {loading ? (
-          <div className="flex justify-center items-center py-16">
-            <Loader />
-          </div>
-        ) : sortedAndPaginatedRows.length > 0 ? (
-          <table className="min-w-full table-auto divide-y divide-gray-400 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-800">
-              <tr>
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <Loader />
+        </div>
+      ) : sortedAndPaginatedRows.length > 0 ? (
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
+          <thead>
+            <tr>
+              <th className="p-3 text-left font-medium text-dark dark:text-gray-300 bg-gray-500 hover:bg-gray-400 dark:bg-gray-800  dark:border-gray-700">
+                <input
+                  type="checkbox"
+                  className="form-checkbox h-4 w-4 text-gray-600"
+                  checked={selectAll}
+                  onChange={handleSelectAllChange}
+                />
+              </th>
+              {data.columns.map((column, index) => (
                 <th
-                  scope="col"
-                  className="p-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+                  key={index}
+                  className="p-3  dark:border-gray-700 bg-gray-500 dark:bg-gray-800 dark:text-gray-300 cursor-pointer text-left transition-colors duration-200 hover:bg-gray-400 dark:hover:bg-gray-700"
+                  onClick={() => toggleSort(index)}
                 >
-                  <label htmlFor="select-all-checkbox" className="sr-only">
-                    Select all
-                  </label>
-                  <input
-                    id="select-all-checkbox"
-                    type="checkbox"
-                    className="form-checkbox h-4 w-4 text-blue-600 dark:text-blue-500 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 bg-gray-100 dark:bg-gray-700"
-                    checked={selectAll && sortedAndPaginatedRows.length > 0}
-                    onChange={handleSelectAllChange}
-                    disabled={sortedAndPaginatedRows.length === 0}
-                  />
+                  <div className="flex items-center justify-between">
+                    <span className="mr-2 font-semibold">{column}</span>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth="1.5"
+                      stroke="currentColor"
+                      className="size-6"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M8.25 15 12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9"
+                      />
+                    </svg>
+                  </div>
                 </th>
-                {data.columns.map((column, index) => (
-                  <th
-                    key={index}
-                    scope="col"
-                    className="px-4 py-3 text-left text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider cursor-pointer hover:bg-gray-400 dark:hover:bg-gray-700 group"
-                    onClick={() => toggleSort(index)}
-                    title={`Sort by ${column}`}
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {sortedAndPaginatedRows.map((row, rowIndex) => (
+              <tr
+                key={rowIndex}
+                className="cursor-pointer transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                onClick={(e) => {
+                  if ((e.target as HTMLElement).tagName !== "INPUT") {
+                    onRowClick(row);
+                  }
+                }}
+              >
+                <td className="p-3 border-b border-gray-300 dark:border-gray-700 text-base font-light text-gray-700 dark:text-gray-300">
+                  <input
+                    type="checkbox"
+                    className="form-checkbox h-4 w-4 text-gray-200 dark:text-light"
+                    checked={selectedRows[rowIndex] || false}
+                    onChange={(e) => handleRowCheckboxChange(rowIndex, e)}
+                  />
+                </td>
+                {row.map((cell, cellIndex) => (
+                  <td
+                    key={cellIndex}
+                    className="p-2 border-b border-gray-300 dark:border-gray-200 text-base font-light dark:text-gray-400"
                   >
-                    <div className="flex items-center justify-between">
-                      <span>{column}</span>
-                      <span className="opacity-50 group-hover:opacity-100 transition-opacity">
-                        {getSortIcon(index)}
-                      </span>
-                    </div>
-                  </th>
+                    {view === "inventory" &&
+                    data.columns[cellIndex] === "Status" ? (
+                      <div className="flex gap-[2px] text-sm">
+                        {(() => {
+                          const quantity =
+                            row[data.columns.indexOf("Quantity")];
+                          const max = Math.max(
+                            ...filteredRows.map(
+                              (r) => r[data.columns.indexOf("Quantity")]
+                            )
+                          );
+                          const ratio = quantity / max;
+                          let count = 0;
+                          let color = "";
+
+                          if (ratio < 0.25) {
+                            count = 1;
+                            color = "text-red-200";
+                          } else if (ratio < 0.5) {
+                            count = 2;
+                            color = "text-orange-200";
+                          } else if (ratio < 0.75) {
+                            count = 3;
+                            color = "text-yellow-200";
+                          } else {
+                            count = 4;
+                            color = "text-green-200";
+                          }
+
+                          return Array.from({ length: count }).map((_, i) => (
+                            <FontAwesomeIcon
+                              key={i}
+                              icon={faCircle}
+                              className={color}
+                            />
+                          ));
+                        })()}
+                      </div>
+                    ) : (
+                      cell
+                    )}
+                  </td>
                 ))}
               </tr>
-            </thead>
-            <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-400 dark:divide-gray-700">
-              {sortedAndPaginatedRows.map((row, rowIndex) => (
-                <tr
-                  key={rowIndex}
-                  className={`hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors duration-150 ease-in-out ${
-                    selectedRows[rowIndex]
-                      ? "bg-blue-50 dark:bg-blue-900/20"
-                      : ""
-                  }`}
-                  onClick={(e) => {
-                    const target = e.target as HTMLElement;
-                    const checkboxCell = target.closest("td:first-child");
-                    const isCheckboxClick =
-                      target.tagName === "INPUT" &&
-                      target.getAttribute("type") === "checkbox";
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <div className="text-center p-4 text-gray-300">
+          <span className="text-lg">⚠️</span> No Data Available
+        </div>
+      )}
 
-                    if (!isCheckboxClick && !checkboxCell) {
-                      onRowClick(row);
-                    }
-                  }}
-                  style={{ cursor: "pointer" }}
-                >
-                  <td className="p-3 whitespace-nowrap">
-                    <input
-                      type="checkbox"
-                      className="form-checkbox h-4 w-4 text-blue-600 dark:text-blue-500 border-gray-300 dark:border-gray-600 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-900 focus:ring-2 bg-white dark:bg-gray-800"
-                      checked={selectedRows[rowIndex] || false}
-                      onChange={(e) => handleRowCheckboxChange(rowIndex, e)}
-                      onClick={(e) => e.stopPropagation()}
-                      aria-label={`Select row ${rowIndex + 1}`}
-                    />
-                  </td>
-                  {row.map((cell, cellIndex) => (
-                    <td
-                      key={cellIndex}
-                      className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300"
-                    >
-                      {renderCellContent(cell, rowIndex, cellIndex)}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <div className="text-center py-16 px-4">
-            <svg
-              className="mx-auto h-12 w-12 text-gray-100"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              aria-hidden="true"
-            >
-              <path
-                vectorEffect="non-scaling-stroke"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2zm0 0h16"
-              />
-            </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">
-              No data available
-            </h3>
-            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-              {searchQuery
-                ? "Try adjusting your search or filter criteria."
-                : "There is currently no data to display."}
-            </p>
-          </div>
-        )}
-      </div>
-
-      {!loading && totalRecordCount > 0 && (
+      {!loading && (
         <nav
-          className="flex items-center justify-between px-4 py-3 sm:px-6 border-t border-gray-400 dark:border-gray-700"
+          className="flex items-center justify-between px-4 py-3 sm:px-6 bg-gray-50 dark:bg-gray-800 rounded-b-lg transition-colors duration-300"
           aria-label="Pagination"
         >
-          <div className="hidden sm:block">
-            <DropdownLarge
-              items={paginationItems}
-              selectedItem={`${itemsPerPage} per page`}
-              onSelect={handleSelectItemsPerPage}
-            />
-          </div>
-
-          <div className="flex-1 flex justify-between sm:justify-center items-center gap-2">
+          <div className="flex mx-auto px-5 items-center">
             <Button
               text="Previous"
               style="ghost"
@@ -731,13 +503,11 @@ const Table = ({
               onClick={() => {
                 if (currentPage > 1) setCurrentPage(currentPage - 1);
               }}
-              aria-label="Go to previous page"
             />
 
-            <p className="text-sm text-gray-700 dark:text-gray-300">
-              Page <span className="font-medium">{currentPage}</span> of{" "}
-              <span className="font-medium">
-                {Math.ceil(totalRecordCount / itemsPerPage)}
+            <p className="mx-3 text-sm dark:text-light text-dark">
+              <span className="px-2 py-1 border border-gray-300 rounded-sm">
+                {currentPage}
               </span>
             </p>
 
@@ -745,25 +515,21 @@ const Table = ({
               text="Next"
               style="ghost"
               arrow="right"
-              isDisabled={currentPage * itemsPerPage >= totalRecordCount}
+              isDisabled={
+                currentPage === Math.ceil(totalRecordCount / itemsPerPage)
+              }
               onClick={() => {
-                if (currentPage * itemsPerPage < totalRecordCount)
+                if (currentPage < Math.ceil(totalRecordCount / itemsPerPage))
                   setCurrentPage(currentPage + 1);
               }}
-              aria-label="Go to next page"
             />
           </div>
-
-          <div className="hidden sm:block text-sm text-gray-600 dark:text-gray-400">
-            Showing{" "}
-            <span className="font-medium">
-              {Math.min((currentPage - 1) * itemsPerPage + 1, totalRecordCount)}
-            </span>{" "}
-            to{" "}
-            <span className="font-medium">
-              {Math.min(currentPage * itemsPerPage, totalRecordCount)}
-            </span>{" "}
-            of <span className="font-medium">{totalRecordCount}</span> results
+          <div className="relative">
+            <DropdownLarge
+              items={paginationItems}
+              selectedItem="25 per page"
+              onSelect={handleSelect}
+            />
           </div>
         </nav>
       )}
