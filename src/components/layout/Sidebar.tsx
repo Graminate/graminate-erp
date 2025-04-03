@@ -77,7 +77,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
         },
         {
           label: "Payment",
-          route: `/platform/${userId}/payment`,
+          route: `/platform/${userId}/labour_payment`,
         },
       ],
     },

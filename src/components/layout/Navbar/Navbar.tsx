@@ -111,9 +111,6 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
                   <span className="hidden sm:inline text-bold text-3xl text-light">
                     Graminate
                   </span>
-                  <sup className="hidden sm:inline text-bold text-lg text-light">
-                    ERP
-                  </sup>
                 </div>
               </div>
             </div>

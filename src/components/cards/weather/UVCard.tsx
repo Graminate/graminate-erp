@@ -395,7 +395,7 @@ const UVCard = ({ lat, lon }: Coordinates) => {
         {dropdownOpen && (
           <div className="absolute top-8 right-0 bg-white dark:bg-gray-600 dark:text-light text-black rounded-lg shadow-lg z-20 w-32">
             <button
-              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 dark:hover:bg-gray-500 cursor-pointer"
+              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 dark:hover:bg-gray-800 rounded-t-lg cursor-pointer"
               type="button"
               onClick={() => {
                 setDisplayMode("Small");
@@ -405,7 +405,7 @@ const UVCard = ({ lat, lon }: Coordinates) => {
               Small
             </button>
             <button
-              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 dark:hover:bg-gray-500 cursor-pointer"
+              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 dark:hover:bg-gray-800 rounded-b-lg cursor-pointer"
               type="button"
               onClick={() => {
                 setDisplayMode("Large");
@@ -482,7 +482,7 @@ const UVCard = ({ lat, lon }: Coordinates) => {
                         dateItem.date.toDateString() ===
                           selectedDate.toDateString()
                           ? "bg-green-200 text-white"
-                          : "hover:bg-gray-400"
+                          : "hover:bg-gray-400 dark:hover:bg-gray-300"
                       }`}
                       onClick={() => setSelectedDate(dateItem.date)}
                       onKeyDown={(e) => {
@@ -550,17 +550,6 @@ const UVCard = ({ lat, lon }: Coordinates) => {
                     UV index {lowestRiskLevel} to {highestRiskLevel} on this day
                   </p>
                 )}
-              </div>
-
-              <div className="border-t border-gray-400 dark:border-gray-600 my-2 pt-2">
-                <p className="text-md font-semibold text-dark dark:text-light">
-                  About the UV Index
-                </p>
-                <p className="text-xs text-dark dark:text-light mt-1">
-                  The UV index measures ultraviolet radiation. Higher values
-                  mean greater risk and faster potential for harm. Use it to
-                  plan sun protection.
-                </p>
               </div>
             </div>
           )}

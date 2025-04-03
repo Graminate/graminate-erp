@@ -63,7 +63,7 @@ const PlatformLayout = ({ children }: Props) => {
           allowEscapeKey: false,
         }).then((res) => {
           if (res.isConfirmed) {
-            router.push("/");
+            router.back();
           }
         });
       } finally {

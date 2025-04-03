@@ -322,7 +322,7 @@ const SunCard = ({ lat, lon }: Coordinates) => {
         {dropdownOpen && (
           <div className="absolute top-8 right-0 bg-white dark:bg-gray-600 dark:text-light text-black rounded-lg shadow-lg z-20 w-32">
             <button
-              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 dark:hover:bg-gray-500 cursor-pointer"
+              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 dark:hover:bg-gray-800 rounded-t-lg cursor-pointer"
               type="button"
               onClick={() => {
                 setDisplayMode("Small");
@@ -332,7 +332,7 @@ const SunCard = ({ lat, lon }: Coordinates) => {
               Small
             </button>
             <button
-              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 dark:hover:bg-gray-500 cursor-pointer"
+              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 dark:hover:bg-gray-800 rounded-b-lg cursor-pointer"
               type="button"
               onClick={() => {
                 setDisplayMode("Large");
@@ -357,7 +357,7 @@ const SunCard = ({ lat, lon }: Coordinates) => {
             sunriseTime !== null &&
             sunsetTime !== null && (
               <div
-                className={`w-full ${displayMode === "Small" ? "pb-1" : ""}`}
+                className={`w-full ${displayMode === "Small" ? "pb-2" : ""}`}
               >
                 <div className="flex flex-col items-center w-full text-center rounded-md">
                   <div className="w-full flex flex-row items-center justify-center mb-2 gap-2">
@@ -369,7 +369,7 @@ const SunCard = ({ lat, lon }: Coordinates) => {
                       Sunrise & Sunset
                     </p>
                   </div>
-                  <div className="w-full grid grid-cols-2 gap-2 text-center px-2">
+                  <div className="w-full grid grid-cols-2 gap-2 text-center mb-1 px-2">
                     <div>
                       <p className="text-xs tracking-wide text-dark dark:text-light">
                         Sunrise
@@ -388,9 +388,9 @@ const SunCard = ({ lat, lon }: Coordinates) => {
                     </div>
                   </div>
 
-                  <div className="h-4">
+                  <div className="h-4 mt-1">
                     {isHovering && hoveredTime && (
-                      <p className="text-center text-xs text-dark dark:text-light font-medium">
+                      <p className="text-center text-md text-dark dark:text-light font-bold">
                         {hoveredTime}
                       </p>
                     )}

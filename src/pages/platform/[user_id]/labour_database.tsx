@@ -32,8 +32,6 @@ const LabourDatabase = () => {
           `http://localhost:3001/api/labour/${encodeURIComponent(parsedUserId)}`
         );
 
-        console.log("Fetched Labour Data:", response.data);
-
         setLabourRecords(response.data.labours || []);
       } catch (error: any) {
         console.error(
@@ -82,7 +80,6 @@ const LabourDatabase = () => {
         <title>Graminate | Employee Database</title>
       </Head>
       <div className="min-h-screen container mx-auto p-4">
-        {/* Header */}
         <div className="flex justify-between items-center dark:bg-dark relative mb-4">
           <div>
             <h1 className="text-lg font-semibold dark:text-white">
@@ -102,7 +99,6 @@ const LabourDatabase = () => {
           </div>
         </div>
 
-        {/* Table displaying the labour data */}
         <Table
           data={{ ...tableData, rows: tableData.rows }}
           filteredRows={tableData.rows}
