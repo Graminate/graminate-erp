@@ -731,7 +731,7 @@ const DataForm = ({
           )}
 
           {/* Form for Labours */}
-          {view === "labours" && (
+          {view === "labour" && (
             <form
               className="flex flex-col gap-4 w-full flex-grow"
               onSubmit={handleSubmitLabour}

@@ -196,7 +196,7 @@ const Table = ({
       receipts: "receipt",
     };
 
-    const entityToDelete = entityNames[view] || "contracts";
+    const entityToDelete = entityNames[view] || view;
 
     const result = await Swal.fire({
       title: "Are you sure?",
@@ -302,17 +302,17 @@ const Table = ({
               const entityNames: Record<string, string> = {
                 contacts: "contacts",
                 companies: "companies",
-                contracts: "deals",
+                contracts: "contracts",
                 receipts: "invoices",
-                labour: "employees",
+                labour: "labour",
                 inventory: "inventory",
               };
 
-              const entityToTruncate = entityNames[view] || view; // Added fallback to view itself if not found
+              const entityToTruncate = entityNames[view] || view;
 
               const result = await Swal.fire({
                 title: "Are you sure?",
-                text: `This will reset your ${entityToTruncate} database.`, // Now uses the correct name
+                text: `This will reset your ${entityToTruncate} database.`,
                 icon: "warning",
                 showCancelButton: true,
                 confirmButtonText: "Yes, Reset!",
@@ -322,13 +322,16 @@ const Table = ({
               if (result.isConfirmed) {
                 try {
                   const userId = localStorage.getItem("userId");
-                  // Ensure the API endpoint still uses the correct 'view' value ('labour')
-                  await axios.post(`http://localhost:3001/api/${view}/reset`, {
-                    userId,
-                  });
+                  await axios.post(
+                    `http://localhost:3001/api/${entityToTruncate}/reset`,
+                    {
+                      userId,
+                    }
+                  );
                   Swal.fire("Reset!", "Table has been reset.", "success").then(
                     () => location.reload()
                   );
+                  let endpoint = "";
                 } catch (err) {
                   console.error(err);
                   Swal.fire("Error", "Failed to reset table.", "error");

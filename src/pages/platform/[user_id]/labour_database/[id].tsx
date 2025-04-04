@@ -38,6 +38,14 @@ const LabourDetails = () => {
   const [esic, setEsic] = useState("");
   const [pmKisan, setPmKisan] = useState("");
 
+  const [baseSalary, setBaseSalary] = useState("");
+  const [bonus, setBonus] = useState("");
+  const [overtimePay, setOvertimePay] = useState("");
+  const [housingAllowance, setHousingAllowance] = useState("");
+  const [travelAllowance, setTravelAllowance] = useState("");
+  const [mealAllowance, setMealAllowance] = useState("");
+  const [paymentFrequency, setPaymentFrequency] = useState("");
+
   const [initialFormData, setInitialFormData] = useState({
     fullName: "",
     dateOfBirth: "",
@@ -58,6 +66,13 @@ const LabourDetails = () => {
     epfo: "",
     esic: "",
     pmKisan: "",
+    baseSalary: "",
+    bonus: "",
+    overtimePay: "",
+    housingAllowance: "",
+    travelAllowance: "",
+    mealAllowance: "",
+    paymentFrequency: "",
   });
 
   const [saving, setSaving] = useState(false);
@@ -86,7 +101,6 @@ const LabourDetails = () => {
       setAddress(parsedLabour.address || "");
       setRole(parsedLabour.role || "");
 
-      // Optional fields
       setRationCard(parsedLabour.ration_card ?? "");
       setPanCard(parsedLabour.pan_card ?? "");
       setDrivingLicense(parsedLabour.driving_license ?? "");
@@ -99,8 +113,14 @@ const LabourDetails = () => {
       setEpfo(parsedLabour.epfo ?? "");
       setEsic(parsedLabour.esic ?? "");
       setPmKisan(parsedLabour.pm_kisan ? "Yes" : "No");
+      setBaseSalary(parsedLabour.base_salary?.toString() || "");
+      setBonus(parsedLabour.bonus?.toString() || "");
+      setOvertimePay(parsedLabour.overtime_pay?.toString() || "");
+      setHousingAllowance(parsedLabour.housing_allowance?.toString() || "");
+      setTravelAllowance(parsedLabour.travel_allowance?.toString() || "");
+      setMealAllowance(parsedLabour.meal_allowance?.toString() || "");
+      setPaymentFrequency(parsedLabour.payment_frequency || "Monthly");
 
-      // Set initial form data for change detection
       setInitialFormData({
         fullName: parsedLabour.full_name || "",
         dateOfBirth:
@@ -122,6 +142,13 @@ const LabourDetails = () => {
         epfo: parsedLabour.epfo || "",
         esic: parsedLabour.esic || "",
         pmKisan: parsedLabour.pm_kisan ? "Yes" : "No",
+        baseSalary: parsedLabour.base_salary?.toString() || "",
+        bonus: parsedLabour.bonus?.toString() || "",
+        overtimePay: parsedLabour.overtime_pay?.toString() || "",
+        housingAllowance: parsedLabour.housing_allowance?.toString() || "",
+        travelAllowance: parsedLabour.travel_allowance?.toString() || "",
+        mealAllowance: parsedLabour.meal_allowance?.toString() || "",
+        paymentFrequency: parsedLabour.payment_frequency || "Monthly",
       });
     } catch (error) {
       console.error("Error parsing labour data:", error);
@@ -147,7 +174,14 @@ const LabourDetails = () => {
     role !== initialFormData.role ||
     epfo !== initialFormData.epfo ||
     esic !== initialFormData.esic ||
-    pmKisan !== initialFormData.pmKisan;
+    pmKisan !== initialFormData.pmKisan ||
+    baseSalary !== initialFormData.baseSalary ||
+    bonus !== initialFormData.bonus ||
+    overtimePay !== initialFormData.overtimePay ||
+    housingAllowance !== initialFormData.housingAllowance ||
+    travelAllowance !== initialFormData.travelAllowance ||
+    mealAllowance !== initialFormData.mealAllowance ||
+    paymentFrequency !== initialFormData.paymentFrequency;
 
   const handleSave = async () => {
     setSaving(true);
@@ -185,6 +219,14 @@ const LabourDetails = () => {
       epfo: epfo,
       esic: esic,
       pm_kisan: pmKisan === "Yes",
+
+      base_salary: parseFloat(baseSalary),
+      bonus: parseFloat(bonus),
+      overtime_pay: parseFloat(overtimePay),
+      housing_allowance: parseFloat(housingAllowance),
+      travel_allowance: parseFloat(travelAllowance),
+      meal_allowance: parseFloat(mealAllowance),
+      payment_frequency: paymentFrequency,
     };
 
     console.log("Sending update request with payload:", payload);
@@ -220,6 +262,13 @@ const LabourDetails = () => {
         epfo: payload.epfo,
         esic: payload.esic,
         pmKisan: payload.pm_kisan ? "Yes" : "No",
+        baseSalary: payload.base_salary?.toString() || "",
+        bonus: payload.bonus?.toString() || "",
+        overtimePay: payload.overtime_pay?.toString() || "",
+        housingAllowance: payload.housing_allowance?.toString() || "",
+        travelAllowance: payload.travel_allowance?.toString() || "",
+        mealAllowance: payload.meal_allowance?.toString() || "",
+        paymentFrequency: payload.payment_frequency || "Monthly",
       });
     } catch (error: any) {
       console.error("Error updating labour:", error);
@@ -398,6 +447,59 @@ const LabourDetails = () => {
                   label="Bank Branch"
                   value={bankBranch}
                   onChange={(val) => setBankBranch(val)}
+                  width="large"
+                />
+              </div>
+            </div>
+
+            {/* Salary Data Section */}
+            <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
+              <h2 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-400">
+                Salary Data
+              </h2>
+              <div className="grid grid-cols-2 gap-4">
+                <TextField
+                  label="Base Salary"
+                  value={baseSalary}
+                  onChange={setBaseSalary}
+                  width="large"
+                />
+                <DropdownLarge
+                  label="Payment Frequency"
+                  items={["Monthly", "Weekly", "Bi-weekly", "Daily"]}
+                  selectedItem={paymentFrequency}
+                  onSelect={(value) => setPaymentFrequency(value)}
+                  type="form"
+                  width="full"
+                />
+                <TextField
+                  label="Bonus"
+                  value={bonus}
+                  onChange={setBonus}
+                  width="large"
+                />
+                <TextField
+                  label="Overtime Pay"
+                  value={overtimePay}
+                  onChange={setOvertimePay}
+                  width="large"
+                />
+                <TextField
+                  label="Housing Allowance (Optional)"
+                  value={housingAllowance}
+                  onChange={setHousingAllowance}
+                  width="large"
+                />
+                <TextField
+                  label="Travel Allowance (Optional)"
+                  value={travelAllowance}
+                  onChange={setTravelAllowance}
+                  width="large"
+                />
+                <TextField
+                  label="Meal Allowance (Optional)"
+                  value={mealAllowance}
+                  onChange={setMealAllowance}
                   width="large"
                 />
               </div>

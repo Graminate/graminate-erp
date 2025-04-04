@@ -8,14 +8,14 @@ import { PAGINATION_ITEMS } from "@/constants/options";
 import Head from "next/head";
 import axios from "axios";
 
-type View = "labours";
+type View = "labour";
 
 const LabourDatabase = () => {
   const router = useRouter();
   const { user_id, view: queryView } = router.query;
   const parsedUserId = Array.isArray(user_id) ? user_id[0] : user_id;
   const view: View =
-    typeof queryView === "string" ? (queryView as View) : "labours";
+    typeof queryView === "string" ? (queryView as View) : "labour";
 
   const [labourRecords, setLabourRecords] = useState<any[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -45,7 +45,7 @@ const LabourDatabase = () => {
   }, [router.isReady, parsedUserId]);
 
   const tableData = useMemo(() => {
-    if (view === "labours" && labourRecords.length > 0) {
+    if (view === "labour" && labourRecords.length > 0) {
       return {
         columns: [
           "ID",
