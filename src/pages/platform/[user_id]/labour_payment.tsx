@@ -7,7 +7,7 @@ import Table from "@/components/tables/Table";
 
 const LabourPayment = () => {
   const now = new Date();
-  const currentMonth = now.getMonth(); // 0-indexed: 0 = Jan
+  const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
   const router = useRouter();
   const { user_id } = router.query;
@@ -129,31 +129,28 @@ const LabourPayment = () => {
         <div className="flex justify-between items-center dark:bg-dark relative mb-4">
           <div>
             <h1 className="text-lg font-semibold dark:text-white">
-              Payment Details
+              Salary Manager
             </h1>
           </div>
         </div>
 
-        {/* 💳 Budget Cards */}
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="bg-white dark:bg-gray-800 p-4 rounded shadow flex-1">
-            <h2 className="text-lg font-semibold">Total Salary to Pay</h2>
-            <p className="text-2xl">{salaryToPay.toFixed(2)}</p>
-          </div>
-          <div className="bg-white dark:bg-gray-800 p-4 rounded shadow flex-1">
-            <h2 className="text-lg font-semibold text-green-700 dark:text-green-300">
-              Total Salary Paid
-            </h2>
-            <p className="text-2xl text-dark dark:text-white">
-              {totalPaid.toFixed(2)}
+            <h2 className="text-lg font-semibold">Salary to Pay</h2>
+            <p className="text-lg text-dark dark:text-white">
+              ₹ {salaryToPay.toFixed(2)}
             </p>
           </div>
           <div className="bg-white dark:bg-gray-800 p-4 rounded shadow flex-1">
-            <h2 className="text-lg font-semibold text-red-600 dark:text-red-400">
-              Remaining Salary to Pay
-            </h2>
-            <p className="text-2xl text-dark dark:text-white">
-              {remainingToPay.toFixed(2)}
+            <h2 className="text-lg font-semibold">Salary Paid </h2>
+            <p className="text-lg text-dark dark:text-white">
+              ₹ {totalPaid.toFixed(2)}
+            </p>
+          </div>
+          <div className="bg-white dark:bg-gray-800 p-4 rounded shadow flex-1">
+            <h2 className="text-lg font-semibold">Pending Salary</h2>
+            <p className="text-lg text-dark dark:text-white">
+              ₹ {remainingToPay.toFixed(2)}
             </p>
           </div>
         </div>

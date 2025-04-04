@@ -67,16 +67,16 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
     },
     {
       icon: faUsers,
-      label: "Workerforce",
+      label: "Employees",
       section: "Labour",
       basePath: `/platform/${userId}/labour`,
       subItems: [
         {
-          label: "Employee Database",
+          label: "Database",
           route: `/platform/${userId}/labour_database`,
         },
         {
-          label: "Payment",
+          label: "Salary Manager",
           route: `/platform/${userId}/labour_payment`,
         },
       ],

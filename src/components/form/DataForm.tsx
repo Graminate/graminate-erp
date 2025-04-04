@@ -13,6 +13,8 @@ import {
   UNITS,
 } from "@/constants/options";
 import axios from "axios";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faX } from "@fortawesome/free-solid-svg-icons";
 
 const DataForm = ({
   view,
@@ -369,7 +371,7 @@ const DataForm = ({
               className="text-gray-300 hover:text-gray-100"
               onClick={handleClose}
             >
-              ✕
+              <FontAwesomeIcon icon={faX} className="w-5 h-5" />
             </button>
           </div>
 

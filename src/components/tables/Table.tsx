@@ -451,7 +451,8 @@ const Table = ({
                 {row.map((cell, cellIndex) => (
                   <td
                     key={cellIndex}
-                    className="p-2 border-b border-gray-300 dark:border-gray-200 text-base font-light dark:text-gray-400"
+                    className="p-2 border-b border-gray-300 dark:border-gray-200 text-base font-light dark:text-gray-400 max-w-[200px] truncate overflow-hidden whitespace-nowrap"
+                    title={typeof cell === "string" ? cell : undefined}
                   >
                     {view === "inventory" &&
                     data.columns[cellIndex] === "Status" ? (

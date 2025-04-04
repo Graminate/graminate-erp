@@ -302,7 +302,7 @@ const LabourDetails = () => {
             <h1 className="text-2xl font-bold mb-6">{fullName}</h1>
 
             {/* Personal Data Section */}
-            <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm mb-6">
               <h2 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-400">
                 Personal Data
               </h2>
@@ -352,7 +352,7 @@ const LabourDetails = () => {
             </div>
 
             {/* Government Data Section */}
-            <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm mb-6">
               <h2 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-400">
                 Government Data (Optional)
               </h2>
@@ -420,7 +420,7 @@ const LabourDetails = () => {
             </div>
 
             {/* Bank Data Section */}
-            <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm mb-6">
               <h2 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-400">
                 Bank Data
               </h2>
@@ -453,7 +453,7 @@ const LabourDetails = () => {
             </div>
 
             {/* Salary Data Section */}
-            <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm mb-6">
               <h2 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-400">
                 Salary Data
               </h2>

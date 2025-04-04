@@ -5,6 +5,13 @@ import Head from "next/head";
 import axios from "axios";
 import Button from "@/components/ui/Button";
 import Table from "@/components/tables/Table";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faHome,
+  faMobileScreen,
+  faUser,
+} from "@fortawesome/free-solid-svg-icons";
+import SalaryModal from "@/components/modals/SalaryModal";
 
 interface PaymentRecord {
   payment_id: number;
@@ -29,6 +36,12 @@ const LabourPaymentDetails = () => {
 
   const [labourName, setLabourName] = useState<string>("");
   const [paymentRecords, setPaymentRecords] = useState<PaymentRecord[]>([]);
+  const [contact, setContact] = useState<string>("");
+  const [address, setAddress] = useState<string>("");
+  const [showSalaryModal, setShowSalaryModal] = useState(false);
+  const [selectedRecord, setSelectedRecord] = useState<PaymentRecord | null>(
+    null
+  );
 
   // Table state
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -41,18 +54,30 @@ const LabourPaymentDetails = () => {
 
     const fetchData = async () => {
       try {
-        const [paymentsRes, laboursRes] = await Promise.all([
-          axios.get(
-            `http://localhost:3001/api/labour_payment/${parsedLabourId}`
-          ),
-          axios.get(`http://localhost:3001/api/labour/${parsedUserId}`),
-        ]);
-
-        setPaymentRecords(paymentsRes.data.payments || []);
-
+        const laboursRes = await axios.get(
+          `http://localhost:3001/api/labour/${parsedUserId}`
+        );
         const labours = laboursRes.data.labours || [];
         const labour = labours.find((l: any) => l.labour_id == parsedLabourId);
-        if (labour) setLabourName(labour.full_name);
+
+        if (labour) {
+          setLabourName(labour.full_name);
+          setContact(labour.contact_number || "");
+          setAddress(labour.address || "");
+        }
+
+        try {
+          const paymentsRes = await axios.get(
+            `http://localhost:3001/api/labour_payment/${parsedLabourId}`
+          );
+          setPaymentRecords(paymentsRes.data.payments || []);
+        } catch (err: any) {
+          console.warn(
+            "No payments found:",
+            err.response?.data?.error || err.message
+          );
+          setPaymentRecords([]);
+        }
       } catch (error: any) {
         console.error(
           "Error fetching data:",
@@ -64,7 +89,6 @@ const LabourPaymentDetails = () => {
     fetchData();
   }, [router.isReady, parsedUserId, parsedLabourId]);
 
-  // Table structure
   const tableData = useMemo(() => {
     return {
       columns: [
@@ -105,17 +129,48 @@ const LabourPaymentDetails = () => {
     router.push(`/platform/${parsedUserId}/labour_payment`);
   };
 
-
   return (
     <PlatformLayout>
       <Head>
-        <title>Graminate | Labour Payment Details</title>
+        <title>Graminate | Salary Details</title>
       </Head>
-      <div className="min-h-screen container mx-auto p-4">
-        <Button text="Back" style="ghost" arrow="left" onClick={goBack} />
-        <h1 className="text-2xl font-bold mb-4">
-          Payment Details for {labourName || `Labour ID: ${parsedLabourId}`}
-        </h1>
+      <Button text="Back" style="ghost" arrow="left" onClick={goBack} />
+      <div className="min-h-screen container mx-auto px-4">
+        <div className="flex flex-row items-start justify-between mt-4">
+          <h1 className="text-lg font-semibold dark:text-white">
+            Salary Details
+          </h1>
+          <Button
+            text="Add Salary"
+            style="primary"
+            add
+            onClick={() => {
+              setSelectedRecord(null);
+              setShowSalaryModal(true);
+            }}
+          />
+        </div>
+
+        <div className="flex flex-row gap-6 items-start mt-2 space-y-1">
+          <p className="text-sm text-dark dark:text-light">
+            <span className="font-semibold mr-2">
+              <FontAwesomeIcon icon={faUser} />
+            </span>
+            {labourName}
+          </p>
+          <p className="text-sm text-dark dark:text-light">
+            <span className="font-semibold mr-2">
+              <FontAwesomeIcon icon={faMobileScreen} />
+            </span>
+            {contact}
+          </p>
+          <p className="text-sm text-dark dark:text-light">
+            <span className="font-semibold mr-2">
+              <FontAwesomeIcon icon={faHome} />
+            </span>
+            {address}
+          </p>
+        </div>
 
         <Table
           view="labour_payment"
@@ -129,10 +184,31 @@ const LabourPaymentDetails = () => {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           totalRecordCount={tableData.rows.length}
-          onRowClick={() => {}}
+          onRowClick={(row) => {
+            const payment = paymentRecords.find(
+              (p) => new Date(p.payment_date).toLocaleDateString() === row[0]
+            );
+            if (payment) {
+              setSelectedRecord(payment);
+              setShowSalaryModal(true);
+            }
+          }}
           reset={false}
           hideChecks={true}
         />
+
+        {showSalaryModal && (
+          <SalaryModal
+            labourId={parsedLabourId || ""}
+            editMode={!!selectedRecord}
+            initialData={selectedRecord || undefined}
+            onClose={() => {
+              setShowSalaryModal(false);
+              setSelectedRecord(null);
+            }}
+            onSuccess={() => router.replace(router.asPath)}
+          />
+        )}
       </div>
     </PlatformLayout>
   );
