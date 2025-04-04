@@ -26,6 +26,8 @@ type Props = {
   view?: string;
   exportEnabled?: boolean;
   loading?: boolean;
+  reset?: boolean;
+  hideChecks?: boolean;
 };
 
 const Table = ({
@@ -42,6 +44,8 @@ const Table = ({
   totalRecordCount,
   view = "",
   loading,
+  reset = true,
+  hideChecks = false,
 }: Props) => {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [sortColumn, setSortColumn] = useState<number | null>(null);
@@ -292,53 +296,57 @@ const Table = ({
           )}
         </div>
         <div className="flex flex-row">
-          <Button
-            style="secondary"
-            text="Reset"
-            isDisabled={filteredRows.length === 0}
-            onClick={async () => {
-              if (filteredRows.length === 0) return;
+          {reset && (
+            <Button
+              style="secondary"
+              text="Reset"
+              isDisabled={filteredRows.length === 0}
+              onClick={async () => {
+                if (filteredRows.length === 0) return;
 
-              const entityNames: Record<string, string> = {
-                contacts: "contacts",
-                companies: "companies",
-                contracts: "contracts",
-                receipts: "invoices",
-                labour: "labour",
-                inventory: "inventory",
-              };
+                const entityNames: Record<string, string> = {
+                  contacts: "contacts",
+                  companies: "companies",
+                  contracts: "contracts",
+                  receipts: "invoices",
+                  labour: "labour",
+                  inventory: "inventory",
+                };
 
-              const entityToTruncate = entityNames[view] || view;
+                const entityToTruncate = entityNames[view] || view;
 
-              const result = await Swal.fire({
-                title: "Are you sure?",
-                text: `This will reset your ${entityToTruncate} database.`,
-                icon: "warning",
-                showCancelButton: true,
-                confirmButtonText: "Yes, Reset!",
-                cancelButtonText: "Cancel",
-              });
+                const result = await Swal.fire({
+                  title: "Are you sure?",
+                  text: `This will reset your ${entityToTruncate} database.`,
+                  icon: "warning",
+                  showCancelButton: true,
+                  confirmButtonText: "Yes, Reset!",
+                  cancelButtonText: "Cancel",
+                });
 
-              if (result.isConfirmed) {
-                try {
-                  const userId = localStorage.getItem("userId");
-                  await axios.post(
-                    `http://localhost:3001/api/${entityToTruncate}/reset`,
-                    {
-                      userId,
-                    }
-                  );
-                  Swal.fire("Reset!", "Table has been reset.", "success").then(
-                    () => location.reload()
-                  );
-                  let endpoint = "";
-                } catch (err) {
-                  console.error(err);
-                  Swal.fire("Error", "Failed to reset table.", "error");
+                if (result.isConfirmed) {
+                  try {
+                    const userId = localStorage.getItem("userId");
+                    await axios.post(
+                      `http://localhost:3001/api/${entityToTruncate}/reset`,
+                      {
+                        userId,
+                      }
+                    );
+                    Swal.fire(
+                      "Reset!",
+                      "Table has been reset.",
+                      "success"
+                    ).then(() => location.reload());
+                    let endpoint = "";
+                  } catch (err) {
+                    console.error(err);
+                    Swal.fire("Error", "Failed to reset table.", "error");
+                  }
                 }
-              }
-            }}
-          />
+              }}
+            />
+          )}
 
           <div className="relative" ref={dropdownRef}>
             <Button
@@ -381,14 +389,16 @@ const Table = ({
         <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
           <thead>
             <tr>
-              <th className="p-3 text-left font-medium text-dark dark:text-gray-300 bg-gray-500 hover:bg-gray-400 dark:bg-gray-800  dark:border-gray-700">
-                <input
-                  type="checkbox"
-                  className="form-checkbox h-4 w-4 text-gray-600"
-                  checked={selectAll}
-                  onChange={handleSelectAllChange}
-                />
-              </th>
+              {!hideChecks && (
+                <th className="p-3 text-left font-medium text-dark dark:text-gray-300 bg-gray-500 hover:bg-gray-400 dark:bg-gray-800 dark:border-gray-700">
+                  <input
+                    type="checkbox"
+                    className="form-checkbox h-4 w-4 text-gray-600"
+                    checked={selectAll}
+                    onChange={handleSelectAllChange}
+                  />
+                </th>
+              )}
               {data.columns.map((column, index) => (
                 <th
                   key={index}
@@ -427,14 +437,17 @@ const Table = ({
                   }
                 }}
               >
-                <td className="p-3 border-b border-gray-300 dark:border-gray-700 text-base font-light text-gray-700 dark:text-gray-300">
-                  <input
-                    type="checkbox"
-                    className="form-checkbox h-4 w-4 text-gray-200 dark:text-light"
-                    checked={selectedRows[rowIndex] || false}
-                    onChange={(e) => handleRowCheckboxChange(rowIndex, e)}
-                  />
-                </td>
+                {!hideChecks && (
+                  <td className="p-3 border-b border-gray-300 dark:border-gray-700 text-base font-light text-gray-700 dark:text-gray-300">
+                    <input
+                      type="checkbox"
+                      className="form-checkbox h-4 w-4 text-gray-200 dark:text-light"
+                      checked={selectedRows[rowIndex] || false}
+                      onChange={(e) => handleRowCheckboxChange(rowIndex, e)}
+                    />
+                  </td>
+                )}
+
                 {row.map((cell, cellIndex) => (
                   <td
                     key={cellIndex}

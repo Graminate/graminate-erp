@@ -1,23 +1,129 @@
-import { useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
-
 import PlatformLayout from "@/layout/PlatformLayout";
-
 import Head from "next/head";
+import axios from "axios";
+import Table from "@/components/tables/Table";
 
 const LabourPayment = () => {
+  const now = new Date();
+  const currentMonth = now.getMonth(); // 0-indexed: 0 = Jan
+  const currentYear = now.getFullYear();
   const router = useRouter();
-  const { user_id, view: queryView } = router.query;
+  const { user_id } = router.query;
   const parsedUserId = Array.isArray(user_id) ? user_id[0] : user_id;
+
+  const [labourList, setLabourList] = useState<any[]>([]);
+  const [paymentRecords, setPaymentRecords] = useState<any[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const tableData = useMemo(() => {
+    return {
+      columns: [
+        " ID",
+        "Full Name",
+        "Gender",
+        "Base Salary",
+        "Contact",
+        "Aadhar",
+        "Address",
+      ],
+      rows: labourList.map((labour) => [
+        labour.labour_id,
+        labour.full_name,
+        labour.gender,
+        labour.base_salary,
+        labour.contact_number,
+        labour.aadhar_card_number,
+        labour.address,
+      ]),
+    };
+  }, [labourList]);
+
+  const filteredRows = useMemo(() => {
+    if (!searchQuery) return tableData.rows;
+    return tableData.rows.filter((row) =>
+      row.some((cell) =>
+        String(cell).toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    );
+  }, [searchQuery, tableData.rows]);
+
+  const PAGINATION_ITEMS = ["25 per page", "50 per page", "100 per page"];
 
   useEffect(() => {
     if (!router.isReady || !parsedUserId) return;
+
+    const fetchLabourList = async () => {
+      try {
+        const res = await axios.get(
+          `http://localhost:3001/api/labour/${parsedUserId}`
+        );
+        setLabourList(res.data.labours || []);
+      } catch (error: any) {
+        console.error(
+          "Error fetching labours:",
+          error.response?.data?.error || error.message
+        );
+      }
+    };
+
+    const fetchAllPayments = async () => {
+      try {
+        const res = await axios.get(
+          `http://localhost:3001/api/labour/${parsedUserId}`
+        );
+        const labours = res.data.labours || [];
+        const allPayments: any[] = [];
+
+        for (const labour of labours) {
+          const paymentRes = await axios.get(
+            `http://localhost:3001/api/labour_payment/${labour.labour_id}`
+          );
+          allPayments.push(...(paymentRes.data.payments || []));
+        }
+
+        setPaymentRecords(allPayments);
+      } catch (error: any) {
+        console.error("Error fetching payment records:", error.message);
+      }
+    };
+
+    fetchLabourList();
+    fetchAllPayments();
   }, [router.isReady, parsedUserId]);
+
+  const currentMonthPayments = paymentRecords.filter((p) => {
+    const date = new Date(p.payment_date);
+    return (
+      date.getMonth() === currentMonth && date.getFullYear() === currentYear
+    );
+  });
+
+  const totalPaid = currentMonthPayments
+    .filter((p) => p.payment_status.toLowerCase() === "paid")
+    .reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
+
+  const currentMonthLabours = labourList.filter((labour) => {
+    const date = new Date(labour.created_at);
+    return (
+      date.getMonth() === currentMonth && date.getFullYear() === currentYear
+    );
+  });
+
+  const salaryToPay = currentMonthLabours.reduce(
+    (sum, labour) => sum + Number(labour.base_salary || 0),
+    0
+  );
+
+  const remainingToPay = Math.max(salaryToPay - totalPaid, 0);
 
   return (
     <PlatformLayout>
       <Head>
-        <title>Graminate | Employee Database</title>
+        <title>Graminate | Employee Payroll</title>
       </Head>
       <div className="min-h-screen container mx-auto p-4">
         <div className="flex justify-between items-center dark:bg-dark relative mb-4">
@@ -26,8 +132,53 @@ const LabourPayment = () => {
               Payment Details
             </h1>
           </div>
-          <div className="flex gap-2"></div>
         </div>
+
+        {/* 💳 Budget Cards */}
+        <div className="flex flex-col md:flex-row gap-4 mb-6">
+          <div className="bg-white dark:bg-gray-800 p-4 rounded shadow flex-1">
+            <h2 className="text-lg font-semibold">Total Salary to Pay</h2>
+            <p className="text-2xl">{salaryToPay.toFixed(2)}</p>
+          </div>
+          <div className="bg-white dark:bg-gray-800 p-4 rounded shadow flex-1">
+            <h2 className="text-lg font-semibold text-green-700 dark:text-green-300">
+              Total Salary Paid
+            </h2>
+            <p className="text-2xl text-dark dark:text-white">
+              {totalPaid.toFixed(2)}
+            </p>
+          </div>
+          <div className="bg-white dark:bg-gray-800 p-4 rounded shadow flex-1">
+            <h2 className="text-lg font-semibold text-red-600 dark:text-red-400">
+              Remaining Salary to Pay
+            </h2>
+            <p className="text-2xl text-dark dark:text-white">
+              {remainingToPay.toFixed(2)}
+            </p>
+          </div>
+        </div>
+
+        <Table
+          view="labour"
+          data={tableData}
+          filteredRows={filteredRows}
+          currentPage={currentPage}
+          itemsPerPage={itemsPerPage}
+          setCurrentPage={setCurrentPage}
+          setItemsPerPage={setItemsPerPage}
+          paginationItems={PAGINATION_ITEMS}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          totalRecordCount={tableData.rows.length}
+          onRowClick={(row) => {
+            const labourId = row[0];
+            router.push({
+              pathname: `/platform/${parsedUserId}/labour_payment/${labourId}`,
+            });
+          }}
+          reset={false}
+          hideChecks={true}
+        />
       </div>
     </PlatformLayout>
   );
