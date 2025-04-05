@@ -1,12 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
 import Button from "@/components/ui/Button";
-import DataForm from "@/components/form/DataForm";
 import Table from "@/components/tables/Table";
 import PlatformLayout from "@/layout/PlatformLayout";
 import { PAGINATION_ITEMS } from "@/constants/options";
 import Head from "next/head";
 import axios from "axios";
+import LabourForm from "@/components/form/labourForm";
 
 type View = "labour";
 
@@ -126,14 +126,13 @@ const LabourDatabase = () => {
         />
 
         {isSidebarOpen && (
-          <DataForm
-            view={view}
+          <LabourForm
+            view="labour"
             onClose={() => setIsSidebarOpen(false)}
             onSubmit={(values: Record<string, string>) => {
-              console.log("Form submitted:", values);
               setIsSidebarOpen(false);
             }}
-            formTitle="Add New Employee"
+            formTitle="Add Labour"
           />
         )}
       </div>

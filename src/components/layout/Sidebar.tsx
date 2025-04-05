@@ -254,9 +254,9 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
         })}
       </nav>
 
-      <div className="mt-auto p-3 border-t border-gray-700">
+      <div className="mt-auto p-3 border-t border-gray-200">
         <button
-          className={`w-full flex items-center p-2 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-gray-100 transition-colors duration-200 ${
+          className={`w-full flex items-center p-2 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-gray-300 transition-colors duration-200 ${
             isCollapsed ? "justify-center" : "justify-end"
           }`}
           onClick={toggleCollapse}

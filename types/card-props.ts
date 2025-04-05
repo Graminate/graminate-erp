@@ -55,12 +55,11 @@ export type Coordinates = {
 };
 
 // Layout component Props
-
-export type DataForm = {
+export type SidebarProp = {
   view: string;
   onClose: () => void;
-  onSubmit?: (values: Record<string, string>) => void;
-  formTitle?: string;
+  onSubmit: (values: Record<string, string>) => void;
+  formTitle: string;
 };
 
 // Left sidebar

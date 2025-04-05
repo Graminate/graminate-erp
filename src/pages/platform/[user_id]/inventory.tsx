@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
 import Button from "@/components/ui/Button";
-import DataForm from "@/components/form/DataForm";
 import Table from "@/components/tables/Table";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
@@ -19,6 +18,7 @@ import {
   Legend,
   ArcElement,
 } from "chart.js";
+import InventoryForm from "@/components/form/inventoryForm";
 
 ChartJS.register(
   CategoryScale,
@@ -282,8 +282,8 @@ const Inventory = () => {
         />
 
         {isSidebarOpen && (
-          <DataForm
-            view={view}
+          <InventoryForm
+            view="inventory"
             onClose={() => setIsSidebarOpen(false)}
             onSubmit={(values: Record<string, string>) => {
               console.log("Form submitted:", values);

@@ -2,11 +2,11 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
 import Button from "@/components/ui/Button";
 import SearchDropdown from "@/components/ui/SearchDropdown";
-import DataForm from "@/components/form/DataForm";
 import Table from "@/components/tables/Table";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
 import { PAGINATION_ITEMS } from "@/constants/options";
+import CRMForm from "@/components/form/crmForm";
 
 type View = "contacts" | "companies" | "contracts" | "receipts" | "tasks";
 
@@ -139,7 +139,15 @@ const CRM = () => {
             item.email,
             item.phone_number,
             item.type,
-            item.address,
+            [
+              item.address_line_1,
+              item.address_line_2,
+              item.city,
+              item.state,
+              item.postal_code,
+            ]
+              .filter(Boolean)
+              .join(", "),
             new Date(item.created_at).toDateString(),
           ]),
         };
@@ -161,7 +169,15 @@ const CRM = () => {
             item.owner_name,
             item.email,
             item.phone_number,
-            item.address,
+            [
+              item.address_line_1,
+              item.address_line_2,
+              item.city,
+              item.state,
+              item.postal_code,
+            ]
+              .filter(Boolean)
+              .join(", "),
             item.type,
           ]),
         };
@@ -261,10 +277,15 @@ const CRM = () => {
 
   const handleRowClick = (row: any[]) => {
     const id = row[0];
-    const fullData =
-      view === "receipts"
-        ? fetchedData.find((item) => item.invoice_id === id)
-        : null;
+    let fullData = null;
+    if (view === "receipts") {
+      fullData = fetchedData.find((item) => item.invoice_id === id);
+    } else if (view === "contacts") {
+      fullData = fetchedData.find((item) => item.contact_id === id);
+    } else if (view === "companies") {
+      fullData = fetchedData.find((item) => item.company_id === id);
+    }
+
     const rowData = JSON.stringify(fullData || row);
 
     const validViews = [
@@ -364,7 +385,7 @@ const CRM = () => {
         />
 
         {isSidebarOpen && (
-          <DataForm
+          <CRMForm
             view={view}
             onClose={() => setIsSidebarOpen(false)}
             onSubmit={handleFormSubmit}
