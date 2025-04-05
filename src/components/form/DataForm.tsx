@@ -766,8 +766,8 @@ const DataForm = ({
                 width="full"
               />
               <TextField
-                label="Role"
-                placeholder="e.g. Farmer, Labourer"
+                label="Designation"
+                placeholder="Role of the Employee "
                 value={labourValues.role}
                 onChange={(val: string) =>
                   setLabourValues({ ...labourValues, role: val })
@@ -775,7 +775,7 @@ const DataForm = ({
               />
               <TextField
                 label="Contact Number"
-                placeholder="e.g. +91 XXXXX XXX XX"
+                placeholder="e.g. 91 XXXXX XXX XX"
                 value={labourValues.contactNumber}
                 onChange={(val: string) =>
                   setLabourValues({ ...labourValues, contactNumber: val })
@@ -783,7 +783,7 @@ const DataForm = ({
               />
               <TextField
                 label="Aadhar Card Number"
-                placeholder="e.g. 1234 5678 9012"
+                placeholder="e.g. XXX XXX XXX XXX"
                 value={labourValues.aadharCardNumber}
                 onChange={(val: string) =>
                   setLabourValues({ ...labourValues, aadharCardNumber: val })

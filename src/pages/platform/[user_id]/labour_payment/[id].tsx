@@ -17,7 +17,7 @@ interface PaymentRecord {
   payment_id: number;
   labour_id: number;
   payment_date: string;
-  base_salary: number;
+  salary_paid: number;
   bonus: number;
   overtime_pay: number;
   housing_allowance: number;
@@ -93,18 +93,18 @@ const LabourPaymentDetails = () => {
     return {
       columns: [
         "Payment Date",
-        "Base Salary",
+        "Salary Paid",
         "Bonus",
         "Overtime Pay",
         "Housing Allowance",
         "Travel Allowance",
         "Meal Allowance",
-        "Total Amount",
+        "Total Salary",
         "Payment Status",
       ],
       rows: paymentRecords.map((p) => [
         new Date(p.payment_date).toLocaleDateString(),
-        p.base_salary,
+        p.salary_paid,
         p.bonus,
         p.overtime_pay,
         p.housing_allowance,

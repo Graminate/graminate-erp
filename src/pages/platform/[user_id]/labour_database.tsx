@@ -48,15 +48,15 @@ const LabourDatabase = () => {
     if (view === "labour" && labourRecords.length > 0) {
       return {
         columns: [
-          "ID",
+          "#",
           "Full Name",
-          "Date of Birth",
+          "Birth Date",
           "Gender",
           "Role",
           "Phone Number",
           "Aadhar Card",
           "Address",
-          "Created On",
+          "Added On",
         ],
         rows: labourRecords.map((item) => [
           item.labour_id,

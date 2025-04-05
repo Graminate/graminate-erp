@@ -9,7 +9,7 @@ type PaymentData = {
   payment_id: number;
   labour_id: number;
   payment_date: string;
-  base_salary: number;
+  salary_paid: number;
   bonus: number;
   overtime_pay: number;
   housing_allowance: number;
@@ -36,7 +36,7 @@ const SalaryModal = ({
   initialData,
 }: SalaryModalProps) => {
   const [paymentDate, setPaymentDate] = useState("");
-  const [baseSalary, setBaseSalary] = useState("");
+  const [salaryPaid, setSalaryPaid] = useState("");
   const [bonus, setBonus] = useState("");
   const [overtimePay, setOvertimePay] = useState("");
   const [housingAllowance, setHousingAllowance] = useState("");
@@ -48,7 +48,7 @@ const SalaryModal = ({
   useEffect(() => {
     if (editMode && initialData) {
       setPaymentDate(initialData.payment_date.slice(0, 10));
-      setBaseSalary(initialData.base_salary.toString());
+      setSalaryPaid(initialData.salary_paid.toString());
       setBonus(initialData.bonus.toString());
       setOvertimePay(initialData.overtime_pay.toString());
       setHousingAllowance(initialData.housing_allowance.toString());
@@ -57,7 +57,7 @@ const SalaryModal = ({
       setPaymentStatus(initialData.payment_status);
     } else {
       setPaymentDate("");
-      setBaseSalary("");
+      setSalaryPaid("");
       setBonus("");
       setOvertimePay("");
       setHousingAllowance("");
@@ -70,10 +70,10 @@ const SalaryModal = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!paymentDate || !baseSalary) {
+    if (!paymentDate || !salaryPaid) {
       Swal.fire(
         "Error",
-        "Payment Date and Base Salary are required.",
+        "Payment Date and Salary Paid are required.",
         "warning"
       );
       return;
@@ -86,7 +86,7 @@ const SalaryModal = ({
     const payload = {
       labour_id: labourId,
       payment_date: paymentDate,
-      base_salary: parseOrDefault(baseSalary),
+      salary_paid: parseOrDefault(salaryPaid),
       bonus: parseOrDefault(bonus),
       overtime_pay: parseOrDefault(overtimePay),
       housing_allowance: parseOrDefault(housingAllowance),
@@ -148,10 +148,10 @@ const SalaryModal = ({
               width="large"
             />
             <TextField
-              label="Base Salary *"
+              label="Salary Paid *"
               number
-              value={baseSalary}
-              onChange={setBaseSalary}
+              value={salaryPaid}
+              onChange={setSalaryPaid}
               width="large"
             />
           </div>

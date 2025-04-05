@@ -22,18 +22,17 @@ const LabourPayment = () => {
   const tableData = useMemo(() => {
     return {
       columns: [
-        " ID",
-        "Full Name",
-        "Gender",
-        "Base Salary",
-        "Contact",
+        "#",
+        "Employee",
+        "Basic Salary",
+        "Phone No.",
         "Aadhar",
         "Address",
       ],
       rows: labourList.map((labour) => [
         labour.labour_id,
         labour.full_name,
-        labour.gender,
+
         labour.base_salary,
         labour.contact_number,
         labour.aadhar_card_number,
@@ -95,16 +94,14 @@ const LabourPayment = () => {
     fetchAllPayments();
   }, [router.isReady, parsedUserId]);
 
-  const currentMonthPayments = paymentRecords.filter((p) => {
-    const date = new Date(p.payment_date);
-    return (
-      date.getMonth() === currentMonth && date.getFullYear() === currentYear
-    );
-  });
-
-  const totalPaid = currentMonthPayments
-    .filter((p) => p.payment_status.toLowerCase() === "paid")
-    .reduce((sum, p) => sum + Number(p.total_amount || 0), 0);
+  const totalPaid = useMemo(() => {
+    return paymentRecords
+      .filter((p) => (p.payment_status || "").toLowerCase() === "paid")
+      .reduce((sum, p) => {
+        const salary = parseFloat(p.salary_paid as any);
+        return sum + (isNaN(salary) ? 0 : salary);
+      }, 0);
+  }, [paymentRecords]);
 
   const currentMonthLabours = labourList.filter((labour) => {
     const date = new Date(labour.created_at);

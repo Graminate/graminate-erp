@@ -14,6 +14,7 @@ import axios from "axios";
 const LabourDetails = () => {
   const router = useRouter();
   const [labour, setLabour] = useState<any | null>(null);
+  const [displayName, setDisplayName] = useState("");
   const [fullName, setFullName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [gender, setGender] = useState("");
@@ -89,8 +90,7 @@ const LabourDetails = () => {
     try {
       const parsedLabour = JSON.parse(queryData);
       setLabour(parsedLabour);
-
-      // Mandatory fields
+      setDisplayName(`${parsedLabour.full_name} (${parsedLabour.role})`); // Point to remember
       setFullName(parsedLabour.full_name || "");
       setDateOfBirth(
         new Date(parsedLabour.date_of_birth).toLocaleDateString() || ""
@@ -299,7 +299,7 @@ const LabourDetails = () => {
             }
           />
           <div className="pt-4">
-            <h1 className="text-2xl font-bold mb-6">{fullName}</h1>
+            <h1 className="text-2xl font-bold mb-6">{displayName}</h1>
 
             {/* Personal Data Section */}
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm mb-6">
@@ -335,9 +335,15 @@ const LabourDetails = () => {
                   width="large"
                 />
                 <TextField
-                  label="Aadhar Card Number"
+                  label="Aadhar Card"
                   value={aadharCardNumber}
                   onChange={(val) => setAadharCardNumber(val)}
+                  width="large"
+                />
+                <TextField
+                  label="Role"
+                  value={role}
+                  onChange={(val) => setRole(val)}
                   width="large"
                 />
                 <div className="col-span-2">
@@ -351,10 +357,63 @@ const LabourDetails = () => {
               </div>
             </div>
 
-            {/* Government Data Section */}
+            {/* Salary Data Section */}
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm mb-6">
               <h2 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-400">
-                Government Data (Optional)
+                Salary Data
+              </h2>
+              <div className="grid grid-cols-2 gap-4">
+                <TextField
+                  label="Basic Salary (₹)"
+                  value={baseSalary}
+                  onChange={setBaseSalary}
+                  width="large"
+                />
+                <DropdownLarge
+                  label="Payment Frequency"
+                  items={["Monthly", "Weekly", "Bi-weekly", "Daily"]}
+                  selectedItem={paymentFrequency}
+                  onSelect={(value) => setPaymentFrequency(value)}
+                  type="form"
+                  width="full"
+                />
+                <TextField
+                  label="Bonus (₹)"
+                  value={bonus}
+                  onChange={setBonus}
+                  width="large"
+                />
+                <TextField
+                  label="Overtime Pay (₹)"
+                  value={overtimePay}
+                  onChange={setOvertimePay}
+                  width="large"
+                />
+                <TextField
+                  label="Housing Allowance (Optional) (₹)"
+                  value={housingAllowance}
+                  onChange={setHousingAllowance}
+                  width="large"
+                />
+                <TextField
+                  label="Travel Allowance (Optional) (₹)"
+                  value={travelAllowance}
+                  onChange={setTravelAllowance}
+                  width="large"
+                />
+                <TextField
+                  label="Meal Allowance (Optional) (₹)"
+                  value={mealAllowance}
+                  onChange={setMealAllowance}
+                  width="large"
+                />
+              </div>
+            </div>
+
+            {/* Government Compliance Section */}
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm mb-6">
+              <h2 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-400">
+                Government Compliance Data
               </h2>
               <div className="grid grid-cols-2 gap-4">
                 <TextField
@@ -447,59 +506,6 @@ const LabourDetails = () => {
                   label="Bank Branch"
                   value={bankBranch}
                   onChange={(val) => setBankBranch(val)}
-                  width="large"
-                />
-              </div>
-            </div>
-
-            {/* Salary Data Section */}
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm mb-6">
-              <h2 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-400">
-                Salary Data
-              </h2>
-              <div className="grid grid-cols-2 gap-4">
-                <TextField
-                  label="Base Salary"
-                  value={baseSalary}
-                  onChange={setBaseSalary}
-                  width="large"
-                />
-                <DropdownLarge
-                  label="Payment Frequency"
-                  items={["Monthly", "Weekly", "Bi-weekly", "Daily"]}
-                  selectedItem={paymentFrequency}
-                  onSelect={(value) => setPaymentFrequency(value)}
-                  type="form"
-                  width="full"
-                />
-                <TextField
-                  label="Bonus"
-                  value={bonus}
-                  onChange={setBonus}
-                  width="large"
-                />
-                <TextField
-                  label="Overtime Pay"
-                  value={overtimePay}
-                  onChange={setOvertimePay}
-                  width="large"
-                />
-                <TextField
-                  label="Housing Allowance (Optional)"
-                  value={housingAllowance}
-                  onChange={setHousingAllowance}
-                  width="large"
-                />
-                <TextField
-                  label="Travel Allowance (Optional)"
-                  value={travelAllowance}
-                  onChange={setTravelAllowance}
-                  width="large"
-                />
-                <TextField
-                  label="Meal Allowance (Optional)"
-                  value={mealAllowance}
-                  onChange={setMealAllowance}
                   width="large"
                 />
               </div>
