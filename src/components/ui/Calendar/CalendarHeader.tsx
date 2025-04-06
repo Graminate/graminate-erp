@@ -11,52 +11,48 @@ const CalendarHeader = ({
   previousMonth,
   nextMonth,
 }: CalendarHeaderProps) => (
-  <div className="flex items-center justify-between mb-4">
+  <div className="flex items-center justify-between mb-4 px-1">
     <button
-      className="text-gray-600 hover:text-gray-100 dark:text-gray-300 dark:hover:text-light px-2 focus:outline-none"
+      className="p-2 rounded-full text-dark hover:text-light dark:text-light hover:bg-green-200 dark:hover:text-light transition-colors duration-300 ease-in-out"
       onClick={previousMonth}
       aria-label="Previous month"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
+        className="h-5 w-5"
         fill="none"
         viewBox="0 0 24 24"
-        strokeWidth="1.5"
         stroke="currentColor"
-        className="w-6 h-6"
+        strokeWidth="2"
       >
         <path
           strokeLinecap="round"
           strokeLinejoin="round"
-          d="M15.75 19.5L8.25 12l7.5-7.5"
+          d="M15 19l-7-7 7-7"
         />
       </svg>
     </button>
     <div className="flex items-center">
-      <span className="text-lg font-semibold text-dark dark:text-light">
+      <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100 tracking-wide">
         {`${new Date(calendarYear, calendarMonth).toLocaleString("default", {
           month: "long",
         })} ${calendarYear}`}
-      </span>
+      </h2>
     </div>
     <button
-      className="text-gray-200 hover:text-gray-100 dark:text-gray-300 dark:hover:text-light px-2 focus:outline-none"
+      className="p-2 rounded-full text-dark hover:text-light dark:text-light hover:bg-green-200 dark:hover:text-light transition-colors duration-300 ease-in-out"
       onClick={nextMonth}
       aria-label="Next month"
     >
       <svg
         xmlns="http://www.w3.org/2000/svg"
+        className="h-5 w-5"
         fill="none"
         viewBox="0 0 24 24"
-        strokeWidth="1.5"
         stroke="currentColor"
-        className="w-6 h-6"
+        strokeWidth="2"
       >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M8.25 4.5l7.5 7.5-7.5 7.5"
-        />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
       </svg>
     </button>
   </div>

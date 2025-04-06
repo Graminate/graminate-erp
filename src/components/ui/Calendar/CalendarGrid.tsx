@@ -1,11 +1,4 @@
-type Task = {
-  name: string;
-  time: string;
-};
-
-type Tasks = {
-  [key: string]: Task[];
-};
+import { Tasks } from "./Calendar";
 
 type CalendarGridProps = {
   calendarDays: (number | null)[];
@@ -15,6 +8,7 @@ type CalendarGridProps = {
   calendarYear: number;
   handleDateChange: (date: Date) => void;
   tasks: Tasks;
+  getDateKey: (date: Date) => string;
 };
 
 const CalendarGrid = ({
@@ -25,45 +19,59 @@ const CalendarGrid = ({
   calendarYear,
   handleDateChange,
   tasks,
-}: CalendarGridProps) => (
-  <>
-    <div className="grid grid-cols-7 gap-1 mb-2">
-      {dayAbbreviations.map((dayAbbr, idx) => (
-        <div
-          key={idx}
-          className="flex items-center justify-center font-semibold text-sm text-dark dark:text-light"
-        >
-          {dayAbbr}
-        </div>
-      ))}
-    </div>
-
-    <div className="grid grid-cols-7 gap-1">
-      {calendarDays.map((day, index) => {
-        const dateKey =
-          day &&
-          new Date(calendarYear, calendarMonth, day)
-            .toISOString()
-            .split("T")[0];
-
-        return (
-          <div
-            key={index}
-            className="relative"
-            onClick={() =>
-              day &&
-              handleDateChange(new Date(calendarYear, calendarMonth, day))
-            }
-          >
-            <div className={getDayClasses(day)}>{day || ""}</div>
-            {day && tasks[dateKey!] && tasks[dateKey!].length > 0 && (
-              <span className="absolute bottom-1 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-indigo-100 dark:bg-yellow-200 rounded-full"></span>
-            )}
+  getDateKey,
+}: CalendarGridProps) => {
+  return (
+    <div className="mt-4 animate-fadeIn">
+      <div className="grid grid-cols-7 gap-1 mb-2 text-center text-xs font-semibold text-dark dark:text-light uppercase tracking-wider">
+        {dayAbbreviations.map((dayAbbr) => (
+          <div key={dayAbbr} className="pb-1">
+            {dayAbbr}
           </div>
-        );
-      })}
+        ))}
+      </div>
+
+      <div className="grid grid-cols-7 gap-1">
+        {calendarDays.map((day, index) => {
+          const date = day ? new Date(calendarYear, calendarMonth, day) : null;
+          const dateKey = date ? getDateKey(date) : null;
+          const hasTasks =
+            day && dateKey && tasks[dateKey] && tasks[dateKey].length > 0;
+
+          return (
+            <div
+              key={index}
+              className="relative flex items-center justify-center h-12 cursor-pointer"
+              onClick={() => day && handleDateChange(date!)}
+              role={day ? "button" : undefined}
+              tabIndex={day ? 0 : -1}
+              aria-label={
+                day
+                  ? date?.toLocaleDateString(undefined, {
+                      month: "long",
+                      day: "numeric",
+                    })
+                  : "Empty day"
+              }
+              onKeyDown={(e) => {
+                if ((e.key === "Enter" || e.key === " ") && day) {
+                  handleDateChange(date!);
+                }
+              }}
+            >
+              <div className={getDayClasses(day)}>{day || ""}</div>
+              {hasTasks && (
+                <span
+                  className="absolute bottom-2 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-light dark:bg-green-400 rounded-full"
+                  title="Tasks present"
+                ></span>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
-  </>
-);
+  );
+};
 
 export default CalendarGrid;
