@@ -20,7 +20,11 @@ const LabourDetails = () => {
   const [gender, setGender] = useState("");
   const [contactNumber, setContactNumber] = useState("");
   const [aadharCardNumber, setAadharCardNumber] = useState("");
-  const [address, setAddress] = useState("");
+  const [addressLine1, setAddressLine1] = useState("");
+  const [addressLine2, setAddressLine2] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [postalCode, setPostalCode] = useState("");
   const [queryData, setQueryData] = useState<string | null>(null);
   const [role, setRole] = useState("");
 
@@ -53,7 +57,11 @@ const LabourDetails = () => {
     gender: "",
     contactNumber: "",
     aadharCardNumber: "",
-    address: "",
+    addressLine1: "",
+    addressLine2: "",
+    city: "",
+    state: "",
+    postalCode: "",
     rationCard: "",
     panCard: "",
     drivingLicense: "",
@@ -98,7 +106,11 @@ const LabourDetails = () => {
       setGender(parsedLabour.gender || "");
       setContactNumber(parsedLabour.contact_number || "");
       setAadharCardNumber(parsedLabour.aadhar_card_number || "");
-      setAddress(parsedLabour.address || "");
+      setAddressLine1(parsedLabour.address_line_1 || "");
+      setAddressLine2(parsedLabour.address_line_2 || "");
+      setCity(parsedLabour.city || "");
+      setState(parsedLabour.state || "");
+      setPostalCode(parsedLabour.postal_code || "");
       setRole(parsedLabour.role || "");
 
       setRationCard(parsedLabour.ration_card ?? "");
@@ -128,7 +140,11 @@ const LabourDetails = () => {
         gender: parsedLabour.gender || "",
         contactNumber: parsedLabour.contact_number || "",
         aadharCardNumber: parsedLabour.aadhar_card_number || "",
-        address: parsedLabour.address || "",
+        addressLine1: parsedLabour.address_line_1 || "",
+        addressLine2: parsedLabour.address_line_2 || "",
+        city: parsedLabour.city || "",
+        state: parsedLabour.state || "",
+        postalCode: parsedLabour.postal_code || "",
         rationCard: parsedLabour.ration_card || "",
         panCard: parsedLabour.pan_card || "",
         drivingLicense: parsedLabour.driving_license || "",
@@ -161,7 +177,11 @@ const LabourDetails = () => {
     gender !== initialFormData.gender ||
     contactNumber !== initialFormData.contactNumber ||
     aadharCardNumber !== initialFormData.aadharCardNumber ||
-    address !== initialFormData.address ||
+    addressLine1 !== initialFormData.addressLine1 ||
+    addressLine2 !== initialFormData.addressLine2 ||
+    city !== initialFormData.city ||
+    state !== initialFormData.state ||
+    postalCode !== initialFormData.postalCode ||
     rationCard !== initialFormData.rationCard ||
     panCard !== initialFormData.panCard ||
     drivingLicense !== initialFormData.drivingLicense ||
@@ -199,7 +219,11 @@ const LabourDetails = () => {
       gender: gender,
       contact_number: contactNumber,
       aadhar_card_number: aadharCardNumber,
-      address: address,
+      address_line_1: addressLine1,
+      address_line_2: addressLine2,
+      city: city,
+      state: state,
+      postalCode: postalCode,
 
       // Government Data
       ration_card: rationCard,
@@ -248,7 +272,11 @@ const LabourDetails = () => {
         gender: payload.gender,
         contactNumber: payload.contact_number,
         aadharCardNumber: payload.aadhar_card_number,
-        address: payload.address,
+        addressLine1: payload.address_line_1,
+        addressLine2: payload.address_line_2,
+        city: city,
+        state: state,
+        postalCode: postalCode,
         rationCard: payload.ration_card,
         panCard: payload.pan_card,
         drivingLicense: payload.driving_license,
@@ -327,7 +355,12 @@ const LabourDetails = () => {
                   label="Gender"
                   width="full"
                 />
-
+                <TextField
+                  label="Role"
+                  value={role}
+                  onChange={(val) => setRole(val)}
+                  width="large"
+                />
                 <TextField
                   label="Contact Number"
                   value={contactNumber}
@@ -340,20 +373,39 @@ const LabourDetails = () => {
                   onChange={(val) => setAadharCardNumber(val)}
                   width="large"
                 />
+
                 <TextField
-                  label="Role"
-                  value={role}
-                  onChange={(val) => setRole(val)}
+                  label="Address Line 1"
+                  value={addressLine1}
+                  onChange={(val) => setAddressLine1(val)}
                   width="large"
                 />
-                <div className="col-span-2">
-                  <TextArea
-                    label="Address"
-                    placeholder="Address"
-                    value={address}
-                    onChange={(val: string) => setAddress(val)}
-                  />
-                </div>
+                <TextField
+                  label="Address Line 2"
+                  value={addressLine2}
+                  onChange={(val) => setAddressLine2(val)}
+                  width="large"
+                />
+              </div>
+              <div className="grid grid-cols-3 mt-4 gap-4 w-full">
+                <TextField
+                  label="City"
+                  value={city}
+                  onChange={(val) => setCity(val)}
+                  width="large"
+                />
+                <TextField
+                  label="State"
+                  value={state}
+                  onChange={(val) => setState(val)}
+                  width="large"
+                />
+                <TextField
+                  label="Postal Code"
+                  value={postalCode}
+                  onChange={(val) => setPostalCode(val)}
+                  width="large"
+                />
               </div>
             </div>
 
@@ -389,6 +441,8 @@ const LabourDetails = () => {
                   onChange={setOvertimePay}
                   width="large"
                 />
+              </div>
+              <div className="grid grid-cols-3 mt-4 gap-4 w-full">
                 <TextField
                   label="Housing Allowance (Optional) (₹)"
                   value={housingAllowance}
@@ -446,7 +500,7 @@ const LabourDetails = () => {
 
                 <DropdownLarge
                   items={YESNO}
-                  selectedItem={disabilityStatus} // Will default to "" if no data is found
+                  selectedItem={disabilityStatus}
                   onSelect={(value: string) => setDisabilityStatus(value)}
                   type="form"
                   label="Disability Status"

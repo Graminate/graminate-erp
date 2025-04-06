@@ -66,7 +66,15 @@ const LabourDatabase = () => {
           item.role,
           item.contact_number,
           item.aadhar_card_number,
-          item.address,
+          [
+            item.address_line_1,
+            item.address_line_2,
+            item.city,
+            item.state,
+            item.postal_code,
+          ]
+            .filter(Boolean)
+            .join(", "),
           new Date(item.created_at).toDateString(),
         ]),
       };

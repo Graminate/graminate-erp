@@ -63,7 +63,17 @@ const LabourPaymentDetails = () => {
         if (labour) {
           setLabourName(labour.full_name);
           setContact(labour.contact_number || "");
-          setAddress(labour.address || "");
+          setAddress(
+            [
+              labour.address_line_1,
+              labour.address_line_2,
+              labour.city,
+              labour.state,
+              labour.postal_code,
+            ]
+              .filter(Boolean)
+              .join(", ")
+          );
         }
 
         try {

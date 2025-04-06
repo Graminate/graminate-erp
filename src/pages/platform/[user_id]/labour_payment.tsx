@@ -36,7 +36,15 @@ const LabourPayment = () => {
         labour.base_salary,
         labour.contact_number,
         labour.aadhar_card_number,
-        labour.address,
+        [
+          labour.address_line_1,
+          labour.address_line_2,
+          labour.city,
+          labour.state,
+          labour.postal_code,
+        ]
+          .filter(Boolean)
+          .join(", "),
       ]),
     };
   }, [labourList]);

@@ -307,7 +307,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                   if (!isValidE164(val)) {
                     setContactErrors({
                       ...contactErrors,
-                      phoneNumber: "Phone number must be in E.164 format",
+                      phoneNumber: "Phone number is not valid",
                     });
                   } else {
                     setContactErrors({ ...contactErrors, phoneNumber: "" });

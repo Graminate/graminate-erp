@@ -3,7 +3,6 @@ import { useRouter } from "next/router";
 import TextField from "@/components/ui/TextField";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import Button from "@/components/ui/Button";
-import TextArea from "@/components/ui/TextArea";
 import { GENDER } from "@/constants/options";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -20,15 +19,30 @@ const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
     role: "",
     contactNumber: "",
     aadharCardNumber: "",
-    address: "",
+    addressLine1: "",
+    addressLine2: "",
+    city: "",
+    state: "",
+    postalCode: "",
   });
+
+  const [labourErrors, setLabourErrors] = useState({
+    contactNumber: "",
+  });
+
   const [animate, setAnimate] = useState(false);
   useEffect(() => {
     setAnimate(true);
   }, []);
+
   const handleClose = () => {
     onClose();
   };
+
+  const isValidE164 = (phone: string) => {
+    return /^\+?[1-9]\d{1,14}$/.test(phone);
+  };
+
   const handleSubmitLabour = async (e: React.FormEvent) => {
     e.preventDefault();
     const payload = {
@@ -39,7 +53,11 @@ const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
       role: labourValues.role,
       contact_number: labourValues.contactNumber,
       aadhar_card_number: labourValues.aadharCardNumber,
-      address: labourValues.address,
+      address_line_1: labourValues.addressLine1,
+      address_line_2: labourValues.addressLine2,
+      city: labourValues.city,
+      state: labourValues.state,
+      postal_code: labourValues.postalCode,
     };
     try {
       await axios.post("http://localhost:3001/api/labour/add", payload);
@@ -50,7 +68,11 @@ const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
         role: "",
         contactNumber: "",
         aadharCardNumber: "",
-        address: "",
+        addressLine1: "",
+        addressLine2: "",
+        city: "",
+        state: "",
+        postalCode: "",
       });
       handleClose();
       window.location.reload();
@@ -63,6 +85,7 @@ const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
       alert(message);
     }
   };
+
   const panelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
@@ -77,6 +100,7 @@ const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
     document.addEventListener("mousedown", handleOutsideClick);
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, []);
+
   return (
     <div className="fixed inset-0 z-50 bg-black/30">
       <div
@@ -111,15 +135,25 @@ const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
                 setLabourValues({ ...labourValues, fullName: val })
               }
             />
-            <TextField
-              label="Date of Birth"
-              placeholder="YYYY-MM-DD"
-              value={labourValues.dateOfBirth}
-              onChange={(val: string) =>
-                setLabourValues({ ...labourValues, dateOfBirth: val })
-              }
-              calendar
-            />
+            <div className="flex flex-row gap-2">
+              <TextField
+                label="Date of Birth"
+                placeholder="YYYY-MM-DD"
+                value={labourValues.dateOfBirth}
+                onChange={(val: string) =>
+                  setLabourValues({ ...labourValues, dateOfBirth: val })
+                }
+                calendar
+              />
+              <TextField
+                label="Designation"
+                placeholder="Role of the Employee"
+                value={labourValues.role}
+                onChange={(val: string) =>
+                  setLabourValues({ ...labourValues, role: val })
+                }
+              />
+            </div>
             <DropdownLarge
               items={GENDER}
               selectedItem={labourValues.gender}
@@ -130,36 +164,74 @@ const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
               label="Gender"
               width="full"
             />
+            <div className="flex flex-row gap-2">
+              <TextField
+                label="Contact Number"
+                placeholder="e.g. +91XXXXXXXXXX"
+                value={labourValues.contactNumber}
+                onChange={(val: string) => {
+                  setLabourValues({ ...labourValues, contactNumber: val });
+                  if (!isValidE164(val)) {
+                    setLabourErrors({
+                      ...labourErrors,
+                      contactNumber: "Phone number is not valid",
+                    });
+                  } else {
+                    setLabourErrors({ ...labourErrors, contactNumber: "" });
+                  }
+                }}
+                type={labourErrors.contactNumber ? "error" : ""}
+                errorMessage={labourErrors.contactNumber}
+              />
+              <TextField
+                label="Aadhar Card Number"
+                placeholder="e.g. XXX XXX XXX XXX"
+                value={labourValues.aadharCardNumber}
+                onChange={(val: string) =>
+                  setLabourValues({ ...labourValues, aadharCardNumber: val })
+                }
+              />
+            </div>
             <TextField
-              label="Designation"
-              placeholder="Role of the Employee"
-              value={labourValues.role}
+              label="Address Line 1"
+              placeholder="e.g. Street Address"
+              value={labourValues.addressLine1 || ""}
               onChange={(val: string) =>
-                setLabourValues({ ...labourValues, role: val })
+                setLabourValues({ ...labourValues, addressLine1: val })
               }
             />
             <TextField
-              label="Contact Number"
-              placeholder="e.g. 91 XXXXX XXX XX"
-              value={labourValues.contactNumber}
+              label="Address Line 2"
+              placeholder="e.g. Landmark / Additional Info"
+              value={labourValues.addressLine2 || ""}
               onChange={(val: string) =>
-                setLabourValues({ ...labourValues, contactNumber: val })
+                setLabourValues({ ...labourValues, addressLine2: val })
               }
             />
+            <div className="flex flex-row gap-2">
+              <TextField
+                label="City"
+                placeholder="e.g. Mumbai"
+                value={labourValues.city || ""}
+                onChange={(val: string) =>
+                  setLabourValues({ ...labourValues, city: val })
+                }
+              />
+              <TextField
+                label="State"
+                placeholder="e.g. Maharashtra"
+                value={labourValues.state || ""}
+                onChange={(val: string) =>
+                  setLabourValues({ ...labourValues, state: val })
+                }
+              />
+            </div>
             <TextField
-              label="Aadhar Card Number"
-              placeholder="e.g. XXX XXX XXX XXX"
-              value={labourValues.aadharCardNumber}
+              label="Postal Code"
+              placeholder="e.g. 400001"
+              value={labourValues.postalCode || ""}
               onChange={(val: string) =>
-                setLabourValues({ ...labourValues, aadharCardNumber: val })
-              }
-            />
-            <TextArea
-              label="Address"
-              placeholder="Enter full address"
-              value={labourValues.address}
-              onChange={(val: string) =>
-                setLabourValues({ ...labourValues, address: val })
+                setLabourValues({ ...labourValues, postalCode: val })
               }
             />
             <div className="flex justify-end gap-4 mt-2">
