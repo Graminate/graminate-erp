@@ -77,7 +77,7 @@ const Dashboard = () => {
             errorText = "Session expired. Please log in again.";
           } else if (error.response?.status === 404) {
             errorTitle = "Not Found";
-            errorText = `User not found.`; // Avoid echoing user ID back directly
+            errorText = `User not found.`; 
           } else if (error.code === "ECONNABORTED") {
             errorText =
               "Request timed out. Please check your connection and try again.";
@@ -86,7 +86,7 @@ const Dashboard = () => {
           console.error("Non-Axios error fetching user data:", error);
         }
 
-        // Show error modal and redirect
+
         await Swal.fire({
           title: errorTitle,
           text: errorText,
@@ -95,7 +95,7 @@ const Dashboard = () => {
           allowOutsideClick: false,
           allowEscapeKey: false,
         });
-        router.push("/"); // Redirect to home or login page
+        router.push("/");
       } finally {
         if (isMounted) {
           setIsUserDataLoading(false);

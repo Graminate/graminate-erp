@@ -5,7 +5,7 @@ import PlatformLayout from "@/layout/PlatformLayout";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
-
+import { showToast, toastMessage } from "@/stores/toast";
 import { CONTACT_TYPES } from "@/constants/options";
 import Loader from "@/components/ui/Loader";
 import axios from "axios";
@@ -129,7 +129,8 @@ const ContactDetails = () => {
 
       console.log("Response from API:", response.data);
 
-      Swal.fire("Success", "Contact updated successfully", "success");
+      toastMessage.set("Contact updated successfully");
+      showToast.set(true);
 
       const updated = response.data.contact;
 
@@ -161,12 +162,11 @@ const ContactDetails = () => {
       });
     } catch (error: any) {
       console.error("Error updating contact:", error);
-      Swal.fire(
-        "Error",
+      toastMessage.set(
         error.response?.data?.error ||
-          "An error occurred while updating the contact.",
-        "error"
+          "An error occurred while updating the contact."
       );
+      showToast.set(true);
     } finally {
       setSaving(false);
     }

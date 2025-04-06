@@ -5,7 +5,7 @@ import TextField from "@/components/ui/TextField";
 import TextArea from "@/components/ui/TextArea";
 import CustomTable from "@/components/tables/CustomTable";
 import PlatformLayout from "@/layout/PlatformLayout";
-import Swal from "sweetalert2";
+import { showToast, toastMessage } from "@/stores/toast";
 import Head from "next/head";
 import domtoimage from "dom-to-image";
 import jsPDF from "jspdf";
@@ -173,8 +173,8 @@ const ReceiptDetails = () => {
         payload
       );
 
-      Swal.fire("Success", "Receipt updated successfully", "success");
-
+      toastMessage.set("Receipt updated successfully");
+      showToast.set(true);
       setInitialFormData({
         receiptNumber,
         receiptTitle,
@@ -195,12 +195,11 @@ const ReceiptDetails = () => {
       setReceipt(response.data.invoice);
     } catch (error: any) {
       console.error("Error updating receipt:", error);
-      Swal.fire(
-        "Error",
+      toastMessage.set(
         error.response?.data?.error ||
-          "An error occurred while updating the receipt.",
-        "error"
+          "An error occurred while updating the receipt."
       );
+      showToast.set(true);
     } finally {
       setSaving(false);
     }
@@ -222,9 +221,9 @@ const ReceiptDetails = () => {
       pdf.save("receipt.pdf");
     } catch (error) {
       console.error("Error generating PDF:", error);
-      Swal.fire("Error", "Could not generate PDF", "error");
+      toastMessage.set("Could not generate PDF");
+      showToast.set(true);
     } finally {
-      // Restore the buttons after the snapshot
       buttons.forEach((btn) => ((btn as HTMLElement).style.display = ""));
     }
   };

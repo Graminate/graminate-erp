@@ -3,7 +3,6 @@ import { useRouter } from "next/router";
 import TextField from "@/components/ui/TextField";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import Button from "@/components/ui/Button";
-import TextArea from "@/components/ui/TextArea";
 import { CONTACT_TYPES, PAYMENT_STATUS } from "@/constants/options";
 import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -16,6 +15,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
   };
   const router = useRouter();
   const { user_id } = router.query;
+
   const [contactValues, setContactValues] = useState({
     firstName: "",
     lastName: "",
@@ -28,15 +28,9 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     state: "",
     postal_code: "",
   });
-
   const [contactErrors, setContactErrors] = useState({
     phoneNumber: "",
   });
-
-  const [companyErrors, setCompanyErrors] = useState({
-    phoneNumber: "",
-  });
-
   const [companyValues, setCompanyValues] = useState({
     companyName: "",
     companyOwner: "",
@@ -50,6 +44,9 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     state: "",
     postal_code: "",
   });
+  const [companyErrors, setCompanyErrors] = useState({
+    phoneNumber: "",
+  });
   const [contractsValues, setContractsValues] = useState({
     dealName: "",
     dealPartner: "",
@@ -60,6 +57,15 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
   });
 
   const [receiptsValues, setReceiptsValues] = useState({
+    title: "",
+    billTo: "",
+    amount_paid: "",
+    amount_due: "",
+    due_date: "",
+    status: "",
+  });
+  // To change
+  const [taskValues, setTaskValues] = useState({
     title: "",
     billTo: "",
     amount_paid: "",
@@ -228,6 +234,44 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       alert(message);
     }
   };
+  // To edit
+  const handleSubmitTasks = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const payload = {
+      user_id,
+      title: taskValues.title,
+      bill_to: taskValues.billTo,
+      amount_paid: taskValues.amount_paid,
+      amount_due: taskValues.amount_due,
+      due_date: taskValues.due_date,
+      status: taskValues.status,
+    };
+    try {
+      const response = await axios.post(
+        "http://localhost:3001/api/tasks/add",
+        payload
+      );
+      console.log("API Response:", response.data);
+      setTaskValues({
+        title: "",
+        billTo: "",
+        amount_paid: "",
+        amount_due: "",
+        due_date: "",
+        status: "",
+      });
+      handleClose();
+      window.location.reload();
+    } catch (error: any) {
+      const message =
+        error.response?.data?.error ||
+        error.message ||
+        "An unexpected error occurred";
+      console.error("Error adding new task:", message);
+      alert(message);
+    }
+  };
+
   const panelRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
@@ -620,6 +664,73 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                   selectedItem={receiptsValues.status}
                   onSelect={(value: string) =>
                     setReceiptsValues({ ...receiptsValues, status: value })
+                  }
+                  type="form"
+                  label="Status"
+                  width="full"
+                />
+              </div>
+              <div className="flex justify-end gap-4 mt-2">
+                <Button text="Create" style="primary" type="submit" />
+                <Button text="Cancel" style="secondary" onClick={handleClose} />
+              </div>
+            </form>
+          )}
+          {/* To edit */}
+          {view === "tasks" && (
+            <form
+              className="flex flex-col gap-4 w-full flex-grow"
+              onSubmit={handleSubmitTasks}
+            >
+              <TextField
+                label="Receipt Title"
+                placeholder="Name of your receipt / invoice"
+                value={receiptsValues.title}
+                onChange={(val: string) =>
+                  setTaskValues({ ...taskValues, title: val })
+                }
+              />
+              <TextField
+                label="Bill To"
+                placeholder="Customer Details"
+                value={taskValues.billTo}
+                onChange={(val: string) =>
+                  setTaskValues({ ...taskValues, billTo: val })
+                }
+              />
+              <div className="flex flex-col gap-2">
+                <TextField
+                  label="Paid (₹)"
+                  placeholder="Amount Paid"
+                  value={taskValues.amount_paid}
+                  onChange={(val: string) =>
+                    setTaskValues({ ...taskValues, amount_paid: val })
+                  }
+                />
+                <TextField
+                  label="Amount Due (₹)"
+                  placeholder="Amount yet to be paid"
+                  value={taskValues.amount_due}
+                  onChange={(val: string) =>
+                    setTaskValues({ ...taskValues, amount_due: val })
+                  }
+                />
+              </div>
+              <div className="flex flex-col gap-2">
+                <TextField
+                  label="Due Date"
+                  placeholder="YYYY-MM-DD"
+                  value={taskValues.due_date}
+                  onChange={(val: string) =>
+                    setTaskValues({ ...taskValues, due_date: val })
+                  }
+                  calendar
+                />
+                <DropdownLarge
+                  items={PAYMENT_STATUS}
+                  selectedItem={taskValues.status}
+                  onSelect={(value: string) =>
+                    setTaskValues({ ...taskValues, status: value })
                   }
                   type="form"
                   label="Status"

@@ -6,7 +6,7 @@ import PlatformLayout from "@/layout/PlatformLayout";
 import axios from "axios";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import Swal from "sweetalert2";
+import { showToast, toastMessage } from "@/stores/toast";
 
 const ContractDetails = () => {
   const router = useRouter();
@@ -92,11 +92,8 @@ const ContractDetails = () => {
 
   const handleSave = async () => {
     if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
-      Swal.fire(
-        "Error",
-        "End Date of Contract cannot be before Start Date",
-        "error"
-      );
+      toastMessage.set("End Date of Contract cannot be before Start Date");
+      showToast.set(true);
       return;
     }
 
@@ -118,7 +115,8 @@ const ContractDetails = () => {
         payload
       );
 
-      Swal.fire("Success", "Contract updated successfully", "success");
+      toastMessage.set("Contract updated successfully");
+      showToast.set(true);
 
       setDisplayContractName(contractName);
       setInitialFormData({
@@ -130,13 +128,11 @@ const ContractDetails = () => {
         endDate,
       });
     } catch (error: any) {
-      console.error("Error updating contract:", error);
-      Swal.fire(
-        "Error",
+      toastMessage.set(
         error.response?.data?.error ||
-          "An error occurred while updating the contract.",
-        "error"
+          "An error occurred while updating the contract."
       );
+      showToast.set(true);
     } finally {
       setSaving(false);
     }

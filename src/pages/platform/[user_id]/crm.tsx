@@ -6,7 +6,7 @@ import Table from "@/components/tables/Table";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
 import { PAGINATION_ITEMS } from "@/constants/options";
-import CRMForm from "@/components/form/crmForm";
+import CRMForm from "@/components/form/CRMForm";
 
 type View = "contacts" | "companies" | "contracts" | "receipts" | "tasks";
 

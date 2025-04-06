@@ -1,13 +1,12 @@
 import Button from "@/components/ui/Button";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
-import TextArea from "@/components/ui/TextArea";
 import TextField from "@/components/ui/TextField";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import Swal from "sweetalert2";
-
+import { showToast, toastMessage } from "@/stores/toast";
 import { GENDER, YESNO } from "@/constants/options";
 import axios from "axios";
 
@@ -207,7 +206,8 @@ const LabourDetails = () => {
     setSaving(true);
 
     if (!labour || !labour.labour_id) {
-      Swal.fire("Error", "Labour ID is missing. Cannot update.", "error");
+      toastMessage.set("Labour ID is missing. Cannot update.");
+      showToast.set(true);
       setSaving(false);
       return;
     }
@@ -225,19 +225,16 @@ const LabourDetails = () => {
       state: state,
       postalCode: postalCode,
 
-      // Government Data
       ration_card: rationCard,
       pan_card: panCard,
       driving_license: drivingLicense,
       mnrega_job_card_number: mnregaJobCardNumber,
 
-      // Bank Data
       bank_account_number: bankAccountNumber,
       ifsc_code: ifscCode,
       bank_name: bankName,
       bank_branch: bankBranch,
 
-      // Other optional fields
       disability_status: disabilityStatus === "Yes",
       role: role,
       epfo: epfo,
@@ -263,7 +260,8 @@ const LabourDetails = () => {
 
       console.log("Response from API:", response.data);
 
-      Swal.fire("Success", "Labour updated successfully", "success");
+      toastMessage.set("Labour updated successfully");
+      showToast.set(true);
 
       setLabour(response.data.updatedLabour);
       setInitialFormData({
@@ -300,12 +298,11 @@ const LabourDetails = () => {
       });
     } catch (error: any) {
       console.error("Error updating labour:", error);
-      Swal.fire(
-        "Error",
+      toastMessage.set(
         error.response?.data?.error ||
-          "An error occurred while updating the labour.",
-        "error"
+          "An error occurred while updating the labour."
       );
+      showToast.set(true);
     } finally {
       setSaving(false);
     }

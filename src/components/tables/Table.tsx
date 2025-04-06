@@ -474,7 +474,7 @@ const Table = ({
                             color = "text-red-200";
                           } else if (ratio < 0.5) {
                             count = 2;
-                            color = "text-orange-200";
+                            color = "text-orange-400";
                           } else if (ratio < 0.75) {
                             count = 3;
                             color = "text-yellow-200";

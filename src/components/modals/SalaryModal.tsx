@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import Swal from "sweetalert2";
+import { showToast, toastMessage } from "@/stores/toast";
 import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
@@ -71,11 +71,8 @@ const SalaryModal = ({
     e.preventDefault();
 
     if (!paymentDate || !salaryPaid) {
-      Swal.fire(
-        "Error",
-        "Payment Date and Salary Paid are required.",
-        "warning"
-      );
+      toastMessage.set("Payment Date and Salary Paid are required.");
+      showToast.set(true);
       return;
     }
 
@@ -107,13 +104,12 @@ const SalaryModal = ({
           payload
         );
       }
-      await Swal.fire(
-        "Success",
-        editMode
-          ? "Salary updated successfully!"
-          : "Salary added successfully!",
-        "success"
+
+      toastMessage.set(
+        editMode ? "Salary updated successfully!" : "Salary added successfully!"
       );
+      showToast.set(true);
+
       onClose();
       onSuccess();
       window.location.reload();
@@ -122,7 +118,8 @@ const SalaryModal = ({
       const errorMessage =
         (error as any).response?.data?.message ||
         "An unexpected error occurred. Please try again.";
-      Swal.fire("Error", errorMessage, "error");
+      toastMessage.set(errorMessage);
+      showToast.set(true);
     } finally {
       setLoading(false);
     }

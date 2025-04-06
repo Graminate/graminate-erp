@@ -5,8 +5,7 @@ import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import Swal from "sweetalert2";
-
+import { showToast, toastMessage } from "@/stores/toast";
 import { COMPANY_TYPES } from "@/constants/options";
 import axios from "axios";
 
@@ -105,7 +104,7 @@ const CompanyDetails = () => {
     setSaving(true);
 
     const payload = {
-      id: company.company_id, // Assuming parsedCompany has company_id
+      id: company.company_id,
       company_name: companyName,
       owner_name: ownerName,
       email: email,
@@ -126,12 +125,12 @@ const CompanyDetails = () => {
 
       console.log("Response from API:", response.data);
 
-      Swal.fire("Success", "Company updated successfully", "success");
+      toastMessage.set("Company updated successfully");
+      showToast.set(true);
 
       const updated = response.data.company;
 
-      // Update state with the response data to reflect the saved state
-      setCompany(updated); // Assuming the API returns the full updated company object
+      setCompany(updated);
       setInitialCompanyName(updated.company_name);
       setCompanyName(updated.company_name);
       setOwnerName(updated.owner_name);
@@ -158,12 +157,11 @@ const CompanyDetails = () => {
       });
     } catch (error: any) {
       console.error("Error updating company:", error);
-      Swal.fire(
-        "Error",
+      toastMessage.set(
         error.response?.data?.error ||
-          "An error occurred while updating the company.",
-        "error"
+          "An error occurred while updating the company."
       );
+      showToast.set(true);
     } finally {
       setSaving(false);
     }

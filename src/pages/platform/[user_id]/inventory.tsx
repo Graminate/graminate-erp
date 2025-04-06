@@ -18,7 +18,7 @@ import {
   Legend,
   ArcElement,
 } from "chart.js";
-import InventoryForm from "@/components/form/inventoryForm";
+import InventoryForm from "@/components/form/InventoryForm";
 
 ChartJS.register(
   CategoryScale,
