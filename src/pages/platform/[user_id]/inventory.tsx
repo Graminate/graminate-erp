@@ -79,7 +79,7 @@ const Inventory = () => {
     if (view === "inventory" && itemRecords.length > 0) {
       return {
         columns: [
-          "#",
+          // "#",
           "Item Name",
           "Item Group",
           "Units",
@@ -88,7 +88,7 @@ const Inventory = () => {
           "Status",
         ],
         rows: itemRecords.map((item) => [
-          item.inventory_id,
+          // item.inventory_id,
           item.item_name,
           item.item_group,
           item.units,
@@ -254,7 +254,6 @@ const Inventory = () => {
           </div>
         </div>
 
-        {/* Table displaying the inventory data */}
         <Table
           data={{ ...tableData, rows: tableData.rows }}
           filteredRows={tableData.rows}
@@ -263,18 +262,6 @@ const Inventory = () => {
           paginationItems={PAGINATION_ITEMS}
           searchQuery={searchQuery}
           totalRecordCount={tableData.rows.length}
-          onRowClick={(row) => {
-            const itemId = row[0];
-            const item = itemRecords.find(
-              (item) => item.inventory_id === itemId
-            );
-            if (item) {
-              router.push({
-                pathname: `/platform/${parsedUserId}/inventory/${itemId}`,
-                query: { data: JSON.stringify(item) },
-              });
-            }
-          }}
           view={view}
           setCurrentPage={setCurrentPage}
           setItemsPerPage={setItemsPerPage}

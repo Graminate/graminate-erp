@@ -7,8 +7,8 @@ import Calendar from "@/components/ui/Calendar/Calendar";
 import Loader from "@/components/ui/Loader";
 import Head from "next/head";
 import Swal from "sweetalert2";
+import FirstLoginModal from "@/components/modals/FirstLoginModal";
 
-// --- Type Definitions ---
 type Coordinates = {
   lat: number;
   lon: number;
@@ -24,32 +24,24 @@ type User = {
   imageUrl?: string | null;
   language?: string;
   time_format?: string;
+  type?: string;
 };
 
-// --- Constants ---
-// Base URL for API requests - consider moving to environment variables
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
 
-// --- Component ---
 const Dashboard = () => {
   const router = useRouter();
   const userId = router.isReady ? (router.query.user_id as string) : undefined;
 
-  // --- State ---
   const [userData, setUserData] = useState<User | null>(null);
   const [location, setLocation] = useState<Coordinates | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [isLocationLoading, setIsLocationLoading] = useState<boolean>(true);
   const [isUserDataLoading, setIsUserDataLoading] = useState<boolean>(true);
-  // Note: isAuthorized state was present but not used for rendering control, removed for simplicity unless needed elsewhere.
-  // Note: currentStep and steps array were present but not used in the UI, removed for simplicity unless needed elsewhere.
-  // Note: temperatureScale state was present but only used to derive 'fahrenheit', simplified.
-  const [isFahrenheit, setIsFahrenheit] = useState<boolean>(true); // Default to Fahrenheit
+  const [isFahrenheit, setIsFahrenheit] = useState<boolean>(true);
+  const [isSetupModalOpen, setIsSetupModalOpen] = useState<boolean>(false);
 
-  // --- Effects ---
-
-  // Fetch User Data
   useEffect(() => {
     if (!router.isReady || !userId) return;
 
@@ -58,12 +50,19 @@ const Dashboard = () => {
 
     const fetchUserData = async () => {
       try {
-        const response = await axios.get(`${API_BASE_URL}/user/${userId}`, {
-          withCredentials: true,
-          timeout: 10000, // 10 second timeout
-        });
+        const response = await axios.get(
+          `http://localhost:3001/api/user/${userId}`,
+          {
+            withCredentials: true,
+            timeout: 10000, // 10 second timeout
+          }
+        );
         if (isMounted) {
-          setUserData(response.data.user);
+          const fetchedUser = response.data.user as User;
+          setUserData(fetchedUser);
+          if (!fetchedUser.business_name || !fetchedUser.type) {
+            setIsSetupModalOpen(true);
+          }
         }
       } catch (error: any) {
         if (!isMounted) return;
@@ -77,7 +76,7 @@ const Dashboard = () => {
             errorText = "Session expired. Please log in again.";
           } else if (error.response?.status === 404) {
             errorTitle = "Not Found";
-            errorText = `User not found.`; 
+            errorText = `User not found.`;
           } else if (error.code === "ECONNABORTED") {
             errorText =
               "Request timed out. Please check your connection and try again.";
@@ -85,7 +84,6 @@ const Dashboard = () => {
         } else {
           console.error("Non-Axios error fetching user data:", error);
         }
-
 
         await Swal.fire({
           title: errorTitle,
@@ -106,16 +104,14 @@ const Dashboard = () => {
     fetchUserData();
 
     return () => {
-      isMounted = false; // Cleanup function to prevent state updates on unmounted component
+      isMounted = false;
     };
-  }, [router.isReady, userId, router]); // Added router to dependency array as it's used for push
+  }, [router.isReady, userId, router]);
 
-  // Get Location
   useEffect(() => {
-    // No need to wait for userId for location
     let isMounted = true;
     setIsLocationLoading(true);
-    setLocationError(null); // Reset error on new attempt
+    setLocationError(null);
 
     if (!navigator.geolocation) {
       setLocationError("Geolocation is not supported by your browser.");
@@ -152,7 +148,7 @@ const Dashboard = () => {
               break;
           }
           setLocationError(errorMessage);
-          setLocation(null); // Ensure location is null on error
+          setLocation(null);
         }
       },
       { timeout: 10000 }
@@ -165,12 +161,8 @@ const Dashboard = () => {
     };
 
     navigator.geolocation.getCurrentPosition(
-      (position) => {
-        checkLoading();
-      },
-      (error) => {
-        checkLoading();
-      },
+      () => checkLoading(),
+      () => checkLoading(),
       { timeout: 10000 }
     );
 
@@ -178,6 +170,41 @@ const Dashboard = () => {
       isMounted = false;
     };
   }, []);
+
+  const handleFirstLogin = async (
+    businessName: string,
+    businessType: string
+  ) => {
+    try {
+      await axios.put(
+        `${API_BASE_URL}/user/${userId}`,
+        { business_name: businessName, type: businessType },
+        { withCredentials: true }
+      );
+      await Swal.fire({
+        title: "Welcome!",
+        text: "Your account is now set up. Let’s get started 🚀",
+        icon: "success",
+        confirmButtonText: "Ok",
+      }).then(() => {
+        window.location.reload();
+      });
+      setUserData((prev) =>
+        prev
+          ? { ...prev, business_name: businessName, type: businessType }
+          : prev
+      );
+      setIsSetupModalOpen(false);
+    } catch (error: any) {
+      console.error("Error updating business info:", error);
+      Swal.fire({
+        title: "Error",
+        text: "Failed to update business info. Please try again.",
+        icon: "error",
+        confirmButtonText: "OK",
+      });
+    }
+  };
 
   const renderWeatherContent = () => {
     if (isLocationLoading) {
@@ -240,13 +267,20 @@ const Dashboard = () => {
             <div className="lg:col-span-1 space-y-6">
               {renderWeatherContent()}
             </div>
-
             <div className="lg:col-span-2 space-y-6">
               <Calendar />
             </div>
           </div>
         </div>
       </PlatformLayout>
+      {isSetupModalOpen && userId && (
+        <FirstLoginModal
+          isOpen={isSetupModalOpen}
+          userId={userId}
+          onSubmit={handleFirstLogin}
+          onClose={() => setIsSetupModalOpen(false)}
+        />
+      )}
     </>
   );
 };

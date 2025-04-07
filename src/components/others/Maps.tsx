@@ -1,13 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { loadGoogleMaps } from "@/lib/utils/loadLocation";
 
-export interface MarkerData {
+export type MarkerData = {
   id: string;
   position: google.maps.LatLngLiteral;
   title?: string;
 }
 
-interface MapsProps {
+type MapsProps = {
   apiKey: string;
   initialCenter?: google.maps.LatLngLiteral;
   initialZoom?: number;

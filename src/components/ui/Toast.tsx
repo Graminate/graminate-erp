@@ -5,6 +5,7 @@ const Toast = () => {
   const [isVisible, setIsVisible] = useState(false);
   const [shouldRender, setShouldRender] = useState(false);
   const [message, setMessage] = useState("");
+  const [type, setType] = useState<"success" | "error">("success");
 
   useEffect(() => {
     const unsubToast = showToast.subscribe((value: boolean) => {
@@ -21,8 +22,11 @@ const Toast = () => {
   }, []);
 
   useEffect(() => {
-    const unsubMessage = toastMessage.subscribe((value: string | null) => {
-      setMessage(value ?? "");
+    const unsubMessage = toastMessage.subscribe((value) => {
+      if (value) {
+        setMessage(value.message);
+        setType(value.type);
+      }
     });
 
     return unsubMessage;
@@ -32,7 +36,7 @@ const Toast = () => {
     if (isVisible) {
       const timeout = setTimeout(() => {
         showToast.set(false);
-        toastMessage.set("");
+        toastMessage.set(null);
       }, 3000);
       return () => clearTimeout(timeout);
     }
@@ -40,13 +44,16 @@ const Toast = () => {
 
   if (!shouldRender) return null;
 
+  const bgClass =
+    type === "error" ? "bg-red-200 text-light" : "bg-green-200 text-white";
+
   return (
     <div
-      className={`fixed right-4 bottom-4 left-4 max-w-xs md:right-6 md:bottom-6 md:left-auto md:max-w-sm px-4 py-3 rounded-lg text-white shadow-md transition-all duration-300 ease-in-out transform ${
+      className={`fixed z-[9999] right-4 bottom-4 left-4 max-w-xs md:right-6 md:bottom-6 md:left-auto md:max-w-sm px-4 py-3 rounded-lg shadow-md transition-all duration-300 ease-in-out transform ${
         isVisible
           ? "opacity-100 translate-y-0"
           : "opacity-0 translate-y-4 pointer-events-none"
-      } bg-green-600`}
+      } ${bgClass}`}
     >
       <p className="text-sm font-semibold text-center md:text-left">
         {message}

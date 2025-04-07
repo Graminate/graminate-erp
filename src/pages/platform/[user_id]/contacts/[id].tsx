@@ -4,11 +4,11 @@ import TextField from "@/components/ui/TextField";
 import PlatformLayout from "@/layout/PlatformLayout";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import Swal from "sweetalert2";
-import { showToast, toastMessage } from "@/stores/toast";
+import { triggerToast } from "@/stores/toast";
 import { CONTACT_TYPES } from "@/constants/options";
 import Loader from "@/components/ui/Loader";
 import axios from "axios";
+import Head from "next/head";
 
 const ContactDetails = () => {
   const router = useRouter();
@@ -129,8 +129,7 @@ const ContactDetails = () => {
 
       console.log("Response from API:", response.data);
 
-      toastMessage.set("Contact updated successfully");
-      showToast.set(true);
+      triggerToast("Contact updated successfully", "success");
 
       const updated = response.data.contact;
 
@@ -162,11 +161,11 @@ const ContactDetails = () => {
       });
     } catch (error: any) {
       console.error("Error updating contact:", error);
-      toastMessage.set(
+      triggerToast(
         error.response?.data?.error ||
-          "An error occurred while updating the contact."
+          "An error occurred while updating the contact.",
+        "error"
       );
-      showToast.set(true);
     } finally {
       setSaving(false);
     }
@@ -174,6 +173,9 @@ const ContactDetails = () => {
 
   return (
     <PlatformLayout>
+      <Head>
+        <title>Contact | {initialFullName}</title>
+      </Head>
       <div className="px-6">
         <Button
           text="Back"

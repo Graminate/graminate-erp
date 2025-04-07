@@ -1,12 +1,12 @@
 import React from "react";
 
-interface BusinessCardProps {
+type BusinessCardProps = {
   businessName: string;
   stars: number;
   address: string;
   open: boolean;
   price: number;
-}
+};
 
 const renderStars = (rating: number): string[] => {
   const roundedRating = Math.round(rating);

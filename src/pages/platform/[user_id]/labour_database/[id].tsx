@@ -5,8 +5,7 @@ import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import Swal from "sweetalert2";
-import { showToast, toastMessage } from "@/stores/toast";
+import { triggerToast } from "@/stores/toast";
 import { GENDER, YESNO } from "@/constants/options";
 import axios from "axios";
 
@@ -27,7 +26,6 @@ const LabourDetails = () => {
   const [queryData, setQueryData] = useState<string | null>(null);
   const [role, setRole] = useState("");
 
-  // Optional fields
   const [rationCard, setRationCard] = useState("");
   const [panCard, setPanCard] = useState("");
   const [drivingLicense, setDrivingLicense] = useState("");
@@ -97,7 +95,7 @@ const LabourDetails = () => {
     try {
       const parsedLabour = JSON.parse(queryData);
       setLabour(parsedLabour);
-      setDisplayName(`${parsedLabour.full_name} (${parsedLabour.role})`); // Point to remember
+      setDisplayName(`${parsedLabour.full_name} (${parsedLabour.role})`);
       setFullName(parsedLabour.full_name || "");
       setDateOfBirth(
         new Date(parsedLabour.date_of_birth).toLocaleDateString() || ""
@@ -206,8 +204,7 @@ const LabourDetails = () => {
     setSaving(true);
 
     if (!labour || !labour.labour_id) {
-      toastMessage.set("Labour ID is missing. Cannot update.");
-      showToast.set(true);
+      triggerToast("Labour ID is missing. Cannot update.", "error");
       setSaving(false);
       return;
     }
@@ -260,8 +257,7 @@ const LabourDetails = () => {
 
       console.log("Response from API:", response.data);
 
-      toastMessage.set("Labour updated successfully");
-      showToast.set(true);
+      triggerToast("Labour updated successfully", "success");
 
       setLabour(response.data.updatedLabour);
       setInitialFormData({
@@ -298,11 +294,11 @@ const LabourDetails = () => {
       });
     } catch (error: any) {
       console.error("Error updating labour:", error);
-      toastMessage.set(
+      triggerToast(
         error.response?.data?.error ||
-          "An error occurred while updating the labour."
+          "An error occurred while updating the labour.",
+        "error"
       );
-      showToast.set(true);
     } finally {
       setSaving(false);
     }
@@ -314,6 +310,9 @@ const LabourDetails = () => {
         <title>Graminate | Employee Database</title>
       </Head>
       <PlatformLayout>
+        <Head>
+          <title>Employee | {displayName}</title>
+        </Head>
         <div className="px-6">
           <Button
             text="Back"
@@ -326,7 +325,6 @@ const LabourDetails = () => {
           <div className="pt-4">
             <h1 className="text-2xl font-bold mb-6">{displayName}</h1>
 
-            {/* Personal Data Section */}
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm mb-6">
               <h2 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-400">
                 Personal Data

@@ -1,10 +1,20 @@
+// src/stores/toast.ts
 import { writable } from "svelte/store";
 
-export const toastMessage = writable<string | null>(null);
+type ToastType = "success" | "error";
+
+export const toastMessage = writable<{
+  message: string;
+  type: ToastType;
+} | null>(null);
 export const showToast = writable<boolean>(false);
 
-export function triggerToast(message: string, duration = 3000) {
-  toastMessage.set(message);
+export function triggerToast(
+  message: string,
+  type: ToastType = "success",
+  duration = 3000
+) {
+  toastMessage.set({ message, type });
   showToast.set(true);
 
   setTimeout(() => {

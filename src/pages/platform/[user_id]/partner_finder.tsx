@@ -9,10 +9,10 @@ import Loader from "@/components/ui/Loader";
 
 type View = "distributor" | "exporter" | "factories";
 
-interface Button {
+type Button = {
   name: string;
   view: View;
-}
+};
 
 const buttons: Button[] = [
   { name: "Distributor", view: "distributor" },
@@ -20,12 +20,12 @@ const buttons: Button[] = [
   { name: "Factories", view: "factories" },
 ];
 
-interface MapState {
+type MapState = {
   center: google.maps.LatLngLiteral;
   zoom: number;
-}
+};
 
-const PartnerFinder: React.FC = () => {
+const PartnerFinder = () => {
   const [activeView, setActiveView] = useState<View>("distributor");
   const [mapState, setMapState] = useState<MapState>({
     center: { lat: 51.1657, lng: 10.4515 },

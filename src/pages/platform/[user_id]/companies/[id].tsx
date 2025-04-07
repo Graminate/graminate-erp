@@ -5,7 +5,7 @@ import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { showToast, toastMessage } from "@/stores/toast";
+import { triggerToast } from "@/stores/toast";
 import { COMPANY_TYPES } from "@/constants/options";
 import axios from "axios";
 
@@ -125,8 +125,7 @@ const CompanyDetails = () => {
 
       console.log("Response from API:", response.data);
 
-      toastMessage.set("Company updated successfully");
-      showToast.set(true);
+      triggerToast("Company updated successfully", "success");
 
       const updated = response.data.company;
 
@@ -157,11 +156,11 @@ const CompanyDetails = () => {
       });
     } catch (error: any) {
       console.error("Error updating company:", error);
-      toastMessage.set(
+      triggerToast(
         error.response?.data?.error ||
-          "An error occurred while updating the company."
+          "An error occurred while updating the company.",
+        "error"
       );
-      showToast.set(true);
     } finally {
       setSaving(false);
     }
@@ -173,6 +172,9 @@ const CompanyDetails = () => {
         <title>Graminate | Company Details</title>
       </Head>
       <PlatformLayout>
+        <Head>
+          <title>Company | {initialCompanyName}</title>
+        </Head>
         <div className="px-6">
           <Button
             text="Back"

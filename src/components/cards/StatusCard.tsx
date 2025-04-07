@@ -12,25 +12,25 @@ import NavPanel from "@/components/layout/NavPanel";
 
 Chart.register(DoughnutController, ArcElement, Tooltip, Legend);
 
-interface BudgetItem {
+type BudgetItem = {
   id: string;
   name: string;
   description?: string;
   allocated: number;
   spent: number;
-}
+};
 
-interface BudgetStep {
+type BudgetStep = {
   id: string;
   name: string;
   items: BudgetItem[];
-}
+};
 
-interface StatusCardProps {
+type StatusCardProps = {
   stepData: BudgetStep | undefined;
   onUpdateSpent: (stepId: string, itemId: string, newSpent: number) => void;
   currencySymbol?: string;
-}
+};
 
 const StatusCard = ({
   stepData,

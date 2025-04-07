@@ -12,7 +12,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
 type Props = {
-  onRowClick: (row: any[]) => void;
+  onRowClick?: (row: any[]) => void;
   data: { columns: string[]; rows: any[][] };
   filteredRows: any[][];
   currentPage: number;
@@ -433,7 +433,7 @@ const Table = ({
                 className="cursor-pointer transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-gray-800"
                 onClick={(e) => {
                   if ((e.target as HTMLElement).tagName !== "INPUT") {
-                    onRowClick(row);
+                    onRowClick?.(row);
                   }
                 }}
               >

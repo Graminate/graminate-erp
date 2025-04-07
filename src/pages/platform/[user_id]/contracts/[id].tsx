@@ -6,7 +6,8 @@ import PlatformLayout from "@/layout/PlatformLayout";
 import axios from "axios";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import { showToast, toastMessage } from "@/stores/toast";
+import { triggerToast } from "@/stores/toast";
+import Head from "next/head";
 
 const ContractDetails = () => {
   const router = useRouter();
@@ -92,8 +93,7 @@ const ContractDetails = () => {
 
   const handleSave = async () => {
     if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
-      toastMessage.set("End Date of Contract cannot be before Start Date");
-      showToast.set(true);
+      triggerToast("End Date of Contract cannot be before Start Date", "error");
       return;
     }
 
@@ -115,8 +115,7 @@ const ContractDetails = () => {
         payload
       );
 
-      toastMessage.set("Contract updated successfully");
-      showToast.set(true);
+      triggerToast("Contract updated successfully", "success");
 
       setDisplayContractName(contractName);
       setInitialFormData({
@@ -128,11 +127,11 @@ const ContractDetails = () => {
         endDate,
       });
     } catch (error: any) {
-      toastMessage.set(
+      triggerToast(
         error.response?.data?.error ||
-          "An error occurred while updating the contract."
+          "An error occurred while updating the contract.",
+        "error"
       );
-      showToast.set(true);
     } finally {
       setSaving(false);
     }
@@ -140,6 +139,9 @@ const ContractDetails = () => {
 
   return (
     <PlatformLayout>
+      <Head>
+        <title>Contract | {displayContractName}</title>
+      </Head>
       <div className="px-6">
         <Button
           text="Back"

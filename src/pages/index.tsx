@@ -36,7 +36,6 @@ const SignIn = () => {
     last_name: "",
     email: "",
     phone_number: "",
-    business_name: "",
     date_of_birth: "",
     password: "",
   });
@@ -377,20 +376,6 @@ const SignIn = () => {
                         })
                       }
                       errorMessage={phoneErrorMessage}
-                      width="large"
-                    />
-                  </div>
-                  <div className="mb-4">
-                    <TextField
-                      label="Business Name (optional)"
-                      placeholder="Enter name of your Farm Business"
-                      value={registerData.business_name}
-                      onChange={(val) =>
-                        setRegisterData({
-                          ...registerData,
-                          business_name: val,
-                        })
-                      }
                       width="large"
                     />
                   </div>

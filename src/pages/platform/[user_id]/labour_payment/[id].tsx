@@ -13,7 +13,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import SalaryModal from "@/components/modals/SalaryModal";
 
-interface PaymentRecord {
+type PaymentRecord = {
   payment_id: number;
   labour_id: number;
   payment_date: string;
@@ -43,7 +43,6 @@ const LabourPaymentDetails = () => {
     null
   );
 
-  // Table state
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [itemsPerPage, setItemsPerPage] = useState<number>(25);
   const [searchQuery, setSearchQuery] = useState<string>("");

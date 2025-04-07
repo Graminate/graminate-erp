@@ -8,18 +8,18 @@ import ProgressCard from "@/components/cards/ProgressCard";
 import StatusCard from "@/components/cards/StatusCard";
 import Loader from "@/components/ui/Loader";
 
-interface BudgetItem {
+type BudgetItem = {
   id: string;
   name: string;
   description?: string;
   allocated: number;
   spent: number;
-}
-interface BudgetStep {
+};
+type BudgetStep = {
   id: string;
   name: string;
   items: BudgetItem[];
-}
+};
 type BudgetData = BudgetStep[];
 
 const initialBudgetData: BudgetData = [
@@ -188,7 +188,7 @@ const updateBudgetItemSpent = (
   });
 };
 
-interface OverallSummaryProps {
+type OverallSummaryProps = {
   budgetData: BudgetData;
   currencySymbol?: string;
 }

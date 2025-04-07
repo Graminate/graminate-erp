@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from "react";
 import Button from "@/components/ui/Button";
 
-interface ProgressStep {
+type ProgressStep = {
   id: string;
   name: string;
 }
 
-interface ProgressCardProps {
+type ProgressCardProps = {
   steps: ProgressStep[];
   currentStepIndex: number;
   onStepChange: (newStepIndex: number) => void;

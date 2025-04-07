@@ -2,24 +2,24 @@ import React, { useState, useEffect, KeyboardEvent } from "react";
 import Button from "@/components/ui/Button";
 import CustomTextArea from "@/components/ui/CustomTextArea";
 
-interface TaskDetails {
+type TaskDetails = {
   id: string;
   title: string;
-}
+};
 
-interface TaskModalProps {
+type TaskModalProps = {
   isOpen: boolean;
   taskDetails: TaskDetails;
   projectName: string | null;
   onClose: () => void;
-}
+};
 
-const TaskModal: React.FC<TaskModalProps> = ({
+const TaskModal = ({
   isOpen,
   taskDetails,
   projectName,
   onClose,
-}) => {
+}: TaskModalProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(taskDetails.title);
   const [description, setDescription] = useState("");

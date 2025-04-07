@@ -5,7 +5,7 @@ import TextField from "@/components/ui/TextField";
 import TextArea from "@/components/ui/TextArea";
 import CustomTable from "@/components/tables/CustomTable";
 import PlatformLayout from "@/layout/PlatformLayout";
-import { showToast, toastMessage } from "@/stores/toast";
+import { triggerToast } from "@/stores/toast";
 import Head from "next/head";
 import domtoimage from "dom-to-image";
 import jsPDF from "jspdf";
@@ -173,8 +173,8 @@ const ReceiptDetails = () => {
         payload
       );
 
-      toastMessage.set("Receipt updated successfully");
-      showToast.set(true);
+      triggerToast("Receipt updated successfully", "success");
+
       setInitialFormData({
         receiptNumber,
         receiptTitle,
@@ -195,11 +195,11 @@ const ReceiptDetails = () => {
       setReceipt(response.data.invoice);
     } catch (error: any) {
       console.error("Error updating receipt:", error);
-      toastMessage.set(
+      triggerToast(
         error.response?.data?.error ||
-          "An error occurred while updating the receipt."
+          "An error occurred while updating the receipt.",
+        "error"
       );
-      showToast.set(true);
     } finally {
       setSaving(false);
     }
@@ -221,8 +221,7 @@ const ReceiptDetails = () => {
       pdf.save("receipt.pdf");
     } catch (error) {
       console.error("Error generating PDF:", error);
-      toastMessage.set("Could not generate PDF");
-      showToast.set(true);
+      triggerToast("Could not generate PDF", "error");
     } finally {
       buttons.forEach((btn) => ((btn as HTMLElement).style.display = ""));
     }

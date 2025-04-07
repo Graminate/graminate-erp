@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import Footer from "@/components/layout/Footer";
 import HomeNavbar from "@/components/layout/Navbar/HomeNavbar";
 
-interface PlatformLayoutProps {
+type PlatformLayoutProps = {
   children: React.ReactNode;
 }
 
