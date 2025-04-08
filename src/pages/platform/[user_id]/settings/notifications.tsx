@@ -1,5 +1,5 @@
-"use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import SettingsBar from "@/components/layout/SettingsBar";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
@@ -28,7 +28,7 @@ type NotificationSettings = {
   };
 };
 
-const NotificationPage: React.FC = () => {
+const NotificationPage = () => {
   const [settings, setSettings] = useState<NotificationSettings>({
     orders: {
       enabled: true,
@@ -52,6 +52,38 @@ const NotificationPage: React.FC = () => {
     },
   });
 
+  const [userType, setUserType] = useState<string | null>(null);
+
+  // Get the user_id from the route params
+  const params = useParams();
+
+  useEffect(() => {
+    const fetchUserType = async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:3001/api/user/type/${params.user_id}`,
+          {
+            credentials: "include",
+          }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          setUserType(data.type);
+        } else {
+          console.error("Failed to fetch user type");
+        }
+      } catch (err) {
+        console.error("Error fetching user type:", err);
+      }
+    };
+
+    if (params.user_id) {
+      fetchUserType();
+    }
+  }, [params.user_id]);
+
+  const showWeatherAlerts = userType == "Producer";
+
   const handleToggle = (category: keyof NotificationSettings) => {
     setSettings((prev) => ({
       ...prev,
@@ -72,7 +104,7 @@ const NotificationPage: React.FC = () => {
   return (
     <>
       <Head>
-        <title>Notification Settings</title>
+        <title>Settings | Notification</title>
       </Head>
       <PlatformLayout>
         <div className="flex min-h-screen">
@@ -86,13 +118,10 @@ const NotificationPage: React.FC = () => {
                 <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
                   Manage how you receive notifications for your operations
                 </p>
-
                 <Button text="Save Changes" style="primary" />
               </div>
 
-              {/* Notification Sections */}
               <div className="space-y-6">
-                {/* Orders Section */}
                 <SectionCard
                   title="Orders & Deliveries"
                   description="Receive updates about purchase orders and deliveries"
@@ -113,7 +142,6 @@ const NotificationPage: React.FC = () => {
                   />
                 </SectionCard>
 
-                {/* Inventory Section */}
                 <SectionCard
                   title="Inventory Updates"
                   description="Get alerts about stock levels and supplies"
@@ -138,30 +166,31 @@ const NotificationPage: React.FC = () => {
                   />
                 </SectionCard>
 
-                {/* Weather Section */}
-                <SectionCard
-                  title="Weather Alerts"
-                  description="Important weather updates for your region"
-                  enabled={settings.weather.enabled}
-                  onToggle={() => handleToggle("weather")}
-                >
-                  <CheckboxOption
-                    label="Severe Weather Alerts"
-                    checked={settings.weather.alerts}
-                    onChange={() => handleCheckboxChange("weather", "alerts")}
-                    disabled={!settings.weather.enabled}
-                  />
-                  <CheckboxOption
-                    label="Daily Forecasts"
-                    checked={settings.weather.forecasts}
-                    onChange={() =>
-                      handleCheckboxChange("weather", "forecasts")
-                    }
-                    disabled={!settings.weather.enabled}
-                  />
-                </SectionCard>
+                {/* Conditionally render the Weather Alerts section */}
+                {showWeatherAlerts && (
+                  <SectionCard
+                    title="Weather Alerts"
+                    description="Important weather updates for your region"
+                    enabled={settings.weather.enabled}
+                    onToggle={() => handleToggle("weather")}
+                  >
+                    <CheckboxOption
+                      label="Severe Weather Alerts"
+                      checked={settings.weather.alerts}
+                      onChange={() => handleCheckboxChange("weather", "alerts")}
+                      disabled={!settings.weather.enabled}
+                    />
+                    <CheckboxOption
+                      label="Daily Forecasts"
+                      checked={settings.weather.forecasts}
+                      onChange={() =>
+                        handleCheckboxChange("weather", "forecasts")
+                      }
+                      disabled={!settings.weather.enabled}
+                    />
+                  </SectionCard>
+                )}
 
-                {/* System Section */}
                 <SectionCard
                   title="System Updates"
                   description="Important updates about your ERP system"
@@ -220,8 +249,8 @@ const SectionCard = ({
       <button
         onClick={onToggle}
         className={`ml-4 relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent 
-          transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-green-500 ${
-            enabled ? "bg-green-600" : "bg-gray-300"
+          transition-colors duration-200 ${
+            enabled ? "bg-green-200" : "bg-gray-300"
           }`}
       >
         <span

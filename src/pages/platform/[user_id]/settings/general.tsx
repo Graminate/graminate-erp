@@ -130,7 +130,7 @@ const GeneralPage = () => {
           {/* Main content */}
           <main className="flex-1 px-12">
             <div className="pb-4 font-bold text-lg text-dark dark:text-light">
-              General
+              General Settings
             </div>
 
             {/* Navigation panel */}
@@ -232,6 +232,7 @@ const GeneralPage = () => {
                         setUser((prev) => ({ ...prev, firstName: val }))
                       }
                       width="large"
+                      isDisabled={true}
                     />
                     <TextField
                       label="Last Name"
@@ -241,9 +242,9 @@ const GeneralPage = () => {
                         setUser((prev) => ({ ...prev, lastName: val }))
                       }
                       width="large"
+                      isDisabled={true}
                     />
 
-                    {/* Language & Time Format Selectors in the Same Row */}
                     <div className="flex gap-4">
                       <DropdownSmall
                         label="Language"

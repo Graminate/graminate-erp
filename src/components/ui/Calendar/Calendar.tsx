@@ -116,13 +116,10 @@ const Calendar = () => {
     }
 
     const dateKey = getDateKey(selectedDate);
-    // Consider adding a unique ID when creating the task:
-    // const newTaskObject = { id: Date.now().toString(), name: newTask.trim(), time: newTaskTime };
     const newTaskObject = { name: newTask.trim(), time: newTaskTime };
 
     setTasks((prevTasks) => {
       const dateTasks = prevTasks[dateKey] ? [...prevTasks[dateKey]] : [];
-      // Ensure you push the object with the ID if you add one
       dateTasks.push(newTaskObject);
       dateTasks.sort((a, b) => {
         return (
@@ -261,13 +258,13 @@ const Calendar = () => {
         classes += "bg-green-200 text-white shadow-md ";
       } else if (isToday) {
         classes +=
-          "text-light dark:text-blue-300 dark:border-blue-400 hover:bg-gray-400 dark:hover:bg-blue-900 ";
+          "text-dark dark:text-light dark:border-blue-400 hover:bg-green-300 dark:hover:bg-green-100 ";
       } else if (isPast) {
         classes +=
           "text-dark dark:text-light cursor-default hover:bg-gray-400 dark:hover:bg-gray-600 ";
       } else {
         classes +=
-          "text-gray-700 dark:text-gray-200 hover:bg-gray-400 dark:hover:bg-gray-600 ";
+          "text-gray-700 dark:text-light hover:bg-gray-400 dark:hover:bg-gray-600 ";
       }
     }
     return classes;

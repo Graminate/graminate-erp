@@ -1,4 +1,3 @@
-// src/stores/toast.ts
 import { writable } from "svelte/store";
 
 type ToastType = "success" | "error";

@@ -2,7 +2,7 @@ import React, { useState, FormEvent } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import Swal from "sweetalert2";
-
+import { triggerToast } from "@/stores/toast";
 import LoginLayout from "@/layout/LoginLayout";
 import TextField from "@/components/ui/TextField";
 import Button from "@/components/ui/Button";
@@ -96,14 +96,27 @@ const SignIn = () => {
 
       const responseData = response.data;
       router.push(`/platform/${responseData.user.user_id}`);
-    } catch (error: any) {
-      console.error("Error during login:", error);
-      Swal.fire({
-        title: "Login Failed",
-        text: error.response?.data?.error || "Invalid email or password.",
-        icon: "error",
-        confirmButtonText: "OK",
-      });
+    } catch (err) {
+      const error = err as any;
+      const status = error?.response?.status;
+      const serverMessage =
+        error?.response?.data?.error || error?.response?.data?.message;
+
+      if (status === 401 && serverMessage === "User does not exist") {
+        Swal.fire({
+          title: "User Not Found",
+          text: "Email not registed. Please sign up first",
+          icon: "error",
+          confirmButtonText: "OK",
+        });
+      } else {
+        Swal.fire({
+          title: "Login Failed",
+          text: serverMessage || "Invalid email or password.",
+          icon: "error",
+          confirmButtonText: "OK",
+        });
+      }
     }
   };
 
@@ -290,7 +303,7 @@ const SignIn = () => {
                   </div>
                   <p className="text-center mt-4 text-sm text-gray-600 dark:text-gray-300">
                     <button
-                      className="text-blue-500 hover:underline focus:outline-none"
+                      className="text-blue-200 hover:underline focus:outline-none"
                       type="button"
                       onClick={openForgotPasswordModal}
                     >
@@ -301,7 +314,7 @@ const SignIn = () => {
                 <p className="text-center mt-4 text-sm text-gray-600 dark:text-gray-300">
                   Don't have an account?{" "}
                   <button
-                    className="text-blue-500 hover:underline focus:outline-none"
+                    className="text-blue-200 hover:underline focus:outline-none"
                     type="button"
                     onClick={toggleForm}
                   >

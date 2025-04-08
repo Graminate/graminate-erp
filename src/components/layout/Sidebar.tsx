@@ -11,6 +11,9 @@ import {
   faWarehouse,
   faChevronRight,
   faChevronLeft,
+  faFish,
+  faKiwiBird,
+  faCow,
 } from "@fortawesome/free-solid-svg-icons";
 
 import type { Sidebar } from "@/types/card-props";
@@ -46,7 +49,6 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
     if (userId) fetchUserType();
   }, [userId]);
 
-  // Section responds to the type of user by showing / not showing some contents
   const sections = useMemo(() => {
     const base = [
       {
@@ -77,14 +79,37 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
       },
     ];
 
-    if (userType !== "Wholesaler" && userType !== "Processor") {
-      base.push({
-        icon: faCloud,
-        label: "Weather Monitor",
-        section: "Weather Monitor",
-        route: `/platform/${userId}/weather`,
-        subItems: [],
-      });
+    if (userType === "Producer") {
+      base.push(
+        {
+          icon: faCloud,
+          label: "Weather Monitor",
+          section: "Weather Monitor",
+          route: `/platform/${userId}/weather`,
+          subItems: [],
+        },
+        {
+          icon: faFish,
+          label: "Fishery",
+          section: "Fishery Farm",
+          route: `/platform/${userId}/fishery`,
+          subItems: [],
+        },
+        {
+          icon: faKiwiBird,
+          label: "Poultry Farm",
+          section: "Poultry Farm",
+          route: `/platform/${userId}/poultry`,
+          subItems: [],
+        },
+        {
+          icon: faCow,
+          label: "Animal Husbandry",
+          section: "Fishery",
+          route: `/platform/${userId}/animal_husbandry`,
+          subItems: [],
+        }
+      );
     }
 
     base.push(
