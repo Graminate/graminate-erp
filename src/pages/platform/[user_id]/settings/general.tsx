@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import NavPanel from "@/components/layout/NavPanel";
@@ -11,17 +11,50 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Button from "@/components/ui/Button";
 import { LANGUAGES, TIME_FORMAT } from "@/constants/options";
 import axios from "axios";
+import Loader from "@/components/ui/Loader";
 
 const GeneralPage = () => {
   const router = useRouter();
-  const { view } = router.query;
+  const { view, user_id } = router.query;
   const currentView = (view as string) || "profile";
+  const userId = Array.isArray(user_id) ? user_id[0] : user_id;
 
-  const navButtons = [
-    { name: "Profile", view: "profile" },
-    { name: "Weather", view: "weather" },
-    { name: "Occupation", view: "occupation" },
-  ];
+  const [userType, setUserType] = useState<string | null>(null);
+  const [isUserTypeLoading, setIsUserTypeLoading] = useState(true);
+
+  useEffect(() => {
+    if (!userId) return;
+    const fetchUserType = async () => {
+      try {
+        const res = await fetch(`http://localhost:3001/api/user/${userId}`, {
+          credentials: "include",
+        });
+        const json = await res.json();
+        // Assumes the API returns an object with user.type;
+        setUserType(json?.user?.type);
+      } catch (err) {
+        console.error("Error fetching user type", err);
+        setUserType("Producer");
+      } finally {
+        setIsUserTypeLoading(false);
+      }
+    };
+
+    fetchUserType();
+  }, [userId]);
+
+  // Use useMemo to conditionally build the navigation buttons based on userType.
+  const navButtons = useMemo(() => {
+    const buttons = [{ name: "Profile", view: "profile" }];
+
+    // Only add Weather button if the user type is "Producer"
+    if (userType === "Producer") {
+      buttons.push({ name: "Weather", view: "weather" });
+    }
+
+    buttons.push({ name: "Occupation", view: "occupation" });
+    return buttons;
+  }, [userType]);
 
   const changeView = (newView: string) => {
     router.push({
@@ -46,14 +79,11 @@ const GeneralPage = () => {
     timeFormat: "24-hour",
   });
 
-  const { user_id } = router.query;
-
   const [weatherSettings, setWeatherSettings] = useState({
     location: "",
     scale: "Celsius",
     aiSuggestions: false,
   });
-  const userId = Array.isArray(user_id) ? user_id[0] : user_id;
 
   const handleSaveChanges = async () => {
     setIsSaving(true);
@@ -85,6 +115,7 @@ const GeneralPage = () => {
     }
   };
 
+  // Fetch the user data (profile details)
   useEffect(() => {
     if (!userId) return;
 
@@ -134,11 +165,15 @@ const GeneralPage = () => {
             </div>
 
             {/* Navigation panel */}
-            <NavPanel
-              buttons={navButtons}
-              activeView={currentView}
-              onNavigate={(newView: string) => changeView(newView)}
-            />
+            {isUserTypeLoading ? (
+              <Loader />
+            ) : (
+              <NavPanel
+                buttons={navButtons}
+                activeView={currentView}
+                onNavigate={(newView: string) => changeView(newView)}
+              />
+            )}
 
             <section className="py-6">
               {/* Profile View */}
@@ -305,7 +340,6 @@ const GeneralPage = () => {
 
                   {/* Weather Settings Form */}
                   <div className="flex flex-col gap-4 max-w-lg">
-                    {/* Set Location */}
                     <TextField
                       label="Set Location"
                       placeholder="Enter your location"
@@ -319,7 +353,6 @@ const GeneralPage = () => {
                       width="large"
                     />
 
-                    {/* Scale Selection */}
                     <DropdownSmall
                       label="Scale"
                       items={["Celsius", "Fahrenheit"]}
@@ -329,7 +362,6 @@ const GeneralPage = () => {
                       }
                     />
 
-                    {/* Enable / Disable AI Suggestions */}
                     <div className="flex items-center gap-2">
                       <input
                         type="checkbox"

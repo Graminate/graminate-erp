@@ -1,11 +1,6 @@
-import { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/router";
-import Button from "@/components/ui/Button";
-import Table from "@/components/tables/Table";
+import { useEffect, useState } from "react";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
-import axios from "axios";
-import { PAGINATION_ITEMS } from "@/constants/options";
 
 import { Bar, Pie } from "react-chartjs-2";
 import {
@@ -18,7 +13,12 @@ import {
   Legend,
   ArcElement,
 } from "chart.js";
-import InventoryForm from "@/components/form/InventoryForm";
+import axios from "axios";
+
+import VeterinaryCard from "@/components/cards/poultry/VeterinaryCard";
+import EnvironmentCard from "@/components/cards/poultry/EnvironmentCard";
+import PoultryTaskCard from "@/components/cards/poultry/PoultryTaskCard";
+import PoultryFeedCard from "@/components/cards/poultry/PoultryFeedCard";
 
 ChartJS.register(
   CategoryScale,
@@ -30,254 +30,433 @@ ChartJS.register(
   ArcElement
 );
 
-type View = "poultry";
-
-const getBarColor = (quantity: number, max: number) => {
-  const ratio = quantity / max;
-  if (ratio < 0.25) return "#e53e3e";
-  if (ratio < 0.5) return "orange";
-  if (ratio < 0.75) return "#facd1d";
-  return "#04ad79";
+const salesChartData = {
+  labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug"],
+  datasets: [
+    {
+      label: "Monthly Egg Sales Value (₹)",
+      data: [65000, 59000, 80000, 81000, 56000, 55000, 40000, 70000],
+      backgroundColor: "rgba(54, 162, 235, 0.6)",
+      borderColor: "rgba(54, 162, 235, 1)",
+      borderWidth: 1,
+    },
+  ],
 };
 
-const Poultry = () => {
-  const router = useRouter();
-  const { user_id, view: queryView } = router.query;
-  const parsedUserId = Array.isArray(user_id) ? user_id[0] : user_id;
-  const view: View =
-    typeof queryView === "string" ? (queryView as View) : "poultry";
+const salesChartOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: { legend: { display: false }, title: { display: false } },
+  scales: {
+    y: {
+      beginAtZero: true,
+      ticks: {
+        callback: function (value: number | string) {
+          if (typeof value === "number") {
+            return "₹" + value / 1000 + "k";
+          }
+          return value;
+        },
+      },
+    },
+    x: { grid: { display: false } },
+  },
+};
 
-  const [itemRecords, setItemRecords] = useState<any[]>([]);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(25);
-  const [searchQuery, setSearchQuery] = useState("");
+const eggGradingPieData = {
+  labels: ["Extra Large", "Large", "Medium", "Small", "Reject/Broken"],
+  datasets: [
+    {
+      label: "Egg Grading Distribution (%)",
+      data: [25, 40, 25, 5, 5],
+      backgroundColor: [
+        "rgba(75, 192, 192, 0.7)",
+        "rgba(54, 162, 235, 0.7)",
+        "rgba(255, 206, 86, 0.7)",
+        "rgba(255, 159, 64, 0.7)",
+        "rgba(255, 99, 132, 0.7)",
+      ],
+      borderColor: [
+        "rgba(75, 192, 192, 1)",
+        "rgba(54, 162, 235, 1)",
+        "rgba(255, 206, 86, 1)",
+        "rgba(255, 159, 64, 1)",
+        "rgba(255, 99, 132, 1)",
+      ],
+      borderWidth: 1,
+    },
+  ],
+};
+
+const eggGradingPieOptions = {
+  responsive: true,
+  maintainAspectRatio: false,
+  plugins: {
+    legend: {
+      display: true,
+      position: "bottom" as const,
+      labels: { padding: 10, boxWidth: 12 },
+    },
+    title: { display: false },
+    tooltip: {
+      callbacks: {
+        label: function (context: any) {
+          let label = context.label || "";
+          if (label) {
+            label += ": ";
+          }
+          if (context.parsed !== null) {
+            label += context.parsed + "%";
+          }
+          return label;
+        },
+      },
+    },
+  },
+};
+
+type Priority = "High" | "Medium" | "Low";
+
+const tasks: {
+  id: number;
+  text: string;
+  completed: boolean;
+  priority: Priority;
+}[] = [
+  { id: 1, text: "Check water lines", completed: false, priority: "High" },
+  { id: 2, text: "Record feed levels", completed: true, priority: "Medium" },
+  { id: 3, text: "Schedule vet visit", completed: false, priority: "Medium" },
+  { id: 4, text: "Clean House B", completed: false, priority: "Low" },
+  { id: 5, text: "Order new feed batch", completed: false, priority: "High" },
+];
+
+const Poultry = () => {
+  const [salesPeriod, setSalesPeriod] = useState("This Month");
+  const [activeAlerts, setActiveAlerts] = useState<any[]>([]);
+  const [temperature, setTemperature] = useState<number | null>(null);
+  const [humidity, setHumidity] = useState<number | null>(null);
+  const [sunrise, setSunrise] = useState<string | null>(null);
+  const [sunset, setSunset] = useState<string | null>(null);
+  const [lightHours, setLightHours] = useState<number | null>(null);
+  const fahrenheit = false;
+
+  function convertToFahrenheit(celsius: number): number {
+    return Math.round((celsius * 9) / 5 + 32);
+  }
+
+  function formatTemperature(
+    value: number | null,
+    showUnit: boolean = true
+  ): string {
+    if (value === null) return "N/A";
+    const temp = fahrenheit ? convertToFahrenheit(value) : value;
+    return showUnit ? `${temp}°${fahrenheit ? "F" : "C"}` : `${temp}°`;
+  }
 
   useEffect(() => {
-    if (!router.isReady || !parsedUserId) return;
-
-    const fetchPoultry = async () => {
+    const fetchWeather = async (lat: number, lon: number) => {
       try {
-        const response = await axios.get(
-          `http://localhost:3001/api/inventory/${parsedUserId}` // Adjust the endpoint as needed
-        );
+        const response = await axios.get("/api/weather", {
+          params: { lat, lon },
+        });
 
-        setItemRecords(response.data.items || []);
-      } catch (error: any) {
-        console.error(
-          "Error fetching poultry data:",
-          error.response?.data?.error || error.message
-        );
+        setTemperature(Math.round(response.data.current.temperature2m));
+        setHumidity(Math.round(response.data.current.relativeHumidity2m));
+
+        const daylightSeconds = response.data.daily.daylightDuration?.[0];
+        if (typeof daylightSeconds === "number") {
+          setLightHours(daylightSeconds / 3600); // convert to hours
+        }
+      } catch (err: any) {
+        console.error("Failed to fetch weather", err.message);
       }
     };
 
-    fetchPoultry();
-  }, [router.isReady, parsedUserId]);
-
-  const tableData = useMemo(() => {
-    if (view === "poultry" && itemRecords.length > 0) {
-      return {
-        columns: [
-          // "#",
-          "Item Name",
-          "Item Group",
-          "Units",
-          "Quantity",
-          "Price / Unit (₹)",
-          "Status",
-        ],
-        rows: itemRecords.map((item) => [
-          // item.poultry_id,
-          item.item_name,
-          item.item_group,
-          item.units,
-          item.quantity,
-          item.price_per_unit,
-          item.status,
-        ]),
-      };
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          fetchWeather(latitude, longitude);
+        },
+        (error) => {
+          console.error("Geolocation error:", error.message);
+        },
+        { enableHighAccuracy: true }
+      );
+    } else {
+      console.error("Geolocation is not supported by this browser.");
     }
-    return { columns: [], rows: [] };
-  }, [itemRecords, view]);
+  }, []);
 
-  const maxQuantity = Math.max(...itemRecords.map((item) => item.quantity));
-  const groups = Array.from(
-    new Set(itemRecords.map((item) => item.item_group))
-  );
+  const feedInventoryDays = 2;
+  useEffect(() => {
+    const dynamicAlerts = [];
 
-  const generateColors = (count: number) =>
-    Array.from(
-      { length: count },
-      (_, i) => `hsl(${(i * 360) / count}, 70%, 60%)`
-    );
+    if (temperature !== null && temperature >= 39) {
+      dynamicAlerts.push({
+        id: 1,
+        type: "Critical",
+        message: `High Temperature Alert in House A (${temperature}°C)`,
+      });
+    }
 
-  const pieColors = generateColors(itemRecords.length);
+    if (feedInventoryDays < 2) {
+      dynamicAlerts.push({
+        id: 2,
+        type: "Warning",
+        message: "Feed Inventory Low (< 2 days remaining)",
+      });
+    }
 
-  const chartData = {
-    labels: groups,
-    datasets: itemRecords.map((item) => ({
-      label: item.item_name,
-      data: groups.map((group) =>
-        group === item.item_group ? item.quantity : null
-      ),
-      backgroundColor: getBarColor(item.quantity, maxQuantity),
-    })),
+    if (expectedMarketDate) {
+      const today = new Date();
+      const vetVisitDate = new Date(expectedMarketDate);
+      const diffInTime = vetVisitDate.getTime() - today.getTime();
+      const diffInDays = Math.ceil(diffInTime / (1000 * 3600 * 24));
+
+      if (diffInDays === 7) {
+        dynamicAlerts.push({
+          id: 3,
+          type: "Info",
+          message: `Veterinary visit scheduled in 7 days (on ${expectedMarketDate}).`,
+        });
+      }
+    }
+
+    setActiveAlerts(dynamicAlerts);
+  }, [temperature, feedInventoryDays]);
+
+  const dismissAlert = (id: number) => {
+    setActiveAlerts((current) => current.filter((alert) => alert.id !== id));
   };
 
-  const chartOptions = {
-    responsive: true,
-    plugins: {
-      legend: { display: false },
-      title: {
-        display: true,
-        text: "Item Quantities by Group",
-      },
-    },
-    scales: {
-      x: {
-        stacked: false,
-        barPercentage: 1.0,
-        categoryPercentage: 1.0,
-      },
-      y: {
-        stacked: false,
-      },
-    },
+  const getAlertStyle = (type: string): string => {
+    switch (type) {
+      case "Critical":
+        return "bg-red-300 border-red-500 text-red-100 dark:bg-red-300 dark:border-red-600 dark:text-red-800";
+      case "Warning":
+        return "bg-yellow-200 border-yellow-500 text-yellow-700 dark:bg-yellow-200 dark:border-yellow-600 dark:text-yellow-800";
+      case "Info":
+        return "bg-blue-300 border-blue-500 text-blue-100 dark:bg-blue-300 dark:border-blue-600 dark:text-blue-800";
+      default:
+        return "bg-gray-300 border-gray-500 text-gray-700 dark:bg-gray-200 dark:border-gray-600 dark:text-gray-800";
+    }
   };
 
-  const totalAssetValue = itemRecords.reduce(
-    (acc, item) => acc + Number(item.price_per_unit) * item.quantity,
-    0
-  );
+  function parseTimeToMinutes(time: string): number {
+    if (!time || !time.includes(":")) return 0;
+    const [h, m] = time.split(":").map(Number);
+    if (isNaN(h) || isNaN(m)) return 0;
+    return h * 60 + m;
+  }
+
+  // --- Dummy Data Values ---
+  const totalEggsStock = 85200;
+  const totalChicks = 850;
+  const dailyFeedConsumption = 150;
+  const flockAgeDays = 42;
+  const flockAgeWeeks = (flockAgeDays / 7).toFixed(1);
+  const breedType = "Broiler";
+  const flockId = "1";
+  const expectedMarketDate = "2025-04-13";
+
+  const getFeedLevelColor = (days: number) => {
+    if (days < 2) return "text-red-500 dark:text-red-400";
+    if (days < 5) return "text-yellow-500 dark:text-yellow-400";
+    return "text-green-500 dark:text-green-400";
+  };
+
+  const [taskList, setTaskList] = useState(tasks);
+  const [newTaskText, setNewTaskText] = useState("");
+  const [newTaskPriority, setNewTaskPriority] = useState<Priority>("Medium");
+  const [prioritySortAsc, setPrioritySortAsc] = useState(false);
+
+  const priorityRank: Record<Priority, number> = { High: 1, Medium: 2, Low: 3 };
+  const sortTasks = (list: typeof tasks, asc = prioritySortAsc) => {
+    const sorted = [...list].sort((a, b) => {
+      const aPriority = priorityRank[a.priority];
+      const bPriority = priorityRank[b.priority];
+      return asc ? aPriority - bPriority : bPriority - aPriority;
+    });
+    return [
+      ...sorted.filter((t) => !t.completed),
+      ...sorted.filter((t) => t.completed),
+    ];
+  };
 
   return (
     <PlatformLayout>
       <Head>
-        <title>Graminate | Poultry Management</title>
+        <title>Graminate | Poultry Dashboard</title>
       </Head>
-      <div className="min-h-screen container mx-auto p-4">
-        {/* Header */}
-        <div className="flex justify-between items-center dark:bg-dark relative mb-4">
-          <div>
-            <h1 className="text-lg font-semibold dark:text-white">
-              Poultry Management
-            </h1>
-            <p className="text-xs text-dark dark:text-light">
-              {itemRecords.length} Record(s)
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              text="Add Item"
-              style="primary"
-              add
-              onClick={() => setIsSidebarOpen(true)}
-            />
-          </div>
-        </div>
-
-        {/* Chart Visualization */}
-        <div className="mb-6  dark:bg-gray-800">
-          <div className="flex flex-col lg:flex-row gap-6 justify-between">
-            {/* Bar Chart (Left) */}
-            <div className="flex-1">
-              <Bar data={chartData} options={chartOptions} />
-            </div>
-
-            {/* Right Panel: Total Asset + Pie Chart */}
-            <div className="flex flex-col">
-              {/* Total Asset Card */}
-              <div className="p-4 bg-gray-500 dark:bg-gray-800 rounded-xl shadow text-center">
-                <p className="text-lg font-medium text-gray-700 dark:text-light">
-                  Total Asset (₹)
-                </p>
-                <p className="text-3xl font-bold text-dark dark:text-light mt-2">
-                  ₹{totalAssetValue.toFixed(2)}
-                </p>
-              </div>
-
-              {/* Pie Chart */}
-              <div className="p-4  dark:bg-gray-800 rounded-xl">
-                <h2 className="text-sm font-semibold text-center text-dark dark:text-light  mb-2">
-                  Poultry Share
-                </h2>
-                <div className="w-full max-w-[300px] mx-auto">
-                  <Pie
-                    data={{
-                      labels: itemRecords.map((item) => item.item_name),
-                      datasets: [
-                        {
-                          label: "Share by Quantity",
-                          data: itemRecords.map((item) => item.quantity),
-                          backgroundColor: pieColors,
-                          borderWidth: 1,
-                        },
-                      ],
-                    }}
-                    options={{
-                      responsive: true,
-                      plugins: {
-                        legend: {
-                          display: false,
-                          position: "bottom",
-                          labels: {
-                            color: "#666",
-                          },
-                        },
-                      },
-                    }}
-                  />
+      <div className="min-h-screen container mx-auto p-4 space-y-6">
+        {/* Alerts Banner */}
+        {activeAlerts.length > 0 && (
+          <div className="space-y-2">
+            {activeAlerts.map((alert) => (
+              <div
+                key={alert.id}
+                className={`border-l-4 p-3 rounded-md flex justify-between items-center ${getAlertStyle(
+                  alert.type
+                )}`}
+                role="alert"
+              >
+                <div>
+                  <p className="font-bold">{alert.type}</p>
+                  <p className="text-sm">{alert.message}</p>
                 </div>
+                <button
+                  onClick={() => dismissAlert(alert.id)}
+                  className="text-xl font-semibold hover:opacity-75"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+        <div>
+          <h1 className="text-lg font-semibold dark:text-white">
+            Poultry Management
+          </h1>
+        </div>
+
+        {/* Row 1 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* Flock Overview Panel */}
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md space-y-6">
+            <h2 className="text-xl font-semibold text-dark dark:text-light flex items-center gap-2">
+              Flock Overview
+            </h2>
+            <div className="text-center border-b border-gray-200 dark:border-gray-700 pb-4 mb-4">
+              <p className="text-sm font-medium text-dark dark:text-light mb-1">
+                Total Birds
+              </p>
+              <p className="text-4xl font-bold text-gray-900 dark:text-white">
+                {totalChicks.toLocaleString()}
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
+              <div>
+                <p className="text-sm font-medium text-dark dark:text-light">
+                  Flock ID
+                </p>
+                <p className="text-lg font-semibold text-dark dark:text-light">
+                  #{flockId}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-dark dark:text-light">
+                  Breed Type
+                </p>
+                <p className="text-lg font-semibold text-dark dark:text-light">
+                  {breedType}
+                </p>
+              </div>
+              <div>
+                <p className="text-sm font-medium text-dark dark:text-light">
+                  Flock Age
+                </p>
+                <p className="text-lg font-semibold text-dark dark:text-light">
+                  {flockAgeDays} days ({flockAgeWeeks} weeks)
+                </p>
+              </div>
+              {breedType === "Broiler" && expectedMarketDate && (
+                <div>
+                  <p className="text-sm font-medium text-dark dark:text-light">
+                    Expected Market Date
+                  </p>
+                  <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">
+                    {expectedMarketDate}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Veterniary Card */}
+          <VeterinaryCard
+            mortalityRate24h={0.2}
+            vaccineStatus="Over Due"
+            nextVisit={"2025-05-12"}
+          />
+
+          {/* Environmental Conditions */}
+          <EnvironmentCard
+            temperature={temperature}
+            humidity={humidity}
+            lightHours={lightHours}
+            formatTemperature={formatTemperature}
+          />
+
+          {/* Egg Production */}
+          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow space-y-4">
+            <h2 className="text-lg font-semibold text-dark dark:text-light mb-2">
+              Egg Production
+            </h2>
+            <div className="grid grid-cols-2 gap-4 text-center">
+              <div className="bg-gray-500 dark:bg-gray-700 p-3 rounded">
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  Total Eggs (Stock)
+                </p>
+                <p className="text-lg font-bold text-dark dark:text-light">
+                  {totalEggsStock.toLocaleString()}
+                </p>
+              </div>
+              <div className="bg-gray-500 dark:bg-gray-700 p-3 rounded">
+                <p className="text-xs text-dark dark:text-light">
+                  Active Chicks
+                </p>
+                <p className="text-lg font-bold text-dark dark:text-light">
+                  {totalChicks.toLocaleString()}
+                </p>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-md font-semibold text-dark dark:text-gray-300 mt-2 mb-1 text-center">
+                Egg Size Distribution
+              </h3>
+              <div className="relative h-48 w-full">
+                <Pie data={eggGradingPieData} options={eggGradingPieOptions} />
               </div>
             </div>
           </div>
 
-          {/* Color Legend */}
-          <div className="flex flex-wrap gap-4 mt-4 text-sm dark:text-gray-300 text-gray-700">
-            <div className="flex items-center gap-2">
-              <span className="inline-block w-4 h-4 bg-red-500 rounded-sm" />{" "}
-              {"< 25%"} of Max
+          <PoultryFeedCard
+            dailyFeedConsumption={dailyFeedConsumption}
+            feedInventoryDays={feedInventoryDays}
+            getFeedLevelColor={getFeedLevelColor}
+          />
+        </div>
+
+        {/* Row 2: Feed, Sales */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Sales */}
+          <div className="bg-white dark:bg-dark p-4 rounded-lg shadow">
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-lg font-semibold text-dark dark:text-gray-300">
+                📈 Sales Performance
+              </h2>
+              <select
+                value={salesPeriod}
+                onChange={(e) => setSalesPeriod(e.target.value)}
+                className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option>This Month</option>
+                <option>Last Month</option>
+                <option>This Quarter</option>
+                <option>This Year</option>
+              </select>
             </div>
-            <div className="flex items-center gap-2">
-              <span className="inline-block w-4 h-4 bg-orange-400 rounded-sm" />{" "}
-              {"< 50%"} of Max
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="inline-block w-4 h-4 bg-yellow-200 rounded-sm" />{" "}
-              {"< 75%"} of Max
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="inline-block w-4 h-4 bg-green-200 rounded-sm" />{" "}
-              {"≥ 75%"} of Max
+            <div className="relative h-56">
+              <Bar data={salesChartData} options={salesChartOptions} />
             </div>
           </div>
         </div>
 
-        <Table
-          data={{ ...tableData, rows: tableData.rows }}
-          filteredRows={tableData.rows}
-          currentPage={currentPage}
-          itemsPerPage={itemsPerPage}
-          paginationItems={PAGINATION_ITEMS}
-          searchQuery={searchQuery}
-          totalRecordCount={tableData.rows.length}
-          view={view}
-          setCurrentPage={setCurrentPage}
-          setItemsPerPage={setItemsPerPage}
-          setSearchQuery={setSearchQuery}
-        />
-
-        {isSidebarOpen && (
-          <InventoryForm
-            view="poultry"
-            onClose={() => setIsSidebarOpen(false)}
-            onSubmit={(values: Record<string, string>) => {
-              console.log("Form submitted:", values);
-              setIsSidebarOpen(false);
-            }}
-            formTitle="Add Item"
-          />
-        )}
+        {/* Row 3: Tasks */}
+        <PoultryTaskCard initialTasks={tasks} />
       </div>
     </PlatformLayout>
   );

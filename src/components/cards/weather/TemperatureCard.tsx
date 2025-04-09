@@ -245,7 +245,6 @@ const TemperatureCard = ({ lat, lon, fahrenheit }: Coordinates) => {
         <p className="text-red-500 text-center py-10">{error}</p>
       ) : temperature !== null ? (
         <>
-          {/* Wrapper div for main temp display - ADDED pb-8 FOR SMALL MODE */}
           <div className={`w-full ${displayMode === "Small" ? "pb-8" : ""}`}>
             {(displayMode === "Small" ||
               displayMode === "Medium" ||
@@ -281,14 +280,12 @@ const TemperatureCard = ({ lat, lon, fahrenheit }: Coordinates) => {
           {(displayMode === "Medium" || displayMode === "Large") && (
             <>
               <hr className="my-4 w-full border-white/50" />{" "}
-              {/* Adjusted border color */}
               <div className="w-full overflow-x-auto">
                 <div className="flex space-x-4 pb-2">
                   {hourlyForecast.map((hour, index) => (
                     <div key={index} className="text-center flex-shrink-0 w-14">
                       <p className="text-sm">{hour.time}:00</p>
                       <p className="text-3xl my-1">{hour.icon}</p>{" "}
-                      {/* Added my-1 */}
                       <p className="text-md font-medium">
                         {formatTemperature(hour.temperature, false)}
                       </p>
