@@ -2,6 +2,7 @@ import {
   faSyringe,
   faCalendarCheck,
   faHeartbeat,
+  faClipboard,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React from "react";
@@ -10,6 +11,7 @@ type VeterinaryCardProps = {
   mortalityRate24h: number;
   vaccineStatus: "Vaccinated" | "Pending" | "Over Due";
   nextVisit: string;
+  reportStatus: string;
 };
 
 const getVaccineStatusStyles = (
@@ -27,6 +29,17 @@ const getVaccineStatusStyles = (
   }
 };
 
+const getReportStatus = (status: "Open" | "Pending") => {
+  switch (status) {
+    case "Open":
+      return "text-green-200";
+    case "Pending":
+      return "text-yellow-200 ";
+    default:
+      return "text-dark";
+  }
+};
+
 const VetStatItem = ({
   icon,
   value,
@@ -41,7 +54,7 @@ const VetStatItem = ({
   <div className="flex flex-col items-center justify-center text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg space-y-1 shadow-sm hover:shadow-md transition-shadow duration-200">
     <FontAwesomeIcon
       icon={icon}
-      className="h-6 w-6 text-blue-200 dark:text-blue-400 mb-2"
+      className="size-6 text-blue-200 dark:text-blue-400 mb-2"
       aria-hidden="true"
     />
     <p className={valueClassName} aria-label={`${label} value`}>
@@ -55,11 +68,14 @@ const VeterinaryCard = ({
   mortalityRate24h,
   vaccineStatus,
   nextVisit,
+  reportStatus,
 }: VeterinaryCardProps) => {
   const mortalityColorClass =
     mortalityRate24h > 0.5
       ? "text-red-600 dark:text-red-400"
       : "text-green-600 dark:text-green-400";
+  const getReportStatus =
+    reportStatus === "Open" ? "text-green-200" : "text-yellow-200";
 
   return (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
@@ -92,6 +108,12 @@ const VeterinaryCard = ({
           value={nextVisit}
           label="Next Visit"
           valueClassName="text-xl font-semibold text-gray-900 dark:text-white"
+        />
+        <VetStatItem
+          icon={faClipboard}
+          value={reportStatus}
+          label="Health Report"
+          valueClassName={`text-sm font-semibold ${getReportStatus}`}
         />
       </div>
     </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, FormEvent } from "react";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
 import { Bar } from "react-chartjs-2";
@@ -20,6 +20,8 @@ import PoultryTaskCard from "@/components/cards/poultry/PoultryTaskCard";
 import PoultryFeedCard from "@/components/cards/poultry/PoultryFeedCard";
 import PoultryOverviewCard from "@/components/cards/poultry/PoultryOverviewCard";
 import PoultryEggCard from "@/components/cards/poultry/PoultryEggCard";
+import Button from "@/components/ui/Button";
+import AddPoultryDataModal from "@/components/modals/AddPoultryDataModal";
 
 ChartJS.register(
   CategoryScale,
@@ -133,6 +135,20 @@ const tasks: {
   { id: 5, text: "Order new feed batch", completed: false, priority: "High" },
 ];
 
+interface PoultryFormData {
+  totalChicks: number;
+  flockId: string;
+  breedType: string;
+  flockAgeDays: number;
+  expectedMarketDate: string;
+  mortalityRate24h: number;
+  vaccineStatus: string;
+  nextVisit: string;
+  totalEggsStock: number;
+  dailyFeedConsumption: number;
+  feedInventoryDays: number;
+}
+
 const Poultry = () => {
   const [salesPeriod, setSalesPeriod] = useState("This Month");
   const [activeAlerts, setActiveAlerts] = useState<any[]>([]);
@@ -140,6 +156,35 @@ const Poultry = () => {
   const [humidity, setHumidity] = useState<number | null>(null);
   const [lightHours, setLightHours] = useState<number | null>(null);
   const fahrenheit = false;
+  const [totalEggsStock, setTotalEggsStock] = useState(85200);
+  const [totalChicks, setTotalChicks] = useState(850);
+  const [dailyFeedConsumption, setDailyFeedConsumption] = useState(150);
+  const [flockAgeDays, setFlockAgeDays] = useState(42);
+  const [breedType, setBreedType] = useState("Broiler");
+  const [flockId, setFlockId] = useState("1");
+  const [expectedMarketDate, setExpectedMarketDate] = useState("2025-04-13");
+  const [feedInventoryDays, setFeedInventoryDays] = useState(2);
+  const [mortalityRate24h, setMortalityRate24h] = useState(0.2);
+  const [vaccineStatus, setVaccineStatus] = useState<
+    "Vaccinated" | "Pending" | "Over Due"
+  >("Vaccinated");
+  const [nextVisit, setNextVisit] = useState("2025-05-12");
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const [formData, setFormData] = useState<PoultryFormData>({
+    totalChicks,
+    flockId,
+    breedType,
+    flockAgeDays,
+    expectedMarketDate,
+    mortalityRate24h,
+    vaccineStatus,
+    nextVisit,
+    totalEggsStock,
+    dailyFeedConsumption,
+    feedInventoryDays,
+  });
 
   function convertToFahrenheit(celsius: number): number {
     return Math.round((celsius * 9) / 5 + 32);
@@ -166,7 +211,7 @@ const Poultry = () => {
 
         const daylightSeconds = response.data.daily.daylightDuration?.[0];
         if (typeof daylightSeconds === "number") {
-          setLightHours(daylightSeconds / 3600); // convert to hours
+          setLightHours(daylightSeconds / 3600);
         }
       } catch (err: any) {
         console.error("Failed to fetch weather", err.message);
@@ -189,37 +234,50 @@ const Poultry = () => {
     }
   }, []);
 
-  const feedInventoryDays = 2;
   useEffect(() => {
     const dynamicAlerts = [];
+    let alertIdCounter = 1;
 
-    if (temperature !== null && temperature >= 39) {
+    if (temperature !== null && temperature >= 35) {
       dynamicAlerts.push({
-        id: 1,
+        id: alertIdCounter++,
         type: "Critical",
-        message: `High Temperature Alert in House A (${temperature}°C)`,
+        message: `High Temperature Alert (${formatTemperature(temperature)})`, // Use formatter
       });
-    }
-
-    if (feedInventoryDays < 2) {
+    } else if (temperature !== null && temperature <= 15) {
       dynamicAlerts.push({
-        id: 2,
+        id: alertIdCounter++,
         type: "Warning",
-        message: "Feed Inventory Low (< 2 days remaining)",
+        message: `Low Temperature Alert (${formatTemperature(temperature)})`,
       });
     }
 
-    if (expectedMarketDate) {
+    if (feedInventoryDays < 3) {
+      dynamicAlerts.push({
+        id: alertIdCounter++,
+        type: "Warning",
+        message: `Feed Inventory Low (${feedInventoryDays} day${
+          feedInventoryDays !== 1 ? "s" : ""
+        } remaining)`,
+      });
+    }
+
+    if (nextVisit) {
       const today = new Date();
-      const vetVisitDate = new Date(expectedMarketDate);
-      const diffInTime = vetVisitDate.getTime() - today.getTime();
+      today.setHours(0, 0, 0, 0);
+      const visitDate = new Date(nextVisit);
+      visitDate.setHours(0, 0, 0, 0);
+      const diffInTime = visitDate.getTime() - today.getTime();
       const diffInDays = Math.ceil(diffInTime / (1000 * 3600 * 24));
 
-      if (diffInDays === 7) {
+      if (diffInDays <= 7 && diffInDays >= 0) {
+        // Alert if within 7 days or today
         dynamicAlerts.push({
-          id: 3,
+          id: alertIdCounter++,
           type: "Info",
-          message: `Veterinary visit scheduled in 7 days (on ${expectedMarketDate}).`,
+          message: `Upcoming Veterinary visit in ${diffInDays} day${
+            diffInDays !== 1 ? "s" : ""
+          } (on ${new Date(nextVisit).toLocaleDateString()}).`,
         });
       }
     }
@@ -244,15 +302,38 @@ const Poultry = () => {
     }
   };
 
-  // --- Dummy Data Values ---
-  const totalEggsStock = 85200;
-  const totalChicks = 850;
-  const dailyFeedConsumption = 150;
-  const flockAgeDays = 42;
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
+    const { name, value, type } = e.target;
+    const processedValue =
+      type === "number" ? (value === "" ? "" : Number(value)) : value;
+    setFormData((prev) => ({ ...prev, [name]: processedValue }));
+  };
+
+  // --- Form Submit Handler ---
+  const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    console.log("Form Data Submitted:", formData);
+    setTotalChicks(formData.totalChicks);
+    setFlockId(formData.flockId);
+    setBreedType(formData.breedType);
+    setFlockAgeDays(formData.flockAgeDays);
+    setExpectedMarketDate(formData.expectedMarketDate);
+    setMortalityRate24h(formData.mortalityRate24h);
+    setVaccineStatus(
+      formData.vaccineStatus as "Vaccinated" | "Pending" | "Over Due"
+    );
+    setNextVisit(formData.nextVisit);
+    setTotalEggsStock(formData.totalEggsStock);
+    setDailyFeedConsumption(formData.dailyFeedConsumption);
+    setFeedInventoryDays(formData.feedInventoryDays);
+
+    // Close the modal
+    setIsModalOpen(false);
+  };
+
   const flockAgeWeeks = (flockAgeDays / 7).toFixed(1);
-  const breedType = "Broiler";
-  const flockId = "1";
-  const expectedMarketDate = "2025-04-13";
 
   const getFeedLevelColor = (days: number) => {
     if (days < 2) return "text-red-500 dark:text-red-400";
@@ -291,10 +372,31 @@ const Poultry = () => {
             ))}
           </div>
         )}
-        <div>
+        <div className="flex justify-between items-center dark:bg-dark relative mb-4">
           <h1 className="text-lg font-semibold dark:text-white">
             Poultry Management
           </h1>
+          <Button
+            add
+            text="Add / Edit Data"
+            style="primary"
+            onClick={() => {
+              setFormData({
+                totalChicks,
+                flockId,
+                breedType,
+                flockAgeDays,
+                expectedMarketDate,
+                mortalityRate24h,
+                vaccineStatus,
+                nextVisit,
+                totalEggsStock,
+                dailyFeedConsumption,
+                feedInventoryDays,
+              });
+              setIsModalOpen(true);
+            }}
+          />
         </div>
 
         {/* Row 1 */}
@@ -313,6 +415,7 @@ const Poultry = () => {
             mortalityRate24h={0.2}
             vaccineStatus="Vaccinated"
             nextVisit={"2025-05-12"}
+            reportStatus="Pending"
           />
 
           {/* Environmental Conditions */}
@@ -366,6 +469,15 @@ const Poultry = () => {
         {/* Row 3: Tasks */}
         <PoultryTaskCard initialTasks={tasks} />
       </div>
+
+      {isModalOpen && (
+        <AddPoultryDataModal
+          formData={formData}
+          onClose={() => setIsModalOpen(false)}
+          onChange={handleInputChange}
+          onSubmit={handleFormSubmit}
+        />
+      )}
     </PlatformLayout>
   );
 };
