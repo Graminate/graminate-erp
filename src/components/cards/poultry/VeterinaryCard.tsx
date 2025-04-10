@@ -6,12 +6,15 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React from "react";
+import Link from "next/link";
+import { useRouter } from "next/router";
 
 type VeterinaryCardProps = {
   mortalityRate24h: number;
   vaccineStatus: "Vaccinated" | "Pending" | "Over Due";
   nextVisit: string;
   reportStatus: string;
+  userId: string;
 };
 
 const getVaccineStatusStyles = (
@@ -26,17 +29,6 @@ const getVaccineStatusStyles = (
       return "bg-red-200 text-light";
     default:
       return "bg-gray-300 text-light";
-  }
-};
-
-const getReportStatus = (status: "Open" | "Pending") => {
-  switch (status) {
-    case "Open":
-      return "text-green-200";
-    case "Pending":
-      return "text-yellow-200 ";
-    default:
-      return "text-dark";
   }
 };
 
@@ -70,12 +62,20 @@ const VeterinaryCard = ({
   nextVisit,
   reportStatus,
 }: VeterinaryCardProps) => {
+  const router = useRouter();
+  const { user_id } = router.query;
   const mortalityColorClass =
     mortalityRate24h > 0.5
       ? "text-red-600 dark:text-red-400"
       : "text-green-600 dark:text-green-400";
-  const getReportStatus =
-    reportStatus === "Open" ? "text-green-200" : "text-yellow-200";
+  const reportStatusClass =
+    {
+      Done: "text-green-500 dark:text-green-300",
+      Pending: "text-yellow-500 dark:text-yellow-300",
+      Upcoming: "text-blue-500 dark:text-blue-300",
+      "Over Due": "text-red-500 dark:text-red-400",
+      "N/A": "text-dark dark:text-light",
+    }[reportStatus] || "text-gray-500 dark:text-gray-300";
 
   return (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
@@ -86,7 +86,7 @@ const VeterinaryCard = ({
         <VetStatItem
           icon={faHeartbeat}
           value={`${mortalityRate24h.toFixed(2)}%`}
-          label="Mortality (24h)"
+          label="Mortality (Last Recorded)"
           valueClassName={`text-2xl font-semibold ${mortalityColorClass}`}
         />
         <VetStatItem
@@ -107,14 +107,16 @@ const VeterinaryCard = ({
           icon={faCalendarCheck}
           value={nextVisit}
           label="Next Visit"
-          valueClassName="text-xl font-semibold text-gray-900 dark:text-white"
+          valueClassName="text-sm font-semibold text-gray-900 dark:text-white"
         />
-        <VetStatItem
-          icon={faClipboard}
-          value={reportStatus}
-          label="Health Report"
-          valueClassName={`text-sm font-semibold ${getReportStatus}`}
-        />
+        <Link href={`/platform/${user_id}/poultry_health`}>
+          <VetStatItem
+            icon={faClipboard}
+            value={reportStatus}
+            label="Health Report"
+            valueClassName={`text-sm font-semibold ${reportStatusClass}`}
+          />
+        </Link>
       </div>
     </div>
   );

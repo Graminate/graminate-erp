@@ -28,6 +28,7 @@ type Props = {
   loading?: boolean;
   reset?: boolean;
   hideChecks?: boolean;
+  download?: boolean;
 };
 
 const Table = ({
@@ -46,6 +47,7 @@ const Table = ({
   loading,
   reset = true,
   hideChecks = false,
+  download = true,
 }: Props) => {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [sortColumn, setSortColumn] = useState<number | null>(null);
@@ -220,6 +222,7 @@ const Table = ({
         else if (view === "contracts") endpoint = "contracts";
         else if (view === "receipts") endpoint = "receipts";
         else if (view === "labour") endpoint = "labour";
+        else if (view === "poultry_health") endpoint = "poultry_health";
         else endpoint = "inventory";
 
         await Promise.all(
@@ -305,19 +308,20 @@ const Table = ({
                 if (filteredRows.length === 0) return;
 
                 const entityNames: Record<string, string> = {
-                  contacts: "contacts",
-                  companies: "companies",
-                  contracts: "contracts",
-                  receipts: "invoices",
-                  labour: "labour",
-                  inventory: "inventory",
+                  contacts: "Contacts",
+                  companies: "Companies",
+                  contracts: "Contracts",
+                  receipts: "Invoice",
+                  labour: "Employee",
+                  inventory: "Inventory",
+                  poultry_health: "Poultry Health",
                 };
 
                 const entityToTruncate = entityNames[view] || view;
 
                 const result = await Swal.fire({
                   title: "Are you sure?",
-                  text: `This will reset your ${entityToTruncate} database.`,
+                  text: `This will reset your ${entityToTruncate} records.`,
                   icon: "warning",
                   showCancelButton: true,
                   confirmButtonText: "Yes, Reset!",
@@ -348,36 +352,38 @@ const Table = ({
             />
           )}
 
-          <div className="relative" ref={dropdownRef}>
-            <Button
-              style="secondary"
-              text="Download Data"
-              isDisabled={filteredRows.length === 0}
-              onClick={() => setShowExportDropdown(!showExportDropdown)}
-            />
-            {showExportDropdown && (
-              <div className="absolute left-0 top-full mt-2 w-40 bg-white dark:bg-gray-700 rounded-lg shadow-lg z-50 transition transform duration-200">
-                <button
-                  className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 rounded-t-lg dark:hover:bg-gray-600"
-                  onClick={() => {
-                    exportTableData("pdf");
-                    setShowExportDropdown(false);
-                  }}
-                >
-                  Export as PDF
-                </button>
-                <button
-                  className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 rounded-b-lg dark:hover:bg-gray-600"
-                  onClick={() => {
-                    exportTableData("xlsx");
-                    setShowExportDropdown(false);
-                  }}
-                >
-                  Export as XLSX
-                </button>
-              </div>
-            )}
-          </div>
+          {download && (
+            <div className="relative" ref={dropdownRef}>
+              <Button
+                style="secondary"
+                text="Download Data"
+                isDisabled={filteredRows.length === 0}
+                onClick={() => setShowExportDropdown(!showExportDropdown)}
+              />
+              {showExportDropdown && (
+                <div className="absolute left-0 top-full mt-2 w-40 bg-white dark:bg-gray-700 rounded-lg shadow-lg z-50 transition transform duration-200">
+                  <button
+                    className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 rounded-t-lg dark:hover:bg-gray-600"
+                    onClick={() => {
+                      exportTableData("pdf");
+                      setShowExportDropdown(false);
+                    }}
+                  >
+                    Export as PDF
+                  </button>
+                  <button
+                    className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 rounded-b-lg dark:hover:bg-gray-600"
+                    onClick={() => {
+                      exportTableData("xlsx");
+                      setShowExportDropdown(false);
+                    }}
+                  >
+                    Export as XLSX
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

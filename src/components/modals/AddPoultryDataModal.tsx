@@ -3,6 +3,8 @@ import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
 import DropdownLarge from "../ui/Dropdown/DropdownLarge";
 import NavPanel from "../layout/NavPanel";
+import TextArea from "../ui/TextArea";
+import axios from "axios";
 
 interface PoultryFormData {
   totalChicks: number;
@@ -25,6 +27,8 @@ interface AddPoultryDataModalProps {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => void;
   onSubmit: (e: FormEvent<HTMLFormElement>) => void;
+  userId: string;
+  refreshHealthRecords: () => Promise<void>;
 }
 
 const AddPoultryDataModal = ({
@@ -32,16 +36,101 @@ const AddPoultryDataModal = ({
   onClose,
   onChange,
   onSubmit,
+  userId,
+  refreshHealthRecords,
 }: AddPoultryDataModalProps) => {
   const [activeView, setActiveView] = useState("flock");
+
+  const [vetForm, setVetForm] = useState({
+    date: "",
+    veterinaryName: "",
+    birdType: "Chicken",
+    purpose: "Broiler",
+    birdsIn: 0,
+    birdsDied: 0,
+    vaccines: "", // previously: [] as string[]
+    deworming: "Yes",
+    symptoms: "",
+    medications: "",
+    actionsTaken: "",
+    remarks: "",
+  });
+
+  const handleVetChange = (field: string, value: any) => {
+    setVetForm((prev) => ({ ...prev, [field]: value }));
+  };
 
   const navButtons = [
     { name: "Flock Data", view: "flock" },
     { name: "Veterinary", view: "vet" },
-
     { name: "Egg Production", view: "eggs" },
     { name: "Food Supply", view: "feed" },
   ];
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    if (activeView === "vet") {
+      // Validation: Required fields only
+      const missingFields: string[] = [];
+
+      if (!vetForm.date) missingFields.push("Visit Date");
+      if (!vetForm.veterinaryName) missingFields.push("Veterinary Name");
+      if (!vetForm.birdType) missingFields.push("Bird Type");
+      if (!vetForm.purpose) missingFields.push("Purpose");
+      if (!vetForm.birdsIn) missingFields.push("Birds In");
+      if (!vetForm.birdsDied) missingFields.push("Birds Died");
+
+      if (missingFields.length > 0) {
+        const formatted = missingFields.join(", ");
+        await import("sweetalert2").then(({ default: Swal }) =>
+          Swal.fire({
+            icon: "warning",
+            title: "Missing Fields",
+            text: `Please fill in the following: ${formatted}`,
+          })
+        );
+        return;
+      }
+
+      try {
+        await axios.post("http://localhost:3001/api/poultry_health", {
+          user_id: userId,
+          date: vetForm.date,
+          veterinary_name: vetForm.veterinaryName,
+          bird_type: vetForm.birdType,
+          purpose: vetForm.purpose,
+          birds_in: vetForm.birdsIn,
+          birds_died: vetForm.birdsDied,
+          vaccines: vetForm.vaccines
+            ? vetForm.vaccines
+                .split(",")
+                .map((v) => v.trim())
+                .filter(Boolean)
+            : [],
+          deworming: vetForm.deworming,
+          symptoms: vetForm.symptoms
+            ? vetForm.symptoms
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean)
+            : [],
+          medications: vetForm.medications || "",
+          actions_taken: vetForm.actionsTaken || "",
+          remarks: vetForm.remarks || "",
+        });
+        console.log("Veterinary data submitted successfully");
+      } catch (error) {
+        console.error("Error submitting veterinary data:", error);
+      }
+    }
+
+    onSubmit(e);
+    await refreshHealthRecords();
+    onClose();
+
+    window.location.reload();
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm p-4">
@@ -70,7 +159,7 @@ const AddPoultryDataModal = ({
         </div>
 
         {/* Form */}
-        <form onSubmit={onSubmit} className="space-y-5">
+        <form onSubmit={handleSubmit} className="space-y-5">
           {/* Flock Data */}
           {activeView === "flock" && (
             <fieldset className="p-4">
@@ -148,50 +237,96 @@ const AddPoultryDataModal = ({
               <legend className="text-lg font-medium px-2 text-gray-800 dark:text-gray-300 -ml-2">
                 Health & Veterinary
               </legend>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4 mt-3">
-                <TextField
-                  label="Mortality Rate (24h %)"
-                  number
-                  value={formData.mortalityRate24h.toString()}
-                  onChange={(val) =>
-                    onChange({
-                      target: {
-                        name: "mortalityRate24h",
-                        value: val,
-                        type: "number",
-                      },
-                    } as any)
-                  }
+              <div className="grid grid-rows-1 gap-6">
+                <div className="flex flex-row gap-2">
+                  <TextField
+                    label="Appointment Visit Date"
+                    calendar
+                    value={vetForm.date}
+                    onChange={(val) => handleVetChange("date", val)}
+                  />
+                  <TextField
+                    label="Veterinary Name"
+                    value={vetForm.veterinaryName}
+                    onChange={(val) => handleVetChange("veterinaryName", val)}
+                  />
+                </div>
+
+                <div className="flex flex-row gap-2 justify-center">
+                  <DropdownLarge
+                    items={["Chicken", "Duck"]}
+                    selectedItem={vetForm.birdType}
+                    onSelect={(val) => handleVetChange("birdType", val)}
+                    label="Bird Type"
+                    type="form"
+                    width="full"
+                  />
+                  <DropdownLarge
+                    items={["Broiler", "Layer"]}
+                    selectedItem={vetForm.purpose}
+                    onSelect={(val) => handleVetChange("purpose", val)}
+                    label="Purpose"
+                    type="form"
+                    width="full"
+                  />
+                  <DropdownLarge
+                    items={["Yes", "No"]}
+                    selectedItem={vetForm.deworming}
+                    onSelect={(val) => handleVetChange("deworming", val)}
+                    label="Deworming"
+                    type="form"
+                    width="full"
+                  />
+                </div>
+
+                <div className="flex flex-row gap-2">
+                  <TextField
+                    label="Birds In"
+                    number
+                    value={vetForm.birdsIn.toString()}
+                    onChange={(val) => handleVetChange("birdsIn", Number(val))}
+                  />
+                  <TextField
+                    label="Birds Died"
+                    number
+                    value={vetForm.birdsDied.toString()}
+                    onChange={(val) =>
+                      handleVetChange("birdsDied", Number(val))
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-6 mt-4">
+                <TextArea
+                  label="Vaccines"
+                  placeholder="Enter vaccine details"
+                  value={vetForm.vaccines}
+                  onChange={(val) => handleVetChange("vaccines", val)}
                 />
-                <DropdownLarge
-                  items={["Vaccinated", "Pending", "Over Due"]}
-                  selectedItem={formData.vaccineStatus}
-                  onSelect={(val) =>
-                    onChange({
-                      target: {
-                        name: "vaccineStatus",
-                        value: val,
-                        type: "text",
-                      },
-                    } as any)
-                  }
-                  label="Vaccine Status"
-                  type="form"
-                  width="full"
+                <TextArea
+                  label="Symptoms"
+                  placeholder="List of symptoms observed"
+                  value={vetForm.symptoms}
+                  onChange={(val) => handleVetChange("symptoms", val)}
                 />
-                <TextField
-                  label="Next Vet Visit"
-                  calendar
-                  value={formData.nextVisit}
-                  onChange={(val) =>
-                    onChange({
-                      target: {
-                        name: "nextVisit",
-                        value: val,
-                        type: "date",
-                      },
-                    } as any)
-                  }
+                <TextArea
+                  label="Medications"
+                  value={vetForm.medications}
+                  placeholder="List of medications for your poultry"
+                  onChange={(val) => handleVetChange("medications", val)}
+                />
+                <TextArea
+                  label="Actions Taken"
+                  value={vetForm.actionsTaken}
+                  placeholder="Actions taken by veterinary or to be taken on veterinary advice"
+                  onChange={(val) => handleVetChange("actionsTaken", val)}
+                />
+                <TextArea
+                  label="Remarks"
+                  value={vetForm.remarks}
+                  placeholder="Any additional remarks or notes"
+                  onChange={(val) => handleVetChange("remarks", val)}
                 />
               </div>
             </fieldset>

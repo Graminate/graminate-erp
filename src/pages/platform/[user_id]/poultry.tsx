@@ -2,6 +2,7 @@ import { useEffect, useState, FormEvent } from "react";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
 import { Bar } from "react-chartjs-2";
+import { useRouter } from "next/router";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -150,6 +151,9 @@ interface PoultryFormData {
 }
 
 const Poultry = () => {
+  const router = useRouter();
+  const { user_id } = router.query;
+  const parsedUserId = Array.isArray(user_id) ? user_id[0] : user_id;
   const [salesPeriod, setSalesPeriod] = useState("This Month");
   const [activeAlerts, setActiveAlerts] = useState<any[]>([]);
   const [temperature, setTemperature] = useState<number | null>(null);
@@ -169,8 +173,9 @@ const Poultry = () => {
     "Vaccinated" | "Pending" | "Over Due"
   >("Vaccinated");
   const [nextVisit, setNextVisit] = useState("2025-05-12");
-
+  const [latestHealthDate, setLatestHealthDate] = useState<string>("—");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [reportStatus, setReportStatus] = useState("Pending");
 
   const [formData, setFormData] = useState<PoultryFormData>({
     totalChicks,
@@ -198,6 +203,163 @@ const Poultry = () => {
     const temp = fahrenheit ? convertToFahrenheit(value) : value;
     return showUnit ? `${temp}°${fahrenheit ? "F" : "C"}` : `${temp}°`;
   }
+
+  useEffect(() => {
+    const fetchHealthRecordsAndSetNextVisit = async () => {
+      if (!parsedUserId) return;
+
+      try {
+        const response = await axios.get(
+          `http://localhost:3001/api/poultry_health/${parsedUserId}`
+        );
+
+        const healthRecords = response.data.health || [];
+
+        const visitDates = healthRecords
+          .map((record: any) => new Date(record.date))
+          .filter((d: Date) => !isNaN(d.getTime()));
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const upcomingDates = visitDates
+          .filter((d: Date) => d.getTime() >= today.getTime())
+          .sort((a: Date, b: Date) => a.getTime() - b.getTime());
+
+        if (upcomingDates.length > 0) {
+          setNextVisit(upcomingDates[0].toISOString().split("T")[0]); // e.g., "2025-05-15"
+        } else {
+          setNextVisit("N/A");
+        }
+      } catch (err) {
+        console.error("Failed to fetch poultry health data", err);
+        setNextVisit("N/A");
+      }
+    };
+
+    fetchHealthRecordsAndSetNextVisit();
+  }, [parsedUserId]);
+
+  useEffect(() => {
+    const fetchNextVisit = async () => {
+      if (!parsedUserId) return;
+      try {
+        const response = await axios.get(
+          `http://localhost:3001/api/poultry_health/${parsedUserId}`
+        );
+        const records = response.data.health || [];
+
+        // Extract all visit dates as Date objects
+        const visitDates = records
+          .map((rec: any) => new Date(rec.date))
+          .filter((d: Date) => !isNaN(d.getTime())); // valid dates only
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Find the earliest visit date in the future
+        const upcoming = visitDates
+          .filter((d: Date) => d.getTime() >= today.getTime())
+          .sort((a: Date, b: Date) => a.getTime() - b.getTime());
+
+        if (upcoming.length > 0) {
+          setNextVisit(upcoming[0].toISOString().split("T")[0]); // e.g., "2025-05-23"
+        } else {
+          setNextVisit("N/A");
+        }
+      } catch (error) {
+        console.error("Error fetching poultry health records:", error);
+        setNextVisit("N/A");
+      }
+    };
+
+    fetchNextVisit();
+  }, [parsedUserId]);
+  // Health visit status
+  useEffect(() => {
+    const fetchLatestHealthVisit = async () => {
+      if (!parsedUserId) return;
+
+      try {
+        const response = await axios.get(
+          `http://localhost:3001/api/poultry_health/${parsedUserId}`
+        );
+        const records = response.data.health;
+
+        if (Array.isArray(records) && records.length > 0) {
+          const sorted = [...records].sort(
+            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+          );
+
+          const latest = sorted[0];
+          const latestDate = new Date(latest.date);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          latestDate.setHours(0, 0, 0, 0);
+
+          setLatestHealthDate(latestDate.toLocaleDateString());
+
+          const diffInDays =
+            (today.getTime() - latestDate.getTime()) / (1000 * 3600 * 24);
+
+          if (diffInDays === 0) {
+            setReportStatus("Done");
+          } else if (diffInDays <= 3 && diffInDays > 0) {
+            setReportStatus("Pending");
+          } else if (diffInDays > 3) {
+            setReportStatus("Over Due");
+          }
+
+          // Check for upcoming visit
+          const nextVisit = formData.nextVisit;
+          if (nextVisit) {
+            const visitDate = new Date(nextVisit);
+            visitDate.setHours(0, 0, 0, 0);
+            const daysUntilVisit =
+              (visitDate.getTime() - today.getTime()) / (1000 * 3600 * 24);
+
+            if (daysUntilVisit <= 7 && daysUntilVisit >= 0) {
+              setReportStatus("Upcoming");
+            }
+          }
+        } else {
+          setLatestHealthDate("N/A"); // ✅ when no record
+          setReportStatus("N/A"); // ✅ when no record
+        }
+      } catch (error) {
+        console.error("Failed to fetch latest health visit:", error);
+      }
+    };
+
+    fetchLatestHealthVisit();
+  }, [parsedUserId, formData.nextVisit]); // also depend on visit date
+
+  useEffect(() => {
+    const fetchLatestHealthVisit = async () => {
+      if (!parsedUserId) return;
+
+      try {
+        const response = await axios.get(
+          `http://localhost:3001/api/poultry_health/${parsedUserId}`
+        );
+        const records = response.data.health;
+
+        if (Array.isArray(records) && records.length > 0) {
+          // Sort by date descending
+          const sorted = [...records].sort(
+            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+          );
+
+          const latestDate = new Date(sorted[0].date).toLocaleDateString();
+          setLatestHealthDate(latestDate);
+        }
+      } catch (error) {
+        console.error("Failed to fetch latest health visit:", error);
+      }
+    };
+
+    fetchLatestHealthVisit();
+  }, [parsedUserId]);
 
   useEffect(() => {
     const fetchWeather = async (lat: number, lon: number) => {
@@ -412,10 +574,11 @@ const Poultry = () => {
           />
           {/* Veterniary Card */}
           <VeterinaryCard
-            mortalityRate24h={0.2}
-            vaccineStatus="Vaccinated"
-            nextVisit={"2025-05-12"}
-            reportStatus="Pending"
+            mortalityRate24h={mortalityRate24h}
+            vaccineStatus={vaccineStatus}
+            nextVisit={nextVisit}
+            reportStatus={reportStatus}
+            userId={typeof user_id === "string" ? user_id : ""}
           />
 
           {/* Environmental Conditions */}
@@ -476,6 +639,12 @@ const Poultry = () => {
           onClose={() => setIsModalOpen(false)}
           onChange={handleInputChange}
           onSubmit={handleFormSubmit}
+          userId={parsedUserId || ""}
+          refreshHealthRecords={async () => {
+            console.log("Refreshing health records...");
+            // Add logic to refresh health records if needed
+            return Promise.resolve();
+          }}
         />
       )}
     </PlatformLayout>

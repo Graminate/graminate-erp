@@ -6,7 +6,7 @@ import PlatformLayout from "@/layout/PlatformLayout";
 import { PAGINATION_ITEMS } from "@/constants/options";
 import Head from "next/head";
 import axios from "axios";
-import LabourForm from "@/components/form/labourForm";
+import LabourForm from "@/components/form/LabourForm";
 
 type View = "labour";
 
@@ -87,7 +87,7 @@ const LabourDatabase = () => {
       <Head>
         <title>Graminate | Employee Database</title>
       </Head>
-      <div className="min-h-screen container mx-auto p-4">
+      <div className="min-h-screen container mx-auto py-4">
         <div className="flex justify-between items-center dark:bg-dark relative mb-4">
           <div>
             <h1 className="text-lg font-semibold dark:text-white">

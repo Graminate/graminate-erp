@@ -15,6 +15,7 @@ import {
   faKiwiBird,
   faCow,
   faBug,
+  IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 
 import type { Sidebar } from "@/types/card-props";
@@ -56,34 +57,41 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
   }, [userId]);
 
   const sections = useMemo(() => {
-    const base = [
-      {
-        icon: faHome,
-        label: "Dashboard",
-        section: "Dashboard",
-        route: `/platform/${userId}`,
-        subItems: [],
-      },
-      {
-        icon: faAddressBook,
-        label: "CRM",
-        section: "CRM",
-        basePath: `/platform/${userId}/crm`,
-        subItems: [
-          { label: "Contacts", route: `/platform/${userId}/crm?view=contacts` },
-          {
-            label: "Companies",
-            route: `/platform/${userId}/crm?view=companies`,
-          },
-          {
-            label: "Contracts",
-            route: `/platform/${userId}/crm?view=contracts`,
-          },
-          { label: "Receipts", route: `/platform/${userId}/crm?view=receipts` },
-          { label: "Tasks", route: `/platform/${userId}/crm?view=tasks` },
-        ],
-      },
-    ];
+      const base: {
+        icon: IconDefinition;
+        label: string;
+        section: string;
+        route?: string;
+        basePath?: string;
+        subItems: { label: string; route: string }[];
+      }[] = [
+        {
+          icon: faHome,
+          label: "Dashboard",
+          section: "Dashboard",
+          route: `/platform/${userId}`,
+          subItems: [],
+        },
+        {
+          icon: faAddressBook,
+          label: "CRM",
+          section: "CRM",
+          basePath: `/platform/${userId}/crm`,
+          subItems: [
+            { label: "Contacts", route: `/platform/${userId}/crm?view=contacts` },
+            {
+              label: "Companies",
+              route: `/platform/${userId}/crm?view=companies`,
+            },
+            {
+              label: "Contracts",
+              route: `/platform/${userId}/crm?view=contracts`,
+            },
+            { label: "Receipts", route: `/platform/${userId}/crm?view=receipts` },
+            { label: "Tasks", route: `/platform/${userId}/crm?view=tasks` },
+          ],
+        },
+      ];
 
     if (userType === "Producer") {
       if (subTypes.includes("Fishery")) {
@@ -102,7 +110,16 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
           label: "Poultry Farm",
           section: "Poultry Farm",
           route: `/platform/${userId}/poultry`,
-          subItems: [],
+          subItems: [
+            {
+              label: "Dashboard",
+              route: `/platform/${userId}/poultry`,
+            },
+            {
+              label: "Health Reports",
+              route: `/platform/${userId}/poultry_health`,
+            },
+          ],
         });
       }
 

@@ -71,7 +71,7 @@ const SalaryModal = ({
     e.preventDefault();
 
     if (!paymentDate || !salaryPaid) {
-      toastMessage.set("Payment Date and Salary Paid are required.");
+      toastMessage.set({ message: "Payment Date and Salary Paid are required.", type: "error" });
       showToast.set(true);
       return;
     }
@@ -105,9 +105,10 @@ const SalaryModal = ({
         );
       }
 
-      toastMessage.set(
-        editMode ? "Salary updated successfully!" : "Salary added successfully!"
-      );
+      toastMessage.set({
+        message: editMode ? "Salary updated successfully!" : "Salary added successfully!",
+        type: "success",
+      });
       showToast.set(true);
 
       onClose();
@@ -116,9 +117,8 @@ const SalaryModal = ({
     } catch (error) {
       console.error("Error submitting salary data:", error);
       const errorMessage =
-        (error as any).response?.data?.message ||
-        "An unexpected error occurred. Please try again.";
-      toastMessage.set(errorMessage);
+        (error as any).response?.data?.message || "An unexpected error occurred.";
+      toastMessage.set({ message: errorMessage, type: "error" });
       showToast.set(true);
     } finally {
       setLoading(false);
