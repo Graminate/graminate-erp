@@ -14,6 +14,7 @@ import {
   faFish,
   faKiwiBird,
   faCow,
+  faBug,
 } from "@fortawesome/free-solid-svg-icons";
 
 import type { Sidebar } from "@/types/card-props";
@@ -26,6 +27,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
   const searchParams = useSearchParams();
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [userType, setUserType] = useState<string | null>(null);
+  const [subTypes, setSubTypes] = useState<string[]>([]);
   const [isUserTypeLoading, setIsUserTypeLoading] = useState(true);
 
   // Fetching type of the User
@@ -37,10 +39,14 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
         });
         const json = await res.json();
         const type = json?.user?.type;
+        const sub = json?.user?.sub_type ?? [];
+
+        setSubTypes(Array.isArray(sub) ? sub : []);
         setUserType(type || "Producer");
       } catch (err) {
         console.error("Error fetching user type", err);
         setUserType("Producer");
+        setSubTypes([]);
       } finally {
         setIsUserTypeLoading(false);
       }
@@ -80,36 +86,54 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
     ];
 
     if (userType === "Producer") {
-      base.push(
-        {
-          icon: faCloud,
-          label: "Weather Monitor",
-          section: "Weather Monitor",
-          route: `/platform/${userId}/weather`,
-          subItems: [],
-        },
-        {
+      if (subTypes.includes("Fishery")) {
+        base.push({
           icon: faFish,
           label: "Fishery",
           section: "Fishery Farm",
           route: `/platform/${userId}/fishery`,
           subItems: [],
-        },
-        {
+        });
+      }
+
+      if (subTypes.includes("Poultry")) {
+        base.push({
           icon: faKiwiBird,
           label: "Poultry Farm",
           section: "Poultry Farm",
           route: `/platform/${userId}/poultry`,
           subItems: [],
-        },
-        {
+        });
+      }
+
+      if (subTypes.includes("Animal Husbandry")) {
+        base.push({
           icon: faCow,
           label: "Animal Husbandry",
-          section: "Fishery",
+          section: "Animal Husbandry",
           route: `/platform/${userId}/animal_husbandry`,
           subItems: [],
-        }
-      );
+        });
+      }
+
+      if (subTypes.includes("Apiculture")) {
+        base.push({
+          icon: faBug, // or another FontAwesome icon you choose
+          label: "Apiculture",
+          section: "Apiculture Farm",
+          route: `/platform/${userId}/apiculture`,
+          subItems: [],
+        });
+      }
+
+      // Weather Monitor should be shown for all Producers
+      base.push({
+        icon: faCloud,
+        label: "Weather Monitor",
+        section: "Weather Monitor",
+        route: `/platform/${userId}/weather`,
+        subItems: [],
+      });
     }
 
     base.push(

@@ -20,21 +20,34 @@ const GeneralPage = () => {
   const userId = Array.isArray(user_id) ? user_id[0] : user_id;
 
   const [userType, setUserType] = useState<string | null>(null);
+  const [subTypes, setSubTypes] = useState<string[]>([]);
   const [isUserTypeLoading, setIsUserTypeLoading] = useState(true);
 
   useEffect(() => {
     if (!userId) return;
+
     const fetchUserType = async () => {
       try {
         const res = await fetch(`http://localhost:3001/api/user/${userId}`, {
           credentials: "include",
         });
         const json = await res.json();
-        // Assumes the API returns an object with user.type;
-        setUserType(json?.user?.type);
+
+        const type = json?.user?.type || "Producer";
+        const rawSubTypes = json?.user?.sub_type;
+
+        const parsedSubTypes = Array.isArray(rawSubTypes)
+          ? rawSubTypes
+          : typeof rawSubTypes === "string"
+          ? rawSubTypes.replace(/[{}"]/g, "").split(",").filter(Boolean)
+          : [];
+
+        setUserType(type);
+        setSubTypes(parsedSubTypes);
       } catch (err) {
         console.error("Error fetching user type", err);
         setUserType("Producer");
+        setSubTypes([]);
       } finally {
         setIsUserTypeLoading(false);
       }
@@ -47,14 +60,22 @@ const GeneralPage = () => {
   const navButtons = useMemo(() => {
     const buttons = [{ name: "Profile", view: "profile" }];
 
-    // Only add Weather button if the user type is "Producer"
     if (userType === "Producer") {
       buttons.push({ name: "Weather", view: "weather" });
+
+      if (subTypes.includes("Poultry")) {
+        buttons.push({ name: "Poultry", view: "poultry" });
+      }
+      if (subTypes.includes("Fishery")) {
+        buttons.push({ name: "Fishery", view: "fishery" });
+      }
+      if (subTypes.includes("Animal Husbandry")) {
+        buttons.push({ name: "Animal Husbandry", view: "animal_husbandry" });
+      }
     }
 
-    buttons.push({ name: "Occupation", view: "occupation" });
     return buttons;
-  }, [userType]);
+  }, [userType, subTypes]);
 
   const changeView = (newView: string) => {
     router.push({
@@ -386,15 +407,30 @@ const GeneralPage = () => {
                 </div>
               )}
 
-              {/* Occupation View */}
-              {currentView === "occupation" && (
+              {/* Poultry View */}
+              {currentView === "poultry" && (
                 <div className="rounded-lg p-4">
                   <h2 className="text-lg font-semibold mb-4 dark:text-light">
-                    Occupation Settings
+                    Poultry Settings
                   </h2>
-                  <p className="text-gray-300 mb-6">
-                    This applies across your account.
-                  </p>
+                </div>
+              )}
+
+              {/* Fishery View */}
+              {currentView === "fishery" && (
+                <div className="rounded-lg p-4">
+                  <h2 className="text-lg font-semibold mb-4 dark:text-light">
+                    Fishery Settings
+                  </h2>
+                </div>
+              )}
+
+              {/* Animal Husbandry View */}
+              {currentView === "animal_husbandry" && (
+                <div className="rounded-lg p-4">
+                  <h2 className="text-lg font-semibold mb-4 dark:text-light">
+                    Animal Husbandry Settings
+                  </h2>
                 </div>
               )}
             </section>

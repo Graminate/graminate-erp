@@ -173,12 +173,13 @@ const Dashboard = () => {
 
   const handleFirstLogin = async (
     businessName: string,
-    businessType: string
+    businessType: string,
+    subType?: string[]
   ) => {
     try {
       await axios.put(
         `${API_BASE_URL}/user/${userId}`,
-        { business_name: businessName, type: businessType },
+        { business_name: businessName, type: businessType, sub_type: subType },
         { withCredentials: true }
       );
       await Swal.fire({
@@ -191,7 +192,12 @@ const Dashboard = () => {
       });
       setUserData((prev) =>
         prev
-          ? { ...prev, business_name: businessName, type: businessType }
+          ? {
+              ...prev,
+              business_name: businessName,
+              type: businessType,
+              sub_type: subType,
+            }
           : prev
       );
       setIsSetupModalOpen(false);
