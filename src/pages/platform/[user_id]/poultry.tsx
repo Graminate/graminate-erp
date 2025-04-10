@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
-
-import { Bar, Pie } from "react-chartjs-2";
+import { Bar } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -19,6 +18,8 @@ import VeterinaryCard from "@/components/cards/poultry/VeterinaryCard";
 import EnvironmentCard from "@/components/cards/poultry/EnvironmentCard";
 import PoultryTaskCard from "@/components/cards/poultry/PoultryTaskCard";
 import PoultryFeedCard from "@/components/cards/poultry/PoultryFeedCard";
+import PoultryOverviewCard from "@/components/cards/poultry/PoultryOverviewCard";
+import PoultryEggCard from "@/components/cards/poultry/PoultryEggCard";
 
 ChartJS.register(
   CategoryScale,
@@ -64,23 +65,25 @@ const salesChartOptions = {
 };
 
 const eggGradingPieData = {
-  labels: ["Extra Large", "Large", "Medium", "Small", "Reject/Broken"],
+  labels: ["Small", "Medium", "Large", "Extra Large", "Jumbo", "Broken"],
   datasets: [
     {
-      label: "Egg Grading Distribution (%)",
-      data: [25, 40, 25, 5, 5],
+      label: "Egg Count",
+      data: [120, 300, 250, 150, 100, 30],
       backgroundColor: [
+        "rgba(255, 206, 86, 0.7)",
         "rgba(75, 192, 192, 0.7)",
         "rgba(54, 162, 235, 0.7)",
-        "rgba(255, 206, 86, 0.7)",
-        "rgba(255, 159, 64, 0.7)",
+        "rgba(54, 102, 205, 0.7)",
+        "rgba(153, 102, 255, 0.7)",
         "rgba(255, 99, 132, 0.7)",
       ],
       borderColor: [
+        "rgba(255, 206, 86, 1)",
         "rgba(75, 192, 192, 1)",
         "rgba(54, 162, 235, 1)",
-        "rgba(255, 206, 86, 1)",
-        "rgba(255, 159, 64, 1)",
+        "rgba(54, 102, 205, 0.7)",
+        "rgba(153, 102, 255, 1)",
         "rgba(255, 99, 132, 1)",
       ],
       borderWidth: 1,
@@ -135,8 +138,6 @@ const Poultry = () => {
   const [activeAlerts, setActiveAlerts] = useState<any[]>([]);
   const [temperature, setTemperature] = useState<number | null>(null);
   const [humidity, setHumidity] = useState<number | null>(null);
-  const [sunrise, setSunrise] = useState<string | null>(null);
-  const [sunset, setSunset] = useState<string | null>(null);
   const [lightHours, setLightHours] = useState<number | null>(null);
   const fahrenheit = false;
 
@@ -243,13 +244,6 @@ const Poultry = () => {
     }
   };
 
-  function parseTimeToMinutes(time: string): number {
-    if (!time || !time.includes(":")) return 0;
-    const [h, m] = time.split(":").map(Number);
-    if (isNaN(h) || isNaN(m)) return 0;
-    return h * 60 + m;
-  }
-
   // --- Dummy Data Values ---
   const totalEggsStock = 85200;
   const totalChicks = 850;
@@ -264,24 +258,6 @@ const Poultry = () => {
     if (days < 2) return "text-red-500 dark:text-red-400";
     if (days < 5) return "text-yellow-500 dark:text-yellow-400";
     return "text-green-500 dark:text-green-400";
-  };
-
-  const [taskList, setTaskList] = useState(tasks);
-  const [newTaskText, setNewTaskText] = useState("");
-  const [newTaskPriority, setNewTaskPriority] = useState<Priority>("Medium");
-  const [prioritySortAsc, setPrioritySortAsc] = useState(false);
-
-  const priorityRank: Record<Priority, number> = { High: 1, Medium: 2, Low: 3 };
-  const sortTasks = (list: typeof tasks, asc = prioritySortAsc) => {
-    const sorted = [...list].sort((a, b) => {
-      const aPriority = priorityRank[a.priority];
-      const bPriority = priorityRank[b.priority];
-      return asc ? aPriority - bPriority : bPriority - aPriority;
-    });
-    return [
-      ...sorted.filter((t) => !t.completed),
-      ...sorted.filter((t) => t.completed),
-    ];
   };
 
   return (
@@ -324,61 +300,18 @@ const Poultry = () => {
         {/* Row 1 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Flock Overview Panel */}
-          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md space-y-6">
-            <h2 className="text-xl font-semibold text-dark dark:text-light flex items-center gap-2">
-              Flock Overview
-            </h2>
-            <div className="text-center border-b border-gray-200 dark:border-gray-700 pb-4 mb-4">
-              <p className="text-sm font-medium text-dark dark:text-light mb-1">
-                Total Birds
-              </p>
-              <p className="text-4xl font-bold text-gray-900 dark:text-white">
-                {totalChicks.toLocaleString()}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-              <div>
-                <p className="text-sm font-medium text-dark dark:text-light">
-                  Flock ID
-                </p>
-                <p className="text-lg font-semibold text-dark dark:text-light">
-                  #{flockId}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-dark dark:text-light">
-                  Breed Type
-                </p>
-                <p className="text-lg font-semibold text-dark dark:text-light">
-                  {breedType}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-dark dark:text-light">
-                  Flock Age
-                </p>
-                <p className="text-lg font-semibold text-dark dark:text-light">
-                  {flockAgeDays} days ({flockAgeWeeks} weeks)
-                </p>
-              </div>
-              {breedType === "Broiler" && expectedMarketDate && (
-                <div>
-                  <p className="text-sm font-medium text-dark dark:text-light">
-                    Expected Market Date
-                  </p>
-                  <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">
-                    {expectedMarketDate}
-                  </p>
-                </div>
-              )}
-            </div>
-          </div>
-
+          <PoultryOverviewCard
+            totalChicks={totalChicks}
+            flockId={flockId}
+            breedType={breedType}
+            flockAgeDays={flockAgeDays}
+            flockAgeWeeks={flockAgeWeeks}
+            expectedMarketDate={expectedMarketDate}
+          />
           {/* Veterniary Card */}
           <VeterinaryCard
             mortalityRate24h={0.2}
-            vaccineStatus="Over Due"
+            vaccineStatus="Vaccinated"
             nextVisit={"2025-05-12"}
           />
 
@@ -391,37 +324,12 @@ const Poultry = () => {
           />
 
           {/* Egg Production */}
-          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow space-y-4">
-            <h2 className="text-lg font-semibold text-dark dark:text-light mb-2">
-              Egg Production
-            </h2>
-            <div className="grid grid-cols-2 gap-4 text-center">
-              <div className="bg-gray-500 dark:bg-gray-700 p-3 rounded">
-                <p className="text-xs text-gray-600 dark:text-gray-400">
-                  Total Eggs (Stock)
-                </p>
-                <p className="text-lg font-bold text-dark dark:text-light">
-                  {totalEggsStock.toLocaleString()}
-                </p>
-              </div>
-              <div className="bg-gray-500 dark:bg-gray-700 p-3 rounded">
-                <p className="text-xs text-dark dark:text-light">
-                  Active Chicks
-                </p>
-                <p className="text-lg font-bold text-dark dark:text-light">
-                  {totalChicks.toLocaleString()}
-                </p>
-              </div>
-            </div>
-            <div>
-              <h3 className="text-md font-semibold text-dark dark:text-gray-300 mt-2 mb-1 text-center">
-                Egg Size Distribution
-              </h3>
-              <div className="relative h-48 w-full">
-                <Pie data={eggGradingPieData} options={eggGradingPieOptions} />
-              </div>
-            </div>
-          </div>
+          <PoultryEggCard
+            totalEggsStock={totalEggsStock}
+            totalChicks={totalChicks}
+            eggGradingPieData={eggGradingPieData}
+            eggGradingPieOptions={eggGradingPieOptions}
+          />
 
           <PoultryFeedCard
             dailyFeedConsumption={dailyFeedConsumption}
