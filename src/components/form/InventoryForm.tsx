@@ -8,10 +8,12 @@ import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faX } from "@fortawesome/free-solid-svg-icons";
 import { SidebarProp } from "@/types/card-props";
+import { API_BASE_URL } from "@/constants/constants";
 
 const InventoryForm = ({ onClose, formTitle }: SidebarProp) => {
   const router = useRouter();
   const { user_id } = router.query;
+
   const [inventoryItem, setInventoryItem] = useState({
     itemName: "",
     itemGroup: "",
@@ -37,7 +39,7 @@ const InventoryForm = ({ onClose, formTitle }: SidebarProp) => {
       price_per_unit: inventoryItem.pricePerUnit,
     };
     try {
-      await axios.post("http://localhost:3001/api/inventory/add", payload);
+      await axios.post(`${API_BASE_URL}/inventory/add`, payload);
       setInventoryItem({
         itemName: "",
         itemGroup: "",

@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { triggerToast } from "@/stores/toast";
 import { GENDER, YESNO } from "@/constants/options";
 import axios from "axios";
+import { API_BASE_URL } from "@/constants/constants";
 
 const LabourDetails = () => {
   const router = useRouter();
@@ -251,7 +252,7 @@ const LabourDetails = () => {
 
     try {
       const response = await axios.put(
-        "http://localhost:3001/api/labour/update",
+        `${API_BASE_URL}/labour/update`,
         payload
       );
 

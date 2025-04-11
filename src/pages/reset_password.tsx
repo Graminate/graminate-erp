@@ -6,6 +6,7 @@ import TextField from "@/components/ui/TextField";
 import Button from "@/components/ui/Button";
 import HomeNavbar from "@/components/layout/Navbar/HomeNavbar";
 import axios from "axios";
+import { API_BASE_URL } from "@/constants/constants";
 
 const ResetPasswordPage = () => {
   const router = useRouter();
@@ -63,7 +64,7 @@ const ResetPasswordPage = () => {
     }
 
     try {
-      await axios.post("http://localhost:3001/api/password/reset", {
+      await axios.post(`${API_BASE_URL}/password/reset`, {
         email,
         token,
         newPassword,

@@ -4,6 +4,7 @@ import { showToast, toastMessage } from "@/stores/toast";
 import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
+import { API_BASE_URL } from "@/constants/constants";
 
 type PaymentData = {
   payment_id: number;
@@ -71,7 +72,10 @@ const SalaryModal = ({
     e.preventDefault();
 
     if (!paymentDate || !salaryPaid) {
-      toastMessage.set({ message: "Payment Date and Salary Paid are required.", type: "error" });
+      toastMessage.set({
+        message: "Payment Date and Salary Paid are required.",
+        type: "error",
+      });
       showToast.set(true);
       return;
     }
@@ -94,19 +98,18 @@ const SalaryModal = ({
 
     try {
       if (editMode && initialData) {
-        await axios.put("http://localhost:3001/api/labour_payment/update", {
+        await axios.put(`${API_BASE_URL}/labour_payment/update`, {
           ...payload,
           payment_id: initialData.payment_id,
         });
       } else {
-        await axios.post(
-          "http://localhost:3001/api/labour_payment/add",
-          payload
-        );
+        await axios.post(`${API_BASE_URL}/labour_payment/add`, payload);
       }
 
       toastMessage.set({
-        message: editMode ? "Salary updated successfully!" : "Salary added successfully!",
+        message: editMode
+          ? "Salary updated successfully!"
+          : "Salary added successfully!",
         type: "success",
       });
       showToast.set(true);
@@ -117,7 +120,8 @@ const SalaryModal = ({
     } catch (error) {
       console.error("Error submitting salary data:", error);
       const errorMessage =
-        (error as any).response?.data?.message || "An unexpected error occurred.";
+        (error as any).response?.data?.message ||
+        "An unexpected error occurred.";
       toastMessage.set({ message: errorMessage, type: "error" });
       showToast.set(true);
     } finally {

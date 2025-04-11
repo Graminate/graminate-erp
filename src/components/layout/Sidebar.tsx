@@ -20,6 +20,7 @@ import {
 
 import type { Sidebar } from "@/types/card-props";
 import Loader from "../ui/Loader";
+import { API_BASE_URL } from "@/constants/constants";
 
 const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
   const router = useRouter();
@@ -35,7 +36,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
   useEffect(() => {
     const fetchUserType = async () => {
       try {
-        const res = await fetch(`http://localhost:3001/api/user/${userId}`, {
+        const res = await fetch(`${API_BASE_URL}/user/${userId}`, {
           credentials: "include",
         });
         const json = await res.json();

@@ -7,6 +7,7 @@ import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
 import { PAGINATION_ITEMS } from "@/constants/options";
 import CRMForm from "@/components/form/CRMForm";
+import { API_BASE_URL } from "@/constants/constants";
 
 type View = "contacts" | "companies" | "contracts" | "receipts" | "tasks";
 
@@ -44,11 +45,11 @@ const CRM = () => {
     setLoading(true);
 
     Promise.all([
-      fetch(`http://localhost:3001/api/contacts/${user_id}`),
-      fetch(`http://localhost:3001/api/companies/${user_id}`),
-      fetch(`http://localhost:3001/api/contracts/${user_id}`),
-      fetch(`http://localhost:3001/api/receipts/${user_id}`),
-      fetch(`/api/tasks/${user_id}`),
+      fetch(`${API_BASE_URL}/contacts/${user_id}`),
+      fetch(`${API_BASE_URL}/companies/${user_id}`),
+      fetch(`${API_BASE_URL}/contracts/${user_id}`),
+      fetch(`${API_BASE_URL}/receipts/${user_id}`),
+      fetch(`${API_BASE_URL}/tasks/${user_id}`),
     ])
       .then(
         async ([

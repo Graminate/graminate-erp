@@ -3,6 +3,7 @@ import Swal from "sweetalert2";
 import TextField from "@/components/ui/TextField";
 import Button from "@/components/ui/Button";
 import axios from "axios";
+import { API_BASE_URL } from "@/constants/constants";
 
 type Props = {
   isOpen: boolean;
@@ -26,7 +27,7 @@ const ForgotPasswordModal = ({ isOpen, closeModal }: Props) => {
     }
 
     try {
-      await axios.post("http://localhost:3001/api/password/forgot", { email });
+      await axios.post(`${API_BASE_URL}/password/forgot`, { email });
 
       Swal.fire({
         title: "Email Sent",

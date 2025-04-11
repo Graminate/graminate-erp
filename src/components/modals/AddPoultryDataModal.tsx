@@ -5,22 +5,23 @@ import DropdownLarge from "../ui/Dropdown/DropdownLarge";
 import NavPanel from "../layout/NavPanel";
 import TextArea from "../ui/TextArea";
 import axios from "axios";
+import { API_BASE_URL } from "@/constants/constants";
 
-interface PoultryFormData {
+type PoultryFormData = {
   totalChicks: number;
   flockId: string;
   breedType: string;
   flockAgeDays: number;
   expectedMarketDate: string;
-  mortalityRate24h: number | null;
+  mortalityRate: number | null;
   vaccineStatus: string;
   nextVisit: string;
   totalEggsStock: number;
   dailyFeedConsumption: number;
   feedInventoryDays: number;
-}
+};
 
-interface AddPoultryDataModalProps {
+type AddPoultryDataModalProps = {
   formData: PoultryFormData;
   onClose: () => void;
   onChange: (
@@ -29,7 +30,7 @@ interface AddPoultryDataModalProps {
   onSubmit: (e: FormEvent<HTMLFormElement>) => void;
   userId: string;
   refreshHealthRecords: () => Promise<void>;
-}
+};
 
 const AddPoultryDataModal = ({
   formData,
@@ -48,7 +49,7 @@ const AddPoultryDataModal = ({
     purpose: "Broiler",
     birdsIn: 0,
     birdsDied: 0,
-    vaccines: "", // previously: [] as string[]
+    vaccines: "",
     deworming: "Yes",
     symptoms: "",
     medications: "",
@@ -107,7 +108,7 @@ const AddPoultryDataModal = ({
       }
 
       try {
-        await axios.post("http://localhost:3001/api/poultry_health", {
+        await axios.post(`${API_BASE_URL}/poultry_health`, {
           user_id: userId,
           date: vetForm.date,
           veterinary_name: vetForm.veterinaryName,

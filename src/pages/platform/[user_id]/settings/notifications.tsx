@@ -4,6 +4,7 @@ import SettingsBar from "@/components/layout/SettingsBar";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
 import Button from "@/components/ui/Button";
+import { API_BASE_URL } from "@/constants/constants";
 
 type NotificationSettings = {
   orders: {
@@ -60,12 +61,9 @@ const NotificationPage = () => {
   useEffect(() => {
     const fetchUserType = async () => {
       try {
-        const res = await fetch(
-          `http://localhost:3001/api/user/type/${params.user_id}`,
-          {
-            credentials: "include",
-          }
-        );
+        const res = await fetch(`${API_BASE_URL}/user/type/${params.user_id}`, {
+          credentials: "include",
+        });
         if (res.ok) {
           const data = await res.json();
           setUserType(data.type);

@@ -7,6 +7,7 @@ import { PAGINATION_ITEMS } from "@/constants/options";
 import Head from "next/head";
 import axios from "axios";
 import LabourForm from "@/components/form/LabourForm";
+import { API_BASE_URL } from "@/constants/constants";
 
 type View = "labour";
 
@@ -29,7 +30,7 @@ const LabourDatabase = () => {
     const fetchLabours = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:3001/api/labour/${encodeURIComponent(parsedUserId)}`
+          `${API_BASE_URL}/labour/${encodeURIComponent(parsedUserId)}`
         );
 
         setLabourRecords(response.data.labours || []);

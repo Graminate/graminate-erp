@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { triggerToast } from "@/stores/toast";
 import { COMPANY_TYPES } from "@/constants/options";
 import axios from "axios";
+import { API_BASE_URL } from "@/constants/constants";
 
 const CompanyDetails = () => {
   const router = useRouter();
@@ -119,7 +120,7 @@ const CompanyDetails = () => {
 
     try {
       const response = await axios.put(
-        "http://localhost:3001/api/companies/update",
+        `${API_BASE_URL}/companies/update`,
         payload
       );
 

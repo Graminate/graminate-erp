@@ -19,6 +19,7 @@ import {
   ArcElement,
 } from "chart.js";
 import InventoryForm from "@/components/form/InventoryForm";
+import { API_BASE_URL } from "@/constants/constants";
 
 ChartJS.register(
   CategoryScale,
@@ -59,7 +60,7 @@ const AnimalHusbandry = () => {
     const fetchAnimalHusbandry = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:3001/api/inventory/${parsedUserId}` // Adjust the endpoint as needed
+          `${API_BASE_URL}/inventory/${parsedUserId}`
         );
 
         setItemRecords(response.data.items || []);

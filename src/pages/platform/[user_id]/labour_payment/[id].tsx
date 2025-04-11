@@ -12,6 +12,7 @@ import {
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import SalaryModal from "@/components/modals/SalaryModal";
+import { API_BASE_URL } from "@/constants/constants";
 
 type PaymentRecord = {
   payment_id: number;
@@ -54,7 +55,7 @@ const LabourPaymentDetails = () => {
     const fetchData = async () => {
       try {
         const laboursRes = await axios.get(
-          `http://localhost:3001/api/labour/${parsedUserId}`
+          `${API_BASE_URL}/labour/${parsedUserId}`
         );
         const labours = laboursRes.data.labours || [];
         const labour = labours.find((l: any) => l.labour_id == parsedLabourId);
@@ -77,7 +78,7 @@ const LabourPaymentDetails = () => {
 
         try {
           const paymentsRes = await axios.get(
-            `http://localhost:3001/api/labour_payment/${parsedLabourId}`
+            `${API_BASE_URL}/labour_payment/${parsedLabourId}`
           );
           setPaymentRecords(paymentsRes.data.payments || []);
         } catch (err: any) {

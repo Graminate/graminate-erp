@@ -4,6 +4,7 @@ import Navbar from "@/components/layout/Navbar/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
 import Swal from "sweetalert2";
 import axios, { AxiosError } from "axios";
+import { API_BASE_URL } from "@/constants/constants";
 
 type Props = {
   children: React.ReactNode;
@@ -35,7 +36,7 @@ const PlatformLayout = ({ children }: Props) => {
       setIsAuthorized(false);
 
       try {
-        await axios.get(`http://localhost:3001/api/user/${user_id}`, {
+        await axios.get(`${API_BASE_URL}/user/${user_id}`, {
           withCredentials: true,
           timeout: 10000,
         });

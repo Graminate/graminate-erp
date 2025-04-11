@@ -14,7 +14,7 @@ type Task = {
   priority: Priority;
 };
 
-interface PoultryTaskCardProps {
+type PoultryTaskCardProps = {
   initialTasks: Task[];
 }
 

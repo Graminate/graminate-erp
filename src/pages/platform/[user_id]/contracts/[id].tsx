@@ -8,6 +8,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { triggerToast } from "@/stores/toast";
 import Head from "next/head";
+import { API_BASE_URL } from "@/constants/constants";
 
 const ContractDetails = () => {
   const router = useRouter();
@@ -111,7 +112,7 @@ const ContractDetails = () => {
 
     try {
       const response = await axios.put(
-        "http://localhost:3001/api/contracts/update",
+        `${API_BASE_URL}/contracts/update`,
         payload
       );
 

@@ -4,6 +4,7 @@ import PlatformLayout from "@/layout/PlatformLayout";
 import SettingsBar from "@/components/layout/SettingsBar";
 import { useRouter } from "next/router";
 import axios from "axios";
+import { API_BASE_URL } from "@/constants/constants";
 
 const AccountPage = () => {
   const [successMessage, setSuccessMessage] = useState("");
@@ -18,7 +19,7 @@ const AccountPage = () => {
 
     try {
       const response = await axios.delete(
-        `http://localhost:3001/api/user/delete/${user_id}`,
+        `${API_BASE_URL}/user/delete/${user_id}`,
         { withCredentials: true }
       );
       if (response.status === 200) {

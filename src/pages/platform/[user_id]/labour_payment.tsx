@@ -4,6 +4,7 @@ import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
 import axios from "axios";
 import Table from "@/components/tables/Table";
+import { API_BASE_URL } from "@/constants/constants";
 
 const LabourPayment = () => {
   const now = new Date();
@@ -66,7 +67,7 @@ const LabourPayment = () => {
     const fetchLabourList = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:3001/api/labour/${parsedUserId}`
+          `${API_BASE_URL}/labour/${parsedUserId}`
         );
         setLabourList(res.data.labours || []);
       } catch (error: any) {
@@ -80,14 +81,14 @@ const LabourPayment = () => {
     const fetchAllPayments = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:3001/api/labour/${parsedUserId}`
+          `${API_BASE_URL}/labour/${parsedUserId}`
         );
         const labours = res.data.labours || [];
         const allPayments: any[] = [];
 
         for (const labour of labours) {
           const paymentRes = await axios.get(
-            `http://localhost:3001/api/labour_payment/${labour.labour_id}`
+            `${API_BASE_URL}/labour_payment/${labour.labour_id}`
           );
           allPayments.push(...(paymentRes.data.payments || []));
         }

@@ -8,10 +8,12 @@ import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faX } from "@fortawesome/free-solid-svg-icons";
 import { SidebarProp } from "@/types/card-props";
+import { API_BASE_URL } from "@/constants/constants";
 
 const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
   const router = useRouter();
   const { user_id } = router.query;
+
   const [labourValues, setLabourValues] = useState({
     fullName: "",
     dateOfBirth: "",
@@ -60,7 +62,7 @@ const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
       postal_code: labourValues.postalCode,
     };
     try {
-      await axios.post("http://localhost:3001/api/labour/add", payload);
+      await axios.post(`${API_BASE_URL}/labour/add`, payload);
       setLabourValues({
         fullName: "",
         dateOfBirth: "",

@@ -10,6 +10,7 @@ import { faCircle } from "@fortawesome/free-solid-svg-icons";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { API_BASE_URL } from "@/constants/constants";
 
 type Props = {
   onRowClick?: (row: any[]) => void;
@@ -228,9 +229,7 @@ const Table = ({
         await Promise.all(
           rowsToDelete.map(async (id) => {
             try {
-              await axios.delete(
-                `http://localhost:3001/api/${endpoint}/delete/${id}`
-              );
+              await axios.delete(`${API_BASE_URL}/${endpoint}/delete/${id}`);
             } catch (error: any) {
               const message =
                 error.response?.data?.error ||
@@ -298,7 +297,7 @@ const Table = ({
             </div>
           )}
         </div>
-        <div className="flex flex-row">
+        <div className="flex flex-row gap-2">
           {reset && (
             <Button
               style="secondary"
@@ -308,13 +307,13 @@ const Table = ({
                 if (filteredRows.length === 0) return;
 
                 const entityNames: Record<string, string> = {
-                  contacts: "Contacts",
-                  companies: "Companies",
-                  contracts: "Contracts",
-                  receipts: "Invoice",
-                  labour: "Employee",
-                  inventory: "Inventory",
-                  poultry_health: "Poultry Health",
+                  contacts: "contacts",
+                  companies: "companies",
+                  contracts: "deals",
+                  receipts: "invoices",
+                  labour: "employees",
+                  inventory: "inventory",
+                  poultry_health: "poultry_health",
                 };
 
                 const entityToTruncate = entityNames[view] || view;
@@ -332,7 +331,7 @@ const Table = ({
                   try {
                     const userId = localStorage.getItem("userId");
                     await axios.post(
-                      `http://localhost:3001/api/${entityToTruncate}/reset`,
+                      `${API_BASE_URL}/${entityToTruncate}/reset`,
                       {
                         userId,
                       }

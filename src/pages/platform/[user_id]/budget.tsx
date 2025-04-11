@@ -191,7 +191,7 @@ const updateBudgetItemSpent = (
 type OverallSummaryProps = {
   budgetData: BudgetData;
   currencySymbol?: string;
-}
+};
 const IntegratedOverallSummary = ({
   budgetData,
   currencySymbol = "₹",
@@ -377,22 +377,19 @@ const Budget = () => {
             </div>
           ) : error ? (
             <div className="flex justify-center items-center min-h-[60vh] text-center">
-              {" "}
               <div
                 className="bg-red-100 dark:bg-red-900/30 border border-red-400 text-red-700 dark:text-red-300 px-4 py-3 rounded relative"
                 role="alert"
               >
-                {" "}
-                <strong className="font-bold">Error!</strong>{" "}
-                <span className="block sm:inline ml-2">{error}</span>{" "}
-              </div>{" "}
+                <strong className="font-bold">Error!</strong>
+                <span className="block sm:inline ml-2">{error}</span>
+              </div>
             </div>
           ) : budgetData.length === 0 && !loading ? (
             <div className="flex justify-center items-center min-h-[60vh] text-center">
-              {" "}
               <p className="text-lg text-gray-500 dark:text-gray-400">
                 No budget data available.
-              </p>{" "}
+              </p>
             </div>
           ) : (
             <div className="space-y-6 md:space-y-8">

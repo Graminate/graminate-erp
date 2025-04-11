@@ -16,6 +16,7 @@ import axios from "axios";
 import Table from "@/components/tables/Table";
 import { PAGINATION_ITEMS } from "@/constants/options";
 import Button from "@/components/ui/Button";
+import { API_BASE_URL } from "@/constants/constants";
 
 ChartJS.register(
   CategoryScale,
@@ -69,11 +70,17 @@ const PoultryHealth = () => {
     setMortalityRate24h(averageMortality);
   }, [healthRecords]);
 
+  useEffect(() => {
+    if (router.isReady && parsedUserId) {
+      fetchHealthRecords();
+    }
+  }, [router.isReady, parsedUserId]);
+
   const fetchHealthRecords = async () => {
     if (!parsedUserId) return;
     try {
       const response = await axios.get(
-        `http://localhost:3001/api/poultry_health/${encodeURIComponent(
+        `${API_BASE_URL}/poultry_health/${encodeURIComponent(
           parsedUserId
         )}`
       );
@@ -85,12 +92,6 @@ const PoultryHealth = () => {
       );
     }
   };
-
-  useEffect(() => {
-    if (router.isReady && parsedUserId) {
-      fetchHealthRecords();
-    }
-  }, [router.isReady, parsedUserId]);
 
   const tableData = useMemo(() => {
     if (healthRecords.length > 0) {

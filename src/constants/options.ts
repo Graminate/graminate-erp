@@ -16,7 +16,6 @@ export const UNITS = [
   "sack",
   "bale",
   "bundle",
-
   // Fertilizers, Pesticides, Chemicals
   "liter",
   "milliliter",
@@ -24,24 +23,20 @@ export const UNITS = [
   "can",
   "drum",
   "packet",
-
   // Seeds
   "tin",
   "sachet",
-
   // Tools & Equipment
   "unit",
   "set",
   "piece",
   "kit",
   "pair",
-
   // Safety Equipment
   "helmet",
   "goggle",
   "glove",
   "apron",
-
   // Water/Irrigation/Storage
   "gallon",
   "barrel",

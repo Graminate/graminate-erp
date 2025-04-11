@@ -5,6 +5,7 @@ import NotificationBar from "../NotificationSideBar";
 import type { User } from "@/types/card-props";
 import type { Navbar } from "@/types/card-props";
 import axios from "axios";
+import { API_BASE_URL } from "@/constants/constants";
 
 const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
   const router = useRouter();
@@ -37,12 +38,9 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
   useEffect(() => {
     async function fetchUserDetails() {
       try {
-        const response = await axios.get(
-          `http://localhost:3001/api/user/${userId}`,
-          {
-            withCredentials: true,
-          }
-        );
+        const response = await axios.get(`${API_BASE_URL}/user/${userId}`, {
+          withCredentials: true,
+        });
 
         const data = response.data;
 
@@ -69,7 +67,7 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
 
   const handleLogout = async () => {
     try {
-      await axios.post("http://localhost:3001/api/user/logout", null, {
+      await axios.post(`${API_BASE_URL}/user/logout`, null, {
         withCredentials: true,
       });
 

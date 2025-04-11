@@ -12,6 +12,7 @@ import Button from "@/components/ui/Button";
 import { LANGUAGES, TIME_FORMAT } from "@/constants/options";
 import axios from "axios";
 import Loader from "@/components/ui/Loader";
+import { API_BASE_URL } from "@/constants/constants";
 
 const GeneralPage = () => {
   const router = useRouter();
@@ -28,7 +29,7 @@ const GeneralPage = () => {
 
     const fetchUserType = async () => {
       try {
-        const res = await fetch(`http://localhost:3001/api/user/${userId}`, {
+        const res = await fetch(`${API_BASE_URL}/user/${userId}`, {
           credentials: "include",
         });
         const json = await res.json();
@@ -112,7 +113,7 @@ const GeneralPage = () => {
 
     try {
       await axios.put(
-        `http://localhost:3001/api/user/${userId}`,
+        `${API_BASE_URL}/user/${userId}`,
         {
           first_name: user.firstName,
           last_name: user.lastName,
@@ -143,7 +144,7 @@ const GeneralPage = () => {
     const fetchUserData = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:3001/api/user/${userId}`,
+          `${API_BASE_URL}/user/${userId}`,
           {
             withCredentials: true,
           }

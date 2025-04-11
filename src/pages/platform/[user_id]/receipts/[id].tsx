@@ -12,6 +12,7 @@ import jsPDF from "jspdf";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import { PAYMENT_STATUS } from "@/constants/options";
 import axios from "axios";
+import { API_BASE_URL } from "@/constants/constants";
 
 type Item = {
   description: string;
@@ -169,7 +170,7 @@ const ReceiptDetails = () => {
 
     try {
       const response = await axios.put(
-        `http://localhost:3001/api/receipts/update`,
+        `${API_BASE_URL}/receipts/update`,
         payload
       );
 

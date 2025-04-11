@@ -8,6 +8,7 @@ import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faX } from "@fortawesome/free-solid-svg-icons";
 import { SidebarProp } from "@/types/card-props";
+import { API_BASE_URL } from "@/constants/constants";
 
 const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
   const isValidE164 = (phone: string) => {
@@ -15,7 +16,6 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
   };
   const router = useRouter();
   const { user_id } = router.query;
-
   const [contactValues, setContactValues] = useState({
     firstName: "",
     lastName: "",
@@ -78,9 +78,11 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
   useEffect(() => {
     setAnimate(true);
   }, []);
+
   const handleClose = () => {
     onClose();
   };
+
   const handleSubmitContacts = async (e: React.FormEvent) => {
     e.preventDefault();
     const payload = {
@@ -97,7 +99,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       postal_code: contactValues.postal_code,
     };
     try {
-      await axios.post("http://localhost:3001/api/contacts/add", payload);
+      await axios.post(`${API_BASE_URL}/contacts/add`, payload);
       setContactValues({
         firstName: "",
         lastName: "",
@@ -137,7 +139,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       postal_code: companyValues.postal_code,
     };
     try {
-      await axios.post("http://localhost:3001/api/companies/add", payload);
+      await axios.post(`${API_BASE_URL}/companies/add`, payload);
       setCompanyValues({
         companyName: "",
         companyOwner: "",
@@ -175,7 +177,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     };
     try {
       const response = await axios.post(
-        "http://localhost:3001/api/contracts/add",
+        `${API_BASE_URL}/contracts/add`,
         payload
       );
       console.log("API Response:", response.data);
@@ -211,7 +213,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     };
     try {
       const response = await axios.post(
-        "http://localhost:3001/api/receipts/add",
+        `${API_BASE_URL}/receipts/add`,
         payload
       );
       console.log("API Response:", response.data);
@@ -247,10 +249,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       status: taskValues.status,
     };
     try {
-      const response = await axios.post(
-        "http://localhost:3001/api/tasks/add",
-        payload
-      );
+      const response = await axios.post(`${API_BASE_URL}/tasks/add`, payload);
       console.log("API Response:", response.data);
       setTaskValues({
         title: "",
@@ -273,6 +272,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
   };
 
   const panelRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
       if (
@@ -286,6 +286,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     document.addEventListener("mousedown", handleOutsideClick);
     return () => document.removeEventListener("mousedown", handleOutsideClick);
   }, []);
+
   return (
     <div className="fixed inset-0 z-50 bg-black/30">
       <div

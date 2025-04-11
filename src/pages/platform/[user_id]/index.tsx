@@ -8,6 +8,7 @@ import Loader from "@/components/ui/Loader";
 import Head from "next/head";
 import Swal from "sweetalert2";
 import FirstLoginModal from "@/components/modals/FirstLoginModal";
+import { API_BASE_URL } from "@/constants/constants";
 
 type Coordinates = {
   lat: number;
@@ -26,9 +27,6 @@ type User = {
   time_format?: string;
   type?: string;
 };
-
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api";
 
 const Dashboard = () => {
   const router = useRouter();
@@ -51,7 +49,7 @@ const Dashboard = () => {
     const fetchUserData = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:3001/api/user/${userId}`,
+          `${API_BASE_URL}/user/${userId}`,
           {
             withCredentials: true,
             timeout: 10000, // 10 second timeout

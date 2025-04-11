@@ -9,6 +9,7 @@ import Button from "@/components/ui/Button";
 import ForgotPasswordModal from "@/components/modals/ForgotPasswordModal";
 import OTPModal from "@/components/modals/OTPModal";
 import axios from "axios";
+import { API_BASE_URL } from "@/constants/constants";
 
 const SignIn = () => {
   const router = useRouter();
@@ -89,7 +90,7 @@ const SignIn = () => {
 
     try {
       const response = await axios.post(
-        "http://localhost:3001/api/user/login",
+        `${API_BASE_URL}/user/login`,
         loginData,
         { withCredentials: true }
       );
@@ -175,7 +176,7 @@ const SignIn = () => {
     setUserEmailForOtp(registerData.email);
 
     try {
-      await axios.post("http://localhost:3001/api/otp/send-otp", {
+      await axios.post(`${API_BASE_URL}/otp/send-otp`, {
         email: registerData.email,
       });
 
@@ -194,7 +195,7 @@ const SignIn = () => {
   const handleOtpValidation = async (otp: string) => {
     try {
       const verifyResponse = await axios.post(
-        "http://localhost:3001/api/otp/verify-otp",
+        `${API_BASE_URL}/otp/verify-otp`,
         {
           email: userEmailForOtp,
           otp,
@@ -213,7 +214,7 @@ const SignIn = () => {
         return;
       }
 
-      await axios.post("http://localhost:3001/api/user/register", registerData);
+      await axios.post(`${API_BASE_URL}/user/register`, registerData);
 
       Swal.fire({
         title: "Registration Successful!",

@@ -23,6 +23,7 @@ import PoultryOverviewCard from "@/components/cards/poultry/PoultryOverviewCard"
 import PoultryEggCard from "@/components/cards/poultry/PoultryEggCard";
 import Button from "@/components/ui/Button";
 import AddPoultryDataModal from "@/components/modals/AddPoultryDataModal";
+import { API_BASE_URL } from "@/constants/constants";
 
 ChartJS.register(
   CategoryScale,
@@ -109,19 +110,19 @@ const tasks: {
   { id: 5, text: "Order new feed batch", completed: false, priority: "High" },
 ];
 
-interface PoultryFormData {
+type PoultryFormData = {
   totalChicks: number;
   flockId: string;
   breedType: string;
   flockAgeDays: number;
   expectedMarketDate: string;
-  mortalityRate24h: number | null;
+  mortalityRate: number | null;
   vaccineStatus: string;
   nextVisit: string;
   totalEggsStock: number;
   dailyFeedConsumption: number;
   feedInventoryDays: number;
-}
+};
 
 const Poultry = () => {
   const router = useRouter();
@@ -140,29 +141,29 @@ const Poultry = () => {
   const [flockId, setFlockId] = useState("1");
   const [expectedMarketDate, setExpectedMarketDate] = useState("2025-04-13");
   const [feedInventoryDays, setFeedInventoryDays] = useState(2);
-  const [mortalityRate24h, setMortalityRate24h] = useState<number | null>(null);
+  const [mortalityRate, setMortalityRate] = useState<number | null>(null);
   const [vaccineStatus, setVaccineStatus] = useState<
-    "Vaccinated" | "Pending" | "Over Due"
-  >("Vaccinated");
+    "Vaccinated" | "Unvaccinated" | "N/A"
+  >("N/A");
   const [nextVisit, setNextVisit] = useState("2025-05-12");
   const [latestHealthDate, setLatestHealthDate] = useState<string>("—");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [reportStatus, setReportStatus] = useState("Pending");
   const [sensorUrl, setSensorUrl] = useState<string | null>(null);
-
   const [formData, setFormData] = useState<PoultryFormData>({
     totalChicks,
     flockId,
     breedType,
     flockAgeDays,
     expectedMarketDate,
-    mortalityRate24h,
+    mortalityRate,
     vaccineStatus,
     nextVisit,
     totalEggsStock,
     dailyFeedConsumption,
     feedInventoryDays,
   });
+
 
   const fahrenheit = false;
   function convertToFahrenheit(celsius: number): number {
@@ -185,7 +186,7 @@ const Poultry = () => {
 
       try {
         const response = await axios.get(
-          `http://localhost:3001/api/poultry_health/${parsedUserId}`
+          `${API_BASE_URL}/poultry_health/${parsedUserId}`
         );
         const healthRecords = response.data.health || [];
 
@@ -199,7 +200,7 @@ const Poultry = () => {
           .filter((d: Date) => d.getTime() >= today.getTime())
           .sort((a: Date, b: Date) => a.getTime() - b.getTime());
         if (upcomingDates.length > 0) {
-          setNextVisit(upcomingDates[0].toISOString().split("T")[0]);
+          setNextVisit(upcomingDates[0].toLocaleDateString("en-CA"));
         } else {
           setNextVisit("N/A");
         }
@@ -219,14 +220,25 @@ const Poultry = () => {
             recentRecords.length > 0
               ? mortalitySum / recentRecords.length
               : null;
-          setMortalityRate24h(averageMortality);
+          setMortalityRate(averageMortality);
         } else {
-          setMortalityRate24h(null);
+          setMortalityRate(null);
+        }
+
+        // Set vaccine status from latest record
+        const latestRecord = healthRecords[0];
+        if (healthRecords.length > 0) {
+          const latestRecord = healthRecords[0];
+          const vaccines = latestRecord.vaccines;
+          const isVaccinated = Array.isArray(vaccines) && vaccines.length > 0;
+          setVaccineStatus(isVaccinated ? "Vaccinated" : "Unvaccinated");
+        } else {
+          setVaccineStatus("N/A");
         }
       } catch (err) {
         console.error("Failed to fetch poultry health data", err);
         setNextVisit("N/A");
-        setMortalityRate24h(null);
+        setMortalityRate(null);
       }
     };
 
@@ -238,7 +250,7 @@ const Poultry = () => {
       if (!parsedUserId) return;
       try {
         const response = await axios.get(
-          `http://localhost:3001/api/poultry_health/${parsedUserId}`
+          `${API_BASE_URL}/poultry_health/${parsedUserId}`
         );
         const records = response.data.health;
         if (Array.isArray(records) && records.length > 0) {
@@ -418,9 +430,12 @@ const Poultry = () => {
     setBreedType(formData.breedType);
     setFlockAgeDays(formData.flockAgeDays);
     setExpectedMarketDate(formData.expectedMarketDate);
-    setMortalityRate24h(formData.mortalityRate24h);
+    setMortalityRate(formData.mortalityRate);
     setVaccineStatus(
-      formData.vaccineStatus as "Vaccinated" | "Pending" | "Over Due"
+      Array.isArray(formData.vaccineStatus) &&
+        formData.vaccineStatus === "Vaccinated"
+        ? "Vaccinated"
+        : "Unvaccinated"
     );
     setNextVisit(formData.nextVisit);
     setTotalEggsStock(formData.totalEggsStock);
@@ -482,7 +497,7 @@ const Poultry = () => {
                 breedType,
                 flockAgeDays,
                 expectedMarketDate,
-                mortalityRate24h,
+                mortalityRate,
                 vaccineStatus,
                 nextVisit,
                 totalEggsStock,
@@ -503,7 +518,7 @@ const Poultry = () => {
             expectedMarketDate={expectedMarketDate}
           />
           <VeterinaryCard
-            mortalityRate24h={mortalityRate24h}
+            mortalityRate={mortalityRate}
             vaccineStatus={vaccineStatus}
             nextVisit={nextVisit}
             userId={parsedUserId || ""}
