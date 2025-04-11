@@ -134,7 +134,7 @@ const PoultryHealthDetails = () => {
           <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-1">
             Poultry Health Report
           </h1>
-          <p className="text-sm text-dark">{formatDate(record.date)}</p>
+          <p className="text-sm text-dark">{formatDate(record.created_at)}</p>
         </div>
 
         <div className="mb-6">

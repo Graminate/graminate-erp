@@ -10,10 +10,9 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 
 type VeterinaryCardProps = {
-  mortalityRate24h: number;
+  mortalityRate24h: number | null;
   vaccineStatus: "Vaccinated" | "Pending" | "Over Due";
   nextVisit: string;
-  reportStatus: string;
   userId: string;
 };
 
@@ -24,7 +23,7 @@ const getVaccineStatusStyles = (
     case "Vaccinated":
       return "bg-green-200 text-light";
     case "Pending":
-      return "bg-yellow-200 text-dark ";
+      return "bg-yellow-200 text-dark";
     case "Over Due":
       return "bg-red-200 text-light";
     default:
@@ -60,22 +59,15 @@ const VeterinaryCard = ({
   mortalityRate24h,
   vaccineStatus,
   nextVisit,
-  reportStatus,
 }: VeterinaryCardProps) => {
   const router = useRouter();
   const { user_id } = router.query;
   const mortalityColorClass =
-    mortalityRate24h > 0.5
+    mortalityRate24h === null
+      ? "text-gray-400"
+      : mortalityRate24h > 0.5
       ? "text-red-600 dark:text-red-400"
       : "text-green-600 dark:text-green-400";
-  const reportStatusClass =
-    {
-      Done: "text-green-500 dark:text-green-300",
-      Pending: "text-yellow-500 dark:text-yellow-300",
-      Upcoming: "text-blue-500 dark:text-blue-300",
-      "Over Due": "text-red-500 dark:text-red-400",
-      "N/A": "text-dark dark:text-light",
-    }[reportStatus] || "text-gray-500 dark:text-gray-300";
 
   return (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
@@ -85,7 +77,11 @@ const VeterinaryCard = ({
       <div className="grid grid-cols-2 gap-4">
         <VetStatItem
           icon={faHeartbeat}
-          value={`${mortalityRate24h.toFixed(2)}%`}
+          value={
+            mortalityRate24h !== null
+              ? `${mortalityRate24h.toFixed(2)}%`
+              : "N/A"
+          }
           label="Mortality (Last Recorded)"
           valueClassName={`text-2xl font-semibold ${mortalityColorClass}`}
         />
@@ -103,18 +99,20 @@ const VeterinaryCard = ({
           label="Vaccine Status"
           valueClassName="mt-2"
         />
-        <VetStatItem
-          icon={faCalendarCheck}
-          value={nextVisit}
-          label="Next Visit"
-          valueClassName="text-sm font-semibold text-gray-900 dark:text-white"
-        />
+        <Link href={`/platform/${user_id}/poultry_health`}>
+          <VetStatItem
+            icon={faCalendarCheck}
+            value={nextVisit}
+            label="Next Visit"
+            valueClassName="text-sm font-semibold text-gray-900 dark:text-white"
+          />
+        </Link>
         <Link href={`/platform/${user_id}/poultry_health`}>
           <VetStatItem
             icon={faClipboard}
-            value={reportStatus}
-            label="Health Report"
-            valueClassName={`text-sm font-semibold ${reportStatusClass}`}
+            value={"Poultry"}
+            label="Health Records"
+            valueClassName="text-sm font-semibold"
           />
         </Link>
       </div>

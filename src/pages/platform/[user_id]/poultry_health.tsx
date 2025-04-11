@@ -27,18 +27,47 @@ ChartJS.register(
   ArcElement
 );
 
-type View = "poultry_health";
-
 const PoultryHealth = () => {
   const router = useRouter();
-  const { user_id, view: queryView } = router.query;
+  const { user_id } = router.query;
   const parsedUserId = Array.isArray(user_id) ? user_id[0] : user_id;
   const [healthRecords, setHealthRecords] = useState<any[]>([]);
-  const view: View =
-    typeof queryView === "string" ? (queryView as View) : "poultry_health";
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(25);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [mortalityRate24h, setMortalityRate24h] = useState<number | null>(null);
+  const [vaccineStatus, setVaccineStatus] = useState("Pending");
+  const [nextVisit, setNextVisit] = useState("N/A");
+
+  useEffect(() => {
+    if (!healthRecords || healthRecords.length === 0) {
+      setMortalityRate24h(null);
+      return;
+    }
+    const sortedByDate = [...healthRecords].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+    // Set vaccine status based on the latest record’s vaccines
+    const latestVaccines = sortedByDate[0]?.vaccines || [];
+    setVaccineStatus(
+      Array.isArray(latestVaccines) && latestVaccines.length > 0
+        ? "Vaccinated"
+        : "Pending"
+    );
+    // Next Visit: choose the next future date
+    const futureDates = healthRecords
+      .map((item) => new Date(item.date))
+      .filter((d) => d > new Date())
+      .sort((a, b) => a.getTime() - b.getTime());
+    setNextVisit(futureDates[0] ? futureDates[0].toLocaleDateString() : "N/A");
+
+    // Mortality Rate: average from the last 3 records
+    const recentRecords = sortedByDate.slice(0, 3);
+    const mortalitySum = recentRecords.reduce(
+      (sum: number, record: any) => sum + (record.mortality_rate || 0),
+      0
+    );
+    const averageMortality =
+      recentRecords.length > 0 ? mortalitySum / recentRecords.length : null;
+    setMortalityRate24h(averageMortality);
+  }, [healthRecords]);
 
   const fetchHealthRecords = async () => {
     if (!parsedUserId) return;
@@ -64,11 +93,11 @@ const PoultryHealth = () => {
   }, [router.isReady, parsedUserId]);
 
   const tableData = useMemo(() => {
-    if (view === "poultry_health" && healthRecords.length > 0) {
+    if (healthRecords.length > 0) {
       return {
         columns: [
           "#",
-          "Date",
+          "Next Appointment",
           "Veterinary Name",
           "Bird Type",
           "Purpose",
@@ -87,7 +116,7 @@ const PoultryHealth = () => {
       };
     }
     return { columns: [], rows: [] };
-  }, [healthRecords, view]);
+  }, [healthRecords]);
 
   const goBack = () => {
     router.push(`/platform/${parsedUserId}/poultry`);
@@ -119,10 +148,10 @@ const PoultryHealth = () => {
         <Table
           data={tableData}
           filteredRows={tableData.rows}
-          currentPage={currentPage}
-          itemsPerPage={itemsPerPage}
+          currentPage={1}
+          itemsPerPage={25}
           paginationItems={PAGINATION_ITEMS}
-          searchQuery={searchQuery}
+          searchQuery={""}
           totalRecordCount={tableData.rows.length}
           onRowClick={(row) => {
             const healthId = row[0];
@@ -136,10 +165,10 @@ const PoultryHealth = () => {
               });
             }
           }}
-          view={view}
-          setCurrentPage={setCurrentPage}
-          setItemsPerPage={setItemsPerPage}
-          setSearchQuery={setSearchQuery}
+          view={"poultry_health"}
+          setCurrentPage={() => {}}
+          setItemsPerPage={() => {}}
+          setSearchQuery={() => {}}
           download={false}
         />
       </div>

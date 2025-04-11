@@ -12,7 +12,7 @@ interface PoultryFormData {
   breedType: string;
   flockAgeDays: number;
   expectedMarketDate: string;
-  mortalityRate24h: number;
+  mortalityRate24h: number | null;
   vaccineStatus: string;
   nextVisit: string;
   totalEggsStock: number;
@@ -71,9 +71,22 @@ const AddPoultryDataModal = ({
     e.preventDefault();
 
     if (activeView === "vet") {
+      // Calculate the mortality rate
+      const mortality =
+        vetForm.birdsIn > 0
+          ? Math.round((vetForm.birdsDied / vetForm.birdsIn) * 10000) / 100
+          : null;
+      // Update parent's formData with the computed mortality
+      onChange({
+        target: {
+          name: "mortalityRate24h",
+          value: mortality,
+          type: "number",
+        },
+      } as any);
+
       // Validation: Required fields only
       const missingFields: string[] = [];
-
       if (!vetForm.date) missingFields.push("Visit Date");
       if (!vetForm.veterinaryName) missingFields.push("Veterinary Name");
       if (!vetForm.birdType) missingFields.push("Bird Type");
@@ -102,6 +115,7 @@ const AddPoultryDataModal = ({
           purpose: vetForm.purpose,
           birds_in: vetForm.birdsIn,
           birds_died: vetForm.birdsDied,
+          mortality_rate: mortality,
           vaccines: vetForm.vaccines
             ? vetForm.vaccines
                 .split(",")
@@ -128,7 +142,6 @@ const AddPoultryDataModal = ({
     onSubmit(e);
     await refreshHealthRecords();
     onClose();
-
     window.location.reload();
   };
 

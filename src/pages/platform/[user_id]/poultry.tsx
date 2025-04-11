@@ -94,33 +94,6 @@ const eggGradingPieData = {
   ],
 };
 
-const eggGradingPieOptions = {
-  responsive: true,
-  maintainAspectRatio: false,
-  plugins: {
-    legend: {
-      display: true,
-      position: "bottom" as const,
-      labels: { padding: 10, boxWidth: 12 },
-    },
-    title: { display: false },
-    tooltip: {
-      callbacks: {
-        label: function (context: any) {
-          let label = context.label || "";
-          if (label) {
-            label += ": ";
-          }
-          if (context.parsed !== null) {
-            label += context.parsed + "%";
-          }
-          return label;
-        },
-      },
-    },
-  },
-};
-
 type Priority = "High" | "Medium" | "Low";
 
 const tasks: {
@@ -142,7 +115,7 @@ interface PoultryFormData {
   breedType: string;
   flockAgeDays: number;
   expectedMarketDate: string;
-  mortalityRate24h: number;
+  mortalityRate24h: number | null;
   vaccineStatus: string;
   nextVisit: string;
   totalEggsStock: number;
@@ -159,7 +132,6 @@ const Poultry = () => {
   const [temperature, setTemperature] = useState<number | null>(null);
   const [humidity, setHumidity] = useState<number | null>(null);
   const [lightHours, setLightHours] = useState<number | null>(null);
-  const fahrenheit = false;
   const [totalEggsStock, setTotalEggsStock] = useState(85200);
   const [totalChicks, setTotalChicks] = useState(850);
   const [dailyFeedConsumption, setDailyFeedConsumption] = useState(150);
@@ -168,7 +140,7 @@ const Poultry = () => {
   const [flockId, setFlockId] = useState("1");
   const [expectedMarketDate, setExpectedMarketDate] = useState("2025-04-13");
   const [feedInventoryDays, setFeedInventoryDays] = useState(2);
-  const [mortalityRate24h, setMortalityRate24h] = useState(0.2);
+  const [mortalityRate24h, setMortalityRate24h] = useState<number | null>(null);
   const [vaccineStatus, setVaccineStatus] = useState<
     "Vaccinated" | "Pending" | "Over Due"
   >("Vaccinated");
@@ -176,6 +148,7 @@ const Poultry = () => {
   const [latestHealthDate, setLatestHealthDate] = useState<string>("—");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [reportStatus, setReportStatus] = useState("Pending");
+  const [sensorUrl, setSensorUrl] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<PoultryFormData>({
     totalChicks,
@@ -191,6 +164,7 @@ const Poultry = () => {
     feedInventoryDays,
   });
 
+  const fahrenheit = false;
   function convertToFahrenheit(celsius: number): number {
     return Math.round((celsius * 9) / 5 + 32);
   }
@@ -204,6 +178,7 @@ const Poultry = () => {
     return showUnit ? `${temp}°${fahrenheit ? "F" : "C"}` : `${temp}°`;
   }
 
+  // Fetch health records and calculate next visit and mortality rate
   useEffect(() => {
     const fetchHealthRecordsAndSetNextVisit = async () => {
       if (!parsedUserId) return;
@@ -212,28 +187,46 @@ const Poultry = () => {
         const response = await axios.get(
           `http://localhost:3001/api/poultry_health/${parsedUserId}`
         );
-
         const healthRecords = response.data.health || [];
 
+        // Next Visit: calculate from future dates
         const visitDates = healthRecords
           .map((record: any) => new Date(record.date))
           .filter((d: Date) => !isNaN(d.getTime()));
-
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-
         const upcomingDates = visitDates
           .filter((d: Date) => d.getTime() >= today.getTime())
           .sort((a: Date, b: Date) => a.getTime() - b.getTime());
-
         if (upcomingDates.length > 0) {
-          setNextVisit(upcomingDates[0].toISOString().split("T")[0]); // e.g., "2025-05-15"
+          setNextVisit(upcomingDates[0].toISOString().split("T")[0]);
         } else {
           setNextVisit("N/A");
+        }
+
+        // Mortality Rate: average from the last 3 records
+        if (healthRecords.length > 0) {
+          const sortedRecords = [...healthRecords].sort(
+            (a: any, b: any) =>
+              new Date(b.date).getTime() - new Date(a.date).getTime()
+          );
+          const recentRecords = sortedRecords.slice(0, 3);
+          const mortalitySum = recentRecords.reduce(
+            (sum: number, record: any) => sum + (record.mortality_rate || 0),
+            0
+          );
+          const averageMortality =
+            recentRecords.length > 0
+              ? mortalitySum / recentRecords.length
+              : null;
+          setMortalityRate24h(averageMortality);
+        } else {
+          setMortalityRate24h(null);
         }
       } catch (err) {
         console.error("Failed to fetch poultry health data", err);
         setNextVisit("N/A");
+        setMortalityRate24h(null);
       }
     };
 
@@ -241,67 +234,25 @@ const Poultry = () => {
   }, [parsedUserId]);
 
   useEffect(() => {
-    const fetchNextVisit = async () => {
-      if (!parsedUserId) return;
-      try {
-        const response = await axios.get(
-          `http://localhost:3001/api/poultry_health/${parsedUserId}`
-        );
-        const records = response.data.health || [];
-
-        // Extract all visit dates as Date objects
-        const visitDates = records
-          .map((rec: any) => new Date(rec.date))
-          .filter((d: Date) => !isNaN(d.getTime())); // valid dates only
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        // Find the earliest visit date in the future
-        const upcoming = visitDates
-          .filter((d: Date) => d.getTime() >= today.getTime())
-          .sort((a: Date, b: Date) => a.getTime() - b.getTime());
-
-        if (upcoming.length > 0) {
-          setNextVisit(upcoming[0].toISOString().split("T")[0]); // e.g., "2025-05-23"
-        } else {
-          setNextVisit("N/A");
-        }
-      } catch (error) {
-        console.error("Error fetching poultry health records:", error);
-        setNextVisit("N/A");
-      }
-    };
-
-    fetchNextVisit();
-  }, [parsedUserId]);
-  // Health visit status
-  useEffect(() => {
     const fetchLatestHealthVisit = async () => {
       if (!parsedUserId) return;
-
       try {
         const response = await axios.get(
           `http://localhost:3001/api/poultry_health/${parsedUserId}`
         );
         const records = response.data.health;
-
         if (Array.isArray(records) && records.length > 0) {
           const sorted = [...records].sort(
             (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
           );
-
           const latest = sorted[0];
           const latestDate = new Date(latest.date);
           const today = new Date();
           today.setHours(0, 0, 0, 0);
           latestDate.setHours(0, 0, 0, 0);
-
           setLatestHealthDate(latestDate.toLocaleDateString());
-
           const diffInDays =
             (today.getTime() - latestDate.getTime()) / (1000 * 3600 * 24);
-
           if (diffInDays === 0) {
             setReportStatus("Done");
           } else if (diffInDays <= 3 && diffInDays > 0) {
@@ -309,22 +260,20 @@ const Poultry = () => {
           } else if (diffInDays > 3) {
             setReportStatus("Over Due");
           }
-
-          // Check for upcoming visit
-          const nextVisit = formData.nextVisit;
-          if (nextVisit) {
-            const visitDate = new Date(nextVisit);
+          // Check for upcoming visit in formData
+          const nextVisitDate = formData.nextVisit;
+          if (nextVisitDate) {
+            const visitDate = new Date(nextVisitDate);
             visitDate.setHours(0, 0, 0, 0);
             const daysUntilVisit =
               (visitDate.getTime() - today.getTime()) / (1000 * 3600 * 24);
-
             if (daysUntilVisit <= 7 && daysUntilVisit >= 0) {
               setReportStatus("Upcoming");
             }
           }
         } else {
-          setLatestHealthDate("N/A"); // ✅ when no record
-          setReportStatus("N/A"); // ✅ when no record
+          setLatestHealthDate("N/A");
+          setReportStatus("N/A");
         }
       } catch (error) {
         console.error("Failed to fetch latest health visit:", error);
@@ -332,79 +281,72 @@ const Poultry = () => {
     };
 
     fetchLatestHealthVisit();
-  }, [parsedUserId, formData.nextVisit]); // also depend on visit date
-
-  useEffect(() => {
-    const fetchLatestHealthVisit = async () => {
-      if (!parsedUserId) return;
-
-      try {
-        const response = await axios.get(
-          `http://localhost:3001/api/poultry_health/${parsedUserId}`
-        );
-        const records = response.data.health;
-
-        if (Array.isArray(records) && records.length > 0) {
-          // Sort by date descending
-          const sorted = [...records].sort(
-            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-          );
-
-          const latestDate = new Date(sorted[0].date).toLocaleDateString();
-          setLatestHealthDate(latestDate);
-        }
-      } catch (error) {
-        console.error("Failed to fetch latest health visit:", error);
-      }
-    };
-
-    fetchLatestHealthVisit();
-  }, [parsedUserId]);
+  }, [parsedUserId, formData.nextVisit]);
 
   useEffect(() => {
     const fetchWeather = async (lat: number, lon: number) => {
+      const endpoint = sensorUrl || "/api/weather";
       try {
-        const response = await axios.get("/api/weather", {
-          params: { lat, lon },
+        const response = await axios.get(endpoint, {
+          params: sensorUrl ? undefined : { lat, lon },
         });
-
-        setTemperature(Math.round(response.data.current.temperature2m));
-        setHumidity(Math.round(response.data.current.relativeHumidity2m));
-
-        const daylightSeconds = response.data.daily.daylightDuration?.[0];
-        if (typeof daylightSeconds === "number") {
-          setLightHours(daylightSeconds / 3600);
-        }
+        const newWeatherData = {
+          temperature: Math.round(response.data.current.temperature2m),
+          humidity: Math.round(response.data.current.relativeHumidity2m),
+          lightHours:
+            typeof response.data.daily.daylightDuration?.[0] === "number"
+              ? response.data.daily.daylightDuration[0] / 3600
+              : null,
+          timestamp: Date.now(),
+        };
+        localStorage.setItem("weatherData", JSON.stringify(newWeatherData));
+        setTemperature(newWeatherData.temperature);
+        setHumidity(newWeatherData.humidity);
+        setLightHours(newWeatherData.lightHours);
       } catch (err: any) {
         console.error("Failed to fetch weather", err.message);
       }
     };
 
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          fetchWeather(latitude, longitude);
-        },
-        (error) => {
-          console.error("Geolocation error:", error.message);
-        },
-        { enableHighAccuracy: true }
-      );
-    } else {
-      console.error("Geolocation is not supported by this browser.");
+    const getLocationAndFetch = () => {
+      if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            fetchWeather(latitude, longitude);
+          },
+          (error) => {
+            console.error("Geolocation error:", error.message);
+          },
+          { enableHighAccuracy: true }
+        );
+      } else {
+        console.error("Geolocation is not supported by this browser.");
+      }
+    };
+
+    const cached = localStorage.getItem("weatherData");
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      const isValid = Date.now() - parsed.timestamp < 2 * 60 * 1000;
+      if (isValid) {
+        setTemperature(parsed.temperature);
+        setHumidity(parsed.humidity);
+        setLightHours(parsed.lightHours);
+        return;
+      }
     }
-  }, []);
+    getLocationAndFetch();
+  }, [sensorUrl]);
 
   useEffect(() => {
-    const dynamicAlerts = [];
+    const dynamicAlerts: any[] = [];
     let alertIdCounter = 1;
-
     if (temperature !== null && temperature >= 35) {
       dynamicAlerts.push({
         id: alertIdCounter++,
         type: "Critical",
-        message: `High Temperature Alert (${formatTemperature(temperature)})`, // Use formatter
+        message: `High Temperature Alert (${formatTemperature(temperature)})`,
       });
     } else if (temperature !== null && temperature <= 15) {
       dynamicAlerts.push({
@@ -413,7 +355,6 @@ const Poultry = () => {
         message: `Low Temperature Alert (${formatTemperature(temperature)})`,
       });
     }
-
     if (feedInventoryDays < 3) {
       dynamicAlerts.push({
         id: alertIdCounter++,
@@ -423,7 +364,6 @@ const Poultry = () => {
         } remaining)`,
       });
     }
-
     if (nextVisit) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -431,9 +371,7 @@ const Poultry = () => {
       visitDate.setHours(0, 0, 0, 0);
       const diffInTime = visitDate.getTime() - today.getTime();
       const diffInDays = Math.ceil(diffInTime / (1000 * 3600 * 24));
-
       if (diffInDays <= 7 && diffInDays >= 0) {
-        // Alert if within 7 days or today
         dynamicAlerts.push({
           id: alertIdCounter++,
           type: "Info",
@@ -443,9 +381,8 @@ const Poultry = () => {
         });
       }
     }
-
     setActiveAlerts(dynamicAlerts);
-  }, [temperature, feedInventoryDays]);
+  }, [temperature, feedInventoryDays, nextVisit]);
 
   const dismissAlert = (id: number) => {
     setActiveAlerts((current) => current.filter((alert) => alert.id !== id));
@@ -473,7 +410,6 @@ const Poultry = () => {
     setFormData((prev) => ({ ...prev, [name]: processedValue }));
   };
 
-  // --- Form Submit Handler ---
   const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     console.log("Form Data Submitted:", formData);
@@ -490,8 +426,6 @@ const Poultry = () => {
     setTotalEggsStock(formData.totalEggsStock);
     setDailyFeedConsumption(formData.dailyFeedConsumption);
     setFeedInventoryDays(formData.feedInventoryDays);
-
-    // Close the modal
     setIsModalOpen(false);
   };
 
@@ -509,7 +443,6 @@ const Poultry = () => {
         <title>Graminate | Poultry Dashboard</title>
       </Head>
       <div className="min-h-screen container mx-auto p-4 space-y-6">
-        {/* Alerts Banner */}
         {activeAlerts.length > 0 && (
           <div className="space-y-2">
             {activeAlerts.map((alert) => (
@@ -560,10 +493,7 @@ const Poultry = () => {
             }}
           />
         </div>
-
-        {/* Row 1 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Flock Overview Panel */}
           <PoultryOverviewCard
             totalChicks={totalChicks}
             flockId={flockId}
@@ -572,41 +502,32 @@ const Poultry = () => {
             flockAgeWeeks={flockAgeWeeks}
             expectedMarketDate={expectedMarketDate}
           />
-          {/* Veterniary Card */}
           <VeterinaryCard
             mortalityRate24h={mortalityRate24h}
             vaccineStatus={vaccineStatus}
             nextVisit={nextVisit}
-            reportStatus={reportStatus}
-            userId={typeof user_id === "string" ? user_id : ""}
+            userId={parsedUserId || ""}
           />
-
-          {/* Environmental Conditions */}
           <EnvironmentCard
             temperature={temperature}
             humidity={humidity}
             lightHours={lightHours}
             formatTemperature={formatTemperature}
+            onCustomUrlSubmit={(url) => setSensorUrl(url)}
           />
-
-          {/* Egg Production */}
           <PoultryEggCard
             totalEggsStock={totalEggsStock}
             totalChicks={totalChicks}
             eggGradingPieData={eggGradingPieData}
-            eggGradingPieOptions={eggGradingPieOptions}
+            eggGradingPieOptions={salesChartOptions} // Use the appropriate pie options if defined
           />
-
           <PoultryFeedCard
             dailyFeedConsumption={dailyFeedConsumption}
             feedInventoryDays={feedInventoryDays}
             getFeedLevelColor={getFeedLevelColor}
           />
         </div>
-
-        {/* Row 2: Feed, Sales */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Sales */}
           <div className="bg-white dark:bg-dark p-4 rounded-lg shadow">
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-lg font-semibold text-dark dark:text-gray-300">
@@ -628,11 +549,8 @@ const Poultry = () => {
             </div>
           </div>
         </div>
-
-        {/* Row 3: Tasks */}
         <PoultryTaskCard initialTasks={tasks} />
       </div>
-
       {isModalOpen && (
         <AddPoultryDataModal
           formData={formData}
@@ -642,7 +560,6 @@ const Poultry = () => {
           userId={parsedUserId || ""}
           refreshHealthRecords={async () => {
             console.log("Refreshing health records...");
-            // Add logic to refresh health records if needed
             return Promise.resolve();
           }}
         />
