@@ -20,10 +20,7 @@ const BUSINESS_TYPES = ["Producer", "Wholesaler", "Processor"];
 const AGRICULTURE_TYPES = ["Fishery", "Poultry", "Animal Husbandry"];
 const MODAL_TITLE_ID = "first-login-modal-title";
 
-const FirstLoginModal = ({
-  isOpen,
-  onSubmit,
-}: FirstLoginModalProps) => {
+const FirstLoginModal = ({ isOpen, onSubmit }: FirstLoginModalProps) => {
   const [businessName, setBusinessName] = useState("");
   const [businessType, setBusinessType] = useState(BUSINESS_TYPES[0]);
   const [step, setStep] = useState<Step>("businessName");
@@ -172,8 +169,12 @@ const FirstLoginModal = ({
           </p>
           <fieldset className="mb-6">
             <legend className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Choose your primary type of Business:
+              Choose your type of Business:
             </legend>
+            <p className="text-red-200 text-sm">
+              This cannot be changed later. For a different business type,
+              please create a different account
+            </p>
             <div className="space-y-3 mt-2">
               {BUSINESS_TYPES.map((type) => (
                 <label

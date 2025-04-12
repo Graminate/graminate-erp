@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/router";
 import Navbar from "@/components/layout/Navbar/Navbar";
@@ -5,6 +6,9 @@ import Sidebar from "@/components/layout/Sidebar";
 import Swal from "sweetalert2";
 import axios, { AxiosError } from "axios";
 import { API_BASE_URL } from "@/constants/constants";
+import ChatWindow from "@/layout/ChatWindow"; // Import the chat window
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faRobot } from "@fortawesome/free-solid-svg-icons";
 
 type Props = {
   children: React.ReactNode;
@@ -15,8 +19,11 @@ const PlatformLayout = ({ children }: Props) => {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [userId, setUserId] = useState<string>("");
+  const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
   const router = useRouter();
   const { user_id } = router.query;
+
+  const chatRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (user_id) {
@@ -25,6 +32,23 @@ const PlatformLayout = ({ children }: Props) => {
       setUserId("");
     }
   }, [user_id]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        isChatOpen &&
+        chatRef.current &&
+        !chatRef.current.contains(event.target as Node)
+      ) {
+        setIsChatOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isChatOpen]);
 
   const handleSectionChange = (section: string) => {
     console.log("Sidebar Section changed:", section);
@@ -43,17 +67,14 @@ const PlatformLayout = ({ children }: Props) => {
       } catch (error: any) {
         setIsAuthorized(false);
         let errorText = "Session expired or unauthorized access.";
-
         if (axios.isAxiosError(error)) {
           const axiosError = error as AxiosError;
-
           if (axiosError.response?.status === 401) {
             errorText = "Session expired. Please log in again.";
           } else if (axiosError.response?.status === 404) {
             errorText = `User not found`;
           }
         }
-
         Swal.fire({
           title: "Access Denied",
           text: errorText,
@@ -81,18 +102,15 @@ const PlatformLayout = ({ children }: Props) => {
       setIsAuthorized(false);
       return;
     }
-
     if (!router.isReady) {
       setIsLoadingAuth(true);
       return;
     }
-
     if (!user_id) {
       setIsLoadingAuth(false);
       setIsAuthorized(false);
       return;
     }
-
     setIsAuthorized(false);
     verifySession(user_id as string).catch(console.error);
   }, [router.isReady, user_id, verifySession]);
@@ -100,10 +118,10 @@ const PlatformLayout = ({ children }: Props) => {
   if (!router.isReady || isLoadingAuth) {
     return null;
   }
-
   if (!isAuthorized) {
     return null;
   }
+
   return (
     <div className="flex flex-col min-h-screen bg-light dark:bg-dark text-dark dark:text-light">
       <Navbar userId={userId} />
@@ -115,6 +133,19 @@ const PlatformLayout = ({ children }: Props) => {
         />
         <div className="flex-1 p-4">{children}</div>
       </div>
+
+      <button
+        onClick={() => setIsChatOpen((prev) => !prev)}
+        className="fixed bottom-4 right-4 bg-green-200 text-white p-4 rounded-full shadow-lg hover:bg-green-100 z-50"
+      >
+        <FontAwesomeIcon icon={faRobot} />
+      </button>
+
+      {isChatOpen && (
+        <div ref={chatRef}>
+          <ChatWindow />
+        </div>
+      )}
     </div>
   );
 };
