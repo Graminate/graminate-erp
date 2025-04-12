@@ -12,10 +12,13 @@ import { API_BASE_URL } from "@/constants/constants";
 
 const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
   const isValidE164 = (phone: string) => {
-    return /^\+?[1-9][0-9]{1,14}$/.test(phone);
+    // Basic check, adjust regex as needed for more strict validation
+    return /^\+?[1-9]\d{1,14}$/.test(phone);
   };
   const router = useRouter();
   const { user_id } = router.query;
+
+  // --- Contact State ---
   const [contactValues, setContactValues] = useState({
     firstName: "",
     lastName: "",
@@ -30,14 +33,20 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
   });
   const [contactErrors, setContactErrors] = useState({
     phoneNumber: "",
+    address_line_1: "", // Added
+    city: "", // Added
+    state: "", // Added
+    postal_code: "", // Added
   });
+
+  // --- Company State ---
   const [companyValues, setCompanyValues] = useState({
     companyName: "",
     companyOwner: "",
     email: "",
     phoneNumber: "",
     type: "",
-    address: "",
+    // address: "", // Removed as individual lines are used
     address_line_1: "",
     address_line_2: "",
     city: "",
@@ -46,7 +55,13 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
   });
   const [companyErrors, setCompanyErrors] = useState({
     phoneNumber: "",
+    address_line_1: "", // Added
+    city: "", // Added
+    state: "", // Added
+    postal_code: "", // Added
   });
+
+  // --- Other States (unchanged) ---
   const [contractsValues, setContractsValues] = useState({
     dealName: "",
     dealPartner: "",
@@ -55,7 +70,6 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     contractStartDate: "",
     contractEndDate: "",
   });
-
   const [receiptsValues, setReceiptsValues] = useState({
     title: "",
     billTo: "",
@@ -64,7 +78,6 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     due_date: "",
     status: "",
   });
-  // To change
   const [taskValues, setTaskValues] = useState({
     title: "",
     billTo: "",
@@ -75,16 +88,123 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
   });
   const companyType = ["Supplier", "Distributor", "Factories", "Buyer"];
   const [animate, setAnimate] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+
   useEffect(() => {
     setAnimate(true);
+    document.body.classList.add("overflow-hidden");
+    return () => {
+      document.body.classList.remove("overflow-hidden");
+    };
   }, []);
 
-  const handleClose = () => {
-    onClose();
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (
+        panelRef.current &&
+        !panelRef.current.contains(event.target as Node)
+      ) {
+        handleCloseAnimation();
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleCloseAnimation = () => {
+    setAnimate(false);
+    setTimeout(() => onClose(), 300); // Match animation duration
   };
 
+  const handleClose = () => {
+    handleCloseAnimation();
+  };
+
+  // --- Validation Helper Functions ---
+  const validateContactAddress = () => {
+    const errors = {
+      address_line_1: "",
+      city: "",
+      state: "",
+      postal_code: "",
+    };
+    let isValid = true;
+
+    if (!contactValues.address_line_1.trim()) {
+      errors.address_line_1 = "Address Line 1 is required.";
+      isValid = false;
+    }
+    if (!contactValues.city.trim()) {
+      errors.city = "City is required.";
+      isValid = false;
+    }
+    if (!contactValues.state.trim()) {
+      errors.state = "State is required.";
+      isValid = false;
+    }
+    if (!contactValues.postal_code.trim()) {
+      errors.postal_code = "Postal Code is required.";
+      isValid = false;
+    }
+
+    return { errors, isValid };
+  };
+
+  const validateCompanyAddress = () => {
+    const errors = {
+      address_line_1: "",
+      city: "",
+      state: "",
+      postal_code: "",
+    };
+    let isValid = true;
+
+    if (!companyValues.address_line_1.trim()) {
+      errors.address_line_1 = "Address Line 1 is required.";
+      isValid = false;
+    }
+    if (!companyValues.city.trim()) {
+      errors.city = "City is required.";
+      isValid = false;
+    }
+    if (!companyValues.state.trim()) {
+      errors.state = "State is required.";
+      isValid = false;
+    }
+    if (!companyValues.postal_code.trim()) {
+      errors.postal_code = "Postal Code is required.";
+      isValid = false;
+    }
+
+    return { errors, isValid };
+  };
+
+  // --- Submit Handlers ---
   const handleSubmitContacts = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // --- Address Validation ---
+    const addressValidation = validateContactAddress();
+    const phoneValid =
+      isValidE164(contactValues.phoneNumber) || !contactValues.phoneNumber; // Allow empty phone for now, adjust if needed
+    const phoneErrorMsg = !phoneValid ? "Phone number is not valid" : "";
+
+    setContactErrors({
+      ...contactErrors, // Keep existing errors (like initial phone error)
+      ...addressValidation.errors, // Overwrite with new address errors
+      phoneNumber: phoneErrorMsg, // Update phone error based on current value
+    });
+
+    if (!addressValidation.isValid || !phoneValid) {
+      console.log("Contact form validation failed:", {
+        ...addressValidation.errors,
+        phoneNumber: phoneErrorMsg,
+      });
+      return; // Stop submission if validation fails
+    }
+    // --- End Address Validation ---
+
     const payload = {
       user_id: user_id,
       first_name: contactValues.firstName,
@@ -101,6 +221,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     try {
       await axios.post(`${API_BASE_URL}/contacts/add`, payload);
       setContactValues({
+        // Reset form
         firstName: "",
         lastName: "",
         email: "",
@@ -112,19 +233,50 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
         state: "",
         postal_code: "",
       });
+      setContactErrors({
+        // Reset errors
+        phoneNumber: "",
+        address_line_1: "",
+        city: "",
+        state: "",
+        postal_code: "",
+      });
       handleClose();
-      window.location.reload();
+      window.location.reload(); // Consider updating state instead of reload
     } catch (error: any) {
       const message =
         error.response?.data?.error ||
         error.message ||
         "An unexpected error occurred";
       console.error("Error adding contact:", message);
-      alert(message);
+      alert(message); // Consider using a more user-friendly notification
     }
   };
+
   const handleSubmitCompanies = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // --- Address Validation ---
+    const addressValidation = validateCompanyAddress();
+    const phoneValid =
+      isValidE164(companyValues.phoneNumber) || !companyValues.phoneNumber; // Allow empty phone for now, adjust if needed
+    const phoneErrorMsg = !phoneValid ? "Add a valid phone number" : "";
+
+    setCompanyErrors({
+      ...companyErrors, // Keep existing errors
+      ...addressValidation.errors, // Overwrite with new address errors
+      phoneNumber: phoneErrorMsg, // Update phone error
+    });
+
+    if (!addressValidation.isValid || !phoneValid) {
+      console.log("Company form validation failed:", {
+        ...addressValidation.errors,
+        phoneNumber: phoneErrorMsg,
+      });
+      return; // Stop submission
+    }
+    // --- End Address Validation ---
+
     const payload = {
       user_id: user_id,
       company_name: companyValues.companyName,
@@ -141,31 +293,41 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     try {
       await axios.post(`${API_BASE_URL}/companies/add`, payload);
       setCompanyValues({
+        // Reset form
         companyName: "",
         companyOwner: "",
         email: "",
         phoneNumber: "",
         type: "",
-        address: "",
         address_line_1: "",
         address_line_2: "",
         city: "",
         state: "",
         postal_code: "",
       });
+      setCompanyErrors({
+        // Reset errors
+        phoneNumber: "",
+        address_line_1: "",
+        city: "",
+        state: "",
+        postal_code: "",
+      });
       handleClose();
-      window.location.reload();
+      window.location.reload(); // Consider updating state instead of reload
     } catch (error: any) {
       const message =
         error.response?.data?.error ||
         error.message ||
         "An unexpected error occurred";
       console.error("Error adding company:", message);
-      alert(message);
+      alert(message); // Consider using a more user-friendly notification
     }
   };
+
   const handleSubmitContracts = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Add validation if needed for contracts
     const payload = {
       user_id: user_id,
       deal_name: contractsValues.dealName,
@@ -200,8 +362,10 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       alert(message);
     }
   };
+
   const handleSubmitReceipts = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Add validation if needed for receipts
     const payload = {
       user_id,
       title: receiptsValues.title,
@@ -236,13 +400,14 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       alert(message);
     }
   };
-  // To edit
+
   const handleSubmitTasks = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Add validation if needed for tasks
     const payload = {
       user_id,
       title: taskValues.title,
-      bill_to: taskValues.billTo,
+      bill_to: taskValues.billTo, // Assuming these map correctly to task fields
       amount_paid: taskValues.amount_paid,
       amount_due: taskValues.amount_due,
       due_date: taskValues.due_date,
@@ -252,6 +417,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       const response = await axios.post(`${API_BASE_URL}/tasks/add`, payload);
       console.log("API Response:", response.data);
       setTaskValues({
+        // Make sure state matches task fields
         title: "",
         billTo: "",
         amount_paid: "",
@@ -271,479 +437,510 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     }
   };
 
-  const panelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleOutsideClick = (event: MouseEvent) => {
-      if (
-        panelRef.current &&
-        !panelRef.current.contains(event.target as Node)
-      ) {
-        setAnimate(false);
-        setTimeout(() => handleClose(), 300);
-      }
-    };
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => document.removeEventListener("mousedown", handleOutsideClick);
-  }, []);
-
+  // --- JSX ---
   return (
-    <div className="fixed inset-0 z-50 bg-black/30">
+    <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm">
+      {" "}
+      {/* Added backdrop blur */}
       <div
         ref={panelRef}
-        className="fixed top-0 right-0 h-full w-full md:w-1/3 bg-light dark:bg-gray-800 shadow-lg dark:border-l border-gray-200"
+        className="fixed top-0 right-0 h-full w-full md:w-[450px] bg-light dark:bg-gray-800 shadow-lg dark:border-l border-gray-700 overflow-y-auto" // Adjusted width, added overflow
         style={{
-          transform: animate ? "translateX(0)" : "translateX(500px)",
-          transition: "transform 300ms",
+          transform: animate ? "translateX(0)" : "translateX(100%)", // Slide from 100%
+          transition: "transform 300ms ease-out", // Smoother transition
         }}
       >
         <div className="p-6 flex flex-col h-full">
-          <div className="flex justify-between items-center mb-4">
+          {/* Header */}
+          <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-xl font-semibold text-dark dark:text-light">
               {formTitle
                 ? formTitle
-                : "Create " + view.charAt(0).toUpperCase() + view.slice(1)}
+                : `Create ${view.charAt(0).toUpperCase() + view.slice(1)}`}
             </h2>
             <button
-              className="text-gray-300 hover:text-gray-100"
+              className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
               onClick={handleClose}
+              aria-label="Close panel"
             >
               <FontAwesomeIcon icon={faX} className="w-5 h-5" />
             </button>
           </div>
-          {view === "contacts" && (
-            <form
-              className="flex flex-col gap-4 w-full flex-grow"
-              onSubmit={handleSubmitContacts}
-            >
-              <div className="flex flex-row gap-2">
-                <TextField
-                  label="First Name"
-                  placeholder="e.g. John"
-                  value={contactValues.firstName}
-                  onChange={(val: string) =>
-                    setContactValues({ ...contactValues, firstName: val })
-                  }
-                />
-                <TextField
-                  label="Last Name"
-                  placeholder="e.g. Doe"
-                  value={contactValues.lastName}
-                  onChange={(val: string) =>
-                    setContactValues({ ...contactValues, lastName: val })
-                  }
-                />
-              </div>
-              <TextField
-                label="Email"
-                placeholder="e.g. john.doe@gmail.com"
-                value={contactValues.email}
-                onChange={(val: string) =>
-                  setContactValues({ ...contactValues, email: val })
-                }
-              />
-              <TextField
-                label="Phone Number"
-                placeholder="e.g. +91 XXXXXXXX"
-                value={contactValues.phoneNumber}
-                onChange={(val: string) => {
-                  setContactValues({ ...contactValues, phoneNumber: val });
-
-                  if (!isValidE164(val)) {
-                    setContactErrors({
-                      ...contactErrors,
-                      phoneNumber: "Phone number is not valid",
-                    });
-                  } else {
-                    setContactErrors({ ...contactErrors, phoneNumber: "" });
-                  }
-                }}
-                type={contactErrors.phoneNumber ? "error" : ""}
-                errorMessage={contactErrors.phoneNumber}
-              />
-              <DropdownLarge
-                items={CONTACT_TYPES}
-                selectedItem={contactValues.type}
-                onSelect={(value: string) =>
-                  setContactValues({ ...contactValues, type: value })
-                }
-                type="form"
-                label="Type"
-                width="full"
-              />
-              <TextField
-                label="Address Line 1"
-                placeholder="e.g. Flat No. 203, Building C"
-                value={contactValues.address_line_1 || ""}
-                onChange={(val: string) =>
-                  setContactValues({ ...contactValues, address_line_1: val })
-                }
-              />
-
-              {/* Address Line 2 */}
-              <TextField
-                label="Address Line 2"
-                placeholder="e.g. Green View Apartments, 5th Cross"
-                value={contactValues.address_line_2 || ""}
-                onChange={(val: string) =>
-                  setContactValues({ ...contactValues, address_line_2: val })
-                }
-              />
-
-              <div className="flex flex-row gap-2">
-                {/* City */}
-                <TextField
-                  label="City"
-                  placeholder="e.g. Bengaluru"
-                  value={contactValues.city || ""}
-                  onChange={(val: string) =>
-                    setContactValues({ ...contactValues, city: val })
-                  }
-                />
-              </div>
-
-              <div className="flex flex-row gap-2">
-                {/* State */}
-                <TextField
-                  label="State"
-                  placeholder="e.g. Karnataka"
-                  value={contactValues.state || ""}
-                  onChange={(val: string) =>
-                    setContactValues({ ...contactValues, state: val })
-                  }
-                />
-
-                {/* Postal Code */}
-                <TextField
-                  label="Postal Code"
-                  placeholder="e.g. 560076"
-                  value={contactValues.postal_code || ""}
-                  onChange={(val: string) =>
-                    setContactValues({ ...contactValues, postal_code: val })
-                  }
-                />
-              </div>
-              <div className="flex justify-end gap-4 mt-2">
-                <Button text="Create" style="primary" type="submit" />
-                <Button text="Cancel" style="secondary" onClick={handleClose} />
-              </div>
-            </form>
-          )}
-          {view === "companies" && (
-            <form
-              className="flex flex-col gap-4 w-full flex-grow"
-              onSubmit={handleSubmitCompanies}
-            >
-              <TextField
-                label="Company Name"
-                placeholder="Enter company name"
-                value={companyValues.companyName}
-                onChange={(val: string) =>
-                  setCompanyValues({ ...companyValues, companyName: val })
-                }
-              />
-              <TextField
-                label="Owner Name"
-                placeholder="e.g. John Doe"
-                value={companyValues.companyOwner}
-                onChange={(val: string) =>
-                  setCompanyValues({ ...companyValues, companyOwner: val })
-                }
-              />
-              <div className="flex flex-auto gap-2">
+          {/* Form Content Area */}
+          <div className="flex-grow overflow-y-auto pr-2 -mr-2">
+            {" "}
+            {/* Scrollable content */}
+            {/* --- Contacts Form --- */}
+            {view === "contacts" && (
+              <form
+                className="flex flex-col gap-4 w-full" // Removed flex-grow
+                onSubmit={handleSubmitContacts}
+                noValidate // Prevent browser default validation
+              >
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <TextField
+                    label="First Name"
+                    placeholder="e.g. John"
+                    value={contactValues.firstName}
+                    onChange={(val: string) =>
+                      setContactValues({ ...contactValues, firstName: val })
+                    }
+                  />
+                  <TextField
+                    label="Last Name"
+                    placeholder="e.g. Doe"
+                    value={contactValues.lastName}
+                    onChange={(val: string) =>
+                      setContactValues({ ...contactValues, lastName: val })
+                    }
+                  />
+                </div>
                 <TextField
                   label="Email"
                   placeholder="e.g. john.doe@gmail.com"
-                  value={companyValues.email}
+                  value={contactValues.email}
                   onChange={(val: string) =>
-                    setCompanyValues({ ...companyValues, email: val })
+                    setContactValues({ ...contactValues, email: val })
                   }
                 />
                 <TextField
                   label="Phone Number"
-                  placeholder="e.g. +49 XXXXXXXX"
-                  value={companyValues.phoneNumber}
+                  placeholder="e.g. +1XXXXXXXXXX"
+                  value={contactValues.phoneNumber}
                   onChange={(val: string) => {
-                    setCompanyValues({ ...companyValues, phoneNumber: val });
-
-                    if (!isValidE164(val)) {
-                      setCompanyErrors({
-                        ...companyErrors,
-                        phoneNumber: "Add a valid phone number",
+                    setContactValues({ ...contactValues, phoneNumber: val });
+                    // Real-time validation feedback (optional but good UX)
+                    if (val && !isValidE164(val)) {
+                      setContactErrors({
+                        ...contactErrors,
+                        phoneNumber:
+                          "Phone number format is not valid (e.g., +12223334444)",
                       });
                     } else {
-                      setCompanyErrors({ ...companyErrors, phoneNumber: "" });
+                      setContactErrors({ ...contactErrors, phoneNumber: "" });
                     }
                   }}
-                  type={companyErrors.phoneNumber ? "error" : ""}
-                  errorMessage={companyErrors.phoneNumber}
+                  type={contactErrors.phoneNumber ? "error" : ""}
+                  errorMessage={contactErrors.phoneNumber}
                 />
-              </div>
-              <DropdownLarge
-                items={companyType}
-                selectedItem={companyValues.type}
-                onSelect={(value: string) =>
-                  setCompanyValues({ ...companyValues, type: value })
-                }
-                type="form"
-                label="Type"
-                width="full"
-              />
-              <TextField
-                label="Address Line 1"
-                placeholder="e.g. Head Office, Tower B"
-                value={companyValues.address_line_1 || ""}
-                onChange={(val: string) =>
-                  setCompanyValues({ ...companyValues, address_line_1: val })
-                }
-              />
-              <TextField
-                label="Address Line 2"
-                placeholder="e.g. Street Name, Area"
-                value={companyValues.address_line_2 || ""}
-                onChange={(val: string) =>
-                  setCompanyValues({ ...companyValues, address_line_2: val })
-                }
-              />
-              <div className="flex flex-row gap-2">
+                <DropdownLarge
+                  items={CONTACT_TYPES}
+                  selectedItem={contactValues.type}
+                  onSelect={(value: string) =>
+                    setContactValues({ ...contactValues, type: value })
+                  }
+                  type="form"
+                  label="Type"
+                  width="full"
+                />
+
+                {/* --- Address Fields with Validation --- */}
+                <TextField
+                  label="Address Line 1"
+                  placeholder="e.g. Flat No. 203, Building C"
+                  value={contactValues.address_line_1}
+                  onChange={(val: string) =>
+                    setContactValues({ ...contactValues, address_line_1: val })
+                  }
+                  type={contactErrors.address_line_1 ? "error" : ""} // Added
+                  errorMessage={contactErrors.address_line_1} // Added
+                />
+                <TextField
+                  label="Address Line 2 (Optional)"
+                  placeholder="e.g. Green View Apartments, 5th Cross"
+                  value={contactValues.address_line_2}
+                  onChange={(val: string) =>
+                    setContactValues({ ...contactValues, address_line_2: val })
+                  }
+                  // No error props needed as it's optional
+                />
+                <TextField
+                  label="City"
+                  placeholder="e.g. Bengaluru"
+                  value={contactValues.city}
+                  onChange={(val: string) =>
+                    setContactValues({ ...contactValues, city: val })
+                  }
+                  type={contactErrors.city ? "error" : ""} // Added
+                  errorMessage={contactErrors.city} // Added
+                />
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <TextField
+                    label="State"
+                    placeholder="e.g. Karnataka"
+                    value={contactValues.state}
+                    onChange={(val: string) =>
+                      setContactValues({ ...contactValues, state: val })
+                    }
+                    type={contactErrors.state ? "error" : ""} // Added
+                    errorMessage={contactErrors.state} // Added
+                  />
+                  <TextField
+                    label="Postal Code"
+                    placeholder="e.g. 560076"
+                    value={contactValues.postal_code}
+                    onChange={(val: string) =>
+                      setContactValues({ ...contactValues, postal_code: val })
+                    }
+                    type={contactErrors.postal_code ? "error" : ""} // Added
+                    errorMessage={contactErrors.postal_code} // Added
+                  />
+                </div>
+                {/* Form Actions */}
+                <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <Button
+                    text="Cancel"
+                    style="secondary"
+                    onClick={handleClose}
+                  />
+                  <Button text="Create Contact" style="primary" type="submit" />
+                </div>
+              </form>
+            )}
+            {/* --- Companies Form --- */}
+            {view === "companies" && (
+              <form
+                className="flex flex-col gap-4 w-full" // Removed flex-grow
+                onSubmit={handleSubmitCompanies}
+                noValidate // Prevent browser default validation
+              >
+                <TextField
+                  label="Company Name"
+                  placeholder="Enter company name"
+                  value={companyValues.companyName}
+                  onChange={(val: string) =>
+                    setCompanyValues({ ...companyValues, companyName: val })
+                  }
+                />
+                <TextField
+                  label="Owner Name"
+                  placeholder="e.g. John Doe"
+                  value={companyValues.companyOwner}
+                  onChange={(val: string) =>
+                    setCompanyValues({ ...companyValues, companyOwner: val })
+                  }
+                />
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <TextField
+                    label="Company Email"
+                    placeholder="e.g. contact@company.com"
+                    value={companyValues.email}
+                    onChange={(val: string) =>
+                      setCompanyValues({ ...companyValues, email: val })
+                    }
+                  />
+                  <TextField
+                    label="Company Phone"
+                    placeholder="e.g. +1XXXXXXXXXX"
+                    value={companyValues.phoneNumber}
+                    onChange={(val: string) => {
+                      setCompanyValues({ ...companyValues, phoneNumber: val });
+                      // Real-time validation feedback
+                      if (val && !isValidE164(val)) {
+                        setCompanyErrors({
+                          ...companyErrors,
+                          phoneNumber:
+                            "Phone number format is not valid (e.g., +12223334444)",
+                        });
+                      } else {
+                        setCompanyErrors({ ...companyErrors, phoneNumber: "" });
+                      }
+                    }}
+                    type={companyErrors.phoneNumber ? "error" : ""}
+                    errorMessage={companyErrors.phoneNumber}
+                  />
+                </div>
+                <DropdownLarge
+                  items={companyType}
+                  selectedItem={companyValues.type}
+                  onSelect={(value: string) =>
+                    setCompanyValues({ ...companyValues, type: value })
+                  }
+                  type="form"
+                  label="Company Type"
+                  width="full"
+                />
+
+                {/* --- Address Fields with Validation --- */}
+                <TextField
+                  label="Address Line 1"
+                  placeholder="e.g. Head Office, Tower B"
+                  value={companyValues.address_line_1}
+                  onChange={(val: string) =>
+                    setCompanyValues({ ...companyValues, address_line_1: val })
+                  }
+                  type={companyErrors.address_line_1 ? "error" : ""} // Added
+                  errorMessage={companyErrors.address_line_1} // Added
+                />
+                <TextField
+                  label="Address Line 2 (Optional)"
+                  placeholder="e.g. Street Name, Area"
+                  value={companyValues.address_line_2}
+                  onChange={(val: string) =>
+                    setCompanyValues({ ...companyValues, address_line_2: val })
+                  }
+                  // No error props needed
+                />
                 <TextField
                   label="City"
                   placeholder="e.g. Mumbai"
-                  value={companyValues.city || ""}
+                  value={companyValues.city}
                   onChange={(val: string) =>
                     setCompanyValues({ ...companyValues, city: val })
                   }
+                  type={companyErrors.city ? "error" : ""} // Added
+                  errorMessage={companyErrors.city} // Added
                 />
-                <TextField
-                  label="State"
-                  placeholder="e.g. Maharashtra"
-                  value={companyValues.state || ""}
-                  onChange={(val: string) =>
-                    setCompanyValues({ ...companyValues, state: val })
-                  }
-                />
-              </div>
-              <TextField
-                label="Postal Code"
-                placeholder="e.g. 400001"
-                value={companyValues.postal_code || ""}
-                onChange={(val: string) =>
-                  setCompanyValues({ ...companyValues, postal_code: val })
-                }
-              />
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <TextField
+                    label="State"
+                    placeholder="e.g. Maharashtra"
+                    value={companyValues.state}
+                    onChange={(val: string) =>
+                      setCompanyValues({ ...companyValues, state: val })
+                    }
+                    type={companyErrors.state ? "error" : ""} // Added
+                    errorMessage={companyErrors.state} // Added
+                  />
+                  <TextField
+                    label="Postal Code"
+                    placeholder="e.g. 400001"
+                    value={companyValues.postal_code}
+                    onChange={(val: string) =>
+                      setCompanyValues({ ...companyValues, postal_code: val })
+                    }
+                    type={companyErrors.postal_code ? "error" : ""} // Added
+                    errorMessage={companyErrors.postal_code} // Added
+                  />
+                </div>
 
-              <div className="flex justify-end gap-4 mt-2">
-                <Button text="Create" style="primary" type="submit" />
-                <Button text="Cancel" style="secondary" onClick={handleClose} />
-              </div>
-            </form>
-          )}
-          {view === "contracts" && (
-            <form
-              className="flex flex-col gap-4 w-full flex-grow"
-              onSubmit={handleSubmitContracts}
-            >
-              <TextField
-                label="Contract Name"
-                placeholder="Name of your Contract"
-                value={contractsValues.dealName}
-                onChange={(val: string) =>
-                  setContractsValues({ ...contractsValues, dealName: val })
-                }
-              />
-              <TextField
-                label="Partner Name"
-                placeholder="Company, Business owner"
-                value={contractsValues.dealPartner}
-                onChange={(val: string) =>
-                  setContractsValues({ ...contractsValues, dealPartner: val })
-                }
-              />
-              <div className="flex flex-col gap-2">
+                {/* Form Actions */}
+                <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <Button
+                    text="Cancel"
+                    style="secondary"
+                    onClick={handleClose}
+                  />
+                  <Button text="Create Company" style="primary" type="submit" />
+                </div>
+              </form>
+            )}
+            {/* --- Contracts Form --- */}
+            {view === "contracts" && (
+              <form
+                className="flex flex-col gap-4 w-full"
+                onSubmit={handleSubmitContracts}
+              >
                 <TextField
-                  label="Amount Involved (₹)"
-                  placeholder="Budget involved"
-                  value={contractsValues.amountPaid}
+                  label="Contract Name"
+                  placeholder="Name of your Contract"
+                  value={contractsValues.dealName}
                   onChange={(val: string) =>
-                    setContractsValues({ ...contractsValues, amountPaid: val })
+                    setContractsValues({ ...contractsValues, dealName: val })
                   }
                 />
                 <TextField
-                  label="State of Contract"
-                  placeholder="e.g. Initialised, In Process, Completed"
-                  value={contractsValues.status}
+                  label="Partner Name"
+                  placeholder="Company, Business owner"
+                  value={contractsValues.dealPartner}
                   onChange={(val: string) =>
-                    setContractsValues({ ...contractsValues, status: val })
+                    setContractsValues({ ...contractsValues, dealPartner: val })
                   }
                 />
-              </div>
-              <div className="flex flex-col gap-2">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <TextField
+                    label="Amount Involved (₹)"
+                    placeholder="Budget involved"
+                    value={contractsValues.amountPaid}
+                    onChange={(val: string) =>
+                      setContractsValues({
+                        ...contractsValues,
+                        amountPaid: val,
+                      })
+                    }
+                  />
+                  <TextField
+                    label="State of Contract"
+                    placeholder="e.g. Initialised, In Process, Completed" // Consider making this a dropdown
+                    value={contractsValues.status}
+                    onChange={(val: string) =>
+                      setContractsValues({ ...contractsValues, status: val })
+                    }
+                  />
+                </div>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <TextField
+                    label="Start Date"
+                    placeholder="YYYY-MM-DD"
+                    value={contractsValues.contractStartDate}
+                    onChange={(val: string) =>
+                      setContractsValues({
+                        ...contractsValues,
+                        contractStartDate: val,
+                      })
+                    }
+                    calendar
+                  />
+                  <TextField
+                    label="Contract End Date"
+                    placeholder="YYYY-MM-DD"
+                    value={contractsValues.contractEndDate}
+                    onChange={(val: string) =>
+                      setContractsValues({
+                        ...contractsValues,
+                        contractEndDate: val,
+                      })
+                    }
+                    calendar
+                  />
+                </div>
+                {/* Form Actions */}
+                <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <Button
+                    text="Cancel"
+                    style="secondary"
+                    onClick={handleClose}
+                  />
+                  <Button
+                    text="Create Contract"
+                    style="primary"
+                    type="submit"
+                  />
+                </div>
+              </form>
+            )}
+            {/* --- Receipts Form --- */}
+            {view === "receipts" && (
+              <form
+                className="flex flex-col gap-4 w-full"
+                onSubmit={handleSubmitReceipts}
+              >
                 <TextField
-                  label="Start Date"
-                  placeholder="YYYY-MM-DD"
-                  value={contractsValues.contractStartDate}
+                  label="Receipt Title"
+                  placeholder="Name of your receipt / invoice"
+                  value={receiptsValues.title}
                   onChange={(val: string) =>
-                    setContractsValues({
-                      ...contractsValues,
-                      contractStartDate: val,
-                    })
-                  }
-                  width="large"
-                  calendar
-                />
-                <TextField
-                  label="Contract End Date"
-                  placeholder="YYYY-MM-DD"
-                  value={contractsValues.contractEndDate}
-                  onChange={(val: string) =>
-                    setContractsValues({
-                      ...contractsValues,
-                      contractEndDate: val,
-                    })
-                  }
-                  width="large"
-                  calendar
-                />
-              </div>
-              <div className="flex justify-end gap-4 mt-2">
-                <Button text="Create" style="primary" type="submit" />
-                <Button text="Cancel" style="secondary" onClick={handleClose} />
-              </div>
-            </form>
-          )}
-          {view === "receipts" && (
-            <form
-              className="flex flex-col gap-4 w-full flex-grow"
-              onSubmit={handleSubmitReceipts}
-            >
-              <TextField
-                label="Receipt Title"
-                placeholder="Name of your receipt / invoice"
-                value={receiptsValues.title}
-                onChange={(val: string) =>
-                  setReceiptsValues({ ...receiptsValues, title: val })
-                }
-              />
-              <TextField
-                label="Bill To"
-                placeholder="Customer Details"
-                value={receiptsValues.billTo}
-                onChange={(val: string) =>
-                  setReceiptsValues({ ...receiptsValues, billTo: val })
-                }
-              />
-              <div className="flex flex-col gap-2">
-                <TextField
-                  label="Paid (₹)"
-                  placeholder="Amount Paid"
-                  value={receiptsValues.amount_paid}
-                  onChange={(val: string) =>
-                    setReceiptsValues({ ...receiptsValues, amount_paid: val })
-                  }
-                />
-                <TextField
-                  label="Amount Due (₹)"
-                  placeholder="Amount yet to be paid"
-                  value={receiptsValues.amount_due}
-                  onChange={(val: string) =>
-                    setReceiptsValues({ ...receiptsValues, amount_due: val })
-                  }
-                />
-              </div>
-              <div className="flex flex-col gap-2">
-                <TextField
-                  label="Due Date"
-                  placeholder="YYYY-MM-DD"
-                  value={receiptsValues.due_date}
-                  onChange={(val: string) =>
-                    setReceiptsValues({ ...receiptsValues, due_date: val })
-                  }
-                  calendar
-                />
-                <DropdownLarge
-                  items={PAYMENT_STATUS}
-                  selectedItem={receiptsValues.status}
-                  onSelect={(value: string) =>
-                    setReceiptsValues({ ...receiptsValues, status: value })
-                  }
-                  type="form"
-                  label="Status"
-                  width="full"
-                />
-              </div>
-              <div className="flex justify-end gap-4 mt-2">
-                <Button text="Create" style="primary" type="submit" />
-                <Button text="Cancel" style="secondary" onClick={handleClose} />
-              </div>
-            </form>
-          )}
-          {/* To edit */}
-          {view === "tasks" && (
-            <form
-              className="flex flex-col gap-4 w-full flex-grow"
-              onSubmit={handleSubmitTasks}
-            >
-              <TextField
-                label="Receipt Title"
-                placeholder="Name of your receipt / invoice"
-                value={receiptsValues.title}
-                onChange={(val: string) =>
-                  setTaskValues({ ...taskValues, title: val })
-                }
-              />
-              <TextField
-                label="Bill To"
-                placeholder="Customer Details"
-                value={taskValues.billTo}
-                onChange={(val: string) =>
-                  setTaskValues({ ...taskValues, billTo: val })
-                }
-              />
-              <div className="flex flex-col gap-2">
-                <TextField
-                  label="Paid (₹)"
-                  placeholder="Amount Paid"
-                  value={taskValues.amount_paid}
-                  onChange={(val: string) =>
-                    setTaskValues({ ...taskValues, amount_paid: val })
+                    setReceiptsValues({ ...receiptsValues, title: val })
                   }
                 />
                 <TextField
-                  label="Amount Due (₹)"
-                  placeholder="Amount yet to be paid"
-                  value={taskValues.amount_due}
+                  label="Bill To"
+                  placeholder="Customer Details"
+                  value={receiptsValues.billTo}
                   onChange={(val: string) =>
-                    setTaskValues({ ...taskValues, amount_due: val })
+                    setReceiptsValues({ ...receiptsValues, billTo: val })
                   }
                 />
-              </div>
-              <div className="flex flex-col gap-2">
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <TextField
+                    label="Paid (₹)"
+                    placeholder="Amount Paid"
+                    value={receiptsValues.amount_paid}
+                    onChange={(val: string) =>
+                      setReceiptsValues({ ...receiptsValues, amount_paid: val })
+                    }
+                  />
+                  <TextField
+                    label="Amount Due (₹)"
+                    placeholder="Amount yet to be paid"
+                    value={receiptsValues.amount_due}
+                    onChange={(val: string) =>
+                      setReceiptsValues({ ...receiptsValues, amount_due: val })
+                    }
+                  />
+                </div>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <TextField
+                    label="Due Date"
+                    placeholder="YYYY-MM-DD"
+                    value={receiptsValues.due_date}
+                    onChange={(val: string) =>
+                      setReceiptsValues({ ...receiptsValues, due_date: val })
+                    }
+                    calendar
+                  />
+                  <DropdownLarge
+                    items={PAYMENT_STATUS}
+                    selectedItem={receiptsValues.status}
+                    onSelect={(value: string) =>
+                      setReceiptsValues({ ...receiptsValues, status: value })
+                    }
+                    type="form"
+                    label="Status"
+                    width="full"
+                  />
+                </div>
+                {/* Form Actions */}
+                <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <Button
+                    text="Cancel"
+                    style="secondary"
+                    onClick={handleClose}
+                  />
+                  <Button text="Create Receipt" style="primary" type="submit" />
+                </div>
+              </form>
+            )}
+            {/* --- Tasks Form (Example Structure - Needs specific fields) --- */}
+            {view === "tasks" && (
+              <form
+                className="flex flex-col gap-4 w-full"
+                onSubmit={handleSubmitTasks}
+              >
+                {/* Replace these with actual Task fields */}
                 <TextField
-                  label="Due Date"
-                  placeholder="YYYY-MM-DD"
-                  value={taskValues.due_date}
+                  label="Task Title"
+                  placeholder="Name of your task"
+                  value={taskValues.title}
                   onChange={(val: string) =>
-                    setTaskValues({ ...taskValues, due_date: val })
+                    setTaskValues({ ...taskValues, title: val })
                   }
-                  calendar
                 />
-                <DropdownLarge
-                  items={PAYMENT_STATUS}
-                  selectedItem={taskValues.status}
-                  onSelect={(value: string) =>
-                    setTaskValues({ ...taskValues, status: value })
+                <TextField
+                  label="Assigned To / Details" // Example
+                  placeholder="e.g., John Doe, Follow up call"
+                  value={taskValues.billTo} // Rename state if needed
+                  onChange={
+                    (val: string) =>
+                      setTaskValues({ ...taskValues, billTo: val }) // Rename state if needed
                   }
-                  type="form"
-                  label="Status"
-                  width="full"
                 />
-              </div>
-              <div className="flex justify-end gap-4 mt-2">
-                <Button text="Create" style="primary" type="submit" />
-                <Button text="Cancel" style="secondary" onClick={handleClose} />
-              </div>
-            </form>
-          )}
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <TextField
+                    label="Due Date"
+                    placeholder="YYYY-MM-DD"
+                    value={taskValues.due_date}
+                    onChange={(val: string) =>
+                      setTaskValues({ ...taskValues, due_date: val })
+                    }
+                    calendar
+                  />
+                  <DropdownLarge
+                    items={["Pending", "In Progress", "Completed"]} // Example Task Statuses
+                    selectedItem={taskValues.status}
+                    onSelect={(value: string) =>
+                      setTaskValues({ ...taskValues, status: value })
+                    }
+                    type="form"
+                    label="Status"
+                    width="full"
+                  />
+                </div>
+                {/* Add other relevant task fields here */}
+
+                {/* Form Actions */}
+                <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
+                  <Button
+                    text="Cancel"
+                    style="secondary"
+                    onClick={handleClose}
+                  />
+                  <Button text="Create Task" style="primary" type="submit" />
+                </div>
+              </form>
+            )}
+          </div>{" "}
+          {/* End Scrollable Content Area */}
         </div>
       </div>
     </div>

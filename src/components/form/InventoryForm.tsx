@@ -14,6 +14,7 @@ const InventoryForm = ({ onClose, formTitle }: SidebarProp) => {
   const router = useRouter();
   const { user_id } = router.query;
 
+  const [animate, setAnimate] = useState(false);
   const [inventoryItem, setInventoryItem] = useState({
     itemName: "",
     itemGroup: "",
@@ -21,13 +22,33 @@ const InventoryForm = ({ onClose, formTitle }: SidebarProp) => {
     quantity: "",
     pricePerUnit: "",
   });
-  const [animate, setAnimate] = useState(false);
+
   useEffect(() => {
     setAnimate(true);
+    document.body.classList.add("overflow-hidden");
+    return () => {
+      document.body.classList.remove("overflow-hidden");
+    };
   }, []);
+
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (
+        panelRef.current &&
+        !panelRef.current.contains(event.target as Node)
+      ) {
+        setAnimate(false);
+        setTimeout(() => handleClose(), 300);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, []);
+
   const handleClose = () => {
     onClose();
   };
+
   const handleSubmitInventoryItem = async (e: React.FormEvent) => {
     e.preventDefault();
     const payload = {
@@ -59,19 +80,7 @@ const InventoryForm = ({ onClose, formTitle }: SidebarProp) => {
     }
   };
   const panelRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const handleOutsideClick = (event: MouseEvent) => {
-      if (
-        panelRef.current &&
-        !panelRef.current.contains(event.target as Node)
-      ) {
-        setAnimate(false);
-        setTimeout(() => handleClose(), 300);
-      }
-    };
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => document.removeEventListener("mousedown", handleOutsideClick);
-  }, []);
+
   return (
     <div className="fixed inset-0 z-50 bg-black/30">
       <div
