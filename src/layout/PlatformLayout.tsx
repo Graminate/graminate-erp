@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/router";
 import Navbar from "@/components/layout/Navbar/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
@@ -19,30 +19,29 @@ const PlatformLayout = ({ children }: Props) => {
   const { user_id } = router.query;
 
   useEffect(() => {
-    if (router.query.user_id) {
-      setUserId(router.query.user_id as string);
+    if (user_id) {
+      setUserId(user_id as string);
+    } else {
+      setUserId("");
     }
-  }, [router.query.user_id]);
+  }, [user_id]);
 
   const handleSectionChange = (section: string) => {
-    console.log("Section changed:", section);
+    console.log("Sidebar Section changed:", section);
   };
 
-  useEffect(() => {
-    if (!router.isReady || !user_id) return;
-
-    const verifySession = async () => {
+  const verifySession = useCallback(
+    async (currentUserId: string) => {
       setIsLoadingAuth(true);
-      setIsAuthorized(false);
 
       try {
-        await axios.get(`${API_BASE_URL}/user/${user_id}`, {
+        await axios.get(`${API_BASE_URL}/user/${currentUserId}`, {
           withCredentials: true,
           timeout: 10000,
         });
-
         setIsAuthorized(true);
       } catch (error: any) {
+        setIsAuthorized(false);
         let errorText = "Session expired or unauthorized access.";
 
         if (axios.isAxiosError(error)) {
@@ -70,12 +69,39 @@ const PlatformLayout = ({ children }: Props) => {
       } finally {
         setIsLoadingAuth(false);
       }
-    };
-    verifySession().catch(() => {});
-  }, [router.isReady, user_id]);
+    },
+    [router]
+  );
 
-  // Authentication Check
-  if (!router.isReady || isLoadingAuth || !isAuthorized) {
+  useEffect(() => {
+    const accountJustDeleted = sessionStorage.getItem("accountJustDeleted");
+    if (accountJustDeleted === "true") {
+      sessionStorage.removeItem("accountJustDeleted");
+      setIsLoadingAuth(false);
+      setIsAuthorized(false);
+      return;
+    }
+
+    if (!router.isReady) {
+      setIsLoadingAuth(true);
+      return;
+    }
+
+    if (!user_id) {
+      setIsLoadingAuth(false);
+      setIsAuthorized(false);
+      return;
+    }
+
+    setIsAuthorized(false);
+    verifySession(user_id as string).catch(console.error);
+  }, [router.isReady, user_id, verifySession]);
+
+  if (!router.isReady || isLoadingAuth) {
+    return null;
+  }
+
+  if (!isAuthorized) {
     return null;
   }
   return (

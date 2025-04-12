@@ -23,7 +23,6 @@ const MODAL_TITLE_ID = "first-login-modal-title";
 const FirstLoginModal = ({
   isOpen,
   onSubmit,
-  onClose,
 }: FirstLoginModalProps) => {
   const [businessName, setBusinessName] = useState("");
   const [businessType, setBusinessType] = useState(BUSINESS_TYPES[0]);
@@ -189,7 +188,7 @@ const FirstLoginModal = ({
                     onChange={handleBusinessTypeChange}
                     className="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:focus:ring-primary-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800"
                   />
-                  <span className="text-sm font-medium text-gray-800 dark:text-gray-100">
+                  <span className="text-sm font-medium text-dark dark:text-light">
                     {type}
                   </span>
                 </label>
@@ -251,7 +250,7 @@ const FirstLoginModal = ({
                     onChange={handleSubTypeChange}
                     className="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:focus:ring-primary-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800"
                   />
-                  <span className="text-sm font-medium text-gray-800 dark:text-gray-100">
+                  <span className="text-sm font-medium text-dark dark:text-light">
                     {option}
                   </span>
                 </label>
@@ -282,7 +281,7 @@ const FirstLoginModal = ({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-light bg-opacity-60 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-light dark:bg-gray-700 bg-opacity-60 backdrop-blur-sm p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby={MODAL_TITLE_ID}
