@@ -67,6 +67,7 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
 
   const handleLogout = async () => {
     try {
+      localStorage.removeItem("chatMessages");
       await axios.post(`${API_BASE_URL}/user/logout`, null, {
         withCredentials: true,
       });

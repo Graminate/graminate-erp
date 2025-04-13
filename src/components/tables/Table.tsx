@@ -306,11 +306,12 @@ const Table = ({
               onClick={async () => {
                 if (filteredRows.length === 0) return;
 
+                // Do not touch
                 const entityNames: Record<string, string> = {
                   contacts: "contacts",
                   companies: "companies",
-                  contracts: "deals",
-                  receipts: "invoices",
+                  contracts: "contracts",
+                  receipts: "receipts",
                   labour: "employees",
                   inventory: "inventory",
                   poultry_health: "poultry_health",

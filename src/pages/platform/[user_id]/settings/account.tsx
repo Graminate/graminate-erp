@@ -243,9 +243,7 @@ const AccountPage = () => {
                 Account Settings
               </h1>
               <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-                <h2 className="text-lg font-semibold mb-4 text-red-600 dark:text-red-400 border-b pb-2 border-gray-200 dark:border-gray-700">
-                  Danger Zone
-                </h2>
+
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                   <div className="flex-grow">
                     <p className="font-semibold text-dark dark:text-light">
@@ -269,7 +267,7 @@ const AccountPage = () => {
             </section>
           </main>
         </div>
-      </PlatformLayout>{" "}
+      </PlatformLayout>
       {/* Pass children to PlatformLayout */}
       {renderModalContent()}
     </>
