@@ -80,7 +80,7 @@ const Inventory = () => {
     if (view === "inventory" && itemRecords.length > 0) {
       return {
         columns: [
-          // "#",
+          "#",
           "Item Name",
           "Item Group",
           "Units",
@@ -89,7 +89,7 @@ const Inventory = () => {
           "Status",
         ],
         rows: itemRecords.map((item) => [
-          // item.inventory_id,
+          item.inventory_id,
           item.item_name,
           item.item_group,
           item.units,

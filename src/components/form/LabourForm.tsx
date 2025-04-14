@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { useRouter } from "next/router";
 import TextField from "@/components/ui/TextField";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
@@ -9,6 +9,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faX } from "@fortawesome/free-solid-svg-icons";
 import { SidebarProp } from "@/types/card-props";
 import { API_BASE_URL } from "@/constants/constants";
+import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
 
 const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
   const router = useRouter();
@@ -39,26 +40,12 @@ const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
   const [animate, setAnimate] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    setAnimate(true);
-    document.body.classList.add("overflow-hidden");
-    return () => {
-      document.body.classList.remove("overflow-hidden");
-    };
-  }, []);
+  useAnimatePanel(setAnimate);
 
-  useEffect(() => {
-    const handleOutsideClick = (event: MouseEvent) => {
-      if (
-        panelRef.current &&
-        !panelRef.current.contains(event.target as Node)
-      ) {
-        handleCloseAnimation();
-      }
-    };
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => document.removeEventListener("mousedown", handleOutsideClick);
-  }, []);
+  useClickOutside(panelRef, () => {
+    setAnimate(false);
+    setTimeout(() => handleClose(), 300);
+  });
 
   const handleCloseAnimation = () => {
     setAnimate(false);

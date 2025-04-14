@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 import { useRouter } from "next/router";
 import TextField from "@/components/ui/TextField";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
@@ -9,16 +9,16 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faX } from "@fortawesome/free-solid-svg-icons";
 import { SidebarProp } from "@/types/card-props";
 import { API_BASE_URL } from "@/constants/constants";
+import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
 
 const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
-  const isValidE164 = (phone: string) => {
-    // Basic check, adjust regex as needed for more strict validation
-    return /^\+?[0-9]{10,15}$/.test(phone);
-  };
   const router = useRouter();
   const { user_id } = router.query;
 
-  // --- Contact State ---
+  const isValidE164 = (phone: string) => {
+    return /^\+?[0-9]{10,15}$/.test(phone);
+  };
+
   const [contactValues, setContactValues] = useState({
     firstName: "",
     lastName: "",
@@ -88,31 +88,14 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
   const [animate, setAnimate] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    setAnimate(true);
-    document.body.classList.add("overflow-hidden");
-    return () => {
-      document.body.classList.remove("overflow-hidden");
-    };
-  }, []);
-
-  useEffect(() => {
-    const handleOutsideClick = (event: MouseEvent) => {
-      if (
-        panelRef.current &&
-        !panelRef.current.contains(event.target as Node)
-      ) {
-        handleCloseAnimation();
-      }
-    };
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => document.removeEventListener("mousedown", handleOutsideClick);
-  }, []);
-
   const handleCloseAnimation = () => {
     setAnimate(false);
     setTimeout(() => onClose(), 300);
   };
+
+  // hooks
+  useAnimatePanel(setAnimate);
+  useClickOutside(panelRef, handleCloseAnimation);
 
   const handleClose = () => {
     handleCloseAnimation();
