@@ -13,7 +13,7 @@ import { API_BASE_URL } from "@/constants/constants";
 const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
   const isValidE164 = (phone: string) => {
     // Basic check, adjust regex as needed for more strict validation
-    return /^\+?[1-9]\d{1,14}$/.test(phone);
+    return /^\+?[0-9]{10,15}$/.test(phone);
   };
   const router = useRouter();
   const { user_id } = router.query;
@@ -33,20 +33,19 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
   });
   const [contactErrors, setContactErrors] = useState({
     phoneNumber: "",
-    address_line_1: "", // Added
-    city: "", // Added
-    state: "", // Added
-    postal_code: "", // Added
+    address_line_1: "",
+    city: "",
+    state: "",
+    postal_code: "",
   });
 
-  // --- Company State ---
   const [companyValues, setCompanyValues] = useState({
     companyName: "",
     companyOwner: "",
     email: "",
     phoneNumber: "",
     type: "",
-    // address: "", // Removed as individual lines are used
+
     address_line_1: "",
     address_line_2: "",
     city: "",
@@ -55,13 +54,12 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
   });
   const [companyErrors, setCompanyErrors] = useState({
     phoneNumber: "",
-    address_line_1: "", // Added
-    city: "", // Added
-    state: "", // Added
-    postal_code: "", // Added
+    address_line_1: "",
+    city: "",
+    state: "",
+    postal_code: "",
   });
 
-  // --- Other States (unchanged) ---
   const [contractsValues, setContractsValues] = useState({
     dealName: "",
     dealPartner: "",
@@ -90,7 +88,6 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
   const [animate, setAnimate] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
 
-
   useEffect(() => {
     setAnimate(true);
     document.body.classList.add("overflow-hidden");
@@ -110,11 +107,11 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     };
     document.addEventListener("mousedown", handleOutsideClick);
     return () => document.removeEventListener("mousedown", handleOutsideClick);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleCloseAnimation = () => {
     setAnimate(false);
-    setTimeout(() => onClose(), 300); // Match animation duration
+    setTimeout(() => onClose(), 300);
   };
 
   const handleClose = () => {
@@ -180,20 +177,17 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     return { errors, isValid };
   };
 
-  // --- Submit Handlers ---
   const handleSubmitContacts = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    // --- Address Validation ---
     const addressValidation = validateContactAddress();
     const phoneValid =
-      isValidE164(contactValues.phoneNumber) || !contactValues.phoneNumber; // Allow empty phone for now, adjust if needed
+      isValidE164(contactValues.phoneNumber) || !contactValues.phoneNumber;
     const phoneErrorMsg = !phoneValid ? "Phone number is not valid" : "";
 
     setContactErrors({
-      ...contactErrors, // Keep existing errors (like initial phone error)
-      ...addressValidation.errors, // Overwrite with new address errors
-      phoneNumber: phoneErrorMsg, // Update phone error based on current value
+      ...contactErrors,
+      ...addressValidation.errors,
+      phoneNumber: phoneErrorMsg,
     });
 
     if (!addressValidation.isValid || !phoneValid) {
@@ -201,9 +195,8 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
         ...addressValidation.errors,
         phoneNumber: phoneErrorMsg,
       });
-      return; // Stop submission if validation fails
+      return;
     }
-    // --- End Address Validation ---
 
     const payload = {
       user_id: user_id,
@@ -221,7 +214,6 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     try {
       await axios.post(`${API_BASE_URL}/contacts/add`, payload);
       setContactValues({
-        // Reset form
         firstName: "",
         lastName: "",
         email: "",
@@ -234,7 +226,6 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
         postal_code: "",
       });
       setContactErrors({
-        // Reset errors
         phoneNumber: "",
         address_line_1: "",
         city: "",
@@ -242,30 +233,29 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
         postal_code: "",
       });
       handleClose();
-      window.location.reload(); // Consider updating state instead of reload
+      window.location.reload();
     } catch (error: any) {
       const message =
         error.response?.data?.error ||
         error.message ||
         "An unexpected error occurred";
       console.error("Error adding contact:", message);
-      alert(message); // Consider using a more user-friendly notification
+      alert(message);
     }
   };
 
   const handleSubmitCompanies = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // --- Address Validation ---
     const addressValidation = validateCompanyAddress();
     const phoneValid =
-      isValidE164(companyValues.phoneNumber) || !companyValues.phoneNumber; // Allow empty phone for now, adjust if needed
+      isValidE164(companyValues.phoneNumber) || !companyValues.phoneNumber;
     const phoneErrorMsg = !phoneValid ? "Add a valid phone number" : "";
 
     setCompanyErrors({
-      ...companyErrors, // Keep existing errors
-      ...addressValidation.errors, // Overwrite with new address errors
-      phoneNumber: phoneErrorMsg, // Update phone error
+      ...companyErrors,
+      ...addressValidation.errors,
+      phoneNumber: phoneErrorMsg,
     });
 
     if (!addressValidation.isValid || !phoneValid) {
@@ -273,10 +263,8 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
         ...addressValidation.errors,
         phoneNumber: phoneErrorMsg,
       });
-      return; // Stop submission
+      return;
     }
-    // --- End Address Validation ---
-
     const payload = {
       user_id: user_id,
       company_name: companyValues.companyName,
@@ -293,7 +281,6 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     try {
       await axios.post(`${API_BASE_URL}/companies/add`, payload);
       setCompanyValues({
-        // Reset form
         companyName: "",
         companyOwner: "",
         email: "",
@@ -306,7 +293,6 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
         postal_code: "",
       });
       setCompanyErrors({
-        // Reset errors
         phoneNumber: "",
         address_line_1: "",
         city: "",
@@ -314,20 +300,19 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
         postal_code: "",
       });
       handleClose();
-      window.location.reload(); // Consider updating state instead of reload
+      window.location.reload();
     } catch (error: any) {
       const message =
         error.response?.data?.error ||
         error.message ||
         "An unexpected error occurred";
       console.error("Error adding company:", message);
-      alert(message); // Consider using a more user-friendly notification
+      alert(message);
     }
   };
 
   const handleSubmitContracts = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Add validation if needed for contracts
     const payload = {
       user_id: user_id,
       deal_name: contractsValues.dealName,
@@ -365,7 +350,6 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
 
   const handleSubmitReceipts = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Add validation if needed for receipts
     const payload = {
       user_id,
       title: receiptsValues.title,
@@ -403,11 +387,10 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
 
   const handleSubmitTasks = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Add validation if needed for tasks
     const payload = {
       user_id,
       title: taskValues.title,
-      bill_to: taskValues.billTo, // Assuming these map correctly to task fields
+      bill_to: taskValues.billTo,
       amount_paid: taskValues.amount_paid,
       amount_due: taskValues.amount_due,
       due_date: taskValues.due_date,
@@ -437,17 +420,14 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     }
   };
 
-  // --- JSX ---
   return (
     <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm">
-      {" "}
-      {/* Added backdrop blur */}
       <div
         ref={panelRef}
         className="fixed top-0 right-0 h-full w-full md:w-[450px] bg-light dark:bg-gray-800 shadow-lg dark:border-l border-gray-700 overflow-y-auto" // Adjusted width, added overflow
         style={{
-          transform: animate ? "translateX(0)" : "translateX(100%)", // Slide from 100%
-          transition: "transform 300ms ease-out", // Smoother transition
+          transform: animate ? "translateX(0)" : "translateX(100%)",
+          transition: "transform 300ms ease-out",
         }}
       >
         <div className="p-6 flex flex-col h-full">
@@ -466,16 +446,13 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
               <FontAwesomeIcon icon={faX} className="w-5 h-5" />
             </button>
           </div>
-          {/* Form Content Area */}
+
           <div className="flex-grow overflow-y-auto pr-2 -mr-2">
-            {" "}
-            {/* Scrollable content */}
-            {/* --- Contacts Form --- */}
             {view === "contacts" && (
               <form
-                className="flex flex-col gap-4 w-full" // Removed flex-grow
+                className="flex flex-col gap-4 w-full"
                 onSubmit={handleSubmitContacts}
-                noValidate // Prevent browser default validation
+                noValidate
               >
                 <div className="flex flex-col sm:flex-row gap-4">
                   <TextField
@@ -505,16 +482,18 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                 />
                 <TextField
                   label="Phone Number"
-                  placeholder="e.g. +1XXXXXXXXXX"
+                  placeholder="eg. +91 XXXXX XXXXX"
                   value={contactValues.phoneNumber}
                   onChange={(val: string) => {
-                    setContactValues({ ...contactValues, phoneNumber: val });
-                    // Real-time validation feedback (optional but good UX)
+                    setContactValues({
+                      ...contactValues,
+                      phoneNumber: val,
+                    });
+
                     if (val && !isValidE164(val)) {
                       setContactErrors({
                         ...contactErrors,
-                        phoneNumber:
-                          "Phone number format is not valid (e.g., +12223334444)",
+                        phoneNumber: "Contact number not valid",
                       });
                     } else {
                       setContactErrors({ ...contactErrors, phoneNumber: "" });
@@ -542,8 +521,8 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                   onChange={(val: string) =>
                     setContactValues({ ...contactValues, address_line_1: val })
                   }
-                  type={contactErrors.address_line_1 ? "error" : ""} // Added
-                  errorMessage={contactErrors.address_line_1} // Added
+                  type={contactErrors.address_line_1 ? "error" : ""}
+                  errorMessage={contactErrors.address_line_1}
                 />
                 <TextField
                   label="Address Line 2 (Optional)"
@@ -552,7 +531,6 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                   onChange={(val: string) =>
                     setContactValues({ ...contactValues, address_line_2: val })
                   }
-                  // No error props needed as it's optional
                 />
                 <TextField
                   label="City"
@@ -561,8 +539,8 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                   onChange={(val: string) =>
                     setContactValues({ ...contactValues, city: val })
                   }
-                  type={contactErrors.city ? "error" : ""} // Added
-                  errorMessage={contactErrors.city} // Added
+                  type={contactErrors.city ? "error" : ""}
+                  errorMessage={contactErrors.city}
                 />
                 <div className="flex flex-col sm:flex-row gap-4">
                   <TextField
@@ -572,8 +550,8 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                     onChange={(val: string) =>
                       setContactValues({ ...contactValues, state: val })
                     }
-                    type={contactErrors.state ? "error" : ""} // Added
-                    errorMessage={contactErrors.state} // Added
+                    type={contactErrors.state ? "error" : ""}
+                    errorMessage={contactErrors.state}
                   />
                   <TextField
                     label="Postal Code"
@@ -582,8 +560,8 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                     onChange={(val: string) =>
                       setContactValues({ ...contactValues, postal_code: val })
                     }
-                    type={contactErrors.postal_code ? "error" : ""} // Added
-                    errorMessage={contactErrors.postal_code} // Added
+                    type={contactErrors.postal_code ? "error" : ""}
+                    errorMessage={contactErrors.postal_code}
                   />
                 </div>
                 {/* Form Actions */}
@@ -600,9 +578,9 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
             {/* --- Companies Form --- */}
             {view === "companies" && (
               <form
-                className="flex flex-col gap-4 w-full" // Removed flex-grow
+                className="flex flex-col gap-4 w-full"
                 onSubmit={handleSubmitCompanies}
-                noValidate // Prevent browser default validation
+                noValidate
               >
                 <TextField
                   label="Company Name"
@@ -631,16 +609,14 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                   />
                   <TextField
                     label="Company Phone"
-                    placeholder="e.g. +1XXXXXXXXXX"
+                    placeholder="e.g. +91 XXXXX XXXXX"
                     value={companyValues.phoneNumber}
                     onChange={(val: string) => {
                       setCompanyValues({ ...companyValues, phoneNumber: val });
-                      // Real-time validation feedback
                       if (val && !isValidE164(val)) {
                         setCompanyErrors({
                           ...companyErrors,
-                          phoneNumber:
-                            "Phone number format is not valid (e.g., +12223334444)",
+                          phoneNumber: "Company phone invalid",
                         });
                       } else {
                         setCompanyErrors({ ...companyErrors, phoneNumber: "" });
@@ -669,8 +645,8 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                   onChange={(val: string) =>
                     setCompanyValues({ ...companyValues, address_line_1: val })
                   }
-                  type={companyErrors.address_line_1 ? "error" : ""} // Added
-                  errorMessage={companyErrors.address_line_1} // Added
+                  type={companyErrors.address_line_1 ? "error" : ""}
+                  errorMessage={companyErrors.address_line_1}
                 />
                 <TextField
                   label="Address Line 2 (Optional)"
@@ -679,7 +655,6 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                   onChange={(val: string) =>
                     setCompanyValues({ ...companyValues, address_line_2: val })
                   }
-                  // No error props needed
                 />
                 <TextField
                   label="City"
@@ -688,8 +663,8 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                   onChange={(val: string) =>
                     setCompanyValues({ ...companyValues, city: val })
                   }
-                  type={companyErrors.city ? "error" : ""} // Added
-                  errorMessage={companyErrors.city} // Added
+                  type={companyErrors.city ? "error" : ""}
+                  errorMessage={companyErrors.city}
                 />
                 <div className="flex flex-col sm:flex-row gap-4">
                   <TextField
@@ -699,8 +674,8 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                     onChange={(val: string) =>
                       setCompanyValues({ ...companyValues, state: val })
                     }
-                    type={companyErrors.state ? "error" : ""} // Added
-                    errorMessage={companyErrors.state} // Added
+                    type={companyErrors.state ? "error" : ""}
+                    errorMessage={companyErrors.state}
                   />
                   <TextField
                     label="Postal Code"
@@ -709,8 +684,8 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                     onChange={(val: string) =>
                       setCompanyValues({ ...companyValues, postal_code: val })
                     }
-                    type={companyErrors.postal_code ? "error" : ""} // Added
-                    errorMessage={companyErrors.postal_code} // Added
+                    type={companyErrors.postal_code ? "error" : ""}
+                    errorMessage={companyErrors.postal_code}
                   />
                 </div>
 
@@ -887,7 +862,6 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                 className="flex flex-col gap-4 w-full"
                 onSubmit={handleSubmitTasks}
               >
-                {/* Replace these with actual Task fields */}
                 <TextField
                   label="Task Title"
                   placeholder="Name of your task"
@@ -897,12 +871,11 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                   }
                 />
                 <TextField
-                  label="Assigned To / Details" // Example
+                  label="Assigned To / Details"
                   placeholder="e.g., John Doe, Follow up call"
-                  value={taskValues.billTo} // Rename state if needed
-                  onChange={
-                    (val: string) =>
-                      setTaskValues({ ...taskValues, billTo: val }) // Rename state if needed
+                  value={taskValues.billTo}
+                  onChange={(val: string) =>
+                    setTaskValues({ ...taskValues, billTo: val })
                   }
                 />
                 <div className="flex flex-col sm:flex-row gap-4">
@@ -926,9 +899,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                     width="full"
                   />
                 </div>
-                {/* Add other relevant task fields here */}
 
-                {/* Form Actions */}
                 <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
                   <Button
                     text="Cancel"
@@ -939,8 +910,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                 </div>
               </form>
             )}
-          </div>{" "}
-          {/* End Scrollable Content Area */}
+          </div>
         </div>
       </div>
     </div>
