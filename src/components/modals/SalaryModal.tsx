@@ -5,6 +5,7 @@ import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import { API_BASE_URL } from "@/constants/constants";
+import { useSalaryModalPrefill } from "@/hooks/modals";
 
 type PaymentData = {
   payment_id: number;
@@ -46,27 +47,16 @@ const SalaryModal = ({
   const [paymentStatus, setPaymentStatus] = useState("Pending");
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    if (editMode && initialData) {
-      setPaymentDate(initialData.payment_date.slice(0, 10));
-      setSalaryPaid(initialData.salary_paid.toString());
-      setBonus(initialData.bonus.toString());
-      setOvertimePay(initialData.overtime_pay.toString());
-      setHousingAllowance(initialData.housing_allowance.toString());
-      setTravelAllowance(initialData.travel_allowance.toString());
-      setMealAllowance(initialData.meal_allowance.toString());
-      setPaymentStatus(initialData.payment_status);
-    } else {
-      setPaymentDate("");
-      setSalaryPaid("");
-      setBonus("");
-      setOvertimePay("");
-      setHousingAllowance("");
-      setTravelAllowance("");
-      setMealAllowance("");
-      setPaymentStatus("Pending");
-    }
-  }, [editMode, initialData]);
+  useSalaryModalPrefill(editMode, initialData, {
+    setPaymentDate,
+    setSalaryPaid,
+    setBonus,
+    setOvertimePay,
+    setHousingAllowance,
+    setTravelAllowance,
+    setMealAllowance,
+    setPaymentStatus,
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

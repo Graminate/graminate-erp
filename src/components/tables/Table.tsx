@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import Swal from "sweetalert2";
 import SearchBar from "@/components/ui/SearchBar";
 import Button from "@/components/ui/Button";
@@ -55,34 +55,13 @@ const Table = ({
   const [selectAll, setSelectAll] = useState(false);
   const [selectedRows, setSelectedRows] = useState<boolean[]>([]);
   const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const paginatedRows = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     const end = start + itemsPerPage;
     return filteredRows.slice(start, end);
   }, [filteredRows, currentPage, itemsPerPage]);
-
-  useEffect(() => {
-    if (paginatedRows.length > 0) {
-      setSelectedRows(new Array(paginatedRows.length).fill(selectAll));
-    }
-  }, [paginatedRows, selectAll]);
-
-  const dropdownRef = React.useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setShowExportDropdown(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
 
   const selectedRowCount = selectedRows.filter(
     (isSelected) => isSelected
@@ -312,7 +291,7 @@ const Table = ({
                   companies: "companies",
                   contracts: "contracts",
                   receipts: "receipts",
-                  labour: "employees",
+                  labour: "labour",
                   inventory: "inventory",
                   poultry_health: "poultry_health",
                 };

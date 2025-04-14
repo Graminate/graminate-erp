@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import Head from "next/head";
 import FinderBar from "@/components/layout/FinderBar";
 import NavPanel from "@/components/layout/NavPanel";
-import Maps, { MarkerData } from "@/components/others/Maps";
+import Maps, { MarkerData } from "@/components/maps/Maps";
 import PlatformLayout from "@/layout/PlatformLayout";
 import { getCurrentLocation } from "@/lib/utils/loadLocation";
 import Loader from "@/components/ui/Loader";

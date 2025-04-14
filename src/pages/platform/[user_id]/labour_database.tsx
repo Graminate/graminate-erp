@@ -100,6 +100,13 @@ const LabourDatabase = () => {
           </div>
           <div className="flex gap-2">
             <Button
+              text="View Salaries"
+              style="primary"
+              onClick={() =>
+                router.push(`/platform/${parsedUserId}/labour_payment`)
+              }
+            />
+            <Button
               text="Add Employee"
               style="primary"
               add

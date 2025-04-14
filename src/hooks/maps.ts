@@ -1,38 +1,27 @@
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect } from "react";
 import { loadGoogleMaps } from "@/lib/utils/loadLocation";
+import { MarkerData } from "@/components/maps/Maps";
 
-export type MarkerData = {
-  id: string;
-  position: google.maps.LatLngLiteral;
-  title?: string;
-}
-
-type MapsProps = {
+type UseInitializeMapProps = {
   apiKey: string;
-  initialCenter?: google.maps.LatLngLiteral;
-  initialZoom?: number;
-  markers?: MarkerData[];
+  mapContainerRef: React.RefObject<HTMLDivElement>;
+  initialCenter: google.maps.LatLngLiteral;
+  initialZoom: number;
   onStateChange?: (state: {
     center: google.maps.LatLngLiteral;
     zoom: number;
   }) => void;
-}
+  setMap: (map: google.maps.Map) => void;
+};
 
-const DEFAULT_CENTER = { lat: 51.1657, lng: 10.4515 }; 
-const DEFAULT_ZOOM = 6;
-
-const Maps = ({
+export const useInitializeMap = ({
   apiKey,
-  initialCenter = DEFAULT_CENTER,
-  initialZoom = DEFAULT_ZOOM,
-  markers = [],
+  mapContainerRef,
+  initialCenter,
+  initialZoom,
   onStateChange,
-}: MapsProps) => {
-  const mapContainerRef = useRef<HTMLDivElement | null>(null);
-  const [map, setMap] = useState<google.maps.Map | null>(null);
-
-  const markerInstancesRef = useRef<Map<string, google.maps.Marker>>(new Map());
-
+  setMap,
+}: UseInitializeMapProps) => {
   useEffect(() => {
     let isMounted = true;
 
@@ -68,7 +57,6 @@ const Maps = ({
         setMap(newMap);
       } catch (error) {
         console.error("Error loading or initializing Google Maps:", error);
-
         if (mapContainerRef.current) {
           mapContainerRef.current.innerHTML =
             '<p class="text-red-500 text-center p-4">Could not load map.</p>';
@@ -81,44 +69,53 @@ const Maps = ({
     return () => {
       isMounted = false;
     };
-  }, [apiKey, initialCenter, initialZoom, onStateChange]);
+  }, [
+    apiKey,
+    mapContainerRef,
+    initialCenter,
+    initialZoom,
+    onStateChange,
+    setMap,
+  ]);
+};
 
+export const useManageMarkers = (
+  map: google.maps.Map | null,
+  markers: MarkerData[],
+  markerInstancesRef: React.MutableRefObject<Map<string, google.maps.Marker>>
+) => {
   useEffect(() => {
     if (!map) return;
 
     const currentMarkerInstances = markerInstancesRef.current;
     const newMarkerInstances = new Map<string, google.maps.Marker>();
-    const incomingMarkerIds = new Set(markers.map((m) => m.id));
 
     markers.forEach((markerData) => {
       if (currentMarkerInstances.has(markerData.id)) {
-      
         const existingMarker = currentMarkerInstances.get(markerData.id)!;
-
         newMarkerInstances.set(markerData.id, existingMarker);
-        currentMarkerInstances.delete(markerData.id); 
+        currentMarkerInstances.delete(markerData.id);
       } else {
- 
         const newMarker = new google.maps.Marker({
           position: markerData.position,
           map: map,
           title: markerData.title,
-      
         });
         newMarkerInstances.set(markerData.id, newMarker);
       }
     });
 
-    
     currentMarkerInstances.forEach((markerToRemove) => {
-      markerToRemove.setMap(null); 
+      markerToRemove.setMap(null);
     });
 
     markerInstancesRef.current = newMarkerInstances;
-
-    return () => {};
   }, [map, markers]);
+};
 
+export const useClearMarkersOnUnmount = (
+  markerInstancesRef: React.MutableRefObject<Map<string, google.maps.Marker>>
+) => {
   useEffect(() => {
     return () => {
       if (markerInstancesRef.current) {
@@ -129,15 +126,4 @@ const Maps = ({
       }
     };
   }, []);
-
-  return (
-    <div
-      ref={mapContainerRef}
-      id="map"
-      className="w-full h-full"
-      style={{ minHeight: "300px" }}
-    />
-  );
 };
-
-export default Maps;

@@ -1,4 +1,11 @@
+import { useAllRowsSelected } from "@/hooks/tables";
 import React, { useState, useEffect, JSX } from "react";
+
+type FilterTasksFn = (column: {
+  id: string;
+  title: string;
+  tasks: Task[];
+}) => Task[];
 
 type Task = {
   id: string;
@@ -19,7 +26,7 @@ type Header = {
 
 type Props = {
   columns: Column[];
-  filterTasks: (column: Column) => Task[];
+  filterTasks: FilterTasksFn;
   searchQuery: string;
   headers: Header[];
 };
@@ -28,9 +35,7 @@ const ViewTable = ({ columns, filterTasks, searchQuery, headers }: Props) => {
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [isAllSelected, setIsAllSelected] = useState(false);
 
-  useEffect(() => {
-    setIsAllSelected(areAllRowsSelected());
-  }, [selectedRows, columns]);
+  useAllRowsSelected(columns, filterTasks, selectedRows, setIsAllSelected);
 
   const highlightText = (text: string, query: string): JSX.Element | string => {
     if (!query) return text;
@@ -104,7 +109,9 @@ const ViewTable = ({ columns, filterTasks, searchQuery, headers }: Props) => {
       <tbody>
         {hasData ? (
           columns.map((column) =>
-            filterTasks(column).map((task) => (
+            filterTasks(
+              column as { id: string; title: string; tasks: Task[] }
+            ).map((task) => (
               <tr
                 key={task.id}
                 className="cursor-pointer hover:bg-gray-500 dark:hover:bg-gray-700"

@@ -32,7 +32,6 @@ const TaskModal = ({
   useEffect(() => {
     const savedTitle = localStorage.getItem(`task-${taskDetails.id}`);
     if (savedTitle) {
-      // In Svelte, the taskDetails title is updated; here we update our local state.
       setEditedTitle(savedTitle);
     }
   }, [taskDetails.id]);

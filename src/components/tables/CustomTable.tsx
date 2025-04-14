@@ -1,4 +1,3 @@
-import { useState } from "react";
 import Button from "@/components/ui/Button";
 
 type Item = {
@@ -13,7 +12,7 @@ type CustomTableProps = {
   onItemsChange: (newItems: Item[]) => void;
 };
 
-const CustomTable: React.FC<CustomTableProps> = ({ items, onItemsChange }) => {
+const CustomTable = ({ items, onItemsChange }: CustomTableProps) => {
   const addItem = () => {
     const newItems = [
       ...items,
@@ -41,7 +40,6 @@ const CustomTable: React.FC<CustomTableProps> = ({ items, onItemsChange }) => {
 
   return (
     <div>
-      {/* Table */}
       <table className="w-full border-collapse border border-gray-300 dark:border-gray-200 mt-6">
         <thead>
           <tr className="bg-gray-800 text-light">
