@@ -27,7 +27,7 @@ type PaymentRecord = {
   total_amount: number;
   payment_status: string;
   created_at: string;
-}
+};
 
 const LabourPaymentDetails = () => {
   const router = useRouter();
@@ -135,16 +135,17 @@ const LabourPaymentDetails = () => {
     );
   }, [searchQuery, tableData.rows]);
 
-  const goBack = () => {
-    router.push(`/platform/${parsedUserId}/labour_payment`);
-  };
-
   return (
     <PlatformLayout>
       <Head>
         <title>Graminate | Salary Details</title>
       </Head>
-      <Button text="Back" style="ghost" arrow="left" onClick={goBack} />
+      <Button
+        text="Back"
+        style="ghost"
+        arrow="left"
+        onClick={() => router.push(`/platform/${parsedUserId}/labour_payment`)}
+      />
       <div className="min-h-screen container mx-auto px-4">
         <div className="flex flex-row items-start justify-between mt-4">
           <h1 className="text-lg font-semibold dark:text-white">

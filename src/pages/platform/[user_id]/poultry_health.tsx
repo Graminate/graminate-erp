@@ -80,9 +80,7 @@ const PoultryHealth = () => {
     if (!parsedUserId) return;
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/poultry_health/${encodeURIComponent(
-          parsedUserId
-        )}`
+        `${API_BASE_URL}/poultry_health/${encodeURIComponent(parsedUserId)}`
       );
       setHealthRecords(response.data.health || []);
     } catch (error: any) {
@@ -119,10 +117,6 @@ const PoultryHealth = () => {
     return { columns: [], rows: [] };
   }, [healthRecords]);
 
-  const goBack = () => {
-    router.push(`/platform/${parsedUserId}/poultry`);
-  };
-
   return (
     <PlatformLayout>
       <Head>
@@ -134,7 +128,7 @@ const PoultryHealth = () => {
             text=""
             arrow="left"
             style="ghost"
-            onClick={goBack}
+            onClick={() => router.push(`/platform/${parsedUserId}/poultry`)}
             aria-label="Go back"
           />
           <div>

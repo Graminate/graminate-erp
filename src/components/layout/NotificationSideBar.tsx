@@ -1,13 +1,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  faChevronUp,
-  faChevronDown,
-  faTrash,
-  faGear,
-} from "@fortawesome/free-solid-svg-icons";
+import { faTrash, faGear } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import Button from "../ui/Button";
 import {
   DndContext,
   closestCenter,
@@ -107,10 +101,7 @@ const NotificationBar = ({
       <div className="p-4">
         {/* Filter & Actions */}
         <div className="flex items-center justify-between mb-2 relative">
-          <div className="flex space-x-2">
-            {/* Buttons (if any) here */}
-           
-          </div>
+          <div className="flex space-x-2">{/* Buttons (if any) here */}</div>
 
           <div className="flex items-center space-x-2 mb-2">
             <button

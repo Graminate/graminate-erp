@@ -325,10 +325,6 @@ const TasksPage: React.FC = () => {
     setIsAddingColumn(false);
   };
 
-  const goBack = () => {
-    router.back();
-  };
-
   const openTaskModal = (task: Task) => {
     setSelectedTask({ ...task });
     setIsTaskModalOpen(true);
@@ -350,7 +346,12 @@ const TasksPage: React.FC = () => {
     <PlatformLayout>
       <div onClick={handlePageClick} className="min-h-screen p-4">
         <div className="mb-4">
-          <Button text="Back" style="ghost" arrow="left" onClick={goBack} />
+          <Button
+            text="Back"
+            style="ghost"
+            arrow="left"
+            onClick={() => router.back()}
+          />
         </div>
         <div className="p-2 mx-auto">
           <div className="flex justify-between items-center">

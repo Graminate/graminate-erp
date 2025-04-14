@@ -335,10 +335,6 @@ const Budget = () => {
     );
   };
 
-  const goBack = () => {
-    router.back();
-  };
-
   const stepsForProgressCard = useMemo(
     () => budgetData.map((step) => ({ id: step.id, name: step.name })),
     [budgetData]
@@ -362,7 +358,7 @@ const Budget = () => {
                 text=""
                 arrow="left"
                 style="ghost"
-                onClick={goBack}
+                onClick={() => router.back()}
                 aria-label="Go back"
               />
               <h1 className="text-lg font-semibold dark:text-white">
