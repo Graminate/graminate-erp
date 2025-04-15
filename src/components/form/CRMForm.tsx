@@ -77,12 +77,12 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     status: "",
   });
   const [taskValues, setTaskValues] = useState({
-    title: "",
-    billTo: "",
-    amount_paid: "",
-    amount_due: "",
-    due_date: "",
-    status: "",
+    project: "",
+    task: "",
+    status: "To Do",
+    description: "",
+    priority: "",
+    deadline: "",
   });
   const companyType = ["Supplier", "Distributor", "Factories", "Buyer"];
   const [animate, setAnimate] = useState(false);
@@ -372,24 +372,23 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     e.preventDefault();
     const payload = {
       user_id,
-      title: taskValues.title,
-      bill_to: taskValues.billTo,
-      amount_paid: taskValues.amount_paid,
-      amount_due: taskValues.amount_due,
-      due_date: taskValues.due_date,
+      project: taskValues.project,
+      task: taskValues.task,
       status: taskValues.status,
+      description: taskValues.description,
+      priority: taskValues.priority,
+      deadline: taskValues.deadline,
     };
     try {
       const response = await axios.post(`${API_BASE_URL}/tasks/add`, payload);
       console.log("API Response:", response.data);
       setTaskValues({
-        // Make sure state matches task fields
-        title: "",
-        billTo: "",
-        amount_paid: "",
-        amount_due: "",
-        due_date: "",
+        project: "",
+        task: "",
         status: "",
+        description: "",
+        priority: "",
+        deadline: "",
       });
       handleClose();
       window.location.reload();
@@ -846,43 +845,54 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                 onSubmit={handleSubmitTasks}
               >
                 <TextField
-                  label="Task Title"
-                  placeholder="Name of your task"
-                  value={taskValues.title}
+                  label="Project / Category"
+                  placeholder="e.g. Poultry / Animal Husbandry / Apiculture"
+                  value={taskValues.project}
                   onChange={(val: string) =>
-                    setTaskValues({ ...taskValues, title: val })
+                    setTaskValues({ ...taskValues, project: val })
                   }
                 />
-                <TextField
-                  label="Assigned To / Details"
-                  placeholder="e.g., John Doe, Follow up call"
-                  value={taskValues.billTo}
-                  onChange={(val: string) =>
-                    setTaskValues({ ...taskValues, billTo: val })
-                  }
-                />
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <TextField
-                    label="Due Date"
-                    placeholder="YYYY-MM-DD"
-                    value={taskValues.due_date}
-                    onChange={(val: string) =>
-                      setTaskValues({ ...taskValues, due_date: val })
-                    }
-                    calendar
-                  />
-                  <DropdownLarge
-                    items={["Pending", "In Progress", "Completed"]} // Example Task Statuses
-                    selectedItem={taskValues.status}
-                    onSelect={(value: string) =>
-                      setTaskValues({ ...taskValues, status: value })
-                    }
-                    type="form"
-                    label="Status"
-                    width="full"
-                  />
-                </div>
 
+                <TextField
+                  label="Task"
+                  placeholder="Your task here"
+                  value={taskValues.task}
+                  onChange={(val: string) =>
+                    setTaskValues({ ...taskValues, task: val })
+                  }
+                />
+
+                <TextField
+                  label="Description"
+                  placeholder="Optional task description"
+                  value={taskValues.description}
+                  onChange={(val: string) =>
+                    setTaskValues({ ...taskValues, description: val })
+                  }
+                />
+
+                <DropdownLarge
+                  items={["Low", "Medium", "High"]}
+                  selectedItem={taskValues.priority}
+                  onSelect={(value: string) =>
+                    setTaskValues({ ...taskValues, priority: value })
+                  }
+                  type="form"
+                  label="Priority"
+                  width="full"
+                />
+
+                <TextField
+                  label="Deadline"
+                  placeholder="YYYY-MM-DD"
+                  value={taskValues.deadline}
+                  onChange={(val: string) =>
+                    setTaskValues({ ...taskValues, deadline: val })
+                  }
+                  calendar
+                />
+
+                {/* Form Actions */}
                 <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
                   <Button
                     text="Cancel"

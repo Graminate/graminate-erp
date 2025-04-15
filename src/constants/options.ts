@@ -78,19 +78,6 @@ export const FOOTER_LINKS = {
   ],
 };
 
-export const REMINDER_OPTIONS = [
-  "At time of event",
-  "5 minutes before",
-  "10 minutes before",
-  "15 minutes before",
-  "30 minutes before",
-  "1 hour before",
-  "2 hours before",
-  "1 day before",
-  "2 days before",
-  "1 week before",
-];
-
 export const COMPANY_TYPES = ["Supplier", "Distributor", "Factories", "Buyer"];
 export const CONTACT_TYPES = [
   "Supplier",

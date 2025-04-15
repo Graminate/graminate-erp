@@ -1,7 +1,5 @@
 import React from "react";
-import { REMINDER_OPTIONS } from "@/constants/options";
 import ClockPicker from "./ClockPicker";
-import DropdownSmall from "../Dropdown/DropdownSmall";
 import TextField from "../TextField";
 
 type AddTaskViewProps = {
@@ -29,8 +27,6 @@ const AddTaskView = ({
   setIsClockVisible,
   addTask,
   setShowAddTask,
-  selectedReminder,
-  setSelectedReminder,
   isTaskNameValid,
 }: AddTaskViewProps) => {
   const handleAddTaskClick = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -56,6 +52,7 @@ const AddTaskView = ({
 
       <div className="space-y-5">
         <TextField
+          label="Task Name"
           placeholder="Enter task name..."
           value={newTask}
           onChange={setNewTask}
@@ -64,7 +61,30 @@ const AddTaskView = ({
               ? "Task name cannot be empty"
               : ""
           }
-          label="Task Name"
+        />
+
+        <TextField
+          label="Category"
+          placeholder="Enter Category"
+          value={newTask}
+          onChange={setNewTask}
+          errorMessage={
+            !isTaskNameValid && !newTask.trim()
+              ? "Category cannot be empty"
+              : ""
+          }
+        />
+
+        <TextField
+          label="Sub-Category"
+          placeholder="Enter Sub-Category (optional)"
+          value={newTask}
+          onChange={setNewTask}
+          errorMessage={
+            !isTaskNameValid && !newTask.trim()
+              ? "Task name cannot be empty"
+              : ""
+          }
         />
 
         <div className="relative">
@@ -113,13 +133,6 @@ const AddTaskView = ({
           )}
         </div>
 
-        <DropdownSmall
-          items={REMINDER_OPTIONS}
-          label="Reminder / Alert"
-          placeholder="No reminder"
-          selected={selectedReminder}
-          onSelect={(item: string) => setSelectedReminder(item)}
-        />
 
         <div className="flex justify-end space-x-3 pt-4">
           <button

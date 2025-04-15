@@ -230,24 +230,24 @@ const CRM = () => {
         return {
           columns: [
             "ID",
-            "Title",
-            "Crop",
+            "Project / Category",
+            "Task",
             "Status",
-            "Budget",
+            "Description",
+            "Priority",
+            "Deadline",
             "Created On",
-            "End Date",
           ],
-          rows: [
-            [
-              "001",
-              "Summer Farm",
-              "Green Tea",
-              "Active",
-              "40,000",
-              "2024-11-01",
-              "2025-07-01",
-            ],
-          ],
+          rows: fetchedData.map((item) => [
+            item.task_id,
+            item.project,
+            item.task,
+            item.status,
+            item.description,
+            item.priority,
+            item.deadline ? new Date(item.deadline).toDateString() : "",
+            new Date(item.created_on).toDateString(),
+          ]),
         };
       default:
         return { columns: [], rows: [] };

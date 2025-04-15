@@ -180,6 +180,7 @@ const Table = ({
       inventory: "inventory",
       contracts: "contract",
       receipts: "receipt",
+      tasks: "tasks",
     };
 
     const entityToDelete = entityNames[view] || view;
@@ -201,6 +202,7 @@ const Table = ({
         else if (view === "companies") endpoint = "companies";
         else if (view === "contracts") endpoint = "contracts";
         else if (view === "receipts") endpoint = "receipts";
+        else if (view === "tasks") endpoint = "tasks";
         else if (view === "labour") endpoint = "labour";
         else if (view === "poultry_health") endpoint = "poultry_health";
         else endpoint = "inventory";
@@ -291,6 +293,7 @@ const Table = ({
                   companies: "companies",
                   contracts: "contracts",
                   receipts: "receipts",
+                  tasks: "tasks",
                   labour: "labour",
                   inventory: "inventory",
                   poultry_health: "poultry_health",
