@@ -5,9 +5,7 @@ import Button from "@/components/ui/Button";
 import TicketModal from "@/components/modals/TicketModal";
 import TaskModal from "@/components/modals/TaskModal";
 import DropdownFilter from "@/components/ui/Dropdown/DropdownFilter";
-import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
 import SearchBar from "@/components/ui/SearchBar";
-import TextArea from "@/components/ui/TextArea";
 import TextField from "@/components/ui/TextField";
 import PlatformLayout from "@/layout/PlatformLayout";
 import TicketView from "@/components/ui/Switch/TicketView";
@@ -27,501 +25,14 @@ import {
   arrayMove,
   SortableContext,
   horizontalListSortingStrategy,
-  verticalListSortingStrategy,
-  useSortable,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { createPortal } from "react-dom";
 import Head from "next/head";
-
-type Id = string | number;
-
-type Task = {
-  id: Id;
-  columnId: Id;
-  title: string;
-  type: string;
-};
-
-type Column = {
-  id: Id;
-  title: string;
-};
-
-type SortableItemProps = {
-  id: Id;
-  children: React.ReactNode;
-  isColumn?: boolean;
-};
-
-const SortableItem = ({
-  id,
-  children,
-  isColumn = false,
-}: SortableItemProps) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({
-    id,
-    data: {
-      type: isColumn ? "Column" : "Task",
-      item: { id },
-    },
-  });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-    touchAction: "manipulation",
-  };
-
-  return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-      {children}
-    </div>
-  );
-};
-
-type TaskCardProps = {
-  task: Task;
-  openTaskModal: (task: Task) => void;
-  toggleDropdown: (colId: Id, taskId: Id) => void;
-  deleteTask: (taskId: Id) => void;
-  openLabelPopup: (taskId: Id) => void;
-  dropdownOpen: { colId: Id; taskId: Id } | null;
-  isOverlay?: boolean;
-};
-
-const TaskCard = ({
-  task,
-  openTaskModal,
-  toggleDropdown,
-  deleteTask,
-  openLabelPopup,
-  dropdownOpen,
-  isOverlay = false,
-}: TaskCardProps) => {
-  const [isHovering, setIsHovering] = useState(false);
-
-  return (
-    <div
-      className={`bg-white dark:bg-gray-700 p-3 rounded-md shadow relative ${
-        isOverlay ? "cursor-grabbing" : "cursor-pointer"
-      } touch-manipulation`}
-      onMouseEnter={() => !isOverlay && setIsHovering(true)}
-      onMouseLeave={() => !isOverlay && setIsHovering(false)}
-      onClick={(e) => {
-        if (isOverlay) return;
-        const target = e.target as HTMLElement;
-        if (!target.closest('[aria-label="ellipsis"]')) {
-          openTaskModal(task);
-        }
-      }}
-    >
-      <div className="flex justify-between items-start">
-        <p className="text-sm font-medium dark:text-light mr-2 break-words">
-          {task.title}
-        </p>
-        {!isOverlay && isHovering && (
-          <div className="relative flex-shrink-0">
-            <button
-              aria-label="ellipsis"
-              className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-light p-1 rounded"
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleDropdown(task.columnId, task.id);
-              }}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                className="w-5 h-5"
-              >
-                {" "}
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6.75 12a.75.75 0 111.5 0 .75.75 0 01-1.5 0zm5 0a.75.75 0 111.5 0 .75.75 0 01-1.5 0zm5 0a.75.75 0 111.5 0 .75.75 0 01-1.5 0z"
-                />{" "}
-              </svg>
-            </button>
-            {dropdownOpen &&
-              dropdownOpen.colId === task.columnId &&
-              dropdownOpen.taskId === task.id && (
-                <div
-                  className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-800 shadow-lg rounded text-sm text-gray-800 dark:text-light z-20"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <button
-                    className="block hover:bg-gray-100 dark:hover:bg-gray-700 px-4 py-2 rounded-t w-full text-left"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openLabelPopup(task.id);
-                    }}
-                  >
-                    Add label
-                  </button>
-                  <button
-                    className="block hover:bg-gray-100 dark:hover:bg-gray-700 px-4 py-2 rounded-b w-full text-left text-red-600"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      deleteTask(task.id);
-                    }}
-                  >
-                    Delete
-                  </button>
-                </div>
-              )}
-          </div>
-        )}
-      </div>
-      {task.type && (
-        <div className="mt-2 flex flex-wrap gap-1">
-          {task.type.split(",").map((label) =>
-            label.trim() ? (
-              <span
-                key={label.trim()}
-                className="text-xs bg-gray-300 text-light px-2.5 py-1 rounded-full dark:bg-gray-900 dark:text-light"
-              >
-                {label.trim()}
-              </span>
-            ) : null
-          )}
-        </div>
-      )}
-      <div className="flex justify-end mt-1">
-        <span className="text-xs text-dark dark:text-light ">
-          Task-
-          {typeof task.id === "string" && task.id.startsWith("task-")
-            ? task.id.toUpperCase()
-            : task.id}
-        </span>
-      </div>
-    </div>
-  );
-};
-
-type ColumnContainerProps = {
-  column: Column;
-  tasks: Task[];
-  deleteColumn: (id: Id) => void;
-  updateColumnTitle: (id: Id, title: string) => void;
-  openTicketModal: (colId: Id) => void;
-  columnLimits: Record<Id, string>;
-  addTask: (columnId: Id, title: string, type: string) => void;
-  dropdownItems: string[];
-  openTaskModal: (task: Task) => void;
-  toggleDropdown: (colId: Id, taskId: Id) => void;
-  deleteTask: (taskId: Id) => void;
-  openLabelPopup: (taskId: Id) => void;
-  dropdownOpen: { colId: Id; taskId: Id } | null;
-  isOverlay?: boolean;
-};
-
-const ColumnContainer = ({
-  column,
-  tasks,
-  deleteColumn,
-  updateColumnTitle,
-  openTicketModal,
-  columnLimits,
-  addTask,
-  dropdownItems,
-  openTaskModal,
-  toggleDropdown,
-  deleteTask,
-  openLabelPopup,
-  dropdownOpen,
-  isOverlay = false,
-}: ColumnContainerProps) => {
-  const [editMode, setEditMode] = useState(false);
-  const [isAddingTask, setIsAddingTask] = useState(false);
-  const [newTaskTitle, setNewTaskTitle] = useState("");
-  const [newTaskType, setNewTaskType] = useState("");
-  const [columnDropdownOpen, setColumnDropdownOpen] = useState(false);
-
-  const tasksIds = useMemo(() => tasks.map((task) => task.id), [tasks]);
-
-  const toggleColumnDropdownInternal = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setColumnDropdownOpen((prev) => !prev);
-  };
-
-  const handleAddTask = () => {
-    if (!newTaskTitle.trim()) {
-      Swal.fire("Error", "Task title cannot be empty.", "error");
-      return;
-    }
-    addTask(column.id, newTaskTitle, newTaskType);
-    setNewTaskTitle("");
-    setNewTaskType("");
-    setIsAddingTask(false);
-  };
-
-  const columnLimit = columnLimits[column.id]
-    ? parseInt(columnLimits[column.id], 10)
-    : Infinity;
-  const limitExceeded = !isNaN(columnLimit) && tasks.length > columnLimit;
-
-  return (
-    <div
-      className={`bg-gray-500 dark:bg-gray-800 shadow-md rounded-lg p-3 w-[300px] flex-shrink-0 flex flex-col max-h-[calc(100vh-240px)] ${
-        isOverlay ? "opacity-90 cursor-grabbing" : ""
-      }`}
-    >
-      <div className={`flex justify-between items-center mb-3 px-1`}>
-        <div className="flex items-center gap-2 flex-grow min-w-0">
-          {!editMode ? (
-            <h2
-              title={column.title}
-              className="text-sm font-semibold dark:text-light cursor-pointer truncate"
-              onClick={() => !isOverlay && setEditMode(true)}
-            >
-              {column.title}
-            </h2>
-          ) : (
-            <input
-              type="text"
-              value={column.title}
-              onChange={(e) => updateColumnTitle(column.id, e.target.value)}
-              onBlur={() => setEditMode(false)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === "Escape") setEditMode(false);
-              }}
-              autoFocus
-              className="bg-transparent border-b border-gray-400 dark:border-gray-600 focus:outline-none text-sm font-semibold dark:text-light w-full"
-            />
-          )}
-          <span
-            className={`text-xs ${
-              limitExceeded ? "text-light bg-red-200" : "text-light bg-blue-200"
-            } dark:bg-gray-700 rounded-full px-2 py-0.5 flex-shrink-0`}
-          >
-            {tasks.length}
-            {columnLimits[column.id] && ` / ${columnLimits[column.id]}`}
-          </span>
-        </div>
-        {!isOverlay && (
-          <div className="relative flex-shrink-0">
-            <button
-              aria-label="column-ellipsis"
-              className="dark:text-light hover:bg-gray-300 dark:hover:bg-gray-700 rounded p-1"
-              onClick={toggleColumnDropdownInternal}
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                className="w-5 h-5"
-              >
-                {" "}
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6.75 12a.75.75 0 111.5 0 .75.75 0 01-1.5 0zm5 0a.75.75 0 111.5 0 .75.75 0 01-1.5 0zm5 0a.75.75 0 111.5 0 .75.75 0 01-1.5 0z"
-                />{" "}
-              </svg>
-            </button>
-            {columnDropdownOpen && (
-              <div
-                className="absolute right-0 mt-1 bg-white dark:bg-gray-800 w-36 shadow-lg rounded text-sm text-gray-800 dark:text-light z-20"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button
-                  className="block hover:bg-gray-400 dark:hover:bg-gray-700 px-4 py-2 rounded-t w-full text-left"
-                  onClick={() => {
-                    openTicketModal(column.id);
-                    setColumnDropdownOpen(false);
-                  }}
-                >
-                  Set column limit
-                </button>
-                <button
-                  className="block hover:bg-gray-400 dark:hover:bg-gray-700 px-4 py-2 rounded-b w-full text-left text-red-200"
-                  onClick={() => {
-                    deleteColumn(column.id);
-                    setColumnDropdownOpen(false);
-                  }}
-                >
-                  Delete Column
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      <div className="flex-grow overflow-y-auto overflow-x-hidden space-y-3 mb-3 pr-1">
-        <SortableContext
-          items={tasksIds}
-          strategy={verticalListSortingStrategy}
-        >
-          {tasks.map((task) => (
-            <SortableItem key={task.id} id={task.id}>
-              <TaskCard
-                task={task}
-                openTaskModal={openTaskModal}
-                toggleDropdown={toggleDropdown}
-                deleteTask={deleteTask}
-                openLabelPopup={openLabelPopup}
-                dropdownOpen={dropdownOpen}
-              />
-            </SortableItem>
-          ))}
-        </SortableContext>
-      </div>
-
-      {!isOverlay && (
-        <>
-          {isAddingTask ? (
-            <div className="mt-auto p-3 bg-gray-500 dark:bg-gray-700">
-              <div className="border border-gray-300 dark:border-gray-300 rounded-lg">
-                <TextArea
-                  placeholder="What needs to be done?"
-                  value={newTaskTitle}
-                  onChange={setNewTaskTitle}
-                />
-              </div>
-
-              <div className="mt-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                <div className="flex flex-row">
-                  <DropdownSmall
-                    items={dropdownItems}
-                    direction="up"
-                    placeholder="Label (Optional)"
-                    selected={newTaskType}
-                    onSelect={setNewTaskType}
-                  />
-                </div>
-
-                <Button
-                  text="Add"
-                  style="primary"
-                  width="small"
-                  onClick={handleAddTask}
-                />
-                <Button
-                  text="Cancel"
-                  style="ghost"
-                  width="small"
-                  onClick={() => setIsAddingTask(false)}
-                />
-              </div>
-            </div>
-          ) : (
-            <div className="mt-auto pt-2">
-              <Button
-                text="Create Issue"
-                style="primary"
-                add
-                width="large"
-                onClick={() => setIsAddingTask(true)}
-              />
-            </div>
-          )}
-        </>
-      )}
-    </div>
-  );
-};
-
-type TaskListViewProps = {
-  tasks: Task[];
-  columns: Column[];
-  openTaskModal: (task: Task) => void;
-};
-
-const TaskListView: React.FC<TaskListViewProps> = ({
-  tasks,
-  columns,
-  openTaskModal,
-}) => {
-  const getColumnName = (columnId: Id) => {
-    return columns.find((col) => col.id === columnId)?.title || "Unknown";
-  };
-
-  const handleRowClick = (task: Task) => {
-    openTaskModal(task);
-  };
-
-  if (tasks.length === 0) {
-    return (
-      <div className="text-center text-dark dark:text-light py-8">
-        No tasks found matching your filters.
-      </div>
-    );
-  }
-
-  return (
-    <div className="overflow-x-auto relative shadow-md sm:rounded-lg">
-      <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
-        <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
-          <tr>
-            <th scope="col" className="py-3 px-6">
-              ID
-            </th>
-            <th scope="col" className="py-3 px-6">
-              Summary
-            </th>
-            <th scope="col" className="py-3 px-6">
-              Status
-            </th>
-            <th scope="col" className="py-3 px-6">
-              Labels
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {tasks.map((task) => (
-            <tr
-              key={task.id}
-              className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer"
-              onClick={() => handleRowClick(task)}
-            >
-              <th
-                scope="row"
-                className="py-4 px-6 font-medium text-gray-900 whitespace-nowrap dark:text-white"
-              >
-                {task.id}
-              </th>
-              <td className="py-4 px-6 text-dark dark:text-light">
-                {task.title}
-              </td>
-              <td className="py-4 px-6 text-dark dark:text-light">
-                {getColumnName(task.columnId)}
-              </td>
-              <td className="py-4 px-6 text-dark dark:text-light">
-                {task.type
-                  ? task.type.split(",").map((label) =>
-                      label.trim() ? (
-                        <span
-                          key={label.trim()}
-                          className="text-xs bg-gray-300 text-light px-2.5 py-1.5 rounded-full dark:bg-gray-700 dark:text-light mr-1 mb-1 inline-block"
-                        >
-                          {label.trim()}
-                        </span>
-                      ) : null
-                    )
-                  : "None"}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-};
+import { Column, Id, Task } from "@/types/types";
+import TaskListView from "./TaskListView";
+import SortableItem from "./SortableItem";
+import ColumnContainer from "./ColumnContainer";
+import TaskCard from "./TaskCard";
 
 const TasksPage: React.FC = () => {
   const router = useRouter();
@@ -529,10 +40,10 @@ const TasksPage: React.FC = () => {
   const projectTitle =
     typeof router.query.title === "string" ? router.query.title : "";
 
-  // --- Initial State ---
   const initialColumns: Column[] = [
     { id: "todo", title: "TO DO" },
     { id: "progress", title: "IN PROGRESS" },
+    { id: "check", title: "CHECK" },
     { id: "done", title: "DONE" },
   ];
 
@@ -563,7 +74,13 @@ const TasksPage: React.FC = () => {
     },
     {
       id: 5,
-      columnId: "done",
+      columnId: "check",
+      title: "Setup project repository on GitHub",
+      type: "Setup",
+    },
+    {
+      id: 6,
+      columnId: "check",
       title: "Setup project repository on GitHub",
       type: "Setup",
     },
@@ -577,8 +94,8 @@ const TasksPage: React.FC = () => {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
   const [isListView, setIsListView] = useState(false);
-  const [isAddingColumn, setIsAddingColumn] = useState(false);
-  const [newColumnTitle, setNewColumnTitle] = useState("");
+  // const [isAddingColumn, setIsAddingColumn] = useState(false);
+  // const [newColumnTitle, setNewColumnTitle] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState<{
     colId: Id;
     taskId: Id;
@@ -657,51 +174,51 @@ const TasksPage: React.FC = () => {
       .substring(2, 7)}`;
   };
 
-  const addNewColumn = () => {
-    const title = newColumnTitle.trim();
-    if (!title) {
-      Swal.fire("Error", "Column title is required", "error");
-      return;
-    }
-    const newCol: Column = {
-      id: generateId("col"),
-      title: title,
-    };
-    setColumns((prev) => [...prev, newCol]);
-    setNewColumnTitle("");
-    setIsAddingColumn(false);
-  };
+  // const addNewColumn = () => {
+  //   const title = newColumnTitle.trim();
+  //   if (!title) {
+  //     Swal.fire("Error", "Column title is required", "error");
+  //     return;
+  //   }
+  //   const newCol: Column = {
+  //     id: generateId("col"),
+  //     title: title,
+  //   };
+  //   setColumns((prev) => [...prev, newCol]);
+  //   setNewColumnTitle("");
+  //   setIsAddingColumn(false);
+  // };
 
-  const deleteColumn = (id: Id) => {
-    const columnToDelete = columns.find((col) => col.id === id);
-    const tasksInColumn = tasks.filter((task) => task.columnId === id).length;
+  // const deleteColumn = (id: Id) => {
+  //   const columnToDelete = columns.find((col) => col.id === id);
+  //   const tasksInColumn = tasks.filter((task) => task.columnId === id).length;
 
-    Swal.fire({
-      title: `Delete "${columnToDelete?.title}"?`,
-      text: `This column has ${tasksInColumn} task(s). Deleting the column will also delete all its tasks! This cannot be undone.`,
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete it!",
-      cancelButtonText: "Cancel",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setColumns((prev) => prev.filter((col) => col.id !== id));
-        setTasks((prev) => prev.filter((task) => task.columnId !== id));
-        setColumnLimits((prev) => {
-          const newLimits = { ...prev };
-          delete newLimits[id];
-          return newLimits;
-        });
-        Swal.fire(
-          "Deleted!",
-          "Column and its tasks have been deleted.",
-          "success"
-        );
-      }
-    });
-  };
+  //   Swal.fire({
+  //     title: `Delete "${columnToDelete?.title}"?`,
+  //     text: `This column has ${tasksInColumn} task(s). Deleting the column will also delete all its tasks! This cannot be undone.`,
+  //     icon: "warning",
+  //     showCancelButton: true,
+  //     confirmButtonColor: "#d33",
+  //     cancelButtonColor: "#3085d6",
+  //     confirmButtonText: "Yes, delete it!",
+  //     cancelButtonText: "Cancel",
+  //   }).then((result) => {
+  //     if (result.isConfirmed) {
+  //       setColumns((prev) => prev.filter((col) => col.id !== id));
+  //       setTasks((prev) => prev.filter((task) => task.columnId !== id));
+  //       setColumnLimits((prev) => {
+  //         const newLimits = { ...prev };
+  //         delete newLimits[id];
+  //         return newLimits;
+  //       });
+  //       Swal.fire(
+  //         "Deleted!",
+  //         "Column and its tasks have been deleted.",
+  //         "success"
+  //       );
+  //     }
+  //   });
+  // };
 
   const updateColumnTitle = (id: Id, title: string) => {
     setColumns((prev) =>
@@ -875,8 +392,8 @@ const TasksPage: React.FC = () => {
       !target.closest("#add-column-form") &&
       !target.closest('[aria-label="add-column"]')
     ) {
-      setIsAddingColumn(false);
-      setNewColumnTitle("");
+      // setIsAddingColumn(false);
+      // setNewColumnTitle("");
     }
   };
 
@@ -920,7 +437,7 @@ const TasksPage: React.FC = () => {
               ...updatedTasks[activeIndex],
               columnId: overId,
             };
-            return updatedTasks;
+            return arrayMove(updatedTasks, activeIndex, activeIndex);
           });
         }
       } else if (isOverATask) {
@@ -930,12 +447,15 @@ const TasksPage: React.FC = () => {
           setTasks((prevTasks) => {
             const activeIndex = prevTasks.findIndex((t) => t.id === activeId);
             if (activeIndex === -1) return prevTasks;
+            const overIndex = prevTasks.findIndex((t) => t.id === overId);
+            if (overIndex === -1) return prevTasks;
             const updatedTasks = [...prevTasks];
             updatedTasks[activeIndex] = {
               ...updatedTasks[activeIndex],
               columnId: overTask.columnId,
             };
-            return updatedTasks;
+
+            return arrayMove(updatedTasks, activeIndex, overIndex);
           });
         }
       }
@@ -983,13 +503,18 @@ const TasksPage: React.FC = () => {
 
         if (isOverAColumn) {
           newColumnId = overId;
-          const firstTaskInOverColumnIndex = currentTasks.findIndex(
-            (t) => t.columnId === overId
-          );
-          overIndex =
-            firstTaskInOverColumnIndex !== -1
-              ? firstTaskInOverColumnIndex
-              : currentTasks.length;
+          overIndex = currentTasks.findIndex((t) => t.columnId === overId);
+          if (overIndex === -1) {
+            overIndex = currentTasks.length;
+          } else {
+            const firstTaskInOverColumnIndex = currentTasks.findIndex(
+              (t) => t.columnId === overId
+            );
+            overIndex =
+              firstTaskInOverColumnIndex !== -1
+                ? firstTaskInOverColumnIndex
+                : currentTasks.length;
+          }
         } else if (isOverATask) {
           overIndex = currentTasks.findIndex((t) => t.id === overId);
           if (overIndex === -1) return currentTasks;
@@ -1048,7 +573,6 @@ const TasksPage: React.FC = () => {
           onClick={handlePageClick}
           className="min-h-screen p-4 flex flex-col dark:bg-gray-900"
         >
-          {/* Header Section */}
           <div className="mb-4 px-2">
             <Button
               text="Back"
@@ -1074,7 +598,7 @@ const TasksPage: React.FC = () => {
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <div className="w-1/4 flex flex-row items-center gap-2">
+              <div className="flex flex-row items-center gap-2">
                 <DropdownFilter
                   items={dropdownItems}
                   direction="down"
@@ -1110,7 +634,6 @@ const TasksPage: React.FC = () => {
               onDragEnd={onDragEnd}
               onDragOver={onDragOver}
             >
-              {/* This div enables horizontal scrolling for the columns */}
               <div className="flex-grow flex gap-4 overflow-x-auto pb-4 px-2">
                 <SortableContext
                   items={columnsId}
@@ -1125,7 +648,7 @@ const TasksPage: React.FC = () => {
                         <ColumnContainer
                           column={col}
                           tasks={tasksForColumn}
-                          deleteColumn={deleteColumn}
+                          // deleteColumn={deleteColumn}
                           updateColumnTitle={updateColumnTitle}
                           openTicketModal={openTicketModal}
                           columnLimits={columnLimits}
@@ -1141,59 +664,6 @@ const TasksPage: React.FC = () => {
                     );
                   })}
                 </SortableContext>
-
-                {/* Add New Column Button/Form */}
-                <div className="flex-shrink-0 w-[300px]">
-                  {isAddingColumn ? (
-                    <div
-                      id="add-column-form"
-                      className="bg-gray-200 dark:bg-gray-800 shadow-md rounded-lg p-3"
-                    >
-                      <TextField
-                        placeholder="Enter column title..."
-                        value={newColumnTitle}
-                        onChange={setNewColumnTitle}
-                      />
-                      <div className="flex justify-end gap-2 mt-2">
-                        <Button
-                          text="Add Column"
-                          style="primary"
-                          width="small"
-                          onClick={addNewColumn}
-                        />
-                        <Button
-                          text="Cancel"
-                          style="ghost"
-                          width="small"
-                          onClick={() => setIsAddingColumn(false)}
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <button
-                      aria-label="add-column"
-                      className="w-full h-12 bg-gray-500 dark:bg-gray-800 hover:bg-gray-400 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg flex items-center justify-center transition-colors"
-                      onClick={() => setIsAddingColumn(true)}
-                    >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        strokeWidth="2"
-                        stroke="currentColor"
-                        className="w-5 h-5 mr-2"
-                      >
-                        {" "}
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M12 4.5v15m7.5-7.5h-15"
-                        />{" "}
-                      </svg>
-                      Add another list
-                    </button>
-                  )}
-                </div>
               </div>
 
               {isBrowser &&
