@@ -11,6 +11,7 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { API_BASE_URL } from "@/constants/constants";
+import { fetchCsrfToken } from "@/lib/utils/loadCsrf";
 
 type Props = {
   onRowClick?: (row: any[]) => void;
@@ -207,10 +208,17 @@ const Table = ({
         else if (view === "poultry_health") endpoint = "poultry_health";
         else endpoint = "inventory";
 
+        const csrfToken = await fetchCsrfToken();
+
         await Promise.all(
           rowsToDelete.map(async (id) => {
             try {
-              await axios.delete(`${API_BASE_URL}/${endpoint}/delete/${id}`);
+              await axios.delete(`${API_BASE_URL}/${endpoint}/delete/${id}`, {
+                withCredentials: true,
+                headers: {
+                  "X-CSRF-Token": csrfToken,
+                },
+              });
             } catch (error: any) {
               const message =
                 error.response?.data?.error ||
@@ -313,10 +321,15 @@ const Table = ({
                 if (result.isConfirmed) {
                   try {
                     const userId = localStorage.getItem("userId");
+                    const csrfToken = await fetchCsrfToken();
                     await axios.post(
                       `${API_BASE_URL}/${entityToTruncate}/reset`,
+                      { userId },
                       {
-                        userId,
+                        withCredentials: true,
+                        headers: {
+                          "X-CSRF-Token": csrfToken,
+                        },
                       }
                     );
                     Swal.fire(

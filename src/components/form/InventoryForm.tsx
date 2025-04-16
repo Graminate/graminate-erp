@@ -10,6 +10,7 @@ import { faX } from "@fortawesome/free-solid-svg-icons";
 import { SidebarProp } from "@/types/card-props";
 import { API_BASE_URL } from "@/constants/constants";
 import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
+import { fetchCsrfToken } from "@/lib/utils/loadCsrf";
 
 const InventoryForm = ({ onClose, formTitle }: SidebarProp) => {
   const router = useRouter();
@@ -48,7 +49,13 @@ const InventoryForm = ({ onClose, formTitle }: SidebarProp) => {
       price_per_unit: inventoryItem.pricePerUnit,
     };
     try {
-      await axios.post(`${API_BASE_URL}/inventory/add`, payload);
+      const csrfToken = await fetchCsrfToken();
+      await axios.post(`${API_BASE_URL}/inventory/add`, payload, {
+        headers: {
+          "X-CSRF-Token": csrfToken,
+        },
+        withCredentials: true,
+      });
       setInventoryItem({
         itemName: "",
         itemGroup: "",

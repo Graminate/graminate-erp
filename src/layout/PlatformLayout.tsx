@@ -6,7 +6,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import Swal from "sweetalert2";
 import axios, { AxiosError } from "axios";
 import { API_BASE_URL } from "@/constants/constants";
-import ChatWindow from "@/layout/ChatWindow"; // Import the chat window
+import ChatWindow from "@/layout/ChatWindow";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faRobot } from "@fortawesome/free-solid-svg-icons";
 

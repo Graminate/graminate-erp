@@ -13,6 +13,7 @@ import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import { PAYMENT_STATUS } from "@/constants/options";
 import axios from "axios";
 import { API_BASE_URL } from "@/constants/constants";
+import { fetchCsrfToken } from "@/lib/utils/loadCsrf";
 
 type Item = {
   description: string;
@@ -169,9 +170,16 @@ const ReceiptDetails = () => {
     };
 
     try {
+      const csrfToken = await fetchCsrfToken();
       const response = await axios.put(
         `${API_BASE_URL}/receipts/update`,
-        payload
+        payload,
+        {
+          headers: {
+            "X-CSRF-Token": csrfToken,
+          },
+          withCredentials: true,
+        }
       );
 
       triggerToast("Receipt updated successfully", "success");

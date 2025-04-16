@@ -13,6 +13,7 @@ import { LANGUAGES, TIME_FORMAT } from "@/constants/options";
 import axios from "axios";
 import Loader from "@/components/ui/Loader";
 import { API_BASE_URL } from "@/constants/constants";
+import { fetchCsrfToken } from "@/lib/utils/loadCsrf";
 
 const GeneralPage = () => {
   const router = useRouter();
@@ -112,6 +113,7 @@ const GeneralPage = () => {
     setSuccessMessage("");
 
     try {
+      const csrfToken = await fetchCsrfToken();
       await axios.put(
         `${API_BASE_URL}/user/${userId}`,
         {
@@ -123,6 +125,9 @@ const GeneralPage = () => {
         },
         {
           withCredentials: true,
+          headers: {
+            "X-CSRF-Token": csrfToken,
+          },
         }
       );
 
@@ -143,12 +148,9 @@ const GeneralPage = () => {
 
     const fetchUserData = async () => {
       try {
-        const response = await axios.get(
-          `${API_BASE_URL}/user/${userId}`,
-          {
-            withCredentials: true,
-          }
-        );
+        const response = await axios.get(`${API_BASE_URL}/user/${userId}`, {
+          withCredentials: true,
+        });
 
         const data = response.data;
 
