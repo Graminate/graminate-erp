@@ -7,10 +7,10 @@ type Props = {
 
 const TicketView = ({ isListView, toggleView }: Props) => {
   return (
-    <div className="flex items-center space-x-2 hover:bg-gray-400 rounded-md">
+    <div className="flex items-center space-x-2 hover:bg-gray-400 dark:hover:bg-gray-800 rounded-md">
       {/* Kanban View Icon */}
       <button
-        className="p-2 focus:outline-none focus:bg-green-400 focus:text-green-700"
+        className="p-2 focus:outline-none dark:focus:bg-gray-700 focus:bg-gray-300 focus:text-dark dark:focus:text-light rounded-l-md"
         onClick={() => {
           if (isListView) {
             toggleView(false);
@@ -36,7 +36,7 @@ const TicketView = ({ isListView, toggleView }: Props) => {
 
       {/* List View Icon */}
       <button
-        className="p-2 focus:outline-none focus:bg-green-400 focus:text-green-700"
+        className="p-2 focus:outline-none dark:focus:bg-gray-700 focus:bg-gray-300 focus:text-dark dark:focus:text-light rounded-r-md"
         onClick={() => {
           if (!isListView) {
             toggleView(true);

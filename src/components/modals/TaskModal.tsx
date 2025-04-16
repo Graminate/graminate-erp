@@ -9,9 +9,21 @@ type TaskDetails = {
 
 type TaskModalProps = {
   isOpen: boolean;
-  taskDetails: TaskDetails;
-  projectName: string | null;
+  taskDetails: {
+    id: string;
+    columnId: string;
+    title: string;
+    type: string;
+  };
+  projectName: string;
+  availableLabels: string[];
   onClose: () => void;
+  updateTask: (updatedTask: {
+    id: string;
+    title: string;
+    columnId: string;
+    type: string;
+  }) => void;
 };
 
 const TaskModal = ({
@@ -46,7 +58,6 @@ const TaskModal = ({
 
   const saveTitle = () => {
     setIsEditing(false);
-    // If needed, you could also call a callback to update the parent state.
     localStorage.setItem(`task-${taskDetails.id}`, editedTitle);
   };
 
@@ -62,7 +73,7 @@ const TaskModal = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/80 bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 h-[80%] w-[1200px] shadow-lg relative">
         {/* Ellipse Button and Close Button */}
         <div className="absolute top-3 right-3 flex items-center space-x-2">
@@ -153,6 +164,7 @@ const TaskModal = ({
               <p className="text-gray-200 font-bold text-md mb-2">
                 Description
               </p>
+              
               <CustomTextArea
                 placeholder="Add your description here..."
                 value={description}

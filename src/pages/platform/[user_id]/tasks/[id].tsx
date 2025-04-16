@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/router";
 import Swal from "sweetalert2";
 import Button from "@/components/ui/Button";
@@ -9,42 +9,76 @@ import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
 import SearchBar from "@/components/ui/SearchBar";
 import TextArea from "@/components/ui/TextArea";
 import TextField from "@/components/ui/TextField";
-import TicketView from "@/components/ui/Switch/TicketView";
-import ViewTable from "@/components/tables/ViewTable";
 import PlatformLayout from "@/layout/PlatformLayout";
+import TicketView from "@/components/ui/Switch/TicketView";
 
-import { DndContext, closestCenter } from "@dnd-kit/core";
+import {
+  DndContext,
+  DragEndEvent,
+  DragOverEvent,
+  DragOverlay,
+  DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCorners,
+} from "@dnd-kit/core";
 import {
   arrayMove,
   SortableContext,
   horizontalListSortingStrategy,
+  verticalListSortingStrategy,
   useSortable,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { createPortal } from "react-dom";
+import Head from "next/head";
+
+type Id = string | number;
 
 type Task = {
-  id: string;
+  id: Id;
+  columnId: Id;
   title: string;
   type: string;
 };
 
 type Column = {
-  id: string;
+  id: Id;
   title: string;
-  tasks: Task[];
 };
 
-type NotificationProps = {
-  id: string;
+type SortableItemProps = {
+  id: Id;
   children: React.ReactNode;
+  isColumn?: boolean;
 };
 
-const Notification = ({ id, children }: NotificationProps) => {
-  const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({ id });
+const SortableItem = ({
+  id,
+  children,
+  isColumn = false,
+}: SortableItemProps) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id,
+    data: {
+      type: isColumn ? "Column" : "Task",
+      item: { id },
+    },
+  });
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    opacity: isDragging ? 0.5 : 1,
+    touchAction: "manipulation",
   };
 
   return (
@@ -54,113 +88,690 @@ const Notification = ({ id, children }: NotificationProps) => {
   );
 };
 
+type TaskCardProps = {
+  task: Task;
+  openTaskModal: (task: Task) => void;
+  toggleDropdown: (colId: Id, taskId: Id) => void;
+  deleteTask: (taskId: Id) => void;
+  openLabelPopup: (taskId: Id) => void;
+  dropdownOpen: { colId: Id; taskId: Id } | null;
+  isOverlay?: boolean;
+};
+
+const TaskCard = ({
+  task,
+  openTaskModal,
+  toggleDropdown,
+  deleteTask,
+  openLabelPopup,
+  dropdownOpen,
+  isOverlay = false,
+}: TaskCardProps) => {
+  const [isHovering, setIsHovering] = useState(false);
+
+  return (
+    <div
+      className={`bg-white dark:bg-gray-700 p-3 rounded-md shadow relative ${
+        isOverlay ? "cursor-grabbing" : "cursor-pointer"
+      } touch-manipulation`}
+      onMouseEnter={() => !isOverlay && setIsHovering(true)}
+      onMouseLeave={() => !isOverlay && setIsHovering(false)}
+      onClick={(e) => {
+        if (isOverlay) return;
+        const target = e.target as HTMLElement;
+        if (!target.closest('[aria-label="ellipsis"]')) {
+          openTaskModal(task);
+        }
+      }}
+    >
+      <div className="flex justify-between items-start">
+        <p className="text-sm font-medium dark:text-light mr-2 break-words">
+          {task.title}
+        </p>
+        {!isOverlay && isHovering && (
+          <div className="relative flex-shrink-0">
+            <button
+              aria-label="ellipsis"
+              className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-light p-1 rounded"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleDropdown(task.columnId, task.id);
+              }}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth="1.5"
+                stroke="currentColor"
+                className="w-5 h-5"
+              >
+                {" "}
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6.75 12a.75.75 0 111.5 0 .75.75 0 01-1.5 0zm5 0a.75.75 0 111.5 0 .75.75 0 01-1.5 0zm5 0a.75.75 0 111.5 0 .75.75 0 01-1.5 0z"
+                />{" "}
+              </svg>
+            </button>
+            {dropdownOpen &&
+              dropdownOpen.colId === task.columnId &&
+              dropdownOpen.taskId === task.id && (
+                <div
+                  className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-800 shadow-lg rounded text-sm text-gray-800 dark:text-light z-20"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    className="block hover:bg-gray-100 dark:hover:bg-gray-700 px-4 py-2 rounded-t w-full text-left"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openLabelPopup(task.id);
+                    }}
+                  >
+                    Add label
+                  </button>
+                  <button
+                    className="block hover:bg-gray-100 dark:hover:bg-gray-700 px-4 py-2 rounded-b w-full text-left text-red-600"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteTask(task.id);
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
+          </div>
+        )}
+      </div>
+      {task.type && (
+        <div className="mt-2 flex flex-wrap gap-1">
+          {task.type.split(",").map((label) =>
+            label.trim() ? (
+              <span
+                key={label.trim()}
+                className="text-xs bg-gray-300 text-light px-2.5 py-1 rounded-full dark:bg-gray-900 dark:text-light"
+              >
+                {label.trim()}
+              </span>
+            ) : null
+          )}
+        </div>
+      )}
+      <div className="flex justify-end mt-1">
+        <span className="text-xs text-dark dark:text-light ">
+          Task-
+          {typeof task.id === "string" && task.id.startsWith("task-")
+            ? task.id.toUpperCase()
+            : task.id}
+        </span>
+      </div>
+    </div>
+  );
+};
+
+type ColumnContainerProps = {
+  column: Column;
+  tasks: Task[];
+  deleteColumn: (id: Id) => void;
+  updateColumnTitle: (id: Id, title: string) => void;
+  openTicketModal: (colId: Id) => void;
+  columnLimits: Record<Id, string>;
+  addTask: (columnId: Id, title: string, type: string) => void;
+  dropdownItems: string[];
+  openTaskModal: (task: Task) => void;
+  toggleDropdown: (colId: Id, taskId: Id) => void;
+  deleteTask: (taskId: Id) => void;
+  openLabelPopup: (taskId: Id) => void;
+  dropdownOpen: { colId: Id; taskId: Id } | null;
+  isOverlay?: boolean;
+};
+
+const ColumnContainer = ({
+  column,
+  tasks,
+  deleteColumn,
+  updateColumnTitle,
+  openTicketModal,
+  columnLimits,
+  addTask,
+  dropdownItems,
+  openTaskModal,
+  toggleDropdown,
+  deleteTask,
+  openLabelPopup,
+  dropdownOpen,
+  isOverlay = false,
+}: ColumnContainerProps) => {
+  const [editMode, setEditMode] = useState(false);
+  const [isAddingTask, setIsAddingTask] = useState(false);
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [newTaskType, setNewTaskType] = useState("");
+  const [columnDropdownOpen, setColumnDropdownOpen] = useState(false);
+
+  const tasksIds = useMemo(() => tasks.map((task) => task.id), [tasks]);
+
+  const toggleColumnDropdownInternal = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setColumnDropdownOpen((prev) => !prev);
+  };
+
+  const handleAddTask = () => {
+    if (!newTaskTitle.trim()) {
+      Swal.fire("Error", "Task title cannot be empty.", "error");
+      return;
+    }
+    addTask(column.id, newTaskTitle, newTaskType);
+    setNewTaskTitle("");
+    setNewTaskType("");
+    setIsAddingTask(false);
+  };
+
+  const columnLimit = columnLimits[column.id]
+    ? parseInt(columnLimits[column.id], 10)
+    : Infinity;
+  const limitExceeded = !isNaN(columnLimit) && tasks.length > columnLimit;
+
+  return (
+    <div
+      className={`bg-gray-500 dark:bg-gray-800 shadow-md rounded-lg p-3 w-[300px] flex-shrink-0 flex flex-col max-h-[calc(100vh-240px)] ${
+        isOverlay ? "opacity-90 cursor-grabbing" : ""
+      }`}
+    >
+      <div className={`flex justify-between items-center mb-3 px-1`}>
+        <div className="flex items-center gap-2 flex-grow min-w-0">
+          {!editMode ? (
+            <h2
+              title={column.title}
+              className="text-sm font-semibold dark:text-light cursor-pointer truncate"
+              onClick={() => !isOverlay && setEditMode(true)}
+            >
+              {column.title}
+            </h2>
+          ) : (
+            <input
+              type="text"
+              value={column.title}
+              onChange={(e) => updateColumnTitle(column.id, e.target.value)}
+              onBlur={() => setEditMode(false)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === "Escape") setEditMode(false);
+              }}
+              autoFocus
+              className="bg-transparent border-b border-gray-400 dark:border-gray-600 focus:outline-none text-sm font-semibold dark:text-light w-full"
+            />
+          )}
+          <span
+            className={`text-xs ${
+              limitExceeded ? "text-light bg-red-200" : "text-light bg-blue-200"
+            } dark:bg-gray-700 rounded-full px-2 py-0.5 flex-shrink-0`}
+          >
+            {tasks.length}
+            {columnLimits[column.id] && ` / ${columnLimits[column.id]}`}
+          </span>
+        </div>
+        {!isOverlay && (
+          <div className="relative flex-shrink-0">
+            <button
+              aria-label="column-ellipsis"
+              className="dark:text-light hover:bg-gray-300 dark:hover:bg-gray-700 rounded p-1"
+              onClick={toggleColumnDropdownInternal}
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth="1.5"
+                stroke="currentColor"
+                className="w-5 h-5"
+              >
+                {" "}
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6.75 12a.75.75 0 111.5 0 .75.75 0 01-1.5 0zm5 0a.75.75 0 111.5 0 .75.75 0 01-1.5 0zm5 0a.75.75 0 111.5 0 .75.75 0 01-1.5 0z"
+                />{" "}
+              </svg>
+            </button>
+            {columnDropdownOpen && (
+              <div
+                className="absolute right-0 mt-1 bg-white dark:bg-gray-800 w-36 shadow-lg rounded text-sm text-gray-800 dark:text-light z-20"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  className="block hover:bg-gray-400 dark:hover:bg-gray-700 px-4 py-2 rounded-t w-full text-left"
+                  onClick={() => {
+                    openTicketModal(column.id);
+                    setColumnDropdownOpen(false);
+                  }}
+                >
+                  Set column limit
+                </button>
+                <button
+                  className="block hover:bg-gray-400 dark:hover:bg-gray-700 px-4 py-2 rounded-b w-full text-left text-red-200"
+                  onClick={() => {
+                    deleteColumn(column.id);
+                    setColumnDropdownOpen(false);
+                  }}
+                >
+                  Delete Column
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="flex-grow overflow-y-auto overflow-x-hidden space-y-3 mb-3 pr-1">
+        <SortableContext
+          items={tasksIds}
+          strategy={verticalListSortingStrategy}
+        >
+          {tasks.map((task) => (
+            <SortableItem key={task.id} id={task.id}>
+              <TaskCard
+                task={task}
+                openTaskModal={openTaskModal}
+                toggleDropdown={toggleDropdown}
+                deleteTask={deleteTask}
+                openLabelPopup={openLabelPopup}
+                dropdownOpen={dropdownOpen}
+              />
+            </SortableItem>
+          ))}
+        </SortableContext>
+      </div>
+
+      {!isOverlay && (
+        <>
+          {isAddingTask ? (
+            <div className="mt-auto p-3 bg-gray-500 dark:bg-gray-700">
+              <div className="border border-gray-300 dark:border-gray-300 rounded-lg">
+                <TextArea
+                  placeholder="What needs to be done?"
+                  value={newTaskTitle}
+                  onChange={setNewTaskTitle}
+                />
+              </div>
+
+              <div className="mt-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <div className="flex flex-row">
+                  <DropdownSmall
+                    items={dropdownItems}
+                    direction="up"
+                    placeholder="Label (Optional)"
+                    selected={newTaskType}
+                    onSelect={setNewTaskType}
+                  />
+                </div>
+
+                <Button
+                  text="Add"
+                  style="primary"
+                  width="small"
+                  onClick={handleAddTask}
+                />
+                <Button
+                  text="Cancel"
+                  style="ghost"
+                  width="small"
+                  onClick={() => setIsAddingTask(false)}
+                />
+              </div>
+            </div>
+          ) : (
+            <div className="mt-auto pt-2">
+              <Button
+                text="Create Issue"
+                style="primary"
+                add
+                width="large"
+                onClick={() => setIsAddingTask(true)}
+              />
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+};
+
+type TaskListViewProps = {
+  tasks: Task[];
+  columns: Column[];
+  openTaskModal: (task: Task) => void;
+};
+
+const TaskListView: React.FC<TaskListViewProps> = ({
+  tasks,
+  columns,
+  openTaskModal,
+}) => {
+  const getColumnName = (columnId: Id) => {
+    return columns.find((col) => col.id === columnId)?.title || "Unknown";
+  };
+
+  const handleRowClick = (task: Task) => {
+    openTaskModal(task);
+  };
+
+  if (tasks.length === 0) {
+    return (
+      <div className="text-center text-dark dark:text-light py-8">
+        No tasks found matching your filters.
+      </div>
+    );
+  }
+
+  return (
+    <div className="overflow-x-auto relative shadow-md sm:rounded-lg">
+      <table className="w-full text-sm text-left text-gray-500 dark:text-gray-400">
+        <thead className="text-xs text-gray-700 uppercase bg-gray-50 dark:bg-gray-700 dark:text-gray-400">
+          <tr>
+            <th scope="col" className="py-3 px-6">
+              ID
+            </th>
+            <th scope="col" className="py-3 px-6">
+              Summary
+            </th>
+            <th scope="col" className="py-3 px-6">
+              Status
+            </th>
+            <th scope="col" className="py-3 px-6">
+              Labels
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {tasks.map((task) => (
+            <tr
+              key={task.id}
+              className="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer"
+              onClick={() => handleRowClick(task)}
+            >
+              <th
+                scope="row"
+                className="py-4 px-6 font-medium text-gray-900 whitespace-nowrap dark:text-white"
+              >
+                {task.id}
+              </th>
+              <td className="py-4 px-6 text-dark dark:text-light">
+                {task.title}
+              </td>
+              <td className="py-4 px-6 text-dark dark:text-light">
+                {getColumnName(task.columnId)}
+              </td>
+              <td className="py-4 px-6 text-dark dark:text-light">
+                {task.type
+                  ? task.type.split(",").map((label) =>
+                      label.trim() ? (
+                        <span
+                          key={label.trim()}
+                          className="text-xs bg-gray-300 text-light px-2.5 py-1.5 rounded-full dark:bg-gray-700 dark:text-light mr-1 mb-1 inline-block"
+                        >
+                          {label.trim()}
+                        </span>
+                      ) : null
+                    )
+                  : "None"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
+
 const TasksPage: React.FC = () => {
   const router = useRouter();
-  const { user_id, id } = router.query;
+  const { user_id, id: projectId } = router.query;
   const projectTitle =
     typeof router.query.title === "string" ? router.query.title : "";
-  const budget =
-    typeof router.query.budget === "string" ? router.query.budget : "";
 
-  const ProjectStatus = ["Active", "On Hold", "Completed"];
-  const [isListView, setIsListView] = useState(false);
-  const toggleView = (view: boolean) => setIsListView(view);
-
+  // --- Initial State ---
   const initialColumns: Column[] = [
+    { id: "todo", title: "TO DO" },
+    { id: "progress", title: "IN PROGRESS" },
+    { id: "done", title: "DONE" },
+  ];
+
+  const initialTasks: Task[] = [
     {
-      id: "1",
-      title: "TO DO",
-      tasks: [
-        {
-          id: "Task-1",
-          title: "Make Ticket section similar to Jira interface",
-          type: "",
-        },
-      ],
+      id: 1,
+      columnId: "todo",
+      title: "Analyze user requirements for the new dashboard feature",
+      type: "Research",
     },
     {
-      id: "2",
-      title: "IN PROGRESS",
-      tasks: [{ id: "Task-2", title: "Complete CRM entry forms", type: "" }],
+      id: 2,
+      columnId: "todo",
+      title: "Create initial wireframes based on requirements",
+      type: "Design",
     },
     {
-      id: "3",
-      title: "DONE",
-      tasks: [
-        { id: "Task-3", title: "Make landing page for Graminate", type: "" },
-      ],
+      id: 3,
+      columnId: "progress",
+      title: "Develop user authentication module",
+      type: "Dev, Urgent",
+    },
+    {
+      id: 4,
+      columnId: "progress",
+      title: "Set up CI/CD pipeline",
+      type: "DevOps",
+    },
+    {
+      id: 5,
+      columnId: "done",
+      title: "Setup project repository on GitHub",
+      type: "Setup",
     },
   ];
 
   const [columns, setColumns] = useState<Column[]>(initialColumns);
-  const [addingTask, setAddingTask] = useState<number | null>(null);
-  const [editingColumn, setEditingColumn] = useState<number | null>(null);
-  const [dropdownOpen, setDropdownOpen] = useState<{
-    colIndex: number;
-    taskIndex: number;
-  } | null>(null);
-  const [columnDropdownOpen, setColumnDropdownOpen] = useState<number | null>(
-    null
-  );
-  const [isLabelPopupOpen, setIsLabelPopupOpen] = useState(false);
-  const [newLabel, setNewLabel] = useState("");
-  const [selectedTaskId, setSelectedTaskId] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [newTaskTitle, setNewTaskTitle] = useState("");
-  const [newTaskType, setNewTaskType] = useState("");
-  const [totalTaskCount, setTotalTaskCount] = useState(3);
-  const [dropdownItems, setDropdownItems] = useState<string[]>([
-    "Finance",
-    "Maintenance",
-    "Research",
-    "Urgent",
-  ]);
+  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
+
+  const [activeColumn, setActiveColumn] = useState<Column | null>(null);
+  const [activeTask, setActiveTask] = useState<Task | null>(null);
+
+  const [isListView, setIsListView] = useState(false);
   const [isAddingColumn, setIsAddingColumn] = useState(false);
   const [newColumnTitle, setNewColumnTitle] = useState("");
+  const [dropdownOpen, setDropdownOpen] = useState<{
+    colId: Id;
+    taskId: Id;
+  } | null>(null);
+  const [isLabelPopupOpen, setIsLabelPopupOpen] = useState(false);
+  const [selectedTaskIdForLabel, setSelectedTaskIdForLabel] =
+    useState<Id | null>(null);
+  const [newLabel, setNewLabel] = useState("");
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
-  const [activeColumnIndex, setActiveColumnIndex] = useState<number | null>(
-    null
-  );
+  const [activeColumnIdForModal, setActiveColumnIdForModal] =
+    useState<Id | null>(null);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [columnLimits, setColumnLimits] = useState<Record<Id, string>>({});
+
+  const [searchQuery, setSearchQuery] = useState("");
   const [selectedFilterLabels, setSelectedFilterLabels] = useState<string[]>(
     []
   );
-  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<Task>({
-    id: "",
-    title: "",
-    type: "",
+  const [dropdownItems, setDropdownItems] = useState<string[]>(() => {
+    const labelsFromTasks = initialTasks.flatMap((t) =>
+      t.type ? t.type.split(",").map((l) => l.trim()) : []
+    );
+    return [
+      ...new Set([
+        ...labelsFromTasks,
+        "Finance",
+        "Maintenance",
+        "Research",
+        "Urgent",
+        "Design",
+        "Dev",
+        "Setup",
+        "Bug",
+        "DevOps",
+      ]),
+    ].filter(Boolean);
   });
-  const [columnLimits, setColumnLimits] = useState<Record<number, string>>({});
 
-  const filterTasks = (column: Column) =>
-    column.tasks.filter((task) => {
+  const [isBrowser, setIsBrowser] = useState(false);
+  useEffect(() => {
+    setIsBrowser(typeof document !== "undefined");
+  }, []);
+
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((task) => {
       const taskLabels = task.type
-        ? task.type.split(", ").map((l) => l.trim())
+        ? task.type.split(",").map((l) => l.trim().toLowerCase())
         : [];
-      return (
-        (selectedFilterLabels.length === 0 ||
-          selectedFilterLabels.some((label) => taskLabels.includes(label))) &&
-        (!searchQuery.trim() ||
-          task.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          task.id.toLowerCase().includes(searchQuery.toLowerCase()))
+      const filterLabelsLower = selectedFilterLabels.map((l) =>
+        l.toLowerCase()
       );
+      const searchLower = searchQuery.toLowerCase().trim();
+      const labelMatch =
+        filterLabelsLower.length === 0 ||
+        filterLabelsLower.some((label) => taskLabels.includes(label));
+      const searchMatch =
+        !searchLower ||
+        task.title.toLowerCase().includes(searchLower) ||
+        String(task.id).toLowerCase().includes(searchLower);
+      return labelMatch && searchMatch;
     });
+  }, [tasks, searchQuery, selectedFilterLabels]);
 
-  // --- dnd-kit drag handler ---
-  const handleDragEnd = (event: any) => {
-    const { active, over } = event;
-    if (!over) return;
-    if (active.id !== over.id) {
-      const oldIndex = columns.findIndex((col) => col.id === active.id);
-      const newIndex = columns.findIndex((col) => col.id === over.id);
-      setColumns(arrayMove(columns, oldIndex, newIndex));
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    })
+  );
+
+  const generateId = (prefix: string = "item") => {
+    return `${prefix}-${Date.now()}-${Math.random()
+      .toString(36)
+      .substring(2, 7)}`;
+  };
+
+  const addNewColumn = () => {
+    const title = newColumnTitle.trim();
+    if (!title) {
+      Swal.fire("Error", "Column title is required", "error");
+      return;
+    }
+    const newCol: Column = {
+      id: generateId("col"),
+      title: title,
+    };
+    setColumns((prev) => [...prev, newCol]);
+    setNewColumnTitle("");
+    setIsAddingColumn(false);
+  };
+
+  const deleteColumn = (id: Id) => {
+    const columnToDelete = columns.find((col) => col.id === id);
+    const tasksInColumn = tasks.filter((task) => task.columnId === id).length;
+
+    Swal.fire({
+      title: `Delete "${columnToDelete?.title}"?`,
+      text: `This column has ${tasksInColumn} task(s). Deleting the column will also delete all its tasks! This cannot be undone.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete it!",
+      cancelButtonText: "Cancel",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setColumns((prev) => prev.filter((col) => col.id !== id));
+        setTasks((prev) => prev.filter((task) => task.columnId !== id));
+        setColumnLimits((prev) => {
+          const newLimits = { ...prev };
+          delete newLimits[id];
+          return newLimits;
+        });
+        Swal.fire(
+          "Deleted!",
+          "Column and its tasks have been deleted.",
+          "success"
+        );
+      }
+    });
+  };
+
+  const updateColumnTitle = (id: Id, title: string) => {
+    setColumns((prev) =>
+      prev.map((col) => (col.id === id ? { ...col, title: title } : col))
+    );
+  };
+
+  const addTask = (columnId: Id, title: string, type: string) => {
+    const newTask: Task = {
+      id: generateId("task"),
+      columnId,
+      title: title.trim(),
+      type: type.trim() || "",
+    };
+    setTasks((prev) => [...prev, newTask]);
+    const newLabel = type.trim();
+    if (
+      newLabel &&
+      !dropdownItems
+        .map((item) => item.toLowerCase())
+        .includes(newLabel.toLowerCase())
+    ) {
+      setDropdownItems((prev) => [...prev, newLabel].sort());
     }
   };
 
-  // --- Label modal ---
-  const openLabelPopup = (taskId: string) => {
-    setSelectedTaskId(taskId);
+  const deleteTask = (taskId: Id) => {
+    Swal.fire({
+      title: "Delete Task?",
+      text: "Are you sure you want to delete this task?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "Yes, delete",
+      cancelButtonText: "Cancel",
+    }).then((result) => {
+      if (result.isConfirmed) {
+        setTasks((prev) => prev.filter((task) => task.id !== taskId));
+        setDropdownOpen(null);
+      }
+    });
+  };
+
+  const updateTask = (updatedTask: Task) => {
+    setTasks((prev) =>
+      prev.map((task) => (task.id === updatedTask.id ? updatedTask : task))
+    );
+    const labels = updatedTask.type
+      ? updatedTask.type
+          .split(",")
+          .map((l) => l.trim())
+          .filter(Boolean)
+      : [];
+    labels.forEach((label) => {
+      if (
+        !dropdownItems
+          .map((item) => item.toLowerCase())
+          .includes(label.toLowerCase())
+      ) {
+        setDropdownItems((prev) => [...prev, label].sort());
+      }
+    });
+  };
+
+  const openLabelPopup = (taskId: Id) => {
+    setSelectedTaskIdForLabel(taskId);
+    setNewLabel("");
     setIsLabelPopupOpen(true);
+    setDropdownOpen(null);
   };
 
   const toggleLabelPopup = () => {
@@ -168,586 +779,543 @@ const TasksPage: React.FC = () => {
   };
 
   const addLabel = () => {
-    const updatedCols = columns.map((col) => ({
-      ...col,
-      tasks: col.tasks.map((task) => {
-        if (task.id === selectedTaskId) {
+    const labelToAdd = newLabel.trim();
+    if (!labelToAdd || !selectedTaskIdForLabel) return;
+
+    setTasks((prevTasks) =>
+      prevTasks.map((task) => {
+        if (task.id === selectedTaskIdForLabel) {
           const currentLabels = task.type
-            ? task.type.split(", ").map((l) => l.trim())
+            ? task.type
+                .split(",")
+                .map((l) => l.trim())
+                .filter(Boolean)
             : [];
-          if (!currentLabels.includes(newLabel.trim())) {
-            const newType =
-              currentLabels.length > 0
-                ? `${task.type}, ${newLabel.trim()}`
-                : newLabel.trim();
+          if (
+            !currentLabels
+              .map((l) => l.toLowerCase())
+              .includes(labelToAdd.toLowerCase())
+          ) {
+            if (
+              !dropdownItems
+                .map((i) => i.toLowerCase())
+                .includes(labelToAdd.toLowerCase())
+            ) {
+              setDropdownItems((prev) => [...prev, labelToAdd].sort());
+            }
+            const newType = [...currentLabels, labelToAdd].join(", ");
             return { ...task, type: newType };
           }
         }
         return task;
-      }),
-    }));
-    setColumns(updatedCols);
+      })
+    );
+    setNewLabel("");
   };
 
-  // --- Ticket modal ---
-  const openTicketModal = (index: number) => {
+  const openTicketModal = (colId: Id) => {
+    setActiveColumnIdForModal(colId);
     setIsTicketModalOpen(true);
-    setActiveColumnIndex(index);
-    setColumnDropdownOpen(null);
   };
 
   const closeTicketModal = () => {
     setIsTicketModalOpen(false);
-    setActiveColumnIndex(null);
+    setActiveColumnIdForModal(null);
   };
 
   const saveColumnLimit = (limit: string) => {
-    if (activeColumnIndex !== null) {
-      setColumnLimits((prev) => ({
-        ...prev,
-        [activeColumnIndex]: limit.trim(),
-      }));
+    if (activeColumnIdForModal !== null) {
+      const parsedLimit = limit.trim();
+      if (parsedLimit === "" || /^\d+$/.test(parsedLimit)) {
+        setColumnLimits((prev) => ({
+          ...prev,
+          [activeColumnIdForModal]: parsedLimit,
+        }));
+        closeTicketModal();
+      } else {
+        Swal.fire(
+          "Invalid Limit",
+          "Please enter a positive number or leave blank for no limit.",
+          "error"
+        );
+        return;
+      }
+    } else {
+      closeTicketModal();
     }
-    closeTicketModal();
-  };
-
-  // --- Task actions ---
-  const startAddingTask = (index: number) => {
-    setNewTaskTitle("");
-    setNewTaskType("");
-    setAddingTask(index);
-  };
-
-  const addTask = (index: number) => {
-    if (!newTaskTitle.trim()) {
-      Swal.fire({
-        title: "Error",
-        text: "Task title is required",
-        icon: "error",
-        confirmButtonText: "OK",
-      });
-      return;
-    }
-
-    const newId = `Task-${totalTaskCount + 1}`;
-    const newTask: Task = {
-      id: newId,
-      title: newTaskTitle.trim(),
-      type: newTaskType.trim() || "",
-    };
-
-    setColumns((prevColumns) =>
-      prevColumns.map((col, i) =>
-        i === index ? { ...col, tasks: [...col.tasks, newTask] } : col
-      )
-    );
-
-    setTotalTaskCount(totalTaskCount + 1);
-    setAddingTask(null); // Close the input field
-  };
-
-  const deleteTask = (colIndex: number, taskIndex: number) => {
-    setColumns((prev) =>
-      prev.map((col, i) =>
-        i === colIndex
-          ? { ...col, tasks: col.tasks.filter((_, j) => j !== taskIndex) }
-          : col
-      )
-    );
-    setDropdownOpen(null);
-  };
-
-  // --- Column actions ---
-  const deleteColumn = (index: number) => {
-    setColumns((prev) => prev.filter((_, i) => i !== index));
-    setColumnDropdownOpen(null);
-  };
-
-  const toggleDropdown = (colIndex: number, taskIndex: number) => {
-    setDropdownOpen((prev) =>
-      prev && prev.colIndex === colIndex && prev.taskIndex === taskIndex
-        ? null
-        : { colIndex, taskIndex }
-    );
-  };
-
-  const toggleColumnDropdown = (index: number) => {
-    setColumnDropdownOpen((prev) => (prev === index ? null : index));
-  };
-
-  const handlePageClick = (e: React.MouseEvent) => {
-    const target = e.target as HTMLElement;
-    if (!target.closest('[aria-label="column-ellipsis"]')) {
-      setColumnDropdownOpen(null);
-    }
-    setAddingTask(null);
-    setDropdownOpen(null);
-    setEditingColumn(null);
-  };
-
-  const startEditingColumn = (index: number) => {
-    setEditingColumn(index);
-  };
-
-  const saveColumnTitle = (index: number, newTitle: string) => {
-    if (newTitle.trim()) {
-      setColumns((prev) =>
-        prev.map((col, i) =>
-          i === index ? { ...col, title: newTitle.trim() } : col
-        )
-      );
-    }
-    setEditingColumn(null);
-  };
-
-  const addNewColumn = () => {
-    if (!newColumnTitle.trim()) {
-      Swal.fire({
-        title: "Error",
-        text: "Column title is required",
-        icon: "error",
-        confirmButtonText: "OK",
-      });
-      return;
-    }
-    const newCol: Column = {
-      id: `${Date.now()}`,
-      title: newColumnTitle.trim(),
-      tasks: [],
-    };
-    setColumns((prev) => [...prev, newCol]);
-    setNewColumnTitle("");
-    setIsAddingColumn(false);
-  };
-
-  const cancelColumn = () => {
-    setNewColumnTitle("");
-    setIsAddingColumn(false);
   };
 
   const openTaskModal = (task: Task) => {
-    setSelectedTask({ ...task });
+    setSelectedTask(task);
     setIsTaskModalOpen(true);
   };
 
   const closeTaskModal = () => {
     setIsTaskModalOpen(false);
+    setSelectedTask(null);
   };
 
-  const hasTasks = columns.some((col) => col.tasks.length > 0);
-  const headers = [
-    { label: "# Key" },
-    { label: "Summary" },
-    { label: "Status" },
-    { label: "Labels" },
-  ];
+  const toggleDropdown = (colId: Id, taskId: Id) => {
+    setDropdownOpen((prev) =>
+      prev && prev.colId === colId && prev.taskId === taskId
+        ? null
+        : { colId, taskId }
+    );
+  };
+
+  const handlePageClick = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (
+      !target.closest('[aria-label="ellipsis"]') &&
+      !target.closest('.absolute[class*="bg-white"]')
+    ) {
+      setDropdownOpen(null);
+    }
+    if (
+      !target.closest("#add-column-form") &&
+      !target.closest('[aria-label="add-column"]')
+    ) {
+      setIsAddingColumn(false);
+      setNewColumnTitle("");
+    }
+  };
+
+  const onDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    setDropdownOpen(null);
+
+    if (active.data.current?.type === "Column") {
+      setActiveColumn(columns.find((col) => col.id === active.id) || null);
+      setActiveTask(null);
+    } else if (active.data.current?.type === "Task") {
+      setActiveTask(tasks.find((task) => task.id === active.id) || null);
+      setActiveColumn(null);
+    }
+  };
+
+  const onDragOver = (event: DragOverEvent) => {
+    const { active, over } = event;
+    if (!over || !active) return;
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    if (activeId === overId) return;
+
+    const isActiveATask = active.data.current?.type === "Task";
+    const isOverATask = over.data.current?.type === "Task";
+    const isOverAColumn = over.data.current?.type === "Column";
+
+    if (isActiveATask) {
+      const activeTask = tasks.find((t) => t.id === activeId);
+      if (!activeTask) return;
+
+      if (isOverAColumn) {
+        if (activeTask.columnId !== overId) {
+          setTasks((prevTasks) => {
+            const activeIndex = prevTasks.findIndex((t) => t.id === activeId);
+            if (activeIndex === -1) return prevTasks;
+            const updatedTasks = [...prevTasks];
+            updatedTasks[activeIndex] = {
+              ...updatedTasks[activeIndex],
+              columnId: overId,
+            };
+            return updatedTasks;
+          });
+        }
+      } else if (isOverATask) {
+        const overTask = tasks.find((t) => t.id === overId);
+        if (!overTask) return;
+        if (activeTask.columnId !== overTask.columnId) {
+          setTasks((prevTasks) => {
+            const activeIndex = prevTasks.findIndex((t) => t.id === activeId);
+            if (activeIndex === -1) return prevTasks;
+            const updatedTasks = [...prevTasks];
+            updatedTasks[activeIndex] = {
+              ...updatedTasks[activeIndex],
+              columnId: overTask.columnId,
+            };
+            return updatedTasks;
+          });
+        }
+      }
+    }
+  };
+
+  const onDragEnd = (event: DragEndEvent) => {
+    setActiveColumn(null);
+    setActiveTask(null);
+
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const activeId = active.id;
+    const overId = over.id;
+
+    const isActiveAColumn = active.data.current?.type === "Column";
+    const isActiveATask = active.data.current?.type === "Task";
+
+    if (isActiveAColumn) {
+      setColumns((currentColumns) => {
+        const activeColumnIndex = currentColumns.findIndex(
+          (col) => col.id === activeId
+        );
+        const overColumnIndex = currentColumns.findIndex(
+          (col) => col.id === overId
+        );
+        if (activeColumnIndex === -1 || overColumnIndex === -1)
+          return currentColumns;
+        return arrayMove(currentColumns, activeColumnIndex, overColumnIndex);
+      });
+      return;
+    }
+
+    if (isActiveATask) {
+      const isOverATask = over.data.current?.type === "Task";
+      const isOverAColumn = over.data.current?.type === "Column";
+
+      setTasks((currentTasks) => {
+        const activeIndex = currentTasks.findIndex((t) => t.id === activeId);
+        if (activeIndex === -1) return currentTasks;
+
+        let newColumnId = currentTasks[activeIndex].columnId;
+        let overIndex = -1;
+
+        if (isOverAColumn) {
+          newColumnId = overId;
+          const firstTaskInOverColumnIndex = currentTasks.findIndex(
+            (t) => t.columnId === overId
+          );
+          overIndex =
+            firstTaskInOverColumnIndex !== -1
+              ? firstTaskInOverColumnIndex
+              : currentTasks.length;
+        } else if (isOverATask) {
+          overIndex = currentTasks.findIndex((t) => t.id === overId);
+          if (overIndex === -1) return currentTasks;
+          newColumnId = currentTasks[overIndex].columnId;
+        } else {
+          return currentTasks;
+        }
+
+        if (currentTasks[activeIndex].columnId === newColumnId) {
+          if (overIndex === -1) overIndex = activeIndex;
+          return arrayMove(currentTasks, activeIndex, overIndex);
+        } else {
+          const updatedTask = {
+            ...currentTasks[activeIndex],
+            columnId: newColumnId,
+          };
+          const tasksWithoutActive = currentTasks.filter(
+            (t) => t.id !== activeId
+          );
+
+          let finalIndex = tasksWithoutActive.findIndex((t) => t.id === overId);
+          if (isOverAColumn) {
+            finalIndex = tasksWithoutActive.findIndex(
+              (t) => t.columnId === newColumnId
+            );
+            if (finalIndex === -1) finalIndex = tasksWithoutActive.length;
+          } else if (isOverATask) {
+            finalIndex = tasksWithoutActive.findIndex((t) => t.id === overId);
+            if (finalIndex === -1) finalIndex = tasksWithoutActive.length;
+          } else {
+            finalIndex = tasksWithoutActive.length;
+          }
+
+          const finalTasks = [
+            ...tasksWithoutActive.slice(0, finalIndex),
+            updatedTask,
+            ...tasksWithoutActive.slice(finalIndex),
+          ];
+          return finalTasks;
+        }
+      });
+    }
+  };
+
+  const toggleView = (view: boolean) => {
+    setIsListView(view);
+  };
 
   return (
-    <PlatformLayout>
-      <div onClick={handlePageClick} className="min-h-screen p-4">
-        <div className="mb-4">
-          <Button
-            text="Back"
-            style="ghost"
-            arrow="left"
-            onClick={() => router.back()}
-          />
-        </div>
-        <div className="p-2 mx-auto">
-          <div className="flex justify-between items-center">
-            <h2 className="text-md dark:text-light">
-              Project / {projectTitle}
-            </h2>
-            <div className="flex items-center space-x-4">
-              <DropdownSmall
-                items={ProjectStatus}
-                placeholder="Status"
-                selected={ProjectStatus[0]}
-                onSelect={(item) => console.log("Selected:", item)}
-              />
-            </div>
-          </div>
-          <h1 className="text-lg font-bold mt-2 mb-6 dark:text-light">
-            TASK board
-          </h1>
-          <div className="flex justify-between items-center mb-4">
-            <SearchBar
-              mode="table"
-              placeholder="Search Task or ID"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+    <>
+      <Head>
+        <title>Tasks </title>
+      </Head>
+      <PlatformLayout>
+        <div
+          onClick={handlePageClick}
+          className="min-h-screen p-4 flex flex-col dark:bg-gray-900"
+        >
+          {/* Header Section */}
+          <div className="mb-4 px-2">
+            <Button
+              text="Back"
+              style="ghost"
+              arrow="left"
+              onClick={() => router.back()}
             />
-            {hasTasks && (
-              <div className="flex items-center gap-4 ml-auto">
+          </div>
+          <div className="px-2 mb-4">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+              <h2 className="text-md dark:text-light">
+                Project / {projectTitle}
+              </h2>
+            </div>
+            <h1 className="text-lg font-bold mt-2 mb-4 dark:text-light">
+              {isListView ? "Task List" : "Kanban Board"}
+            </h1>
+            <div className="flex flex-col justify-between sm:flex-row items-center mb-4">
+              <div className="w-1/4">
+                <SearchBar
+                  placeholder="Search Task Title or ID"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <div className="w-1/4 flex flex-row items-center gap-2">
                 <DropdownFilter
                   items={dropdownItems}
                   direction="down"
-                  placeholder="Label"
+                  placeholder="Filter Labels"
                   selectedItems={selectedFilterLabels}
                   onChange={setSelectedFilterLabels}
                 />
                 {selectedFilterLabels.length > 0 && (
                   <Button
-                    text="Clear filters"
+                    text="Clear"
                     style="ghost"
+                    width="small"
                     onClick={() => setSelectedFilterLabels([])}
                   />
                 )}
-              </div>
-            )}
-            <TicketView isListView={isListView} toggleView={toggleView} />
-          </div>
-          {isListView ? (
-            <ViewTable
-              headers={headers}
-              columns={columns}
-              filterTasks={filterTasks}
-              searchQuery={searchQuery}
-            />
-          ) : (
-            <DndContext
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={columns.map((col) => col.id)}
-                strategy={horizontalListSortingStrategy}
-              >
-                <div className="flex gap-6 overflow-x-auto pb-2 relative">
-                  {columns.map((column, colIndex) => (
-                    <Notification key={column.id} id={column.id}>
-                      <div className="bg-gray-500 dark:bg-gray-800 shadow rounded-lg p-3 w-[280px] flex-shrink-0 relative">
-                        {/* Column Header */}
-                        <div className="flex justify-between items-center mb-3">
-                          {editingColumn === colIndex ? (
-                            <input
-                              type="text"
-                              className="text-sm dark:text-light border-b border-gray-300 w-full focus:outline-none"
-                              value={column.title}
-                              onChange={(e) => {
-                                const updatedTitle = e.target.value;
-                                setColumns((prev) =>
-                                  prev.map((col, i) =>
-                                    i === colIndex
-                                      ? { ...col, title: updatedTitle }
-                                      : col
-                                  )
-                                );
-                              }}
-                              onBlur={() =>
-                                saveColumnTitle(colIndex, column.title)
-                              }
-                            />
-                          ) : (
-                            <h2
-                              className="text-sm font-semibold cursor-pointer"
-                              onClick={() => startEditingColumn(colIndex)}
-                            >
-                              {column.title}{" "}
-                              {columnLimits[colIndex] && (
-                                <span className="text-xs bg-gray-300 rounded p-1 ml-2">
-                                  MAX: {columnLimits[colIndex]}
-                                </span>
-                              )}
-                            </h2>
-                          )}
-                          {/* Column Triple Dot */}
-                          <div className="relative">
-                            <button
-                              aria-label="column-ellipsis"
-                              className="dark:text-light"
-                              onClick={() => toggleColumnDropdown(colIndex)}
-                            >
-                              <svg
-                                xmlns="http://www.w3.org/2000/svg"
-                                fill="none"
-                                viewBox="0 0 24 24"
-                                strokeWidth="1.5"
-                                stroke="currentColor"
-                                className="w-5 h-5"
-                              >
-                                <path
-                                  strokeLinecap="round"
-                                  strokeLinejoin="round"
-                                  d="M6.75 12a.75.75 0 111.5 0 .75.75 0 01-1.5 0zm5 0a.75.75 0 111.5 0 .75.75 0 01-1.5 0zm5 0a.75.75 0 111.5 0 .75.75 0 01-1.5 0z"
-                                />
-                              </svg>
-                            </button>
-                            {columnDropdownOpen === colIndex && (
-                              <div
-                                className="absolute right-0 bg-white w-36 shadow rounded text-sm text-gray-800 z-10"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <button
-                                  className="hover:bg-gray-200 px-4 py-2 rounded w-full text-left"
-                                  onClick={() => openTicketModal(colIndex)}
-                                >
-                                  Set column limit
-                                </button>
-                                <button
-                                  className="hover:bg-gray-200 px-4 py-2 rounded w-full text-left"
-                                  onClick={() => deleteColumn(colIndex)}
-                                >
-                                  Delete
-                                </button>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                        {/* Tasks */}
-                        <div className="space-y-3">
-                          {filterTasks(column).map((task, taskIndex) => (
-                            <div
-                              key={task.id}
-                              className="bg-white dark:bg-gray-700 p-3 rounded-md shadow relative cursor-pointer"
-                              onClick={(e) => {
-                                const target = e.target as HTMLElement;
-                                // Prevent modal from opening if clicking inside the triple-dot button or dropdown
-                                if (
-                                  !target.closest("[aria-label='ellipsis']")
-                                ) {
-                                  openTaskModal(task);
-                                }
-                              }}
-                            >
-                              <div className="flex justify-between">
-                                <p className="text-sm font-medium">
-                                  {task.title}
-                                </p>
-                                {/* Task Triple Dot */}
-                                <div className="relative">
-                                  <button
-                                    aria-label="ellipsis"
-                                    onClick={(e) => {
-                                      e.stopPropagation(); // Prevents modal from opening when clicking this button
-                                      toggleDropdown(colIndex, taskIndex);
-                                    }}
-                                  >
-                                    <svg
-                                      xmlns="http://www.w3.org/2000/svg"
-                                      fill="none"
-                                      viewBox="0 0 24 24"
-                                      strokeWidth="1.5"
-                                      stroke="currentColor"
-                                      className="w-5 h-5"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        d="M6.75 12a.75.75 0 111.5 0 .75.75 0 01-1.5 0zm5 0a.75.75 0 111.5 0 .75.75 0 01-1.5 0zm5 0a.75.75 0 111.5 0 .75.75 0 01-1.5 0z"
-                                      />
-                                    </svg>
-                                  </button>
-                                  {dropdownOpen &&
-                                    dropdownOpen.colIndex === colIndex &&
-                                    dropdownOpen.taskIndex === taskIndex && (
-                                      <div
-                                        className="absolute right-0 w-32 bg-white shadow rounded text-sm text-gray-800 z-10"
-                                        onClick={(e) => e.stopPropagation()} // Prevents dropdown click from closing modal
-                                      >
-                                        <button
-                                          className="hover:bg-gray-200 px-4 py-1 rounded w-full text-left"
-                                          onClick={() =>
-                                            openLabelPopup(task.id)
-                                          }
-                                        >
-                                          Add label
-                                        </button>
-                                        <button
-                                          className="hover:bg-gray-200 px-4 py-1 rounded w-full text-left"
-                                          onClick={() =>
-                                            deleteTask(colIndex, taskIndex)
-                                          }
-                                        >
-                                          Delete
-                                        </button>
-                                      </div>
-                                    )}
-                                </div>
-                              </div>
 
-                              <div className="flex justify-end">
-                                <span className="text-xs text-gray-500">
-                                  {task.id}
-                                </span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                        {addingTask === colIndex ? (
-                          <div className="mt-2 p-3 rounded-lg bg-gray-100 dark:bg-gray-800 shadow">
-                            <TextArea
-                              placeholder="What needs to be done?"
-                              value={newTaskTitle}
-                              onChange={setNewTaskTitle}
-                            />
-                            <div className="mt-3 flex flex-col md:flex-row items-center gap-3">
-                              <DropdownSmall
-                                items={dropdownItems}
-                                direction="up"
-                                placeholder="Task Type"
-                                selected={newTaskType}
-                                onSelect={setNewTaskType}
-                              />
-                              <Button
-                                text="Create"
-                                style="secondary"
-                                onClick={() => addTask(colIndex)}
-                              />
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="mt-4">
-                            <Button
-                              text="Create Issue"
-                              style="primary"
-                              onClick={() => {
-                                setAddingTask(colIndex);
-                                setNewTaskTitle("");
-                                setNewTaskType("");
-                              }}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    </Notification>
-                  ))}
-                  <div className="flex flex-col items-center justify-center">
-                    {isAddingColumn ? (
-                      <div className="w-[280px] bg-gray-500 dark:bg-gray-800 shadow rounded-lg p-3">
-                        <TextField
-                          placeholder="Column title"
-                          value={newColumnTitle}
-                          onChange={setNewColumnTitle}
-                        />
-                        <div className="flex justify-end gap-2 mt-2">
-                          <button
-                            aria-label="create-column"
-                            className="bg-green-500 text-white p-1 rounded"
-                            onClick={addNewColumn}
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              strokeWidth="2"
-                              stroke="currentColor"
-                              className="w-5 h-5"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M5 13l4 4L19 7"
-                              />
-                            </svg>
-                          </button>
-                          <button
-                            aria-label="cancel-column"
-                            className="bg-red-500 text-white p-1 rounded"
-                            onClick={cancelColumn}
-                          >
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              strokeWidth="2"
-                              stroke="currentColor"
-                              className="w-5 h-5"
-                            >
-                              <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                d="M6 18L18 6M6 6l12 12"
-                              />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <button
-                        aria-label="add-column"
-                        className="bg-gray-300 dark:bg-gray-700 text-white p-2 rounded-lg"
-                        onClick={() => setIsAddingColumn(true)}
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth="2"
-                          stroke="currentColor"
-                          className="w-6 h-6"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M12 4.5v15m7.5-7.5h-15"
-                          />
-                        </svg>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </SortableContext>
-            </DndContext>
-          )}
-        </div>
-        {isLabelPopupOpen && (
-          <div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) toggleLabelPopup();
-            }}
-          >
-            <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-96 shadow-lg">
-              <h3 className="text-lg font-bold text-gray-800 dark:text-light">
-                Add labels to {selectedTaskId}
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
-                Begin typing to find and create labels
-              </p>
-              <div className="mt-4">
-                <TextField
-                  placeholder="Labels"
-                  value={newLabel}
-                  onChange={setNewLabel}
-                />
-              </div>
-              <div className="flex justify-end gap-3 mt-6">
-                <Button
-                  text="Cancel"
-                  style="ghost"
-                  onClick={toggleLabelPopup}
-                />
-                <Button
-                  text="Done"
-                  style="primary"
-                  isDisabled={!newLabel.trim()}
-                  onClick={() => {
-                    addLabel();
-                    toggleLabelPopup();
-                  }}
-                />
+                <TicketView isListView={isListView} toggleView={toggleView} />
               </div>
             </div>
           </div>
-        )}
-        <TicketModal
-          isOpen={isTicketModalOpen}
-          columnName={
-            activeColumnIndex !== null ? columns[activeColumnIndex].title : ""
-          }
-          currentLimit="No limit set"
-          onSave={saveColumnLimit}
-          onCancel={closeTicketModal}
-        />
-        <TaskModal
-          isOpen={isTaskModalOpen}
-          taskDetails={selectedTask}
-          projectName={projectTitle}
-          onClose={closeTaskModal}
-        />
-      </div>
-    </PlatformLayout>
+
+          {isListView ? (
+            <TaskListView
+              tasks={filteredTasks}
+              columns={columns}
+              openTaskModal={openTaskModal}
+            />
+          ) : (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCorners}
+              onDragStart={onDragStart}
+              onDragEnd={onDragEnd}
+              onDragOver={onDragOver}
+            >
+              {/* This div enables horizontal scrolling for the columns */}
+              <div className="flex-grow flex gap-4 overflow-x-auto pb-4 px-2">
+                <SortableContext
+                  items={columnsId}
+                  strategy={horizontalListSortingStrategy}
+                >
+                  {columns.map((col) => {
+                    const tasksForColumn = filteredTasks.filter(
+                      (task) => task.columnId === col.id
+                    );
+                    return (
+                      <SortableItem key={col.id} id={col.id} isColumn>
+                        <ColumnContainer
+                          column={col}
+                          tasks={tasksForColumn}
+                          deleteColumn={deleteColumn}
+                          updateColumnTitle={updateColumnTitle}
+                          openTicketModal={openTicketModal}
+                          columnLimits={columnLimits}
+                          addTask={addTask}
+                          dropdownItems={dropdownItems}
+                          openTaskModal={openTaskModal}
+                          toggleDropdown={toggleDropdown}
+                          deleteTask={deleteTask}
+                          openLabelPopup={openLabelPopup}
+                          dropdownOpen={dropdownOpen}
+                        />
+                      </SortableItem>
+                    );
+                  })}
+                </SortableContext>
+
+                {/* Add New Column Button/Form */}
+                <div className="flex-shrink-0 w-[300px]">
+                  {isAddingColumn ? (
+                    <div
+                      id="add-column-form"
+                      className="bg-gray-200 dark:bg-gray-800 shadow-md rounded-lg p-3"
+                    >
+                      <TextField
+                        placeholder="Enter column title..."
+                        value={newColumnTitle}
+                        onChange={setNewColumnTitle}
+                      />
+                      <div className="flex justify-end gap-2 mt-2">
+                        <Button
+                          text="Add Column"
+                          style="primary"
+                          width="small"
+                          onClick={addNewColumn}
+                        />
+                        <Button
+                          text="Cancel"
+                          style="ghost"
+                          width="small"
+                          onClick={() => setIsAddingColumn(false)}
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      aria-label="add-column"
+                      className="w-full h-12 bg-gray-500 dark:bg-gray-800 hover:bg-gray-400 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-lg flex items-center justify-center transition-colors"
+                      onClick={() => setIsAddingColumn(true)}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        strokeWidth="2"
+                        stroke="currentColor"
+                        className="w-5 h-5 mr-2"
+                      >
+                        {" "}
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          d="M12 4.5v15m7.5-7.5h-15"
+                        />{" "}
+                      </svg>
+                      Add another list
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {isBrowser &&
+                createPortal(
+                  <DragOverlay dropAnimation={null}>
+                    {activeColumn && (
+                      <ColumnContainer
+                        column={activeColumn}
+                        tasks={tasks.filter(
+                          (t) => t.columnId === activeColumn.id
+                        )}
+                        deleteColumn={() => {}}
+                        updateColumnTitle={() => {}}
+                        openTicketModal={() => {}}
+                        columnLimits={columnLimits}
+                        addTask={() => {}}
+                        dropdownItems={dropdownItems}
+                        openTaskModal={() => {}}
+                        toggleDropdown={() => {}}
+                        deleteTask={() => {}}
+                        openLabelPopup={() => {}}
+                        dropdownOpen={null}
+                        isOverlay={true}
+                      />
+                    )}
+                    {activeTask && (
+                      <TaskCard
+                        task={activeTask}
+                        openTaskModal={() => {}}
+                        toggleDropdown={() => {}}
+                        deleteTask={() => {}}
+                        openLabelPopup={() => {}}
+                        dropdownOpen={null}
+                        isOverlay={true}
+                      />
+                    )}
+                  </DragOverlay>,
+                  document.body
+                )}
+            </DndContext>
+          )}
+
+          {isLabelPopupOpen && selectedTaskIdForLabel && (
+            <div
+              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) toggleLabelPopup();
+              }}
+            >
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md shadow-lg mx-4">
+                <h3 className="text-lg font-bold text-gray-800 dark:text-light">
+                  Add labels to task{" "}
+                  {typeof selectedTaskIdForLabel === "string" &&
+                  selectedTaskIdForLabel.startsWith("task-")
+                    ? selectedTaskIdForLabel.toUpperCase()
+                    : selectedTaskIdForLabel}
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 mb-4">
+                  Current labels:{" "}
+                  {tasks.find((t) => t.id === selectedTaskIdForLabel)?.type ||
+                    "None"}
+                </p>
+                <div className="mt-4 flex gap-2">
+                  <div className="flex-grow">
+                    <TextField
+                      placeholder="New label name"
+                      value={newLabel}
+                      onChange={setNewLabel}
+                    />
+                  </div>
+                  <Button
+                    text="Add"
+                    style="secondary"
+                    isDisabled={!newLabel.trim()}
+                    onClick={addLabel}
+                  />
+                </div>
+                <div className="flex justify-end gap-3 mt-6">
+                  <Button
+                    text="Done"
+                    style="primary"
+                    onClick={toggleLabelPopup}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          <TicketModal
+            isOpen={isTicketModalOpen}
+            columnName={
+              activeColumnIdForModal
+                ? columns.find((c) => c.id === activeColumnIdForModal)?.title ??
+                  ""
+                : ""
+            }
+            currentLimit={
+              activeColumnIdForModal
+                ? columnLimits[activeColumnIdForModal] || ""
+                : ""
+            }
+            onSave={saveColumnLimit}
+            onCancel={closeTicketModal}
+          />
+
+          {selectedTask && (
+            <TaskModal
+              isOpen={isTaskModalOpen}
+              taskDetails={{
+                ...selectedTask,
+                id: String(selectedTask.id),
+                columnId: String(selectedTask.columnId),
+              }}
+              updateTask={updateTask}
+              projectName={projectTitle}
+              availableLabels={dropdownItems}
+              onClose={closeTaskModal}
+            />
+          )}
+        </div>
+      </PlatformLayout>
+    </>
   );
 };
 
