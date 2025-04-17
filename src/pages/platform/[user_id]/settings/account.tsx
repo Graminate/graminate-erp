@@ -8,7 +8,6 @@ import axios from "axios";
 import { API_BASE_URL } from "@/constants/constants";
 import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
-import { fetchCsrfToken } from "@/lib/utils/loadCsrf";
 
 type ModalType = "confirmDelete" | "password" | "info" | null;
 type InfoModalContent = {
@@ -51,12 +50,13 @@ const AccountPage = () => {
   const closeModal = () => {
     const wasSuccess = infoModalContent.type === "success";
     setActiveModal(null);
-    setInfoModalContent({ title: "", message: "", type: "success" });
+    setInfoModalContent({ title: "", message: "", type: "success" }); 
 
     if (wasSuccess) {
       sessionStorage.setItem("accountJustDeleted", "true");
       router.push("/");
     }
+   
   };
 
   const handleInitiateDelete = () => {
@@ -76,21 +76,12 @@ const AccountPage = () => {
     }
     setIsVerifying(true);
     setPasswordError("");
-
     try {
-      const csrfToken = await fetchCsrfToken();
-
       const response = await axios.post(
         `${API_BASE_URL}/user/verify-password/${userId}`,
         { password },
-        {
-          withCredentials: true,
-          headers: {
-            "X-CSRF-Token": csrfToken,
-          },
-        }
+        { withCredentials: true }
       );
-
       if (response.data.valid) {
         setActiveModal(null);
         await performAccountDeletion();
@@ -108,20 +99,11 @@ const AccountPage = () => {
   const performAccountDeletion = async () => {
     if (!userId) return;
     setIsDeleting(true);
-
     try {
-      const csrfToken = await fetchCsrfToken();
-
       const deleteResponse = await axios.delete(
         `${API_BASE_URL}/user/delete/${userId}`,
-        {
-          withCredentials: true,
-          headers: {
-            "X-CSRF-Token": csrfToken,
-          },
-        }
+        { withCredentials: true }
       );
-
       if (deleteResponse.status === 200) {
         openModal("info", {
           title: "Deleted!",
@@ -129,7 +111,9 @@ const AccountPage = () => {
           type: "success",
         });
       } else {
-        throw new Error("Deletion request failed");
+        throw new Error(
+          "Deletion request failed with status: " + deleteResponse.status
+        );
       }
     } catch (err) {
       console.error("Failed to delete account", err);
@@ -259,6 +243,7 @@ const AccountPage = () => {
                 Account Settings
               </h1>
               <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
+
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                   <div className="flex-grow">
                     <p className="font-semibold text-dark dark:text-light">

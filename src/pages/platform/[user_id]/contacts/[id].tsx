@@ -10,7 +10,6 @@ import Loader from "@/components/ui/Loader";
 import axios from "axios";
 import Head from "next/head";
 import { API_BASE_URL } from "@/constants/constants";
-import { fetchCsrfToken } from "@/lib/utils/loadCsrf";
 
 const ContactDetails = () => {
   const router = useRouter();
@@ -124,16 +123,9 @@ const ContactDetails = () => {
     };
 
     try {
-      const csrfToken = await fetchCsrfToken();
       const response = await axios.put(
         `${API_BASE_URL}/contacts/update`,
-        payload,
-        {
-          headers: {
-            "X-CSRF-Token": csrfToken,
-          },
-          withCredentials: true,
-        }
+        payload
       );
 
       console.log("Response from API:", response.data);

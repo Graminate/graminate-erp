@@ -7,7 +7,6 @@ import Head from "next/head";
 import Swal from "sweetalert2";
 import FirstLoginModal from "@/components/modals/FirstLoginModal";
 import { API_BASE_URL } from "@/constants/constants";
-import { fetchCsrfToken } from "@/lib/utils/loadCsrf";
 
 type User = {
   user_id: string;
@@ -98,29 +97,19 @@ const Dashboard = () => {
     subType?: string[]
   ) => {
     try {
-      const csrfToken = await fetchCsrfToken();
       await axios.put(
         `${API_BASE_URL}/user/${userId}`,
-        {
-          business_name: businessName,
-          type: businessType,
-          sub_type: subType,
-        },
-        {
-          withCredentials: true,
-          headers: {
-            "X-CSRF-Token": csrfToken,
-          },
-        }
+        { business_name: businessName, type: businessType, sub_type: subType },
+        { withCredentials: true }
       );
-
       await Swal.fire({
         title: "Welcome!",
-        text: "Your account is now set up. Let’s get started",
+        text: "Your account is now set up. Let’s get started 🚀",
         icon: "success",
         confirmButtonText: "Ok",
+      }).then(() => {
+        window.location.reload();
       });
-
       setUserData((prev) =>
         prev
           ? {
@@ -131,9 +120,7 @@ const Dashboard = () => {
             }
           : prev
       );
-
       setIsSetupModalOpen(false);
-      window.location.reload(); // Refresh to apply new user role state
     } catch (error: any) {
       console.error("Error updating business info:", error);
       Swal.fire({

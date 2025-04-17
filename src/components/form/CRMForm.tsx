@@ -10,7 +10,6 @@ import { faX } from "@fortawesome/free-solid-svg-icons";
 import { SidebarProp } from "@/types/card-props";
 import { API_BASE_URL } from "@/constants/constants";
 import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
-import { fetchCsrfToken } from "@/lib/utils/loadCsrf";
 
 const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
   const router = useRouter();
@@ -196,11 +195,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       postal_code: contactValues.postal_code,
     };
     try {
-      const csrf = await fetchCsrfToken();
-      await axios.post(`${API_BASE_URL}/contacts/add`, payload, {
-        headers: { "X-CSRF-Token": csrf },
-        withCredentials: true,
-      });
+      await axios.post(`${API_BASE_URL}/contacts/add`, payload);
       setContactValues({
         firstName: "",
         lastName: "",
@@ -267,11 +262,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       postal_code: companyValues.postal_code,
     };
     try {
-      const csrf = await fetchCsrfToken();
-      await axios.post(`${API_BASE_URL}/companies/add`, payload, {
-        headers: { "X-CSRF-Token": csrf },
-        withCredentials: true,
-      });
+      await axios.post(`${API_BASE_URL}/companies/add`, payload);
       setCompanyValues({
         companyName: "",
         companyOwner: "",
@@ -315,11 +306,11 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       end_date: contractsValues.contractEndDate,
     };
     try {
-      const csrf = await fetchCsrfToken();
-      await axios.post(`${API_BASE_URL}/contracts/add`, payload, {
-        headers: { "X-CSRF-Token": csrf },
-        withCredentials: true,
-      });
+      const response = await axios.post(
+        `${API_BASE_URL}/contracts/add`,
+        payload
+      );
+      console.log("API Response:", response.data);
       setContractsValues({
         dealName: "",
         dealPartner: "",
@@ -352,11 +343,11 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       status: receiptsValues.status,
     };
     try {
-      const csrf = await fetchCsrfToken();
-      await axios.post(`${API_BASE_URL}/receipts/add`, payload, {
-        headers: { "X-CSRF-Token": csrf },
-        withCredentials: true,
-      });
+      const response = await axios.post(
+        `${API_BASE_URL}/receipts/add`,
+        payload
+      );
+      console.log("API Response:", response.data);
       setReceiptsValues({
         title: "",
         billTo: "",
@@ -389,11 +380,8 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       deadline: taskValues.deadline,
     };
     try {
-      const csrf = await fetchCsrfToken();
-      await axios.post(`${API_BASE_URL}/tasks/add`, payload, {
-        headers: { "X-CSRF-Token": csrf },
-        withCredentials: true,
-      });
+      const response = await axios.post(`${API_BASE_URL}/tasks/add`, payload);
+      console.log("API Response:", response.data);
       setTaskValues({
         project: "",
         task: "",
@@ -559,13 +547,13 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                   />
                 </div>
                 {/* Form Actions */}
-                <div className="flex justify-start gap-3 mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
                   <Button
                     text="Cancel"
                     style="secondary"
                     onClick={handleClose}
                   />
-                  <Button text="Add Contact" style="primary" type="submit" />
+                  <Button text="Create Contact" style="primary" type="submit" />
                 </div>
               </form>
             )}
@@ -690,7 +678,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                     style="secondary"
                     onClick={handleClose}
                   />
-                  <Button text="Add Company" style="primary" type="submit" />
+                  <Button text="Create Company" style="primary" type="submit" />
                 </div>
               </form>
             )}
@@ -846,7 +834,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                     style="secondary"
                     onClick={handleClose}
                   />
-                  <Button text="Add Receipt" style="primary" type="submit" />
+                  <Button text="Create Receipt" style="primary" type="submit" />
                 </div>
               </form>
             )}
@@ -911,7 +899,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                     style="secondary"
                     onClick={handleClose}
                   />
-                  <Button text="Add Task" style="primary" type="submit" />
+                  <Button text="Create Task" style="primary" type="submit" />
                 </div>
               </form>
             )}

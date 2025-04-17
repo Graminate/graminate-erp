@@ -9,7 +9,6 @@ import { useEffect, useState } from "react";
 import { triggerToast } from "@/stores/toast";
 import Head from "next/head";
 import { API_BASE_URL } from "@/constants/constants";
-import { fetchCsrfToken } from "@/lib/utils/loadCsrf";
 
 const ContractDetails = () => {
   const router = useRouter();
@@ -112,19 +111,10 @@ const ContractDetails = () => {
     };
 
     try {
-      const csrfToken = await fetchCsrfToken();
       const response = await axios.put(
         `${API_BASE_URL}/contracts/update`,
-        payload,
-        {
-          headers: {
-            "X-CSRF-Token": csrfToken,
-          },
-          withCredentials: true,
-        }
+        payload
       );
-
-      console.log("Response from API:", response.data);
 
       triggerToast("Contract updated successfully", "success");
 

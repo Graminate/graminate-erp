@@ -189,7 +189,7 @@ const CRM = () => {
             "ID",
             "Deal Name",
             "Partner / Client",
-            "Amount (₹)",
+            "Amount",
             "Status",
             "Start Date",
             "End Date",

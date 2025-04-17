@@ -226,6 +226,7 @@ const Poultry = () => {
         }
 
         // Set vaccine status from latest record
+        const latestRecord = healthRecords[0];
         if (healthRecords.length > 0) {
           const latestRecord = healthRecords[0];
           const vaccines = latestRecord.vaccines;

@@ -9,7 +9,6 @@ import { triggerToast } from "@/stores/toast";
 import { COMPANY_TYPES } from "@/constants/options";
 import axios from "axios";
 import { API_BASE_URL } from "@/constants/constants";
-import { fetchCsrfToken } from "@/lib/utils/loadCsrf";
 
 const CompanyDetails = () => {
   const router = useRouter();
@@ -120,16 +119,9 @@ const CompanyDetails = () => {
     };
 
     try {
-      const csrfToken = await fetchCsrfToken();
       const response = await axios.put(
         `${API_BASE_URL}/companies/update`,
-        payload,
-        {
-          headers: {
-            "X-CSRF-Token": csrfToken,
-          },
-          withCredentials: true,
-        }
+        payload
       );
 
       console.log("Response from API:", response.data);

@@ -2,6 +2,7 @@ import React, { useState, FormEvent } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import Swal from "sweetalert2";
+import { triggerToast } from "@/stores/toast";
 import LoginLayout from "@/layout/LoginLayout";
 import TextField from "@/components/ui/TextField";
 import Button from "@/components/ui/Button";
@@ -9,7 +10,6 @@ import ForgotPasswordModal from "@/components/modals/ForgotPasswordModal";
 import OTPModal from "@/components/modals/OTPModal";
 import axios from "axios";
 import { API_BASE_URL } from "@/constants/constants";
-import { fetchCsrfToken } from "@/lib/utils/loadCsrf";
 
 const SignIn = () => {
   const router = useRouter();
@@ -89,19 +89,10 @@ const SignIn = () => {
     }
 
     try {
-      const csrf = await axios.get(`${API_BASE_URL}/user/csrf-token`, {
-        withCredentials: true,
-      });
-
       const response = await axios.post(
         `${API_BASE_URL}/user/login`,
         loginData,
-        {
-          headers: {
-            "X-CSRF-Token": csrf.data.csrfToken,
-          },
-          withCredentials: true,
-        }
+        { withCredentials: true }
       );
 
       const responseData = response.data;
@@ -177,7 +168,6 @@ const SignIn = () => {
       );
       hasError = true;
     }
-
     setFieldErrors(newFieldErrors);
     if (hasError) {
       return;
@@ -186,18 +176,9 @@ const SignIn = () => {
     setUserEmailForOtp(registerData.email);
 
     try {
-      const csrfToken = await fetchCsrfToken(); // 🛡️ Get token
-
-      await axios.post(
-        `${API_BASE_URL}/otp/send-otp`,
-        { email: registerData.email },
-        {
-          withCredentials: true,
-          headers: {
-            "X-CSRF-Token": csrfToken,
-          },
-        }
-      );
+      await axios.post(`${API_BASE_URL}/otp/send-otp`, {
+        email: registerData.email,
+      });
 
       setIsOtpModalOpen(true);
     } catch (error: any) {
@@ -213,19 +194,11 @@ const SignIn = () => {
 
   const handleOtpValidation = async (otp: string) => {
     try {
-      const csrfToken = await fetchCsrfToken(); // 🛡️
-
       const verifyResponse = await axios.post(
         `${API_BASE_URL}/otp/verify-otp`,
         {
           email: userEmailForOtp,
           otp,
-        },
-        {
-          withCredentials: true,
-          headers: {
-            "X-CSRF-Token": csrfToken,
-          },
         }
       );
 
@@ -241,13 +214,7 @@ const SignIn = () => {
         return;
       }
 
-      // Register user with CSRF
-      await axios.post(`${API_BASE_URL}/user/register`, registerData, {
-        withCredentials: true,
-        headers: {
-          "X-CSRF-Token": csrfToken,
-        },
-      });
+      await axios.post(`${API_BASE_URL}/user/register`, registerData);
 
       Swal.fire({
         title: "Registration Successful!",

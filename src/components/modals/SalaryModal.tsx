@@ -6,7 +6,6 @@ import TextField from "@/components/ui/TextField";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import { API_BASE_URL } from "@/constants/constants";
 import { useSalaryModalPrefill } from "@/hooks/modals";
-import { fetchCsrfToken } from "@/lib/utils/loadCsrf";
 
 type PaymentData = {
   payment_id: number;
@@ -88,28 +87,13 @@ const SalaryModal = ({
     };
 
     try {
-      const csrfToken = await fetchCsrfToken();
       if (editMode && initialData) {
-        await axios.put(
-          `${API_BASE_URL}/labour_payment/update`,
-          {
-            ...payload,
-            payment_id: initialData.payment_id,
-          },
-          {
-            headers: {
-              "X-CSRF-Token": csrfToken,
-            },
-            withCredentials: true,
-          }
-        );
-      } else {
-        await axios.post(`${API_BASE_URL}/labour_payment/add`, payload, {
-          headers: {
-            "X-CSRF-Token": csrfToken,
-          },
-          withCredentials: true,
+        await axios.put(`${API_BASE_URL}/labour_payment/update`, {
+          ...payload,
+          payment_id: initialData.payment_id,
         });
+      } else {
+        await axios.post(`${API_BASE_URL}/labour_payment/add`, payload);
       }
 
       toastMessage.set({

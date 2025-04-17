@@ -9,7 +9,6 @@ import { triggerToast } from "@/stores/toast";
 import { GENDER, YESNO } from "@/constants/options";
 import axios from "axios";
 import { API_BASE_URL } from "@/constants/constants";
-import { fetchCsrfToken } from "@/lib/utils/loadCsrf";
 
 const LabourDetails = () => {
   const router = useRouter();
@@ -252,16 +251,9 @@ const LabourDetails = () => {
     console.log("Sending update request with payload:", payload);
 
     try {
-      const csrfToken = await fetchCsrfToken();
       const response = await axios.put(
         `${API_BASE_URL}/labour/update`,
-        payload,
-        {
-          headers: {
-            "X-CSRF-Token": csrfToken,
-          },
-          withCredentials: true,
-        }
+        payload
       );
 
       console.log("Response from API:", response.data);

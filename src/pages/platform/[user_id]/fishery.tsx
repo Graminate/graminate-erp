@@ -1,9 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
+import Button from "@/components/ui/Button";
+import Table from "@/components/tables/Table";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
 import axios from "axios";
+import { PAGINATION_ITEMS } from "@/constants/options";
 
+import { Bar, Pie } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -14,6 +18,7 @@ import {
   Legend,
   ArcElement,
 } from "chart.js";
+import InventoryForm from "@/components/form/InventoryForm";
 import { API_BASE_URL } from "@/constants/constants";
 
 ChartJS.register(
@@ -28,6 +33,14 @@ ChartJS.register(
 
 type View = "fishery";
 
+const getBarColor = (quantity: number, max: number) => {
+  const ratio = quantity / max;
+  if (ratio < 0.25) return "#e53e3e";
+  if (ratio < 0.5) return "orange";
+  if (ratio < 0.75) return "#facd1d";
+  return "#04ad79";
+};
+
 const Fishery = () => {
   const router = useRouter();
   const { user_id, view: queryView } = router.query;
@@ -36,24 +49,10 @@ const Fishery = () => {
     typeof queryView === "string" ? (queryView as View) : "fishery";
 
   const [itemRecords, setItemRecords] = useState<any[]>([]);
-  const [activeAlerts, setActiveAlerts] = useState<any[]>([]);
-
-  const dismissAlert = (id: number) => {
-    setActiveAlerts((current) => current.filter((alert) => alert.id !== id));
-  };
-
-  const getAlertStyle = (type: string): string => {
-    switch (type) {
-      case "Critical":
-        return "bg-red-300 border-red-500 text-red-100 dark:bg-red-300 dark:border-red-600 dark:text-red-800";
-      case "Warning":
-        return "bg-yellow-200 border-yellow-500 text-yellow-700 dark:bg-yellow-200 dark:border-yellow-600 dark:text-yellow-800";
-      case "Info":
-        return "bg-blue-300 border-blue-500 text-blue-100 dark:bg-blue-300 dark:border-blue-600 dark:text-blue-800";
-      default:
-        return "bg-gray-300 border-gray-500 text-gray-700 dark:bg-gray-200 dark:border-gray-600 dark:text-gray-800";
-    }
-  };
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(25);
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     if (!router.isReady || !parsedUserId) return;
@@ -61,7 +60,7 @@ const Fishery = () => {
     const fetchFishery = async () => {
       try {
         const response = await axios.get(
-          `${API_BASE_URL}/fishery/${parsedUserId}`
+          `${API_BASE_URL}/inventory/${parsedUserId}` // Adjust the endpoint as needed
         );
 
         setItemRecords(response.data.items || []);
@@ -76,41 +75,210 @@ const Fishery = () => {
     fetchFishery();
   }, [router.isReady, parsedUserId]);
 
+  const tableData = useMemo(() => {
+    if (view === "fishery" && itemRecords.length > 0) {
+      return {
+        columns: [
+          // "#",
+          "Item Name",
+          "Item Group",
+          "Units",
+          "Quantity",
+          "Price / Unit (₹)",
+          "Status",
+        ],
+        rows: itemRecords.map((item) => [
+          // item.fishery_id,
+          item.item_name,
+          item.item_group,
+          item.units,
+          item.quantity,
+          item.price_per_unit,
+          item.status,
+        ]),
+      };
+    }
+    return { columns: [], rows: [] };
+  }, [itemRecords, view]);
+
+  const maxQuantity = Math.max(...itemRecords.map((item) => item.quantity));
+  const groups = Array.from(
+    new Set(itemRecords.map((item) => item.item_group))
+  );
+
+  const generateColors = (count: number) =>
+    Array.from(
+      { length: count },
+      (_, i) => `hsl(${(i * 360) / count}, 70%, 60%)`
+    );
+
+  const pieColors = generateColors(itemRecords.length);
+
+  const chartData = {
+    labels: groups,
+    datasets: itemRecords.map((item) => ({
+      label: item.item_name,
+      data: groups.map((group) =>
+        group === item.item_group ? item.quantity : null
+      ),
+      backgroundColor: getBarColor(item.quantity, maxQuantity),
+    })),
+  };
+
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      title: {
+        display: true,
+        text: "Item Quantities by Group",
+      },
+    },
+    scales: {
+      x: {
+        stacked: false,
+        barPercentage: 1.0,
+        categoryPercentage: 1.0,
+      },
+      y: {
+        stacked: false,
+      },
+    },
+  };
+
+  const totalAssetValue = itemRecords.reduce(
+    (acc, item) => acc + Number(item.price_per_unit) * item.quantity,
+    0
+  );
+
   return (
     <PlatformLayout>
       <Head>
-        <title>Graminate | Fishery Dashboard</title>
+        <title>Graminate | Fishery Management</title>
       </Head>
-      <div className="min-h-screen container mx-auto p-4 space-y-6">
-        {activeAlerts.length > 0 && (
-          <div className="space-y-2">
-            {activeAlerts.map((alert) => (
-              <div
-                key={alert.id}
-                className={`border-l-4 p-3 rounded-md flex justify-between items-center ${getAlertStyle(
-                  alert.type
-                )}`}
-                role="alert"
-              >
-                <div>
-                  <p className="font-bold">{alert.type}</p>
-                  <p className="text-sm">{alert.message}</p>
-                </div>
-                <button
-                  onClick={() => dismissAlert(alert.id)}
-                  className="text-xl font-semibold hover:opacity-75"
-                >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+      <div className="min-h-screen container mx-auto p-4">
+        {/* Header */}
         <div className="flex justify-between items-center dark:bg-dark relative mb-4">
-          <h1 className="text-lg font-semibold dark:text-white">
-            Fishery Management
-          </h1>
+          <div>
+            <h1 className="text-lg font-semibold dark:text-white">
+              Fishery Management
+            </h1>
+            <p className="text-xs text-dark dark:text-light">
+              {itemRecords.length} Record(s)
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              text="Add Item"
+              style="primary"
+              add
+              onClick={() => setIsSidebarOpen(true)}
+            />
+          </div>
         </div>
+
+        {/* Chart Visualization */}
+        <div className="mb-6  dark:bg-gray-800">
+          <div className="flex flex-col lg:flex-row gap-6 justify-between">
+            {/* Bar Chart (Left) */}
+            <div className="flex-1">
+              <Bar data={chartData} options={chartOptions} />
+            </div>
+
+            {/* Right Panel: Total Asset + Pie Chart */}
+            <div className="flex flex-col">
+              {/* Total Asset Card */}
+              <div className="p-4 bg-gray-500 dark:bg-gray-800 rounded-xl shadow text-center">
+                <p className="text-lg font-medium text-gray-700 dark:text-light">
+                  Total Asset (₹)
+                </p>
+                <p className="text-3xl font-bold text-dark dark:text-light mt-2">
+                  ₹{totalAssetValue.toFixed(2)}
+                </p>
+              </div>
+
+              {/* Pie Chart */}
+              <div className="p-4  dark:bg-gray-800 rounded-xl">
+                <h2 className="text-sm font-semibold text-center text-dark dark:text-light  mb-2">
+                  Fishery Share
+                </h2>
+                <div className="w-full max-w-[300px] mx-auto">
+                  <Pie
+                    data={{
+                      labels: itemRecords.map((item) => item.item_name),
+                      datasets: [
+                        {
+                          label: "Share by Quantity",
+                          data: itemRecords.map((item) => item.quantity),
+                          backgroundColor: pieColors,
+                          borderWidth: 1,
+                        },
+                      ],
+                    }}
+                    options={{
+                      responsive: true,
+                      plugins: {
+                        legend: {
+                          display: false,
+                          position: "bottom",
+                          labels: {
+                            color: "#666",
+                          },
+                        },
+                      },
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Color Legend */}
+          <div className="flex flex-wrap gap-4 mt-4 text-sm dark:text-gray-300 text-gray-700">
+            <div className="flex items-center gap-2">
+              <span className="inline-block w-4 h-4 bg-red-500 rounded-sm" />{" "}
+              {"< 25%"} of Max
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-block w-4 h-4 bg-orange-400 rounded-sm" />{" "}
+              {"< 50%"} of Max
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-block w-4 h-4 bg-yellow-200 rounded-sm" />{" "}
+              {"< 75%"} of Max
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="inline-block w-4 h-4 bg-green-200 rounded-sm" />{" "}
+              {"≥ 75%"} of Max
+            </div>
+          </div>
+        </div>
+
+        <Table
+          data={{ ...tableData, rows: tableData.rows }}
+          filteredRows={tableData.rows}
+          currentPage={currentPage}
+          itemsPerPage={itemsPerPage}
+          paginationItems={PAGINATION_ITEMS}
+          searchQuery={searchQuery}
+          totalRecordCount={tableData.rows.length}
+          view={view}
+          setCurrentPage={setCurrentPage}
+          setItemsPerPage={setItemsPerPage}
+          setSearchQuery={setSearchQuery}
+        />
+
+        {isSidebarOpen && (
+          <InventoryForm
+            view="fishery"
+            onClose={() => setIsSidebarOpen(false)}
+            onSubmit={(values: Record<string, string>) => {
+              console.log("Form submitted:", values);
+              setIsSidebarOpen(false);
+            }}
+            formTitle="Add Item"
+          />
+        )}
       </div>
     </PlatformLayout>
   );

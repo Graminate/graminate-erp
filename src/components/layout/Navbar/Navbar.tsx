@@ -6,7 +6,6 @@ import type { User } from "@/types/card-props";
 import type { Navbar } from "@/types/card-props";
 import axios from "axios";
 import { API_BASE_URL } from "@/constants/constants";
-import { fetchCsrfToken } from "@/lib/utils/loadCsrf";
 
 const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
   const router = useRouter();
@@ -69,11 +68,7 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
   const handleLogout = async () => {
     try {
       localStorage.removeItem("chatMessages");
-      const csrfToken = await fetchCsrfToken();
       await axios.post(`${API_BASE_URL}/user/logout`, null, {
-        headers: {
-          "X-CSRF-Token": csrfToken,
-        },
         withCredentials: true,
       });
 
@@ -85,6 +80,7 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
       );
     }
   };
+
   const toggleDropdown = () => {
     setDropdownOpen(!isDropdownOpen);
   };

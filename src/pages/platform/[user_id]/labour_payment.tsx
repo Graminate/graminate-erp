@@ -25,7 +25,7 @@ const LabourPayment = () => {
       columns: [
         "#",
         "Employee",
-        "Basic Salary (₹)",
+        "Basic Salary",
         "Phone No.",
         "Aadhar",
         "Address",
@@ -66,7 +66,9 @@ const LabourPayment = () => {
 
     const fetchLabourList = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/labour/${parsedUserId}`);
+        const res = await axios.get(
+          `${API_BASE_URL}/labour/${parsedUserId}`
+        );
         setLabourList(res.data.labours || []);
       } catch (error: any) {
         console.error(
@@ -78,7 +80,9 @@ const LabourPayment = () => {
 
     const fetchAllPayments = async () => {
       try {
-        const res = await axios.get(`${API_BASE_URL}/labour/${parsedUserId}`);
+        const res = await axios.get(
+          `${API_BASE_URL}/labour/${parsedUserId}`
+        );
         const labours = res.data.labours || [];
         const allPayments: any[] = [];
 
@@ -138,7 +142,7 @@ const LabourPayment = () => {
 
         <div className="flex flex-col md:flex-row gap-4 mb-6">
           <div className="bg-white dark:bg-gray-800 p-4 rounded shadow flex-1">
-            <h2 className="text-lg font-semibold">Total Salary to Pay</h2>
+            <h2 className="text-lg font-semibold">Salary to Pay</h2>
             <p className="text-lg text-dark dark:text-white">
               ₹ {salaryToPay.toFixed(2)}
             </p>

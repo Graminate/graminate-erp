@@ -10,7 +10,6 @@ import { faX } from "@fortawesome/free-solid-svg-icons";
 import { SidebarProp } from "@/types/card-props";
 import { API_BASE_URL } from "@/constants/constants";
 import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
-import { fetchCsrfToken } from "@/lib/utils/loadCsrf";
 
 const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
   const router = useRouter();
@@ -128,11 +127,7 @@ const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
     };
 
     try {
-      const csrf = await fetchCsrfToken();
-      await axios.post(`${API_BASE_URL}/labour/add`, payload, {
-        headers: { "X-CSRF-Token": csrf },
-        withCredentials: true,
-      });
+      await axios.post(`${API_BASE_URL}/labour/add`, payload);
       setLabourValues({
         fullName: "",
         dateOfBirth: "",

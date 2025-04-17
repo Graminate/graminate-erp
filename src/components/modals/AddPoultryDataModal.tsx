@@ -6,7 +6,6 @@ import NavPanel from "../layout/NavPanel";
 import TextArea from "../ui/TextArea";
 import axios from "axios";
 import { API_BASE_URL } from "@/constants/constants";
-import { fetchCsrfToken } from "@/lib/utils/loadCsrf";
 
 type PoultryFormData = {
   totalChicks: number;
@@ -109,42 +108,32 @@ const AddPoultryDataModal = ({
       }
 
       try {
-        const csrf = await fetchCsrfToken();
-        await axios.post(
-          `${API_BASE_URL}/poultry_health`,
-          {
-            user_id: userId,
-            date: vetForm.date,
-            veterinary_name: vetForm.veterinaryName,
-            bird_type: vetForm.birdType,
-            purpose: vetForm.purpose,
-            birds_in: vetForm.birdsIn,
-            birds_died: vetForm.birdsDied,
-            mortality_rate: mortality,
-            vaccines: vetForm.vaccines
-              ? vetForm.vaccines
-                  .split(",")
-                  .map((v) => v.trim())
-                  .filter(Boolean)
-              : [],
-            deworming: vetForm.deworming,
-            symptoms: vetForm.symptoms
-              ? vetForm.symptoms
-                  .split(",")
-                  .map((s) => s.trim())
-                  .filter(Boolean)
-              : [],
-            medications: vetForm.medications || "",
-            actions_taken: vetForm.actionsTaken || "",
-            remarks: vetForm.remarks || "",
-          },
-          {
-            headers: {
-              "X-CSRF-Token": csrf,
-            },
-            withCredentials: true,
-          }
-        );
+        await axios.post(`${API_BASE_URL}/poultry_health`, {
+          user_id: userId,
+          date: vetForm.date,
+          veterinary_name: vetForm.veterinaryName,
+          bird_type: vetForm.birdType,
+          purpose: vetForm.purpose,
+          birds_in: vetForm.birdsIn,
+          birds_died: vetForm.birdsDied,
+          mortality_rate: mortality,
+          vaccines: vetForm.vaccines
+            ? vetForm.vaccines
+                .split(",")
+                .map((v) => v.trim())
+                .filter(Boolean)
+            : [],
+          deworming: vetForm.deworming,
+          symptoms: vetForm.symptoms
+            ? vetForm.symptoms
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean)
+            : [],
+          medications: vetForm.medications || "",
+          actions_taken: vetForm.actionsTaken || "",
+          remarks: vetForm.remarks || "",
+        });
         console.log("Veterinary data submitted successfully");
       } catch (error) {
         console.error("Error submitting veterinary data:", error);
