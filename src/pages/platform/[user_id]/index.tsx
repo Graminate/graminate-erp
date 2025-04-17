@@ -36,16 +36,23 @@ const Dashboard = () => {
 
     const fetchUserData = async () => {
       try {
+        const token = localStorage.getItem("token");
+
         const response = await axios.get(`${API_BASE_URL}/user/${userId}`, {
-          withCredentials: true,
-          timeout: 10000,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
-        if (isMounted) {
-          const fetchedUser = response.data.user as User;
+
+        const fetchedUser = response.data?.data?.user as User | undefined;
+
+        if (fetchedUser) {
           setUserData(fetchedUser);
           if (!fetchedUser.business_name || !fetchedUser.type) {
             setIsSetupModalOpen(true);
           }
+        } else {
+          throw new Error("Invalid response: user not found");
         }
       } catch (error: any) {
         if (!isMounted) return;
@@ -97,11 +104,23 @@ const Dashboard = () => {
     subType?: string[]
   ) => {
     try {
+      const token = localStorage.getItem("token"); // ✅ get JWT
+      if (!token) throw new Error("No token found");
+
       await axios.put(
         `${API_BASE_URL}/user/${userId}`,
-        { business_name: businessName, type: businessType, sub_type: subType },
-        { withCredentials: true }
+        {
+          business_name: businessName,
+          type: businessType,
+          sub_type: subType,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`, // ✅ pass the token
+          },
+        }
       );
+
       await Swal.fire({
         title: "Welcome!",
         text: "Your account is now set up. Let’s get started 🚀",
@@ -110,6 +129,7 @@ const Dashboard = () => {
       }).then(() => {
         window.location.reload();
       });
+
       setUserData((prev) =>
         prev
           ? {
@@ -120,6 +140,7 @@ const Dashboard = () => {
             }
           : prev
       );
+
       setIsSetupModalOpen(false);
     } catch (error: any) {
       console.error("Error updating business info:", error);

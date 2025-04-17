@@ -50,13 +50,12 @@ const AccountPage = () => {
   const closeModal = () => {
     const wasSuccess = infoModalContent.type === "success";
     setActiveModal(null);
-    setInfoModalContent({ title: "", message: "", type: "success" }); 
+    setInfoModalContent({ title: "", message: "", type: "success" });
 
     if (wasSuccess) {
       sessionStorage.setItem("accountJustDeleted", "true");
       router.push("/");
     }
-   
   };
 
   const handleInitiateDelete = () => {
@@ -77,10 +76,15 @@ const AccountPage = () => {
     setIsVerifying(true);
     setPasswordError("");
     try {
+      const token = localStorage.getItem("token");
       const response = await axios.post(
         `${API_BASE_URL}/user/verify-password/${userId}`,
         { password },
-        { withCredentials: true }
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       if (response.data.valid) {
         setActiveModal(null);
@@ -100,9 +104,14 @@ const AccountPage = () => {
     if (!userId) return;
     setIsDeleting(true);
     try {
+      const token = localStorage.getItem("token");
       const deleteResponse = await axios.delete(
         `${API_BASE_URL}/user/delete/${userId}`,
-        { withCredentials: true }
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       if (deleteResponse.status === 200) {
         openModal("info", {
@@ -243,7 +252,6 @@ const AccountPage = () => {
                 Account Settings
               </h1>
               <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
-
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                   <div className="flex-grow">
                     <p className="font-semibold text-dark dark:text-light">

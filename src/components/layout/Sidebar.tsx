@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faHome,
@@ -18,35 +19,43 @@ import {
   IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 
-import type { Sidebar } from "@/types/card-props";
+import type { Sidebar as SidebarProps } from "@/types/card-props";
 import Loader from "../ui/Loader";
 import { API_BASE_URL } from "@/constants/constants";
 
-const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
+const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
   const router = useRouter();
   const pathname = usePathname();
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const searchParams = useSearchParams();
+
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
+
   const [userType, setUserType] = useState<string | null>(null);
   const [subTypes, setSubTypes] = useState<string[]>([]);
   const [isUserTypeLoading, setIsUserTypeLoading] = useState(true);
 
-  // Fetching type of the User
+  // Fetch the user's type & sub_types via JWT-authenticated API call
   useEffect(() => {
     const fetchUserType = async () => {
+      setIsUserTypeLoading(true);
       try {
-        const res = await fetch(`${API_BASE_URL}/user/${userId}`, {
-          credentials: "include",
-        });
-        const json = await res.json();
-        const type = json?.user?.type;
-        const sub = json?.user?.sub_type ?? [];
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No auth token found");
 
-        setSubTypes(Array.isArray(sub) ? sub : []);
-        setUserType(type || "Producer");
+        const response = await axios.get(`${API_BASE_URL}/user/${userId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        // adjust this path if your API wraps differently
+        const user = response.data?.data?.user ?? response.data?.user;
+        if (!user) throw new Error("User payload missing");
+
+        setUserType(user.type || "Producer");
+        setSubTypes(Array.isArray(user.sub_type) ? user.sub_type : []);
       } catch (err) {
-        console.error("Error fetching user type", err);
+        console.error("Error fetching user type:", err);
+        // fallback to default
         setUserType("Producer");
         setSubTypes([]);
       } finally {
@@ -54,45 +63,48 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
       }
     };
 
-    if (userId) fetchUserType();
+    if (userId) {
+      fetchUserType();
+    }
   }, [userId]);
 
+  // Build the menu sections, re-running when userType or subTypes change
   const sections = useMemo(() => {
-      const base: {
-        icon: IconDefinition;
-        label: string;
-        section: string;
-        route?: string;
-        basePath?: string;
-        subItems: { label: string; route: string }[];
-      }[] = [
-        {
-          icon: faHome,
-          label: "Dashboard",
-          section: "Dashboard",
-          route: `/platform/${userId}`,
-          subItems: [],
-        },
-        {
-          icon: faAddressBook,
-          label: "CRM",
-          section: "CRM",
-          basePath: `/platform/${userId}/crm`,
-          subItems: [
-            { label: "Contacts", route: `/platform/${userId}/crm?view=contacts` },
-            {
-              label: "Companies",
-              route: `/platform/${userId}/crm?view=companies`,
-            },
-            {
-              label: "Contracts",
-              route: `/platform/${userId}/crm?view=contracts`,
-            },
-            { label: "Receipts", route: `/platform/${userId}/crm?view=receipts` },
-            { label: "Tasks", route: `/platform/${userId}/crm?view=tasks` },
-          ],
-        },
-      ];
+    const base: {
+      icon: IconDefinition;
+      label: string;
+      section: string;
+      route?: string;
+      basePath?: string;
+      subItems: { label: string; route: string }[];
+    }[] = [
+      {
+        icon: faHome,
+        label: "Dashboard",
+        section: "Dashboard",
+        route: `/platform/${userId}`,
+        subItems: [],
+      },
+      {
+        icon: faAddressBook,
+        label: "CRM",
+        section: "CRM",
+        basePath: `/platform/${userId}/crm`,
+        subItems: [
+          { label: "Contacts", route: `/platform/${userId}/crm?view=contacts` },
+          {
+            label: "Companies",
+            route: `/platform/${userId}/crm?view=companies`,
+          },
+          {
+            label: "Contracts",
+            route: `/platform/${userId}/crm?view=contracts`,
+          },
+          { label: "Receipts", route: `/platform/${userId}/crm?view=receipts` },
+          { label: "Tasks", route: `/platform/${userId}/crm?view=tasks` },
+        ],
+      },
+    ];
 
     if (userType === "Producer") {
       if (subTypes.includes("Fishery")) {
@@ -104,7 +116,6 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
           subItems: [],
         });
       }
-
       if (subTypes.includes("Poultry")) {
         base.push({
           icon: faKiwiBird,
@@ -112,10 +123,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
           section: "Poultry Farm",
           route: `/platform/${userId}/poultry`,
           subItems: [
-            {
-              label: "Dashboard",
-              route: `/platform/${userId}/poultry`,
-            },
+            { label: "Dashboard", route: `/platform/${userId}/poultry` },
             {
               label: "Health Reports",
               route: `/platform/${userId}/poultry_health`,
@@ -123,7 +131,6 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
           ],
         });
       }
-
       if (subTypes.includes("Animal Husbandry")) {
         base.push({
           icon: faCow,
@@ -133,18 +140,16 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
           subItems: [],
         });
       }
-
       if (subTypes.includes("Apiculture")) {
         base.push({
-          icon: faBug, // or another FontAwesome icon you choose
-          label: "Apiculture",
+          icon: faBug,
+          label: "Apiculture Farm",
           section: "Apiculture Farm",
           route: `/platform/${userId}/apiculture`,
           subItems: [],
         });
       }
-
-      // Weather Monitor should be shown for all Producers
+      // Weather Monitor for all producers
       base.push({
         icon: faCloud,
         label: "Weather Monitor",
@@ -154,6 +159,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
       });
     }
 
+    // Common sections
     base.push(
       {
         icon: faUsers,
@@ -161,10 +167,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
         section: "Labour",
         basePath: `/platform/${userId}/labour`,
         subItems: [
-          {
-            label: "Database",
-            route: `/platform/${userId}/labour_database`,
-          },
+          { label: "Database", route: `/platform/${userId}/labour_database` },
           {
             label: "Salary Manager",
             route: `/platform/${userId}/labour_payment`,
@@ -193,8 +196,9 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
         subItems: [],
       }
     );
+
     return base;
-  }, [userId, userType]);
+  }, [userId, userType, subTypes]);
 
   const navigateTo = (route: string) => {
     router.push(route);
@@ -208,51 +212,42 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
   ) => {
     if (route && !hasSubItems) {
       navigateTo(route);
-      setExpandedSection(null);
     } else if (hasSubItems) {
-      const isCurrentlyExpanded = expandedSection === section;
-      setExpandedSection(isCurrentlyExpanded ? null : section);
-      if (onSectionChange && !isCurrentlyExpanded) {
-        onSectionChange(section);
-      }
+      const isOpen = expandedSection === section;
+      setExpandedSection(isOpen ? null : section);
+      if (!isOpen && onSectionChange) onSectionChange(section);
     }
   };
 
   const toggleCollapse = () => {
-    setIsCollapsed(!isCollapsed);
+    setIsCollapsed((c) => !c);
     setExpandedSection(null);
   };
 
-  const closeSubMenu = () => {
-    setExpandedSection(null);
-  };
+  const closeSubMenu = () => setExpandedSection(null);
 
+  // clicking outside closes submenu
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const sidebarElement = document.querySelector(".sidebar-container");
-      if (sidebarElement && !sidebarElement.contains(event.target as Node)) {
-        closeSubMenu();
-      }
+    const handler = (e: MouseEvent) => {
+      const side = document.querySelector(".sidebar-container");
+      if (side && !side.contains(e.target as Node)) closeSubMenu();
     };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  // collapse when parent closes
   useEffect(() => {
-    if (!isOpen) {
-      closeSubMenu();
-    }
+    if (!isOpen) closeSubMenu();
   }, [isOpen]);
 
+  // render
   return (
     <div
-      className={`sidebar-container fixed inset-y-0 left-0 bg-gradient-to-b from-gray-800 to-gray-900 text-gray-300 shadow-xl transform transition-all duration-300 ease-in-out z-50 flex flex-col ${
+      className={`sidebar-container fixed inset-y-0 left-0 bg-gradient-to-b from-gray-800 to-gray-900 text-gray-300 shadow-xl transform transition-transform duration-300 ease-in-out z-50 flex flex-col ${
         isOpen ? "translate-x-0" : "-translate-x-full"
       } lg:translate-x-0 lg:relative lg:shadow-none`}
-      style={{ width: isCollapsed ? "60px" : "230px" }}
+      style={{ width: isCollapsed ? 60 : 230 }}
     >
       <nav className="flex-1 overflow-y-auto py-4 space-y-1">
         {isUserTypeLoading ? (
@@ -261,7 +256,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
           </div>
         ) : (
           sections.map(
-            ({ icon, label, section, route, subItems, basePath }) => {
+            ({ icon, label, section, route, basePath, subItems }) => {
               const hasSubItems = subItems.length > 0;
               const isActive =
                 (!hasSubItems && pathname === route) ||
@@ -274,7 +269,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
                     className={`flex items-center p-3 rounded-lg cursor-pointer group transition-colors duration-200 ${
                       isActive
                         ? "bg-gray-700 text-white shadow-md"
-                        : "text-gray-400 hover:bg-gray-700 hover:text-gray-400"
+                        : "text-gray-400 hover:bg-gray-700 hover:text-gray-300"
                     } ${isCollapsed ? "justify-center" : ""}`}
                     role="button"
                     tabIndex={0}
@@ -291,9 +286,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
                   >
                     <FontAwesomeIcon
                       icon={icon}
-                      className={`h-5 w-5 ${
-                        isCollapsed ? "" : "mr-3"
-                      } flex-shrink-0`}
+                      className={`h-5 w-5 ${isCollapsed ? "" : "mr-3"}`}
                     />
                     {!isCollapsed && (
                       <>
@@ -320,29 +313,28 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
                     expandedSection === section &&
                     hasSubItems && (
                       <div className="mt-1 ml-5 pl-3 border-l border-gray-600 space-y-1">
-                        {subItems.map((subItem) => {
+                        {subItems.map((sub) => {
                           const isSubActive =
-                            pathname + searchParams.toString() ===
-                            subItem.route;
+                            pathname + searchParams.toString() === sub.route;
                           return (
                             <div
-                              key={subItem.label}
+                              key={sub.label}
                               className={`text-sm py-2 px-4 rounded-md cursor-pointer transition-colors duration-150 ${
                                 isSubActive
                                   ? "text-indigo-300 font-semibold"
-                                  : "text-gray-400 hover:text-light hover:bg-gray-700"
+                                  : "text-gray-400 hover:text-white hover:bg-gray-700"
                               }`}
                               role="button"
                               tabIndex={0}
-                              onClick={() => navigateTo(subItem.route)}
+                              onClick={() => navigateTo(sub.route)}
                               onKeyDown={(e) => {
                                 if (e.key === "Enter" || e.key === " ") {
                                   e.preventDefault();
-                                  navigateTo(subItem.route);
+                                  navigateTo(sub.route);
                                 }
                               }}
                             >
-                              {subItem.label}
+                              {sub.label}
                             </div>
                           );
                         })}
@@ -355,7 +347,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: Sidebar) => {
         )}
       </nav>
 
-      <div className="mt-auto p-3 border-t border-gray-200">
+      <div className="mt-auto p-3 border-t border-gray-700">
         <button
           className={`w-full flex items-center p-2 rounded-lg text-gray-400 hover:bg-gray-700 hover:text-gray-300 transition-colors duration-200 ${
             isCollapsed ? "justify-center" : "justify-end"

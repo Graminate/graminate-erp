@@ -38,19 +38,24 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
   useEffect(() => {
     async function fetchUserDetails() {
       try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No token found");
+
         const response = await axios.get(`${API_BASE_URL}/user/${userId}`, {
-          withCredentials: true,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
 
-        const data = response.data;
+        const data = response.data?.data?.user;
 
         setUser({
-          name: `${data.user.first_name} ${data.user.last_name}`,
-          email: data.user.email,
-          business: data.user.business_name,
+          name: `${data.first_name} ${data.last_name}`,
+          email: data.email,
+          business: data.business_name,
           imageUrl:
-            data.user.imageUrl ||
-            `https://eu.ui-avatars.com/api/?name=${data.user.first_name}+${data.user.last_name}&size=250`,
+            data.imageUrl ||
+            `https://eu.ui-avatars.com/api/?name=${data.first_name}+${data.last_name}&size=250`,
         });
       } catch (error: any) {
         console.error(
@@ -68,10 +73,7 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
   const handleLogout = async () => {
     try {
       localStorage.removeItem("chatMessages");
-      await axios.post(`${API_BASE_URL}/user/logout`, null, {
-        withCredentials: true,
-      });
-
+      localStorage.removeItem("token");
       router.push("/");
     } catch (error: any) {
       console.error(

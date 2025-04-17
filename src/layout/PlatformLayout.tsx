@@ -6,7 +6,7 @@ import Sidebar from "@/components/layout/Sidebar";
 import Swal from "sweetalert2";
 import axios, { AxiosError } from "axios";
 import { API_BASE_URL } from "@/constants/constants";
-import ChatWindow from "@/layout/ChatWindow"; // Import the chat window
+import ChatWindow from "@/layout/ChatWindow";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faRobot } from "@fortawesome/free-solid-svg-icons";
 
@@ -58,15 +58,35 @@ const PlatformLayout = ({ children }: Props) => {
     async (currentUserId: string) => {
       setIsLoadingAuth(true);
 
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setIsAuthorized(false);
+        Swal.fire({
+          title: "Unauthorized",
+          text: "Please log in first.",
+          icon: "error",
+          confirmButtonText: "OK",
+          allowOutsideClick: false,
+          allowEscapeKey: false,
+        }).then(() => {
+          router.push("/");
+        });
+        return;
+      }
+
       try {
         await axios.get(`${API_BASE_URL}/user/${currentUserId}`, {
-          withCredentials: true,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
           timeout: 10000,
         });
+
         setIsAuthorized(true);
       } catch (error: any) {
         setIsAuthorized(false);
         let errorText = "Session expired or unauthorized access.";
+
         if (axios.isAxiosError(error)) {
           const axiosError = error as AxiosError;
           if (axiosError.response?.status === 401) {
@@ -75,6 +95,7 @@ const PlatformLayout = ({ children }: Props) => {
             errorText = `User not found`;
           }
         }
+
         Swal.fire({
           title: "Access Denied",
           text: errorText,
@@ -82,10 +103,8 @@ const PlatformLayout = ({ children }: Props) => {
           confirmButtonText: "OK",
           allowOutsideClick: false,
           allowEscapeKey: false,
-        }).then((res) => {
-          if (res.isConfirmed) {
-            router.back();
-          }
+        }).then(() => {
+          router.push("/");
         });
       } finally {
         setIsLoadingAuth(false);

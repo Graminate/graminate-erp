@@ -91,12 +91,15 @@ const SignIn = () => {
     try {
       const response = await axios.post(
         `${API_BASE_URL}/user/login`,
-        loginData,
-        { withCredentials: true }
+        loginData
       );
+      const { access_token, user } = response.data;
 
-      const responseData = response.data;
-      router.push(`/platform/${responseData.user.user_id}`);
+      // ✅ Store token in localStorage
+      localStorage.setItem("token", access_token);
+
+      // ✅ Redirect to platform
+      router.push(`/platform/${user.user_id}`);
     } catch (err) {
       const error = err as any;
       const status = error?.response?.status;
@@ -106,7 +109,7 @@ const SignIn = () => {
       if (status === 401 && serverMessage === "User does not exist") {
         Swal.fire({
           title: "User Not Found",
-          text: "Email not registed. Please sign up first",
+          text: "Email not registered. Please sign up first.",
           icon: "error",
           confirmButtonText: "OK",
         });
@@ -168,10 +171,9 @@ const SignIn = () => {
       );
       hasError = true;
     }
+
     setFieldErrors(newFieldErrors);
-    if (hasError) {
-      return;
-    }
+    if (hasError) return;
 
     setUserEmailForOtp(registerData.email);
 

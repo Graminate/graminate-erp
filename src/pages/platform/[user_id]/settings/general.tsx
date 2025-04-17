@@ -29,13 +29,25 @@ const GeneralPage = () => {
 
     const fetchUserType = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/user/${userId}`, {
-          credentials: "include",
+        const token = localStorage.getItem("token");
+        const response = await axios.get(`${API_BASE_URL}/user/${userId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
-        const json = await res.json();
 
-        const type = json?.user?.type || "Producer";
-        const rawSubTypes = json?.user?.sub_type;
+        const user = response.data.user ?? response.data.data?.user;
+
+        setUser({
+          profilePicture: user.profile_picture || "",
+          firstName: user.first_name || "",
+          lastName: user.last_name || "",
+          phoneNumber: user.phone_number || "",
+          language: user.language || "English",
+          timeFormat: user.time_format || "24-hour",
+        });
+        const type = user?.type || "Producer";
+        const rawSubTypes = user?.sub_type;
 
         const parsedSubTypes = Array.isArray(rawSubTypes)
           ? rawSubTypes
@@ -112,6 +124,7 @@ const GeneralPage = () => {
     setSuccessMessage("");
 
     try {
+      const token = localStorage.getItem("token");
       await axios.put(
         `${API_BASE_URL}/user/${userId}`,
         {
@@ -122,7 +135,9 @@ const GeneralPage = () => {
           time_format: user.timeFormat,
         },
         {
-          withCredentials: true,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         }
       );
 
@@ -143,12 +158,12 @@ const GeneralPage = () => {
 
     const fetchUserData = async () => {
       try {
-        const response = await axios.get(
-          `${API_BASE_URL}/user/${userId}`,
-          {
-            withCredentials: true,
-          }
-        );
+        const token = localStorage.getItem("token");
+        const response = await axios.get(`${API_BASE_URL}/user/${userId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         const data = response.data;
 
