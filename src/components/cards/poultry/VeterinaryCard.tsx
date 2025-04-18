@@ -99,7 +99,7 @@ const VeterinaryCard = ({
         <VetStatItem
           icon={faCalendarCheck}
           value={nextVisit}
-          label="Next Visit"
+          label="Next Appointment"
           valueClassName="text-sm font-semibold text-gray-900 dark:text-white"
         />
         <Link href={`/platform/${user_id}/poultry_health`}>
