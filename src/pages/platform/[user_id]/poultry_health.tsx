@@ -12,11 +12,10 @@ import {
 } from "chart.js";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/router";
-import axios from "axios";
 import Table from "@/components/tables/Table";
 import { PAGINATION_ITEMS } from "@/constants/options";
 import Button from "@/components/ui/Button";
-import { API_BASE_URL } from "@/constants/constants";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 ChartJS.register(
   CategoryScale,
@@ -79,9 +78,10 @@ const PoultryHealth = () => {
   const fetchHealthRecords = async () => {
     if (!parsedUserId) return;
     try {
-      const response = await axios.get(
-        `${API_BASE_URL}/poultry_health/${encodeURIComponent(parsedUserId)}`
+      const response = await axiosInstance.get(
+        `/poultry_health/${encodeURIComponent(parsedUserId)}`
       );
+
       setHealthRecords(response.data.health || []);
     } catch (error: any) {
       console.error(

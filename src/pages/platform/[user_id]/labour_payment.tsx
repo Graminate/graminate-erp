@@ -2,9 +2,8 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
-import axios from "axios";
 import Table from "@/components/tables/Table";
-import { API_BASE_URL } from "@/constants/constants";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 const LabourPayment = () => {
   const now = new Date();
@@ -66,10 +65,9 @@ const LabourPayment = () => {
 
     const fetchLabourList = async () => {
       try {
-        const res = await axios.get(
-          `${API_BASE_URL}/labour/${parsedUserId}`
-        );
-        setLabourList(res.data.labours || []);
+        const response = await axiosInstance.get(`/labour/${parsedUserId}`);
+
+        setLabourList(response.data.labours || []);
       } catch (error: any) {
         console.error(
           "Error fetching labours:",
@@ -80,17 +78,15 @@ const LabourPayment = () => {
 
     const fetchAllPayments = async () => {
       try {
-        const res = await axios.get(
-          `${API_BASE_URL}/labour/${parsedUserId}`
-        );
-        const labours = res.data.labours || [];
+        const response = await axiosInstance.get(`/labour/${parsedUserId}`);
+        const labours = response.data.labours || [];
         const allPayments: any[] = [];
 
         for (const labour of labours) {
-          const paymentRes = await axios.get(
-            `${API_BASE_URL}/labour_payment/${labour.labour_id}`
+          const response = await axiosInstance.get(
+            `/labour_payment/${labour.labour_id}`
           );
-          allPayments.push(...(paymentRes.data.payments || []));
+          allPayments.push(...(response.data.payments || []));
         }
 
         setPaymentRecords(allPayments);

@@ -4,8 +4,7 @@ import TextField from "@/components/ui/TextField";
 import DropdownLarge from "../ui/Dropdown/DropdownLarge";
 import NavPanel from "../layout/NavPanel";
 import TextArea from "../ui/TextArea";
-import axios from "axios";
-import { API_BASE_URL } from "@/constants/constants";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 type PoultryFormData = {
   totalChicks: number;
@@ -108,7 +107,7 @@ const AddPoultryDataModal = ({
       }
 
       try {
-        await axios.post(`${API_BASE_URL}/poultry_health`, {
+        await axiosInstance.post(`/poultry_health`, {
           user_id: userId,
           date: vetForm.date,
           veterinary_name: vetForm.veterinaryName,
@@ -134,7 +133,6 @@ const AddPoultryDataModal = ({
           actions_taken: vetForm.actionsTaken || "",
           remarks: vetForm.remarks || "",
         });
-        console.log("Veterinary data submitted successfully");
       } catch (error) {
         console.error("Error submitting veterinary data:", error);
       }

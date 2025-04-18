@@ -4,13 +4,12 @@ import SearchBar from "@/components/ui/SearchBar";
 import Button from "@/components/ui/Button";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import Loader from "@/components/ui/Loader";
-import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircle } from "@fortawesome/free-solid-svg-icons";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import { API_BASE_URL } from "@/constants/constants";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 type Props = {
   onRowClick?: (row: any[]) => void;
@@ -210,7 +209,7 @@ const Table = ({
         await Promise.all(
           rowsToDelete.map(async (id) => {
             try {
-              await axios.delete(`${API_BASE_URL}/${endpoint}/delete/${id}`);
+              await axiosInstance.delete(`/${endpoint}/delete/${id}`);
             } catch (error: any) {
               const message =
                 error.response?.data?.error ||
@@ -313,12 +312,9 @@ const Table = ({
                 if (result.isConfirmed) {
                   try {
                     const userId = localStorage.getItem("userId");
-                    await axios.post(
-                      `${API_BASE_URL}/${entityToTruncate}/reset`,
-                      {
-                        userId,
-                      }
-                    );
+                    await axiosInstance.post(`/${entityToTruncate}/reset`, {
+                      userId,
+                    });
                     Swal.fire(
                       "Reset!",
                       "Table has been reset.",

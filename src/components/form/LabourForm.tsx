@@ -4,12 +4,11 @@ import TextField from "@/components/ui/TextField";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import Button from "@/components/ui/Button";
 import { GENDER } from "@/constants/options";
-import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faX } from "@fortawesome/free-solid-svg-icons";
 import { SidebarProp } from "@/types/card-props";
-import { API_BASE_URL } from "@/constants/constants";
 import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
   const router = useRouter();
@@ -127,7 +126,7 @@ const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
     };
 
     try {
-      await axios.post(`${API_BASE_URL}/labour/add`, payload);
+      await axiosInstance.post(`/labour/add`, payload);
       setLabourValues({
         fullName: "",
         dateOfBirth: "",

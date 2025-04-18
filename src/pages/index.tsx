@@ -2,7 +2,6 @@ import React, { useState, FormEvent } from "react";
 import Head from "next/head";
 import { useRouter } from "next/router";
 import Swal from "sweetalert2";
-import { triggerToast } from "@/stores/toast";
 import LoginLayout from "@/layout/LoginLayout";
 import TextField from "@/components/ui/TextField";
 import Button from "@/components/ui/Button";
@@ -94,11 +93,7 @@ const SignIn = () => {
         loginData
       );
       const { access_token, user } = response.data;
-
-      // ✅ Store token in localStorage
       localStorage.setItem("token", access_token);
-
-      // ✅ Redirect to platform
       router.push(`/platform/${user.user_id}`);
     } catch (err) {
       const error = err as any;

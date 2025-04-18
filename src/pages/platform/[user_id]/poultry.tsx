@@ -23,7 +23,7 @@ import PoultryOverviewCard from "@/components/cards/poultry/PoultryOverviewCard"
 import PoultryEggCard from "@/components/cards/poultry/PoultryEggCard";
 import Button from "@/components/ui/Button";
 import AddPoultryDataModal from "@/components/modals/AddPoultryDataModal";
-import { API_BASE_URL } from "@/constants/constants";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 ChartJS.register(
   CategoryScale,
@@ -164,7 +164,6 @@ const Poultry = () => {
     feedInventoryDays,
   });
 
-
   const fahrenheit = false;
   function convertToFahrenheit(celsius: number): number {
     return Math.round((celsius * 9) / 5 + 32);
@@ -185,12 +184,12 @@ const Poultry = () => {
       if (!parsedUserId) return;
 
       try {
-        const response = await axios.get(
-          `${API_BASE_URL}/poultry_health/${parsedUserId}`
+        const response = await axiosInstance.get(
+          `/poultry_health/${parsedUserId}`
         );
+
         const healthRecords = response.data.health || [];
 
-        // Next Visit: calculate from future dates
         const visitDates = healthRecords
           .map((record: any) => new Date(record.date))
           .filter((d: Date) => !isNaN(d.getTime()));
@@ -249,9 +248,10 @@ const Poultry = () => {
     const fetchLatestHealthVisit = async () => {
       if (!parsedUserId) return;
       try {
-        const response = await axios.get(
-          `${API_BASE_URL}/poultry_health/${parsedUserId}`
+        const response = await axiosInstance.get(
+          `/poultry_health/${parsedUserId}`
         );
+
         const records = response.data.health;
         if (Array.isArray(records) && records.length > 0) {
           const sorted = [...records].sort(

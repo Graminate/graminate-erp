@@ -4,10 +4,9 @@ import PlatformLayout from "@/layout/PlatformLayout";
 import SettingsBar from "@/components/layout/SettingsBar";
 import DeleteAccountModal from "@/components/modals/DeleteAccountModal";
 import { useRouter } from "next/router";
-import axios from "axios";
-import { API_BASE_URL } from "@/constants/constants";
 import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 type ModalType = "confirmDelete" | "password" | "info" | null;
 type InfoModalContent = {
@@ -76,14 +75,10 @@ const AccountPage = () => {
     setIsVerifying(true);
     setPasswordError("");
     try {
-      const token = localStorage.getItem("token");
-      const response = await axios.post(
-        `${API_BASE_URL}/user/verify-password/${userId}`,
-        { password },
+      const response = await axiosInstance.post(
+        `/user/verify-password/${userId}`,
         {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          password,
         }
       );
       if (response.data.valid) {
@@ -104,14 +99,8 @@ const AccountPage = () => {
     if (!userId) return;
     setIsDeleting(true);
     try {
-      const token = localStorage.getItem("token");
-      const deleteResponse = await axios.delete(
-        `${API_BASE_URL}/user/delete/${userId}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+      const deleteResponse = await axiosInstance.delete(
+        `/user/delete/${userId}`
       );
       if (deleteResponse.status === 200) {
         openModal("info", {

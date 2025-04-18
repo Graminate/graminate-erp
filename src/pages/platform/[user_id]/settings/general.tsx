@@ -10,9 +10,8 @@ import { faTimes } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Button from "@/components/ui/Button";
 import { LANGUAGES, TIME_FORMAT } from "@/constants/options";
-import axios from "axios";
 import Loader from "@/components/ui/Loader";
-import { API_BASE_URL } from "@/constants/constants";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 const GeneralPage = () => {
   const router = useRouter();
@@ -29,13 +28,7 @@ const GeneralPage = () => {
 
     const fetchUserType = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const response = await axios.get(`${API_BASE_URL}/user/${userId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
+        const response = await axiosInstance.get(`/user/${userId}`);
         const user = response.data.user ?? response.data.data?.user;
 
         setUser({
@@ -124,22 +117,13 @@ const GeneralPage = () => {
     setSuccessMessage("");
 
     try {
-      const token = localStorage.getItem("token");
-      await axios.put(
-        `${API_BASE_URL}/user/${userId}`,
-        {
-          first_name: user.firstName,
-          last_name: user.lastName,
-          phone_number: user.phoneNumber,
-          language: user.language,
-          time_format: user.timeFormat,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      await axiosInstance.put(`/user/${userId}`, {
+        first_name: user.firstName,
+        last_name: user.lastName,
+        phone_number: user.phoneNumber,
+        language: user.language,
+        time_format: user.timeFormat,
+      });
 
       setSuccessMessage("Profile updated successfully!");
     } catch (error: any) {
@@ -158,13 +142,7 @@ const GeneralPage = () => {
 
     const fetchUserData = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const response = await axios.get(`${API_BASE_URL}/user/${userId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
+        const response = await axiosInstance.get(`/user/${userId}`);
         const data = response.data;
 
         setUser({

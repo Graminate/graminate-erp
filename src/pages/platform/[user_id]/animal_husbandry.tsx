@@ -4,7 +4,6 @@ import Button from "@/components/ui/Button";
 import Table from "@/components/tables/Table";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
-import axios from "axios";
 import { PAGINATION_ITEMS } from "@/constants/options";
 
 import { Bar, Pie } from "react-chartjs-2";
@@ -19,7 +18,7 @@ import {
   ArcElement,
 } from "chart.js";
 import InventoryForm from "@/components/form/InventoryForm";
-import { API_BASE_URL } from "@/constants/constants";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 ChartJS.register(
   CategoryScale,
@@ -59,8 +58,8 @@ const AnimalHusbandry = () => {
 
     const fetchAnimalHusbandry = async () => {
       try {
-        const response = await axios.get(
-          `${API_BASE_URL}/inventory/${parsedUserId}`
+        const response = await axiosInstance.get(
+          `/animal_husbandry/${parsedUserId}`
         );
 
         setItemRecords(response.data.items || []);

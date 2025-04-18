@@ -3,13 +3,16 @@ import { useRouter } from "next/router";
 import TextField from "@/components/ui/TextField";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import Button from "@/components/ui/Button";
-import { CONTACT_TYPES, PAYMENT_STATUS } from "@/constants/options";
-import axios from "axios";
+import {
+  CONTACT_TYPES,
+  CONTRACT_STATUS,
+  PAYMENT_STATUS,
+} from "@/constants/options";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faX } from "@fortawesome/free-solid-svg-icons";
 import { SidebarProp } from "@/types/card-props";
-import { API_BASE_URL } from "@/constants/constants";
 import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
   const router = useRouter();
@@ -195,7 +198,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       postal_code: contactValues.postal_code,
     };
     try {
-      await axios.post(`${API_BASE_URL}/contacts/add`, payload);
+      await axiosInstance.post("/contacts/add", payload);
       setContactValues({
         firstName: "",
         lastName: "",
@@ -262,7 +265,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       postal_code: companyValues.postal_code,
     };
     try {
-      await axios.post(`${API_BASE_URL}/companies/add`, payload);
+      await axiosInstance.post("/companies/add", payload);
       setCompanyValues({
         companyName: "",
         companyOwner: "",
@@ -306,11 +309,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       end_date: contractsValues.contractEndDate,
     };
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/contracts/add`,
-        payload
-      );
-      console.log("API Response:", response.data);
+      await axiosInstance.post("/contracts/add", payload);
       setContractsValues({
         dealName: "",
         dealPartner: "",
@@ -343,11 +342,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       status: receiptsValues.status,
     };
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/receipts/add`,
-        payload
-      );
-      console.log("API Response:", response.data);
+      await axiosInstance.post("/receipts/add", payload);
       setReceiptsValues({
         title: "",
         billTo: "",
@@ -380,8 +375,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       deadline: taskValues.deadline,
     };
     try {
-      const response = await axios.post(`${API_BASE_URL}/tasks/add`, payload);
-      console.log("API Response:", response.data);
+      await axiosInstance.post("/tasks/add", payload);
       setTaskValues({
         project: "",
         task: "",
@@ -716,13 +710,17 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                       })
                     }
                   />
-                  <TextField
-                    label="State of Contract"
-                    placeholder="e.g. Initialised, In Process, Completed" // Consider making this a dropdown
-                    value={contractsValues.status}
-                    onChange={(val: string) =>
+                </div>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <DropdownLarge
+                    label="Status"
+                    items={CONTRACT_STATUS}
+                    selectedItem={contractsValues.status}
+                    onSelect={(val: string) =>
                       setContractsValues({ ...contractsValues, status: val })
                     }
+                    type="form"
+                    width="full"
                   />
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4">

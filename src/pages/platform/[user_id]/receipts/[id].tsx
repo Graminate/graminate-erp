@@ -11,8 +11,7 @@ import domtoimage from "dom-to-image";
 import jsPDF from "jspdf";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import { PAYMENT_STATUS } from "@/constants/options";
-import axios from "axios";
-import { API_BASE_URL } from "@/constants/constants";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 type Item = {
   description: string;
@@ -169,13 +168,8 @@ const ReceiptDetails = () => {
     };
 
     try {
-      const response = await axios.put(
-        `${API_BASE_URL}/receipts/update`,
-        payload
-      );
-
+      const response = await axiosInstance.put("/receipts/update", payload);
       triggerToast("Receipt updated successfully", "success");
-
       setInitialFormData({
         receiptNumber,
         receiptTitle,

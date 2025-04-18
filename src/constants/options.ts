@@ -88,10 +88,11 @@ export const CONTACT_TYPES = [
 ];
 
 export const CONTRACT_STATUS = [
-  "Negotiation",
-  "Pending Approval",
+  "Drafting",
+  "Review & Discussion",
+  "Approved",
   "Signed",
-  "Completed",
+  "Amendments",
   "Terminated",
 ];
 

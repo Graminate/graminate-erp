@@ -7,7 +7,7 @@ import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
 import { PAGINATION_ITEMS } from "@/constants/options";
 import CRMForm from "@/components/form/CRMForm";
-import { API_BASE_URL } from "@/constants/constants";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 type View = "contacts" | "companies" | "contracts" | "receipts" | "tasks";
 
@@ -45,44 +45,26 @@ const CRM = () => {
     setLoading(true);
 
     Promise.all([
-      fetch(`${API_BASE_URL}/contacts/${user_id}`),
-      fetch(`${API_BASE_URL}/companies/${user_id}`),
-      fetch(`${API_BASE_URL}/contracts/${user_id}`),
-      fetch(`${API_BASE_URL}/receipts/${user_id}`),
-      fetch(`${API_BASE_URL}/tasks/${user_id}`),
+      axiosInstance.get(`/contacts/${user_id}`),
+      axiosInstance.get(`/companies/${user_id}`),
+      axiosInstance.get(`/contracts/${user_id}`),
+      axiosInstance.get(`/receipts/${user_id}`),
+      axiosInstance.get(`/tasks/${user_id}`),
     ])
       .then(
-        async ([
-          contactsRes,
-          companiesRes,
-          contractsRes,
-          receiptsRes,
-          tasksRes,
-        ]) => {
-          if (contactsRes.ok) {
-            const data = await contactsRes.json();
-            setContactsData(data.contacts || []);
-          }
-          if (companiesRes.ok) {
-            const data = await companiesRes.json();
-            setCompaniesData(data.companies || []);
-          }
-          if (contractsRes.ok) {
-            const data = await contractsRes.json();
-            setContractsData(data.contracts || []);
-          }
-          if (receiptsRes.ok) {
-            const data = await receiptsRes.json();
-            setReceiptsData(data.receipts || []);
-          }
-          if (tasksRes.ok) {
-            const data = await tasksRes.json();
-            setTasksData(data.tasks || []);
-          }
+        ([contactsRes, companiesRes, contractsRes, receiptsRes, tasksRes]) => {
+          setContactsData(contactsRes.data.contacts || []);
+          setCompaniesData(companiesRes.data.companies || []);
+          setContractsData(contractsRes.data.contracts || []);
+          setReceiptsData(receiptsRes.data.receipts || []);
+          setTasksData(tasksRes.data.tasks || []);
         }
       )
       .catch((error) => {
-        console.error("Error fetching data:", error);
+        console.error(
+          "Error fetching data:",
+          error.response?.data || error.message
+        );
       })
       .finally(() => {
         setLoading(false);

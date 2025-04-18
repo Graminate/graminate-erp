@@ -21,7 +21,7 @@ import {
 
 import type { Sidebar as SidebarProps } from "@/types/card-props";
 import Loader from "../ui/Loader";
-import { API_BASE_URL } from "@/constants/constants";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
   const router = useRouter();
@@ -43,9 +43,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("No auth token found");
 
-        const response = await axios.get(`${API_BASE_URL}/user/${userId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const response = await axiosInstance.get(`/user/${userId}`);
 
         // adjust this path if your API wraps differently
         const user = response.data?.data?.user ?? response.data?.user;

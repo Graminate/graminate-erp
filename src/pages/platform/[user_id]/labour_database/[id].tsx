@@ -7,8 +7,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { triggerToast } from "@/stores/toast";
 import { GENDER, YESNO } from "@/constants/options";
-import axios from "axios";
-import { API_BASE_URL } from "@/constants/constants";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 const LabourDetails = () => {
   const router = useRouter();
@@ -251,13 +250,7 @@ const LabourDetails = () => {
     console.log("Sending update request with payload:", payload);
 
     try {
-      const response = await axios.put(
-        `${API_BASE_URL}/labour/update`,
-        payload
-      );
-
-      console.log("Response from API:", response.data);
-
+      const response = await axiosInstance.put("/labour/update", payload);
       triggerToast("Labour updated successfully", "success");
 
       setLabour(response.data.updatedLabour);

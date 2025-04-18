@@ -1,11 +1,10 @@
-import { useEffect, useState } from "react";
-import axios from "axios";
+import { useState } from "react";
 import { showToast, toastMessage } from "@/stores/toast";
 import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
-import { API_BASE_URL } from "@/constants/constants";
 import { useSalaryModalPrefill } from "@/hooks/modals";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 type PaymentData = {
   payment_id: number;
@@ -88,12 +87,12 @@ const SalaryModal = ({
 
     try {
       if (editMode && initialData) {
-        await axios.put(`${API_BASE_URL}/labour_payment/update`, {
+        await axiosInstance.put(`/labour_payment/update`, {
           ...payload,
           payment_id: initialData.payment_id,
         });
       } else {
-        await axios.post(`${API_BASE_URL}/labour_payment/add`, payload);
+        await axiosInstance.post(`/labour_payment/add`, payload);
       }
 
       toastMessage.set({

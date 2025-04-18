@@ -5,10 +5,10 @@ import Navbar from "@/components/layout/Navbar/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
 import Swal from "sweetalert2";
 import axios, { AxiosError } from "axios";
-import { API_BASE_URL } from "@/constants/constants";
 import ChatWindow from "@/layout/ChatWindow";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faRobot } from "@fortawesome/free-solid-svg-icons";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 type Props = {
   children: React.ReactNode;
@@ -75,10 +75,7 @@ const PlatformLayout = ({ children }: Props) => {
       }
 
       try {
-        await axios.get(`${API_BASE_URL}/user/${currentUserId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+        await axiosInstance.get(`/user/${currentUserId}`, {
           timeout: 10000,
         });
 

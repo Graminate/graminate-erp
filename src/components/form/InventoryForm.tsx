@@ -4,12 +4,11 @@ import TextField from "@/components/ui/TextField";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import Button from "@/components/ui/Button";
 import { UNITS } from "@/constants/options";
-import axios from "axios";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faX } from "@fortawesome/free-solid-svg-icons";
 import { SidebarProp } from "@/types/card-props";
-import { API_BASE_URL } from "@/constants/constants";
 import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 const InventoryForm = ({ onClose, formTitle }: SidebarProp) => {
   const router = useRouter();
@@ -48,7 +47,7 @@ const InventoryForm = ({ onClose, formTitle }: SidebarProp) => {
       price_per_unit: inventoryItem.pricePerUnit,
     };
     try {
-      await axios.post(`${API_BASE_URL}/inventory/add`, payload);
+      await axiosInstance.post(`/inventory/add`, payload);
       setInventoryItem({
         itemName: "",
         itemGroup: "",

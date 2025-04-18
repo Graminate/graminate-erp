@@ -7,9 +7,8 @@ import { useEffect, useState } from "react";
 import { triggerToast } from "@/stores/toast";
 import { CONTACT_TYPES } from "@/constants/options";
 import Loader from "@/components/ui/Loader";
-import axios from "axios";
 import Head from "next/head";
-import { API_BASE_URL } from "@/constants/constants";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 const ContactDetails = () => {
   const router = useRouter();
@@ -123,15 +122,8 @@ const ContactDetails = () => {
     };
 
     try {
-      const response = await axios.put(
-        `${API_BASE_URL}/contacts/update`,
-        payload
-      );
-
-      console.log("Response from API:", response.data);
-
+      const response = await axiosInstance.put("/contacts/update", payload);
       triggerToast("Contact updated successfully", "success");
-
       const updated = response.data.contact;
 
       setContact([

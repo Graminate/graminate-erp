@@ -4,8 +4,7 @@ import NotificationBar from "../NotificationSideBar";
 
 import type { User } from "@/types/card-props";
 import type { Navbar } from "@/types/card-props";
-import axios from "axios";
-import { API_BASE_URL } from "@/constants/constants";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
   const router = useRouter();
@@ -41,11 +40,7 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("No token found");
 
-        const response = await axios.get(`${API_BASE_URL}/user/${userId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await axiosInstance.get(`/user/${userId}`);
 
         const data = response.data?.data?.user;
 

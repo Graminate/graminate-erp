@@ -7,8 +7,7 @@ import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { triggerToast } from "@/stores/toast";
 import { COMPANY_TYPES } from "@/constants/options";
-import axios from "axios";
-import { API_BASE_URL } from "@/constants/constants";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 const CompanyDetails = () => {
   const router = useRouter();
@@ -119,15 +118,8 @@ const CompanyDetails = () => {
     };
 
     try {
-      const response = await axios.put(
-        `${API_BASE_URL}/companies/update`,
-        payload
-      );
-
-      console.log("Response from API:", response.data);
-
+      const response = await axiosInstance.put("/companies/update", payload);
       triggerToast("Company updated successfully", "success");
-
       const updated = response.data.company;
 
       setCompany(updated);

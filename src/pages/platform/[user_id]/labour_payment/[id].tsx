@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
-import axios from "axios";
 import Button from "@/components/ui/Button";
 import Table from "@/components/tables/Table";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -12,7 +11,7 @@ import {
   faUser,
 } from "@fortawesome/free-solid-svg-icons";
 import SalaryModal from "@/components/modals/SalaryModal";
-import { API_BASE_URL } from "@/constants/constants";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 type PaymentRecord = {
   payment_id: number;
@@ -54,10 +53,8 @@ const LabourPaymentDetails = () => {
 
     const fetchData = async () => {
       try {
-        const laboursRes = await axios.get(
-          `${API_BASE_URL}/labour/${parsedUserId}`
-        );
-        const labours = laboursRes.data.labours || [];
+        const response = await axiosInstance.get(`/labour/${parsedUserId}`);
+        const labours = response.data.labours || [];
         const labour = labours.find((l: any) => l.labour_id == parsedLabourId);
 
         if (labour) {
@@ -77,10 +74,10 @@ const LabourPaymentDetails = () => {
         }
 
         try {
-          const paymentsRes = await axios.get(
-            `${API_BASE_URL}/labour_payment/${parsedLabourId}`
+          const response = await axiosInstance.get(
+            `/labour_payment/${parsedUserId}`
           );
-          setPaymentRecords(paymentsRes.data.payments || []);
+          setPaymentRecords(response.data.payments || []);
         } catch (err: any) {
           console.warn(
             "No payments found:",

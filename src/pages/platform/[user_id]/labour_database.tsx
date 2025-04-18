@@ -5,9 +5,8 @@ import Table from "@/components/tables/Table";
 import PlatformLayout from "@/layout/PlatformLayout";
 import { PAGINATION_ITEMS } from "@/constants/options";
 import Head from "next/head";
-import axios from "axios";
 import LabourForm from "@/components/form/LabourForm";
-import { API_BASE_URL } from "@/constants/constants";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 type View = "labour";
 
@@ -29,8 +28,8 @@ const LabourDatabase = () => {
 
     const fetchLabours = async () => {
       try {
-        const response = await axios.get(
-          `${API_BASE_URL}/labour/${encodeURIComponent(parsedUserId)}`
+        const response = await axiosInstance.get(
+          `/labour/${encodeURIComponent(parsedUserId)}`
         );
 
         setLabourRecords(response.data.labours || []);

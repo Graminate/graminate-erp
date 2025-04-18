@@ -35,27 +35,24 @@ const PoultryHealthDetails = () => {
     setIsDownloading(true);
 
     try {
-      // Convert DOM element to PNG
       const imgData = await domtoimage.toPng(element);
 
       const pdf = new jsPDF("p", "pt", "a4");
-      const pageWidth = pdf.internal.pageSize.getWidth(); // 595pt
-      const pageHeight = pdf.internal.pageSize.getHeight(); // 842pt
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
 
-      // Load image and wait for it to resolve dimensions
       const img = new Image();
       img.src = imgData;
 
       img.onload = () => {
-        const scaleFactor = 0.75; // You can tweak this to zoom more/less
+        const scaleFactor = 0.75;
         const imgWidth = pageWidth * scaleFactor;
         const imgHeight = (img.height * imgWidth) / img.width;
 
-        const xOffset = (pageWidth - imgWidth) / 2; // ✅ Center horizontally
+        const xOffset = (pageWidth - imgWidth) / 2;
         let position = 0;
         let heightLeft = imgHeight;
 
-        // Loop through PDF pages if image is taller than one page
         while (heightLeft > 0) {
           pdf.addImage(
             imgData,

@@ -6,7 +6,7 @@ import Calendar from "@/components/ui/Calendar/Calendar";
 import Head from "next/head";
 import Swal from "sweetalert2";
 import FirstLoginModal from "@/components/modals/FirstLoginModal";
-import { API_BASE_URL } from "@/constants/constants";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 type User = {
   user_id: string;
@@ -36,16 +36,8 @@ const Dashboard = () => {
 
     const fetchUserData = async () => {
       try {
-        const token = localStorage.getItem("token");
-
-        const response = await axios.get(`${API_BASE_URL}/user/${userId}`, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
+        const response = await axiosInstance.get(`/user/${userId}`);
         const fetchedUser = response.data?.data?.user as User | undefined;
-
         if (fetchedUser) {
           setUserData(fetchedUser);
           if (!fetchedUser.business_name || !fetchedUser.type) {
@@ -104,22 +96,14 @@ const Dashboard = () => {
     subType?: string[]
   ) => {
     try {
-      const token = localStorage.getItem("token"); // ✅ get JWT
+      const token = localStorage.getItem("token");
       if (!token) throw new Error("No token found");
 
-      await axios.put(
-        `${API_BASE_URL}/user/${userId}`,
-        {
-          business_name: businessName,
-          type: businessType,
-          sub_type: subType,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`, // ✅ pass the token
-          },
-        }
-      );
+      await axiosInstance.put(`/user/${userId}`, {
+        business_name: businessName,
+        type: businessType,
+        sub_type: subType,
+      });
 
       await Swal.fire({
         title: "Welcome!",

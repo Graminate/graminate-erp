@@ -3,12 +3,11 @@ import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import TextField from "@/components/ui/TextField";
 import { CONTRACT_STATUS } from "@/constants/options";
 import PlatformLayout from "@/layout/PlatformLayout";
-import axios from "axios";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { triggerToast } from "@/stores/toast";
 import Head from "next/head";
-import { API_BASE_URL } from "@/constants/constants";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 const ContractDetails = () => {
   const router = useRouter();
@@ -111,14 +110,10 @@ const ContractDetails = () => {
     };
 
     try {
-      const response = await axios.put(
-        `${API_BASE_URL}/contracts/update`,
-        payload
-      );
-
+      await axiosInstance.put("/contracts/update", payload);
       triggerToast("Contract updated successfully", "success");
-
       setDisplayContractName(contractName);
+
       setInitialFormData({
         contractName,
         partnerClient,
