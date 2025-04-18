@@ -1,12 +1,18 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import Swal from "sweetalert2";
 import SearchBar from "@/components/ui/SearchBar";
 import Button from "@/components/ui/Button";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import Loader from "@/components/ui/Loader";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faCircle } from "@fortawesome/free-solid-svg-icons";
+import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 type Props = {
-  onRowClick: (row: any[]) => void;
+  onRowClick?: (row: any[]) => void;
   data: { columns: string[]; rows: any[][] };
   filteredRows: any[][];
   currentPage: number;
@@ -20,6 +26,9 @@ type Props = {
   view?: string;
   exportEnabled?: boolean;
   loading?: boolean;
+  reset?: boolean;
+  hideChecks?: boolean;
+  download?: boolean;
 };
 
 const Table = ({
@@ -35,34 +44,28 @@ const Table = ({
   setSearchQuery,
   totalRecordCount,
   view = "",
-  exportEnabled = true,
   loading,
+  reset = true,
+  hideChecks = false,
+  download = true,
 }: Props) => {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [sortColumn, setSortColumn] = useState<number | null>(null);
   const [selectAll, setSelectAll] = useState(false);
   const [selectedRows, setSelectedRows] = useState<boolean[]>([]);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Calculate paginated rows based on the filteredRows, currentPage and itemsPerPage.
   const paginatedRows = useMemo(() => {
     const start = (currentPage - 1) * itemsPerPage;
     const end = start + itemsPerPage;
     return filteredRows.slice(start, end);
   }, [filteredRows, currentPage, itemsPerPage]);
 
-  // Reset the selected rows whenever the paginated rows or selectAll flag changes.
-  useEffect(() => {
-    if (paginatedRows.length > 0) {
-      setSelectedRows(new Array(paginatedRows.length).fill(selectAll));
-    }
-  }, [paginatedRows, selectAll]);
-
-  // Count of selected rows
   const selectedRowCount = selectedRows.filter(
     (isSelected) => isSelected
   ).length;
 
-  // Sort the paginated rows based on the selected column and order.
   const sortedAndPaginatedRows = useMemo(() => {
     let rows = [...paginatedRows];
     if (sortColumn !== null) {
@@ -84,36 +87,59 @@ const Table = ({
     return rows;
   }, [paginatedRows, sortColumn, sortOrder]);
 
-  // Export table data as CSV.
-  const exportTableData = () => {
-    if (sortedAndPaginatedRows.length === 0) {
+  const getExportRows = () => {
+    const selected = selectedRows
+      .map((isSelected, idx) =>
+        isSelected ? sortedAndPaginatedRows[idx] : null
+      )
+      .filter((row) => row !== null);
+
+    return selected.length > 0 ? selected : sortedAndPaginatedRows;
+  };
+
+  const exportTableData = (format: "pdf" | "xlsx") => {
+    const exportRows = getExportRows();
+
+    if (exportRows.length === 0) {
       Swal.fire("No Data", "There is no data to export.", "info");
       return;
     }
-    const csvContent = [
-      data.columns.join(","),
-      ...sortedAndPaginatedRows.map((row) => row.join(",")),
-    ].join("\n");
 
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${view}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    if (format === "pdf") {
+      const doc = new jsPDF();
+      autoTable(doc, {
+        head: [data.columns],
+        body: exportRows,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [52, 73, 94] },
+      });
+      doc.save(`${view}.pdf`);
+    }
+
+    if (format === "xlsx") {
+      const worksheet = XLSX.utils.aoa_to_sheet([data.columns, ...exportRows]);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Sheet1");
+      const wbout = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+      const blob = new Blob([wbout], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${view}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
   };
-
-  // Handle "select all" checkbox change.
   const handleSelectAllChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const checked = e.target.checked;
     setSelectAll(checked);
     setSelectedRows(new Array(paginatedRows.length).fill(checked));
   };
 
-  // Handle an individual row checkbox change.
   const handleRowCheckboxChange = (
     rowIndex: number,
     e: React.ChangeEvent<HTMLInputElement>
@@ -127,7 +153,6 @@ const Table = ({
     });
   };
 
-  // Delete selected rows after user confirmation.
   const deleteSelectedRows = async () => {
     const rowsToDelete: number[] = [];
 
@@ -151,11 +176,13 @@ const Table = ({
       companies: "company",
       contacts: "contact",
       labours: "labour",
+      inventory: "inventory",
       contracts: "contract",
       receipts: "receipt",
+      tasks: "tasks",
     };
 
-    const entityToDelete = entityNames[view] || "contracts";
+    const entityToDelete = entityNames[view] || view;
 
     const result = await Swal.fire({
       title: "Are you sure?",
@@ -174,20 +201,21 @@ const Table = ({
         else if (view === "companies") endpoint = "companies";
         else if (view === "contracts") endpoint = "contracts";
         else if (view === "receipts") endpoint = "receipts";
-        else endpoint = "labour";
+        else if (view === "tasks") endpoint = "tasks";
+        else if (view === "labour") endpoint = "labour";
+        else if (view === "poultry_health") endpoint = "poultry_health";
+        else endpoint = "inventory";
 
         await Promise.all(
           rowsToDelete.map(async (id) => {
-            const response = await fetch(
-              `http://localhost:3001/api/${endpoint}/delete/${id}`,
-              {
-                method: "DELETE",
-              }
-            );
-            if (!response.ok) {
-              throw new Error(
-                `Failed to delete ${endpoint.slice(0, -1)} with id ${id}`
-              );
+            try {
+              await axiosInstance.delete(`/${endpoint}/delete/${id}`);
+            } catch (error: any) {
+              const message =
+                error.response?.data?.error ||
+                `Failed to delete ${endpoint.slice(0, -1)} with id ${id}`;
+              console.error(message);
+              throw new Error(message);
             }
           })
         );
@@ -204,7 +232,6 @@ const Table = ({
     }
   };
 
-  // Toggle sort order or set a new sort column.
   const toggleSort = (columnIndex: number) => {
     if (sortColumn === columnIndex) {
       setSortOrder((prev) => (prev === "asc" ? "desc" : "asc"));
@@ -215,7 +242,6 @@ const Table = ({
     setCurrentPage(1);
   };
 
-  // Handle selection change for pagination dropdown.
   const handleSelect = (item: string) => {
     if (item === "25 per page") setItemsPerPage(25);
     else if (item === "50 per page") setItemsPerPage(50);
@@ -224,11 +250,11 @@ const Table = ({
 
   return (
     <div>
-      <div className="flex p-1 justify-between items-center border-t border-l border-r border-gray-300 dark:border-gray-200">
+      <div className="flex py-4 justify-between items-center bg-gray-50 dark:bg-gray-800 border-b border-gray-300 dark:border-gray-700 rounded-t-lg transition-colors duration-300">
         <div className="flex gap-2">
           <SearchBar
             mode="table"
-            placeholder="Search data"
+            placeholder="Search table"
             value={searchQuery}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
               setSearchQuery(e.target.value)
@@ -251,13 +277,90 @@ const Table = ({
             </div>
           )}
         </div>
-        <div className="flex gap-2">
-          {exportEnabled && (
+        <div className="flex flex-row gap-2">
+          {reset && (
             <Button
               style="secondary"
-              text="Export Data"
-              onClick={exportTableData}
+              text="Reset"
+              isDisabled={filteredRows.length === 0}
+              onClick={async () => {
+                if (filteredRows.length === 0) return;
+
+                // Do not touch
+                const entityNames: Record<string, string> = {
+                  contacts: "contacts",
+                  companies: "companies",
+                  contracts: "contracts",
+                  receipts: "receipts",
+                  tasks: "tasks",
+                  labour: "labour",
+                  inventory: "inventory",
+                  poultry_health: "poultry_health",
+                };
+
+                const entityToTruncate = entityNames[view] || view;
+
+                const result = await Swal.fire({
+                  title: "Are you sure?",
+                  text: `This will reset your ${entityToTruncate} records.`,
+                  icon: "warning",
+                  showCancelButton: true,
+                  confirmButtonText: "Yes, Reset!",
+                  cancelButtonText: "Cancel",
+                });
+
+                if (result.isConfirmed) {
+                  try {
+                    const userId = localStorage.getItem("userId");
+                    await axiosInstance.post(`/${entityToTruncate}/reset`, {
+                      userId,
+                    });
+                    Swal.fire(
+                      "Reset!",
+                      "Table has been reset.",
+                      "success"
+                    ).then(() => location.reload());
+                    let endpoint = "";
+                  } catch (err) {
+                    console.error(err);
+                    Swal.fire("Error", "Failed to reset table.", "error");
+                  }
+                }
+              }}
             />
+          )}
+
+          {download && (
+            <div className="relative" ref={dropdownRef}>
+              <Button
+                style="secondary"
+                text="Download Data"
+                isDisabled={filteredRows.length === 0}
+                onClick={() => setShowExportDropdown(!showExportDropdown)}
+              />
+              {showExportDropdown && (
+                <div className="absolute left-0 top-full mt-2 w-40 bg-white dark:bg-gray-700 rounded-lg shadow-lg z-50 transition transform duration-200">
+                  <button
+                    className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 rounded-t-lg dark:hover:bg-gray-600"
+                    onClick={() => {
+                      exportTableData("pdf");
+                      setShowExportDropdown(false);
+                    }}
+                  >
+                    Export as PDF
+                  </button>
+                  <button
+                    className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 rounded-b-lg dark:hover:bg-gray-600"
+                    onClick={() => {
+                      exportTableData("xlsx");
+                      setShowExportDropdown(false);
+                    }}
+                  >
+                    Export as XLSX
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -267,21 +370,23 @@ const Table = ({
           <Loader />
         </div>
       ) : sortedAndPaginatedRows.length > 0 ? (
-        <table className="table-auto w-full border">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900">
           <thead>
             <tr>
-              <th className="p-2 border border-gray-300 dark:border-gray-200 bg-gray-400 dark:bg-gray-800 text-left">
-                <input
-                  type="checkbox"
-                  className="form-checkbox h-4 w-4 text-gray-600"
-                  checked={selectAll}
-                  onChange={handleSelectAllChange}
-                />
-              </th>
+              {!hideChecks && (
+                <th className="p-3 text-left font-medium text-dark dark:text-gray-300 bg-gray-500 hover:bg-gray-400 dark:bg-gray-800 dark:border-gray-700">
+                  <input
+                    type="checkbox"
+                    className="form-checkbox h-4 w-4 text-gray-600"
+                    checked={selectAll}
+                    onChange={handleSelectAllChange}
+                  />
+                </th>
+              )}
               {data.columns.map((column, index) => (
                 <th
                   key={index}
-                  className="p-2 border border-gray-300 dark:border-gray-200 bg-gray-400 dark:bg-gray-800 dark:text-gray-500 cursor-pointer text-left"
+                  className="p-3  dark:border-gray-700 bg-gray-500 dark:bg-gray-800 dark:text-gray-300 cursor-pointer text-left transition-colors duration-200 hover:bg-gray-400 dark:hover:bg-gray-700"
                   onClick={() => toggleSort(index)}
                 >
                   <div className="flex items-center justify-between">
@@ -309,54 +414,86 @@ const Table = ({
             {sortedAndPaginatedRows.map((row, rowIndex) => (
               <tr
                 key={rowIndex}
-                className="cursor-pointer hover:bg-gray-500 dark:hover:bg-gray-700"
+                className="cursor-pointer transition-colors duration-200 hover:bg-gray-50 dark:hover:bg-gray-800"
                 onClick={(e) => {
                   if ((e.target as HTMLElement).tagName !== "INPUT") {
-                    onRowClick(row);
+                    onRowClick?.(row);
                   }
                 }}
               >
-                <td className="p-2 border border-gray-300 dark:border-gray-200">
-                  <input
-                    type="checkbox"
-                    className="form-checkbox h-4 w-4 text-gray-200 dark:text-light"
-                    checked={selectedRows[rowIndex] || false}
-                    onChange={(e) => handleRowCheckboxChange(rowIndex, e)}
-                  />
-                </td>
-                {view === "contacts" ||
-                view === "companies" ||
-                view === "contracts" ||
-                view === "labours"
-                  ? row.slice(1).map((cell, cellIndex) => (
-                      <td
-                        key={cellIndex}
-                        className="p-2 border border-gray-300 dark:border-gray-200 text-base font-light dark:text-gray-400"
-                      >
-                        {cell}
-                      </td>
-                    ))
-                  : row.map((cell, cellIndex) => (
-                      <td
-                        key={cellIndex}
-                        className="p-2 border border-gray-300 dark:border-gray-200 text-base font-light dark:text-gray-400"
-                      >
-                        {cell}
-                      </td>
-                    ))}
+                {!hideChecks && (
+                  <td className="p-3 border-b border-gray-300 dark:border-gray-700 text-base font-light text-gray-700 dark:text-gray-300">
+                    <input
+                      type="checkbox"
+                      className="form-checkbox h-4 w-4 text-gray-200 dark:text-light"
+                      checked={selectedRows[rowIndex] || false}
+                      onChange={(e) => handleRowCheckboxChange(rowIndex, e)}
+                    />
+                  </td>
+                )}
+
+                {row.map((cell, cellIndex) => (
+                  <td
+                    key={cellIndex}
+                    className="p-2 border-b border-gray-300 dark:border-gray-200 text-base font-light dark:text-gray-400 max-w-[200px] truncate overflow-hidden whitespace-nowrap"
+                    title={typeof cell === "string" ? cell : undefined}
+                  >
+                    {view === "inventory" &&
+                    data.columns[cellIndex] === "Status" ? (
+                      <div className="flex gap-[2px] text-sm">
+                        {(() => {
+                          const quantity =
+                            row[data.columns.indexOf("Quantity")];
+                          const max = Math.max(
+                            ...filteredRows.map(
+                              (r) => r[data.columns.indexOf("Quantity")]
+                            )
+                          );
+                          const ratio = quantity / max;
+                          let count = 0;
+                          let color = "";
+
+                          if (ratio < 0.25) {
+                            count = 1;
+                            color = "text-red-200";
+                          } else if (ratio < 0.5) {
+                            count = 2;
+                            color = "text-orange-400";
+                          } else if (ratio < 0.75) {
+                            count = 3;
+                            color = "text-yellow-200";
+                          } else {
+                            count = 4;
+                            color = "text-green-200";
+                          }
+
+                          return Array.from({ length: count }).map((_, i) => (
+                            <FontAwesomeIcon
+                              key={i}
+                              icon={faCircle}
+                              className={color}
+                            />
+                          ));
+                        })()}
+                      </div>
+                    ) : (
+                      cell
+                    )}
+                  </td>
+                ))}
               </tr>
             ))}
           </tbody>
         </table>
       ) : (
         <div className="text-center p-4 text-gray-300">
-          <span className="text-lg">⚠️</span> Record(s) not Found
+          <span className="text-lg">⚠️</span> No Data Available
         </div>
       )}
 
       {!loading && (
         <nav
-          className="flex items-center justify-between px-4 py-3 sm:px-6"
+          className="flex items-center justify-between px-4 py-3 sm:px-6 bg-gray-50 dark:bg-gray-800 rounded-b-lg transition-colors duration-300"
           aria-label="Pagination"
         >
           <div className="flex mx-auto px-5 items-center">

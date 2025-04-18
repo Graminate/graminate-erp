@@ -2,14 +2,16 @@ import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
 import Button from "@/components/ui/Button";
 import SearchDropdown from "@/components/ui/SearchDropdown";
-import DataForm from "@/components/form/DataForm";
 import Table from "@/components/tables/Table";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
+import { PAGINATION_ITEMS } from "@/constants/options";
+import CRMForm from "@/components/form/CRMForm";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 type View = "contacts" | "companies" | "contracts" | "receipts" | "tasks";
 
-const ContactsPage = () => {
+const CRM = () => {
   const router = useRouter();
   const { user_id, view: queryView } = router.query;
   const view: View =
@@ -34,7 +36,7 @@ const ContactsPage = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(25);
-  const paginationItems = ["25 per page", "50 per page", "100 per page"];
+
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
@@ -43,44 +45,26 @@ const ContactsPage = () => {
     setLoading(true);
 
     Promise.all([
-      fetch(`http://localhost:3001/api/contacts/${user_id}`),
-      fetch(`http://localhost:3001/api/companies/${user_id}`),
-      fetch(`http://localhost:3001/api/contracts/${user_id}`),
-      fetch(`http://localhost:3001/api/receipts/${user_id}`),
-      fetch(`/api/tasks/${user_id}`),
+      axiosInstance.get(`/contacts/${user_id}`),
+      axiosInstance.get(`/companies/${user_id}`),
+      axiosInstance.get(`/contracts/${user_id}`),
+      axiosInstance.get(`/receipts/${user_id}`),
+      axiosInstance.get(`/tasks/${user_id}`),
     ])
       .then(
-        async ([
-          contactsRes,
-          companiesRes,
-          contractsRes,
-          receiptsRes,
-          tasksRes,
-        ]) => {
-          if (contactsRes.ok) {
-            const data = await contactsRes.json();
-            setContactsData(data.contacts || []);
-          }
-          if (companiesRes.ok) {
-            const data = await companiesRes.json();
-            setCompaniesData(data.companies || []);
-          }
-          if (contractsRes.ok) {
-            const data = await contractsRes.json();
-            setContractsData(data.contracts || []);
-          }
-          if (receiptsRes.ok) {
-            const data = await receiptsRes.json();
-            setReceiptsData(data.receipts || []);
-          }
-          if (tasksRes.ok) {
-            const data = await tasksRes.json();
-            setTasksData(data.tasks || []);
-          }
+        ([contactsRes, companiesRes, contractsRes, receiptsRes, tasksRes]) => {
+          setContactsData(contactsRes.data.contacts || []);
+          setCompaniesData(companiesRes.data.companies || []);
+          setContractsData(contractsRes.data.contracts || []);
+          setReceiptsData(receiptsRes.data.receipts || []);
+          setTasksData(tasksRes.data.tasks || []);
         }
       )
       .catch((error) => {
-        console.error("Error fetching data:", error);
+        console.error(
+          "Error fetching data:",
+          error.response?.data || error.message
+        );
       })
       .finally(() => {
         setLoading(false);
@@ -119,11 +103,10 @@ const ContactsPage = () => {
   const tableData = useMemo(() => {
     switch (view) {
       case "contacts":
-        if (fetchedData.length === 0) {
-          return { columns: [], rows: [] };
-        }
+        if (fetchedData.length === 0) return { columns: [], rows: [] };
         return {
           columns: [
+            "ID",
             "First Name",
             "Last Name",
             "Email",
@@ -139,16 +122,23 @@ const ContactsPage = () => {
             item.email,
             item.phone_number,
             item.type,
-            item.address,
+            [
+              item.address_line_1,
+              item.address_line_2,
+              item.city,
+              item.state,
+              item.postal_code,
+            ]
+              .filter(Boolean)
+              .join(", "),
             new Date(item.created_at).toDateString(),
           ]),
         };
       case "companies":
-        if (fetchedData.length === 0) {
-          return { columns: [], rows: [] };
-        }
+        if (fetchedData.length === 0) return { columns: [], rows: [] };
         return {
           columns: [
+            "ID",
             "Company Name",
             "Owner Name",
             "Email",
@@ -162,16 +152,23 @@ const ContactsPage = () => {
             item.owner_name,
             item.email,
             item.phone_number,
-            item.address,
+            [
+              item.address_line_1,
+              item.address_line_2,
+              item.city,
+              item.state,
+              item.postal_code,
+            ]
+              .filter(Boolean)
+              .join(", "),
             item.type,
           ]),
         };
       case "contracts":
-        if (fetchedData.length === 0) {
-          return { columns: [], rows: [] };
-        }
+        if (fetchedData.length === 0) return { columns: [], rows: [] };
         return {
           columns: [
+            "ID",
             "Deal Name",
             "Partner / Client",
             "Amount",
@@ -190,9 +187,7 @@ const ContactsPage = () => {
           ]),
         };
       case "receipts":
-        if (fetchedData.length === 0) {
-          return { columns: [], rows: [] };
-        }
+        if (fetchedData.length === 0) return { columns: [], rows: [] };
         return {
           columns: [
             "ID",
@@ -203,7 +198,6 @@ const ContactsPage = () => {
             "Due Date",
             "Status",
           ],
-
           rows: fetchedData.map((item) => [
             item.invoice_id,
             item.title,
@@ -218,24 +212,24 @@ const ContactsPage = () => {
         return {
           columns: [
             "ID",
-            "Title",
-            "Crop",
+            "Project / Category",
+            "Task",
             "Status",
-            "Budget",
+            "Description",
+            "Priority",
+            "Deadline",
             "Created On",
-            "End Date",
           ],
-          rows: [
-            [
-              "001",
-              "Summer Farm",
-              "Green Tea",
-              "Active",
-              "40,000",
-              "2024-11-01",
-              "2025-07-01",
-            ],
-          ],
+          rows: fetchedData.map((item) => [
+            item.task_id,
+            item.project,
+            item.task,
+            item.status,
+            item.description,
+            item.priority,
+            item.deadline ? new Date(item.deadline).toDateString() : "",
+            new Date(item.created_on).toDateString(),
+          ]),
         };
       default:
         return { columns: [], rows: [] };
@@ -266,10 +260,15 @@ const ContactsPage = () => {
 
   const handleRowClick = (row: any[]) => {
     const id = row[0];
-    const fullData =
-      view === "receipts"
-        ? fetchedData.find((item) => item.invoice_id === id)
-        : null;
+    let fullData = null;
+    if (view === "receipts") {
+      fullData = fetchedData.find((item) => item.invoice_id === id);
+    } else if (view === "contacts") {
+      fullData = fetchedData.find((item) => item.contact_id === id);
+    } else if (view === "companies") {
+      fullData = fetchedData.find((item) => item.company_id === id);
+    }
+
     const rowData = JSON.stringify(fullData || row);
 
     const validViews = [
@@ -357,7 +356,7 @@ const ContactsPage = () => {
           filteredRows={filteredRows}
           currentPage={currentPage}
           itemsPerPage={itemsPerPage}
-          paginationItems={paginationItems}
+          paginationItems={PAGINATION_ITEMS}
           searchQuery={searchQuery}
           totalRecordCount={totalRecordCount}
           onRowClick={handleRowClick}
@@ -369,7 +368,7 @@ const ContactsPage = () => {
         />
 
         {isSidebarOpen && (
-          <DataForm
+          <CRMForm
             view={view}
             onClose={() => setIsSidebarOpen(false)}
             onSubmit={handleFormSubmit}
@@ -381,4 +380,4 @@ const ContactsPage = () => {
   );
 };
 
-export default ContactsPage;
+export default CRM;

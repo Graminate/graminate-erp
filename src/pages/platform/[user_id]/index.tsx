@@ -1,141 +1,179 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/router";
+import axios from "axios";
 import PlatformLayout from "@/layout/PlatformLayout";
-import TemperatureCard from "@/components/cards/weather/TemperatureCard";
 import Calendar from "@/components/ui/Calendar/Calendar";
-import Loader from "@/components/ui/Loader";
-import ProgressCard from "@/components/cards/ProgressCard";
-import StatusCard from "@/components/cards/StatusCard";
 import Head from "next/head";
+import Swal from "sweetalert2";
+import FirstLoginModal from "@/components/modals/FirstLoginModal";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
-type Coordinates = {
-  lat: number;
-  lon: number;
+type User = {
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone_number: string;
+  business_name?: string;
+  imageUrl?: string | null;
+  language?: string;
+  time_format?: string;
+  type?: string;
 };
 
-const UserPlatformPage = () => {
-  const [location, setLocation] = useState<Coordinates | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [locationServiceEnabled, setLocationServiceEnabled] = useState(true);
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentStep, setCurrentStep] = useState<number>(1);
-  const [temperatureScale] = useState<string>("Fahrenheit");
-
-  const fahrenheit = temperatureScale === "Fahrenheit";
-
-  const steps = [
-    "Procurement",
-    "Preparation",
-    "Farming",
-    "Recurring Cost",
-    "Harvest",
-  ];
+const Dashboard = () => {
+  const router = useRouter();
+  const userId = router.isReady ? (router.query.user_id as string) : undefined;
+  const [userData, setUserData] = useState<User | null>(null);
+  const [isUserDataLoading, setIsUserDataLoading] = useState<boolean>(true);
+  const [isSetupModalOpen, setIsSetupModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
-    const savedStep = localStorage.getItem("currentStep");
-    if (savedStep) {
-      setCurrentStep(parseInt(savedStep, 10));
-    }
+    if (!router.isReady || !userId) return;
 
-    checkLocationService()
-      .then((coords) => {
-        setLocation(coords);
-      })
-      .catch((err) => {
-        setLocationServiceEnabled(false);
-        setError(err);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  }, []);
+    let isMounted = true;
+    setIsUserDataLoading(true);
 
-  useEffect(() => {
-    localStorage.setItem("currentStep", currentStep.toString());
-  }, [currentStep]);
-
-  const checkLocationService = (): Promise<Coordinates> => {
-    return new Promise((resolve, reject) => {
-      if (!navigator.geolocation) {
-        reject("Geolocation is not supported by your browser.");
-        return;
-      }
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          resolve({
-            lat: position.coords.latitude,
-            lon: position.coords.longitude,
-          });
-        },
-        () => {
-          reject("Unable to fetch location. Please enable location services.");
+    const fetchUserData = async () => {
+      try {
+        const response = await axiosInstance.get(`/user/${userId}`);
+        const fetchedUser = response.data?.data?.user as User | undefined;
+        if (fetchedUser) {
+          setUserData(fetchedUser);
+          if (!fetchedUser.business_name || !fetchedUser.type) {
+            setIsSetupModalOpen(true);
+          }
+        } else {
+          throw new Error("Invalid response: user not found");
         }
-      );
-    });
-  };
+      } catch (error: any) {
+        if (!isMounted) return;
 
-  const handleStepChange = (data: { step: number }) => {
-    setCurrentStep(data.step);
+        let errorTitle = "Error";
+        let errorText = "Failed to fetch user data. Please try again later.";
+
+        if (axios.isAxiosError(error)) {
+          if (error.response?.status === 401) {
+            errorTitle = "Access Denied";
+            errorText = "Session expired. Please log in again.";
+          } else if (error.response?.status === 404) {
+            errorTitle = "Not Found";
+            errorText = `User not found.`;
+          } else if (error.code === "ECONNABORTED") {
+            errorText =
+              "Request timed out. Please check your connection and try again.";
+          }
+        } else {
+          console.error("Non-Axios error fetching user data:", error);
+        }
+
+        await Swal.fire({
+          title: errorTitle,
+          text: errorText,
+          icon: "error",
+          confirmButtonText: "OK",
+          allowOutsideClick: false,
+          allowEscapeKey: false,
+        });
+        router.push("/");
+      } finally {
+        if (isMounted) {
+          setIsUserDataLoading(false);
+        }
+      }
+    };
+
+    fetchUserData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [router.isReady, userId, router]);
+
+  const handleFirstLogin = async (
+    businessName: string,
+    businessType: string,
+    subType?: string[]
+  ) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("No token found");
+
+      await axiosInstance.put(`/user/${userId}`, {
+        business_name: businessName,
+        type: businessType,
+        sub_type: subType,
+      });
+
+      await Swal.fire({
+        title: "Welcome!",
+        text: "Your account is now set up. Let’s get started 🚀",
+        icon: "success",
+        confirmButtonText: "Ok",
+      }).then(() => {
+        window.location.reload();
+      });
+
+      setUserData((prev) =>
+        prev
+          ? {
+              ...prev,
+              business_name: businessName,
+              type: businessType,
+              sub_type: subType,
+            }
+          : prev
+      );
+
+      setIsSetupModalOpen(false);
+    } catch (error: any) {
+      console.error("Error updating business info:", error);
+      Swal.fire({
+        title: "Error",
+        text: "Failed to update business info. Please try again.",
+        icon: "error",
+        confirmButtonText: "OK",
+      });
+    }
   };
 
   return (
     <>
       <Head>
-        <title>Graminate | Platform</title>
+        <title>{`Dashboard ${
+          userData ? `- ${userData.first_name}` : ""
+        } | Graminate Platform`}</title>
       </Head>
       <PlatformLayout>
-        <main className="min-h-screen text-white relative">
-          <header className="px-6 py-4">
-            <h1 className="text-2xl font-bold text-dark dark:text-light">
-              Dashboard
+        <div className="p-4 sm:p-6">
+          <header className="mb-4">
+            <h1 className="text-lg font-semibold text-dark dark:text-light">
+              {isUserDataLoading
+                ? "Loading..."
+                : `Hello ${userData?.first_name || "User"},`}
             </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              Welcome to your dashboard.
+            </p>
           </header>
-          <hr className="mb-6 border-gray-300" />
 
-          {isLoading ? (
-            <div className="flex justify-center items-center min-h-screen">
-              <Loader />
-            </div>
-          ) : (
-            <div className="flex gap-4 px-6 items-start">
-              {locationServiceEnabled && location && (
-                <div className="flex-shrink-0 w-1/3">
-                  <h2 className="text-xl font-semibold text-dark dark:text-light mb-2">
-                    Weather
-                  </h2>
-                  <TemperatureCard
-                    lat={location.lat}
-                    lon={location.lon}
-                    fahrenheit={!fahrenheit}
-                  />
-                </div>
-              )}
+          <hr className="mb-6 border-gray-200 dark:border-gray-700" />
 
-              <div className="flex-grow">
-                <h2 className="text-xl font-semibold text-dark dark:text-light mb-2">
-                  Budget Tracker
-                </h2>
-                <ProgressCard
-                  steps={steps}
-                  currentStep={currentStep}
-                  onStepChange={handleStepChange}
-                />
-                <div className="mt-6 grid grid-cols-2 gap-6">
-                  {!error && (
-                    <div>
-                      <StatusCard steps={steps} currentStep={currentStep} />
-                    </div>
-                  )}
-                  <div>
-                    <Calendar />
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </main>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+            <Calendar />
+          </div>
+        </div>
       </PlatformLayout>
+      {isSetupModalOpen && userId && (
+        <FirstLoginModal
+          isOpen={isSetupModalOpen}
+          userId={userId}
+          onSubmit={handleFirstLogin}
+          onClose={() => setIsSetupModalOpen(false)}
+        />
+      )}
     </>
   );
 };
 
-export default UserPlatformPage;
+export default Dashboard;

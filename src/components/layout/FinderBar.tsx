@@ -8,7 +8,6 @@ type Business = {
   stars: number;
   address: string;
   open: boolean;
-  imageUrl: string;
   price: number;
 };
 
@@ -23,7 +22,6 @@ const businessData: Record<View, Business[]> = {
       stars: 4.1,
       address: "Tinsukia, Assam",
       open: true,
-      imageUrl: "https://via.placeholder.com/100",
       price: 56,
     },
     {
@@ -31,7 +29,6 @@ const businessData: Record<View, Business[]> = {
       stars: 2.9,
       address: "Kolkata, West Bengal",
       open: false,
-      imageUrl: "https://via.placeholder.com/100",
       price: 25,
     },
     {
@@ -39,7 +36,6 @@ const businessData: Record<View, Business[]> = {
       stars: 4.3,
       address: "Sonitpur, Assam",
       open: false,
-      imageUrl: "https://via.placeholder.com/100",
       price: 45,
     },
     {
@@ -47,7 +43,6 @@ const businessData: Record<View, Business[]> = {
       stars: 4.9,
       address: "Assam, India",
       open: false,
-      imageUrl: "https://via.placeholder.com/100",
       price: 65,
     },
   ],
@@ -57,7 +52,6 @@ const businessData: Record<View, Business[]> = {
       stars: 4.2,
       address: "Guwahati, Assam",
       open: true,
-      imageUrl: "https://via.placeholder.com/100",
       price: 23,
     },
     {
@@ -65,7 +59,6 @@ const businessData: Record<View, Business[]> = {
       stars: 4.5,
       address: "Dibrugarh, Assam",
       open: false,
-      imageUrl: "https://via.placeholder.com/100",
       price: 56,
     },
     {
@@ -73,7 +66,6 @@ const businessData: Record<View, Business[]> = {
       stars: 2.8,
       address: "Kolkata, West Bengal",
       open: false,
-      imageUrl: "https://via.placeholder.com/100",
       price: 45,
     },
     {
@@ -81,7 +73,6 @@ const businessData: Record<View, Business[]> = {
       stars: 3.8,
       address: "Kolkata, West Bengal",
       open: false,
-      imageUrl: "https://via.placeholder.com/100",
       price: 87,
     },
   ],
@@ -91,7 +82,6 @@ const businessData: Record<View, Business[]> = {
       stars: 4.7,
       address: "Dibrugarh, Assam",
       open: true,
-      imageUrl: "https://via.placeholder.com/100",
       price: 69,
     },
     {
@@ -99,7 +89,7 @@ const businessData: Record<View, Business[]> = {
       stars: 4.6,
       address: "Assam, India",
       open: false,
-      imageUrl: "https://via.placeholder.com/100",
+
       price: 84,
     },
     {
@@ -107,7 +97,6 @@ const businessData: Record<View, Business[]> = {
       stars: 4.4,
       address: "Tinsukia, Assam",
       open: false,
-      imageUrl: "https://via.placeholder.com/100",
       price: 15,
     },
     {
@@ -115,7 +104,6 @@ const businessData: Record<View, Business[]> = {
       stars: 4.6,
       address: "Upper Assam, India",
       open: false,
-      imageUrl: "https://via.placeholder.com/100",
       price: 98,
     },
   ],
@@ -258,7 +246,6 @@ const FinderBar = ({ activeView }: Props) => {
                 stars={business.stars}
                 address={business.address}
                 open={business.open}
-                imageUrl={business.imageUrl}
                 price={business.price}
               />
             </li>

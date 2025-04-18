@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
 import NavPanel from "@/components/layout/NavPanel";
@@ -10,17 +10,78 @@ import { faTimes } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import Button from "@/components/ui/Button";
 import { LANGUAGES, TIME_FORMAT } from "@/constants/options";
+import Loader from "@/components/ui/Loader";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 const GeneralPage = () => {
   const router = useRouter();
-  const { view } = router.query;
+  const { view, user_id } = router.query;
   const currentView = (view as string) || "profile";
+  const userId = Array.isArray(user_id) ? user_id[0] : user_id;
 
-  const navButtons = [
-    { name: "Profile", view: "profile" },
-    { name: "Weather", view: "weather" },
-    { name: "Occupation", view: "occupation" },
-  ];
+  const [userType, setUserType] = useState<string | null>(null);
+  const [subTypes, setSubTypes] = useState<string[]>([]);
+  const [isUserTypeLoading, setIsUserTypeLoading] = useState(true);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const fetchUserType = async () => {
+      try {
+        const response = await axiosInstance.get(`/user/${userId}`);
+        const user = response.data.user ?? response.data.data?.user;
+
+        setUser({
+          profilePicture: user.profile_picture || "",
+          firstName: user.first_name || "",
+          lastName: user.last_name || "",
+          phoneNumber: user.phone_number || "",
+          language: user.language || "English",
+          timeFormat: user.time_format || "24-hour",
+        });
+        const type = user?.type || "Producer";
+        const rawSubTypes = user?.sub_type;
+
+        const parsedSubTypes = Array.isArray(rawSubTypes)
+          ? rawSubTypes
+          : typeof rawSubTypes === "string"
+          ? rawSubTypes.replace(/[{}"]/g, "").split(",").filter(Boolean)
+          : [];
+
+        setUserType(type);
+        setSubTypes(parsedSubTypes);
+      } catch (err) {
+        console.error("Error fetching user type", err);
+        setUserType("Producer");
+        setSubTypes([]);
+      } finally {
+        setIsUserTypeLoading(false);
+      }
+    };
+
+    fetchUserType();
+  }, [userId]);
+
+  // Use useMemo to conditionally build the navigation buttons based on userType.
+  const navButtons = useMemo(() => {
+    const buttons = [{ name: "Profile", view: "profile" }];
+
+    if (userType === "Producer") {
+      buttons.push({ name: "Weather", view: "weather" });
+
+      if (subTypes.includes("Poultry")) {
+        buttons.push({ name: "Poultry", view: "poultry" });
+      }
+      if (subTypes.includes("Fishery")) {
+        buttons.push({ name: "Fishery", view: "fishery" });
+      }
+      if (subTypes.includes("Animal Husbandry")) {
+        buttons.push({ name: "Animal Husbandry", view: "animal_husbandry" });
+      }
+    }
+
+    return buttons;
+  }, [userType, subTypes]);
 
   const changeView = (newView: string) => {
     router.push({
@@ -45,62 +106,44 @@ const GeneralPage = () => {
     timeFormat: "24-hour",
   });
 
-  const { user_id } = router.query;
-
   const [weatherSettings, setWeatherSettings] = useState({
     location: "",
     scale: "Celsius",
     aiSuggestions: false,
   });
-  const userId = Array.isArray(user_id) ? user_id[0] : user_id;
 
   const handleSaveChanges = async () => {
     setIsSaving(true);
     setSuccessMessage("");
 
     try {
-      const response = await fetch(`http://localhost:3001/api/user/${userId}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          first_name: user.firstName,
-          last_name: user.lastName,
-          phone_number: user.phoneNumber,
-          language: user.language,
-          time_format: user.timeFormat,
-        }),
+      await axiosInstance.put(`/user/${userId}`, {
+        first_name: user.firstName,
+        last_name: user.lastName,
+        phone_number: user.phoneNumber,
+        language: user.language,
+        time_format: user.timeFormat,
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to save changes");
-      }
-
       setSuccessMessage("Profile updated successfully!");
-    } catch (error) {
-      console.error("Error updating profile:", error);
+    } catch (error: any) {
+      console.error(
+        "Error updating profile:",
+        error.response?.data?.error || error.message
+      );
     } finally {
       setIsSaving(false);
     }
   };
 
+  // Fetch the user data (profile details)
   useEffect(() => {
     if (!userId) return;
 
     const fetchUserData = async () => {
       try {
-        const response = await fetch(
-          `http://localhost:3001/api/user/${userId}`,
-          {
-            credentials: "include",
-          }
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch user data");
-        }
-        const data = await response.json();
+        const response = await axiosInstance.get(`/user/${userId}`);
+        const data = response.data;
 
         setUser({
           profilePicture: data.user.profile_picture || "",
@@ -110,8 +153,11 @@ const GeneralPage = () => {
           language: data.user.language || "English",
           timeFormat: data.user.time_format || "24-hour",
         });
-      } catch (error) {
-        console.error("Error fetching user data:", error);
+      } catch (error: any) {
+        console.error(
+          "Error fetching user data:",
+          error.response?.data?.error || error.message
+        );
       }
     };
 
@@ -130,15 +176,19 @@ const GeneralPage = () => {
           {/* Main content */}
           <main className="flex-1 px-12">
             <div className="pb-4 font-bold text-lg text-dark dark:text-light">
-              General
+              General Settings
             </div>
 
             {/* Navigation panel */}
-            <NavPanel
-              buttons={navButtons}
-              activeView={currentView}
-              onNavigate={(newView: string) => changeView(newView)}
-            />
+            {isUserTypeLoading ? (
+              <Loader />
+            ) : (
+              <NavPanel
+                buttons={navButtons}
+                activeView={currentView}
+                onNavigate={(newView: string) => changeView(newView)}
+              />
+            )}
 
             <section className="py-6">
               {/* Profile View */}
@@ -232,6 +282,7 @@ const GeneralPage = () => {
                         setUser((prev) => ({ ...prev, firstName: val }))
                       }
                       width="large"
+                      isDisabled={true}
                     />
                     <TextField
                       label="Last Name"
@@ -241,9 +292,9 @@ const GeneralPage = () => {
                         setUser((prev) => ({ ...prev, lastName: val }))
                       }
                       width="large"
+                      isDisabled={true}
                     />
 
-                    {/* Language & Time Format Selectors in the Same Row */}
                     <div className="flex gap-4">
                       <DropdownSmall
                         label="Language"
@@ -304,7 +355,6 @@ const GeneralPage = () => {
 
                   {/* Weather Settings Form */}
                   <div className="flex flex-col gap-4 max-w-lg">
-                    {/* Set Location */}
                     <TextField
                       label="Set Location"
                       placeholder="Enter your location"
@@ -318,7 +368,6 @@ const GeneralPage = () => {
                       width="large"
                     />
 
-                    {/* Scale Selection */}
                     <DropdownSmall
                       label="Scale"
                       items={["Celsius", "Fahrenheit"]}
@@ -328,7 +377,6 @@ const GeneralPage = () => {
                       }
                     />
 
-                    {/* Enable / Disable AI Suggestions */}
                     <div className="flex items-center gap-2">
                       <input
                         type="checkbox"
@@ -353,15 +401,30 @@ const GeneralPage = () => {
                 </div>
               )}
 
-              {/* Occupation View */}
-              {currentView === "occupation" && (
+              {/* Poultry View */}
+              {currentView === "poultry" && (
                 <div className="rounded-lg p-4">
                   <h2 className="text-lg font-semibold mb-4 dark:text-light">
-                    Occupation Settings
+                    Poultry Settings
                   </h2>
-                  <p className="text-gray-300 mb-6">
-                    This applies across your account.
-                  </p>
+                </div>
+              )}
+
+              {/* Fishery View */}
+              {currentView === "fishery" && (
+                <div className="rounded-lg p-4">
+                  <h2 className="text-lg font-semibold mb-4 dark:text-light">
+                    Fishery Settings
+                  </h2>
+                </div>
+              )}
+
+              {/* Animal Husbandry View */}
+              {currentView === "animal_husbandry" && (
+                <div className="rounded-lg p-4">
+                  <h2 className="text-lg font-semibold mb-4 dark:text-light">
+                    Animal Husbandry Settings
+                  </h2>
                 </div>
               )}
             </section>

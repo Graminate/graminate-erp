@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSun } from "@fortawesome/free-solid-svg-icons";
 
 import { Coordinates } from "@/types/card-props";
-
-const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+import { fetchCityName } from "@/lib/utils/loadWeather";
+import axios from "axios";
+import Loader from "@/components/ui/Loader";
 
 const SunCard = ({ lat, lon }: Coordinates) => {
   const [sunriseTime, setSunriseTime] = useState<string | null>(null);
@@ -17,155 +18,166 @@ const SunCard = ({ lat, lon }: Coordinates) => {
   >([]);
   const [dailySunData, setDailySunData] = useState<any>(null);
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
-  const [xSun, setXSun] = useState<number>(0);
-  const [ySun, setYSun] = useState<number>(0);
+
+  const [currentXSun, setCurrentXSun] = useState<number>(0);
+  const [currentYSun, setCurrentYSun] = useState<number>(0);
+
+  const [hoverXSun, setHoverXSun] = useState<number>(0);
+  const [hoverYSun, setHoverYSun] = useState<number>(0);
+  const [isHovering, setIsHovering] = useState<boolean>(false);
+  const [hoveredTime, setHoveredTime] = useState<string | null>(null);
+
   const [displayedSunsetTime, setDisplayedSunsetTime] = useState<string | null>(
     null
   );
   const [sunsetLabel, setSunsetLabel] = useState<string>("");
 
+  const svgRef = useRef<SVGSVGElement | null>(null);
+
   function parseTimeToMinutes(time: string): number {
+    if (!time || !time.includes(":")) return 0;
     const [h, m] = time.split(":").map(Number);
+    if (isNaN(h) || isNaN(m)) return 0;
     return h * 60 + m;
   }
 
   function formatTimeFromMinutes(minutes: number): string {
-    const hrs = Math.floor(minutes / 60);
+    const hrs = Math.floor(minutes / 60) % 24;
     const mins = Math.floor(minutes % 60);
-    return `${hrs}:${mins.toString().padStart(2, "0")}`;
+    return `${hrs.toString().padStart(2, "0")}:${mins
+      .toString()
+      .padStart(2, "0")}`;
   }
 
   function formatDuration(minutes: number): string {
+    if (minutes < 0) minutes = 0;
     const hrs = Math.floor(minutes / 60);
-    const mins = minutes % 60;
+    const mins = Math.round(minutes % 60);
     return `${hrs}h ${mins}m`;
   }
 
   async function fetchSunData(latitude: number, longitude: number) {
     try {
-      const response = await fetch(
-        `/api/weather?lat=${latitude}&lon=${longitude}`
-      );
-      if (!response.ok) {
-        throw new Error(`Error fetching sun data: ${response.statusText}`);
-      }
-      const data = await response.json();
-      return data.daily;
+      const response = await axios.get("/api/weather", {
+        params: {
+          lat: latitude,
+          lon: longitude,
+        },
+      });
+
+      return response.data.daily;
     } catch (err: any) {
-      console.error(err.message);
+      console.error(
+        err.response?.data?.message || err.message || "Unknown error occurred"
+      );
       throw new Error("Failed to fetch sun data");
     }
   }
 
-  async function fetchCityName(latitude: number, longitude: number) {
-    try {
-      const response = await fetch(
-        `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${apiKey}`
-      );
-      if (!response.ok) {
-        throw new Error(`Error fetching location data: ${response.statusText}`);
-      }
-      const data = await response.json();
-      const cityComponent = data.results[0]?.address_components.find(
-        (component: any) => component.types.includes("locality")
-      );
-      return cityComponent?.long_name || "Your Location";
-    } catch (err: any) {
-      console.error(err.message);
-      return "Unknown city";
+  function calculateAndFormatSunriseSunset(daylightSeconds: number): {
+    sunrise: string;
+    sunset: string;
+  } {
+    if (isNaN(daylightSeconds) || daylightSeconds <= 0) {
+      return { sunrise: "--:--", sunset: "--:--" };
     }
-  }
-
-  function calculateSunriseSunset(daylightSeconds: number) {
     const daylightHours = daylightSeconds / 3600;
     const halfDaylight = daylightHours / 2;
-    const solarNoon = 12 * 60;
-    const sunriseMinutes = solarNoon - halfDaylight * 60;
-    const sunsetMinutes = solarNoon + halfDaylight * 60;
 
-    function formatTime(minutes: number) {
-      const hours = Math.floor(minutes / 60);
-      const mins = Math.floor(minutes % 60);
-      return `${hours}:${mins.toString().padStart(2, "0")}`;
-    }
+    const solarNoonMinutes = 12 * 60;
+    const sunriseMinutes = solarNoonMinutes - halfDaylight * 60;
+    const sunsetMinutes = solarNoonMinutes + halfDaylight * 60;
 
     return {
-      sunrise: formatTime(sunriseMinutes),
-      sunset: formatTime(sunsetMinutes),
+      sunrise: formatTimeFromMinutes(sunriseMinutes),
+      sunset: formatTimeFromMinutes(sunsetMinutes),
     };
   }
+
+  const calculateSunPosition = (t: number): { x: number; y: number } => {
+    t = Math.max(0, Math.min(1, t));
+    const pathWidth = 160;
+    const pathHeight = 50;
+    const midPointX = pathWidth / 2;
+
+    const p0x = 0,
+      p0y = pathHeight;
+    const p1x = midPointX,
+      p1y = 0;
+    const p2x = pathWidth,
+      p2y = pathHeight;
+
+    const currentX =
+      Math.pow(1 - t, 2) * p0x + 2 * (1 - t) * t * p1x + Math.pow(t, 2) * p2x;
+    const currentY =
+      Math.pow(1 - t, 2) * p0y + 2 * (1 - t) * t * p1y + Math.pow(t, 2) * p2y;
+
+    return { x: currentX, y: currentY - 1 };
+  };
 
   useEffect(() => {
     if (lat !== undefined && lon !== undefined) {
       Promise.all([fetchSunData(lat, lon), fetchCityName(lat, lon)])
         .then(([dailyData, city]) => {
-          setDailySunData(dailyData);
-          setLocationName(city);
+          if (dailyData && dailyData.time && dailyData.daylightDuration) {
+            setDailySunData(dailyData);
+            setLocationName(city);
+            setError(null);
+          } else {
+            throw new Error("Incomplete sun data received");
+          }
         })
         .catch((err: any) => {
           setError(err.message);
+          setDailySunData(null);
+          setSunriseTime(null);
+          setSunsetTime(null);
         });
     } else {
-      setError("Latitude and Longitude are required to fetch sun data.");
+      setError("Latitude and Longitude are required.");
     }
   }, [lat, lon]);
 
   useEffect(() => {
-    if (dailySunData && displayMode === "Small") {
-      const today = new Date().toISOString().split("T")[0];
-      let startIndex = dailySunData.time.findIndex(
-        (date: string) => date >= today
-      );
+    if (dailySunData) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      let startIndex = dailySunData.time.findIndex((dateStr: string) => {
+        const date = new Date(dateStr);
+        date.setHours(0, 0, 0, 0);
+        return date >= today;
+      });
+
       if (startIndex === -1) {
         startIndex = 0;
       }
-      const { sunrise, sunset } = calculateSunriseSunset(
-        dailySunData.daylightDuration[startIndex]
-      );
-      setSunriseTime(sunrise);
-      setSunsetTime(sunset);
-      setError(null);
-    }
-  }, [dailySunData, displayMode]);
 
-  useEffect(() => {
-    if (sunriseTime && sunsetTime) {
-      const now = new Date();
-      const currentMinutes = now.getHours() * 60 + now.getMinutes();
-      const sunriseMins = parseTimeToMinutes(sunriseTime);
-      const sunsetMins = parseTimeToMinutes(sunsetTime);
-      if (displayMode === "Small") {
-        let t = (currentMinutes - sunriseMins) / (sunsetMins - sunriseMins);
-        t = Math.max(0, Math.min(1, t));
-        setXSun(160 * t);
-        setYSun(50 * Math.pow(1 - t, 2) + 50 * Math.pow(t, 2));
+      if (
+        dailySunData.daylightDuration &&
+        dailySunData.daylightDuration[startIndex] !== undefined &&
+        dailySunData.daylightDuration[startIndex] !== null
+      ) {
+        const { sunrise, sunset } = calculateAndFormatSunriseSunset(
+          dailySunData.daylightDuration[startIndex]
+        );
+        setSunriseTime(sunrise);
+        setSunsetTime(sunset);
+        setError(null);
       } else {
-        let fraction =
-          (currentMinutes - sunriseMins) / (sunsetMins - sunriseMins);
-        if (isNaN(fraction)) fraction = 0;
-        fraction = Math.max(0, Math.min(1, fraction));
-        setXSun(100 * fraction);
-        setYSun(25 * (Math.pow(1 - fraction, 2) + Math.pow(fraction, 2)));
+        setSunriseTime("--:--");
+        setSunsetTime("--:--");
       }
-    }
-  }, [sunriseTime, sunsetTime, displayMode]);
 
-  useEffect(() => {
-    if (dailySunData && displayMode === "Large") {
       const arr: { date: string; sunrise: string; sunset: string }[] = [];
-      const today = new Date().toISOString().split("T")[0];
-      let startIndex = dailySunData.time.findIndex(
-        (date: string) => date >= today
-      );
-      if (startIndex === -1) {
-        startIndex = 0;
-      }
-      for (let i = startIndex; i < startIndex + 7; i++) {
+      const maxDays = dailySunData.time.length;
+      for (let i = startIndex; i < Math.min(startIndex + 7, maxDays); i++) {
         if (
-          dailySunData.daylightDuration[i] !== undefined &&
-          dailySunData.time[i] !== undefined
+          dailySunData.daylightDuration?.[i] !== undefined &&
+          dailySunData.daylightDuration?.[i] !== null &&
+          dailySunData.time?.[i]
         ) {
-          const { sunrise, sunset } = calculateSunriseSunset(
+          const { sunrise, sunset } = calculateAndFormatSunriseSunset(
             dailySunData.daylightDuration[i]
           );
           arr.push({
@@ -176,28 +188,109 @@ const SunCard = ({ lat, lon }: Coordinates) => {
         }
       }
       setSunTimesArray(arr);
-      setError(null);
     }
-  }, [dailySunData, displayMode]);
+  }, [dailySunData]);
 
   useEffect(() => {
-    if (displayMode === "Large" && sunTimesArray.length > 1) {
+    if (
+      sunriseTime &&
+      sunsetTime &&
+      sunriseTime !== "--:--" &&
+      sunsetTime !== "--:--"
+    ) {
       const now = new Date();
       const currentMinutes = now.getHours() * 60 + now.getMinutes();
-      const todaysSunriseMinutes = parseTimeToMinutes(sunTimesArray[0].sunrise);
-      const todaysSunsetMinutes = parseTimeToMinutes(sunTimesArray[0].sunset);
+      const sunriseMins = parseTimeToMinutes(sunriseTime);
+      const sunsetMins = parseTimeToMinutes(sunsetTime);
+
+      if (sunsetMins <= sunriseMins) {
+        setCurrentXSun(0);
+        setCurrentYSun(50);
+        return;
+      }
+
+      let t = (currentMinutes - sunriseMins) / (sunsetMins - sunriseMins);
+      const { x, y } = calculateSunPosition(t);
+      setCurrentXSun(x);
+      setCurrentYSun(y);
+    } else {
+      setCurrentXSun(0);
+      setCurrentYSun(50);
+    }
+  }, [sunriseTime, sunsetTime]);
+
+  useEffect(() => {
+    if (displayMode === "Large" && sunTimesArray.length > 0) {
+      const now = new Date();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+      let displayIndex = 0;
+      const todaysSunriseMinutes = parseTimeToMinutes(
+        sunTimesArray[0]?.sunrise
+      );
+      const todaysSunsetMinutes = parseTimeToMinutes(sunTimesArray[0]?.sunset);
+
       if (
-        currentMinutes >= todaysSunriseMinutes &&
-        currentMinutes < todaysSunsetMinutes
+        sunTimesArray[0]?.sunset &&
+        currentMinutes >= todaysSunsetMinutes &&
+        sunTimesArray.length > 1
       ) {
-        setDisplayedSunsetTime(sunTimesArray[0].sunset);
+        displayIndex = 1;
+        setSunsetLabel("Sunset Tomorrow");
+      } else if (sunTimesArray[0]?.sunset) {
         setSunsetLabel("Sunset Today");
       } else {
-        setDisplayedSunsetTime(sunTimesArray[1].sunset);
-        setSunsetLabel("Sunset Tomorrow");
+        setSunsetLabel("Sunset");
       }
+
+      setDisplayedSunsetTime(sunTimesArray[displayIndex]?.sunset || "--:--");
     }
   }, [displayMode, sunTimesArray]);
+
+  const handleMouseMove = (event: React.MouseEvent<SVGSVGElement>) => {
+    if (
+      !svgRef.current ||
+      !sunriseTime ||
+      !sunsetTime ||
+      sunriseTime === "--:--" ||
+      sunsetTime === "--:--"
+    )
+      return;
+
+    const svg = svgRef.current;
+    const rect = svg.getBoundingClientRect();
+    const pt = svg.createSVGPoint();
+    pt.x = event.clientX;
+    pt.y = event.clientY;
+
+    const svgP = pt.matrixTransform(svg.getScreenCTM()?.inverse());
+    const relativeX = svgP.x;
+
+    const viewBoxWidth = 160;
+    let t = relativeX / viewBoxWidth;
+    t = Math.max(0, Math.min(1, t));
+
+    const sunriseMins = parseTimeToMinutes(sunriseTime);
+    const sunsetMins = parseTimeToMinutes(sunsetTime);
+
+    if (sunsetMins > sunriseMins) {
+      const hoveredMinutes = sunriseMins + t * (sunsetMins - sunriseMins);
+      setHoveredTime(formatTimeFromMinutes(hoveredMinutes));
+
+      const { x, y } = calculateSunPosition(t);
+      setHoverXSun(x);
+      setHoverYSun(y);
+      setIsHovering(true);
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setIsHovering(false);
+    setHoveredTime(null);
+  };
+
+  const displayXSun = isHovering ? hoverXSun : currentXSun;
+  const displayYSun = isHovering ? hoverYSun : currentYSun;
 
   return (
     <div className="p-4 rounded-lg shadow-md max-w-sm mx-auto flex flex-col items-center relative dark:bg-gray-700 bg-gray-500">
@@ -229,7 +322,7 @@ const SunCard = ({ lat, lon }: Coordinates) => {
         {dropdownOpen && (
           <div className="absolute top-8 right-0 bg-white dark:bg-gray-600 dark:text-light text-black rounded-lg shadow-lg z-20 w-32">
             <button
-              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-500 dark:hover:bg-blue-100 cursor-pointer"
+              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 dark:hover:bg-gray-800 rounded-t-lg cursor-pointer"
               type="button"
               onClick={() => {
                 setDisplayMode("Small");
@@ -239,7 +332,7 @@ const SunCard = ({ lat, lon }: Coordinates) => {
               Small
             </button>
             <button
-              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-500 dark:hover:bg-blue-100 cursor-pointer"
+              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 dark:hover:bg-gray-800 rounded-b-lg cursor-pointer"
               type="button"
               onClick={() => {
                 setDisplayMode("Large");
@@ -252,207 +345,246 @@ const SunCard = ({ lat, lon }: Coordinates) => {
         )}
       </div>
       {error ? (
-        <p className="text-red-500 text-center">Error: {error}</p>
-      ) : sunriseTime !== null && sunsetTime !== null ? (
-        displayMode === "Small" ? (
-          <div className="flex flex-col items-center w-full text-center rounded-md">
-            <div className="w-full flex flex-row items-center justify-center mb-2 gap-2">
-              <FontAwesomeIcon
-                icon={faSun}
-                className="w-4 h-4 text-yellow-200"
-              />
-              <p className="text-sm uppercase tracking-wide text-gray-200 dark:text-light">
-                Sun Time
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-2 text-center">
-              <div className="text-md tracking-wide text-gray-200 dark:text-light">
-                Sunset: <span className="font-semibold">{sunsetTime}</span>
-              </div>
-              <div className="text-md tracking-wide text-gray-200 dark:text-light">
-                Sunrise: <span className="font-semibold">{sunriseTime}</span>
-              </div>
-            </div>
-            <div className="relative">
-              <svg
-                viewBox="0 0 160 60"
-                className="w-full h-full overflow-visible"
+        <p className="text-red-500 text-center py-10">{error}</p>
+      ) : !dailySunData ? (
+        <p className="text-center py-10 text-dark dark:text-light">
+          <Loader />
+        </p>
+      ) : (
+        <>
+          {/* Small Mode */}
+          {displayMode === "Small" &&
+            sunriseTime !== null &&
+            sunsetTime !== null && (
+              <div
+                className={`w-full ${displayMode === "Small" ? "pb-2" : ""}`}
               >
-                <path
-                  d="M0,50 Q80,0 160,50 L160,45 L0,45 Z"
-                  className="fill-gray-500 dark:fill-gray-600"
-                />
-                <path
-                  d="M0,50 Q80,0 160,50"
-                  className="stroke-dark dark:stroke-gray-300"
-                  strokeWidth="1"
-                  fill="none"
-                  strokeDasharray="2,2"
-                />
-                <line
-                  x1="0"
-                  y1="45"
-                  x2="160"
-                  y2="45"
-                  className="stroke-dark dark:stroke-gray-300"
-                  strokeWidth="1"
-                />
-                <g>
-                  <circle
-                    cx={xSun}
-                    cy={ySun}
-                    r="5"
-                    className={
-                      ySun > 45
-                        ? "fill-gray-200 dark:fill-dark"
-                        : "fill-yellow-200"
-                    }
-                  />
-                  {Array.from({ length: 8 }).map((_, i) => {
-                    const angle = (i * 45 * Math.PI) / 180;
-                    return (
-                      <line
-                        key={i}
-                        x1={xSun + Math.cos(angle) * 7}
-                        y1={ySun + Math.sin(angle) * 7}
-                        x2={xSun + Math.cos(angle) * 10}
-                        y2={ySun + Math.sin(angle) * 10}
-                        className={
-                          ySun > 45
-                            ? "fill-gray-200 dark:fill-dark"
-                            : "fill-yellow-200 stroke-yellow-200 dark:stroke-gray-400"
-                        }
-                        strokeWidth="1"
-                      />
-                    );
-                  })}
-                </g>
-              </svg>
-            </div>
-          </div>
-        ) : displayMode === "Large" ? (
-          sunTimesArray.length > 1 && displayedSunsetTime ? (
-            <div className="flex flex-col">
-              <div className="text-sm text-center text-dark dark:text-light">
-                {sunsetLabel}
-              </div>
-              <div className="text-center text-3xl font-semibold text-gray-200 dark:text-light">
-                {displayedSunsetTime}
-              </div>
-            </div>
-          ) : null
-        ) : null
-      ) : null}
-      {!error &&
-        displayMode === "Large" &&
-        sunriseTime !== null &&
-        sunsetTime !== null &&
-        sunTimesArray.length > 0 &&
-        sunTimesArray[0] !== undefined && (
-          <div className="mt-1 w-full max-w-2xl">
-            <div className="flex flex-row justify-between border-b border-gray-300 py-2">
-              <div className="text-sm text-dark dark:text-light">
-                First Light
-              </div>
-              <div className="text-right text-dark dark:text-light">
-                {formatTimeFromMinutes(
-                  Math.max(parseTimeToMinutes(sunTimesArray[0].sunrise) - 30, 0)
-                )}
-              </div>
-            </div>
-            <div className="flex flex-row justify-between border-b border-gray-300 py-2">
-              <div className="text-sm text-dark dark:text-light">
-                Sunrise Today
-              </div>
-              <div className="text-right text-dark dark:text-light">
-                {sunTimesArray[0].sunrise}
-              </div>
-            </div>
-            <div className="flex flex-row justify-between border-b border-gray-300 py-2">
-              <div className="text-sm text-dark dark:text-light">
-                Sunset Today
-              </div>
-              <div className="text-right text-dark dark:text-light">
-                {sunTimesArray[0].sunset}
-              </div>
-            </div>
-            <div className="flex flex-row justify-between border-b border-gray-300 py-2">
-              <div className="text-sm text-dark dark:text-light">
-                Last Light
-              </div>
-              <div className="text-right text-dark dark:text-light">
-                {formatTimeFromMinutes(
-                  Math.min(
-                    parseTimeToMinutes(sunTimesArray[0].sunset) + 30,
-                    1440
-                  )
-                )}
-              </div>
-            </div>
-            <div className="flex flex-row justify-between border-b border-gray-300 py-2">
-              <div className="text-sm text-dark dark:text-light">
-                Total Daylight Duration
-              </div>
-              <div className="text-right text-dark dark:text-light">
-                {formatDuration(
-                  parseTimeToMinutes(sunTimesArray[0].sunset) -
-                    parseTimeToMinutes(sunTimesArray[0].sunrise)
-                )}
-              </div>
-            </div>
-            <p className="my-4 text-sm text-dark dark:text-light">
-              Sunrise &amp; Sunset for the upcoming days
-            </p>
-            <div className="overflow-y-auto" style={{ maxHeight: "150px" }}>
-              <div className="text-center px-2 flex flex-col items-center w-full">
-                {sunTimesArray.map((sunData, idx) => (
+                <div className="flex flex-col items-center w-full text-center rounded-md">
+                  <div className="w-full flex flex-row items-center justify-center mb-2 gap-2">
+                    <FontAwesomeIcon
+                      icon={faSun}
+                      className="w-4 h-4 text-yellow-200"
+                    />
+                    <p className="text-sm uppercase tracking-wide text-gray-200 dark:text-light">
+                      Sunrise & Sunset
+                    </p>
+                  </div>
+                  <div className="w-full grid grid-cols-2 gap-2 text-center mb-1 px-2">
+                    <div>
+                      <p className="text-xs tracking-wide text-dark dark:text-light">
+                        Sunrise
+                      </p>
+                      <p className="text-lg font-semibold text-dark dark:text-light">
+                        {sunriseTime}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs tracking-wide text-dark dark:text-light">
+                        Sunset
+                      </p>
+                      <p className="text-lg font-semibold text-dark dark:text-light">
+                        {sunsetTime}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="h-4 mt-1">
+                    {isHovering && hoveredTime && (
+                      <p className="text-center text-md text-dark dark:text-light font-bold">
+                        {hoveredTime}
+                      </p>
+                    )}
+                  </div>
+
                   <div
-                    key={idx}
-                    className="mx-2 border-b border-gray-300 p-2 my-1 flex flex-col sm:flex-row items-center justify-between gap-4 w-full max-w-2xl"
+                    className="relative w-full max-w-[200px] mx-auto cursor-crosshair"
+                    onMouseLeave={handleMouseLeave}
                   >
-                    {/* Week day */}
-                    <div className="flex flex-row items-center gap-2 w-full sm:w-auto">
-                      <p className="text-sm font-semibold text-dark dark:text-light w-12 text-center">
+                    <svg
+                      ref={svgRef}
+                      viewBox="0 0 160 55"
+                      className="w-full h-auto overflow-visible"
+                      onMouseMove={handleMouseMove}
+                    >
+                      <path
+                        d="M0,50 H160 V55 H0 Z"
+                        className="fill-gray-600 dark:fill-gray-800"
+                      />
+                      <path
+                        d="M0,50 Q80,0 160,50"
+                        className="stroke-gray-300 dark:stroke-gray-500"
+                        strokeWidth="1"
+                        fill="none"
+                        strokeDasharray="2,2"
+                      />
+                      <line
+                        x1="0"
+                        y1="50"
+                        x2="160"
+                        y2="50"
+                        className="stroke-gray-500 dark:stroke-gray-600"
+                        strokeWidth="1.5"
+                      />
+
+                      <g
+                        transform={`translate(${displayXSun}, ${displayYSun})`}
+                      >
+                        <circle
+                          cx="0"
+                          cy="0"
+                          r="5"
+                          className={
+                            displayYSun >= 49
+                              ? "fill-gray-200 dark:fill-gray-200"
+                              : "fill-yellow-200"
+                          }
+                        />
+                        {displayYSun < 49 &&
+                          Array.from({ length: 8 }).map((_, i) => {
+                            const angle = (i * 45 * Math.PI) / 180;
+                            return (
+                              <line
+                                key={i}
+                                x1={Math.cos(angle) * 6}
+                                y1={Math.sin(angle) * 6}
+                                x2={Math.cos(angle) * 8}
+                                y2={Math.sin(angle) * 8}
+                                className="stroke-yellow-200"
+                                strokeWidth="1.5"
+                              />
+                            );
+                          })}
+                      </g>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            )}
+
+          {/* Large Mode */}
+          {displayMode === "Large" && sunTimesArray.length > 0 && (
+            <div className="w-full flex flex-col">
+              {/* Top section for next sunset */}
+              {displayedSunsetTime && (
+                <div className="text-center mb-4">
+                  <p className="text-sm text-dark dark:text-light">
+                    {sunsetLabel}
+                  </p>
+                  <p className="text-3xl font-semibold text-gray-100 dark:text-light mt-1">
+                    {displayedSunsetTime}
+                  </p>
+                </div>
+              )}
+
+              {/* Detailed times for today */}
+              <div className="w-full space-y-1 border-t border-b border-gray-400 dark:border-gray-600 py-2 mb-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-dark dark:text-light">
+                    First Light
+                  </span>
+                  <span className="text-sm font-medium text-gray-100 dark:text-light">
+                    {formatTimeFromMinutes(
+                      Math.max(
+                        parseTimeToMinutes(sunTimesArray[0].sunrise) - 30,
+                        0
+                      )
+                    )}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-dark dark:text-light">
+                    Sunrise
+                  </span>
+                  <span className="text-sm font-medium text-gray-100 dark:text-light">
+                    {sunTimesArray[0].sunrise}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-dark dark:text-light">
+                    Sunset
+                  </span>
+                  <span className="text-sm font-medium text-gray-100 dark:text-light">
+                    {sunTimesArray[0].sunset}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-dark dark:text-light">
+                    Last Light
+                  </span>
+                  <span className="text-sm font-medium text-gray-100 dark:text-light">
+                    {formatTimeFromMinutes(
+                      Math.min(
+                        parseTimeToMinutes(sunTimesArray[0].sunset) + 30,
+                        1439
+                      )
+                    )}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center pt-1">
+                  <span className="text-xs text-dark dark:text-light">
+                    Daylight Duration
+                  </span>
+                  <span className="text-sm font-medium text-gray-100 dark:text-light">
+                    {formatDuration(
+                      parseTimeToMinutes(sunTimesArray[0].sunset) -
+                        parseTimeToMinutes(sunTimesArray[0].sunrise)
+                    )}
+                  </span>
+                </div>
+              </div>
+
+              <p className="text-xs text-center text-dark dark:text-light mb-2">
+                Upcoming Days
+              </p>
+              <div
+                className="w-full overflow-y-auto"
+                style={{ maxHeight: "160px" }}
+              >
+                <div className="flex flex-col space-y-1">
+                  {sunTimesArray.slice(1).map((sunData, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between gap-2 px-1 py-1 rounded hover:bg-gray-400"
+                    >
+                      <p className="text-sm font-medium text-dark dark:text-light w-10 text-left">
                         {new Date(sunData.date).toLocaleDateString(undefined, {
                           weekday: "short",
                         })}
                       </p>
-                    </div>
-                    {/* Sunrise Time */}
-                    <div className="flex flex-row items-center gap-2 w-full sm:w-auto">
-                      <p className="text-sm text-dark dark:text-light text-center w-16">
+
+                      <p className="text-xs text-dark dark:text-light w-12 text-center">
                         {sunData.sunrise}
                       </p>
-                    </div>
-                    {/* Bars */}
-                    <div className="relative h-1 bg-gray-300 dark:bg-gray-100 w-full sm:w-32 rounded-full">
-                      <div
-                        className="h-full bg-blue-200 absolute rounded-full"
-                        style={{
-                          left: `${
-                            (parseTimeToMinutes(sunData.sunrise) / 1440) * 100
-                          }%`,
-                          width: `${
-                            ((parseTimeToMinutes(sunData.sunset) -
-                              parseTimeToMinutes(sunData.sunrise)) /
-                              1440) *
-                            100
-                          }%`,
-                        }}
-                      ></div>
-                    </div>
-                    {/* Sunset Time */}
-                    <div className="flex flex-row items-center gap-2 w-full sm:w-auto">
-                      <p className="text-sm text-dark dark:text-light text-center w-16">
+
+                      <div className="flex-1 h-1.5 bg-gray-700 dark:bg-gray-800 rounded-full overflow-hidden mx-2">
+                        <div
+                          className="h-full bg-yellow-200"
+                          style={{
+                            marginLeft: `${
+                              (parseTimeToMinutes(sunData.sunrise) / 1440) * 100
+                            }%`,
+                            width: `${Math.max(
+                              0,
+                              ((parseTimeToMinutes(sunData.sunset) -
+                                parseTimeToMinutes(sunData.sunrise)) /
+                                1440) *
+                                100
+                            )}%`,
+                          }}
+                        />
+                      </div>
+
+                      <p className="text-xs text-dark dark:text-light w-12 text-center">
                         {sunData.sunset}
                       </p>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+        </>
+      )}
     </div>
   );
 };

@@ -1,4 +1,6 @@
+import axios from "axios";
 import { useState, useEffect } from "react";
+import Button from "./Button";
 
 type Props = {
   placeholder?: string;
@@ -41,24 +43,19 @@ const CustomTextArea = ({
 
   const handleSave = async () => {
     try {
-      const response = await fetch(
-        descriptionId
-          ? `/api/descriptions/${descriptionId}`
-          : `/api/descriptions`,
-        {
-          method: descriptionId ? "PUT" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ description: tempValue }),
-        }
-      );
+      const url = descriptionId
+        ? `/api/descriptions/${descriptionId}`
+        : `/api/descriptions`;
 
-      if (!response.ok) {
-        throw new Error("Failed to save the description");
-      }
+      const method = descriptionId ? "put" : "post";
+
+      await axios[method](url, {
+        description: tempValue,
+      });
 
       onInput(tempValue);
       setIsFocused(false);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error saving description:", error);
       alert("Endpoint doesn't exist until now.");
     }
@@ -73,7 +70,6 @@ const CustomTextArea = ({
     <div className="relative w-full">
       {isFocused ? (
         <>
-          {/* Text Area */}
           <textarea
             className="w-full border border-gray-300 p-3 text-sm rounded shadow-sm resize-none"
             value={tempValue}
@@ -86,18 +82,8 @@ const CustomTextArea = ({
 
           {/* Action Buttons */}
           <div className="flex gap-2 mt-2">
-            <button
-              className="px-4 py-2 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 focus:outline-none"
-              onClick={handleSave}
-            >
-              Save
-            </button>
-            <button
-              className="px-4 py-2 bg-gray-400 text-gray-700 text-sm rounded hover:bg-gray-500 focus:outline-none"
-              onClick={handleCancel}
-            >
-              Cancel
-            </button>
+            <Button text="Save" style="primary" onClick={handleSave} />
+            <Button text="Cancel" style="secondary" onClick={handleCancel} />
           </div>
         </>
       ) : (

@@ -16,9 +16,6 @@ const Footer = () => {
       <div className="mx-auto max-w-7xl px-6 py-4 sm:pt-12 sm:pb-16 lg:px-8">
         <div className="xl:grid xl:grid-cols-3 xl:gap-8">
           <div className="space-y-2">
-            <h2 className="text-left text-3xl font-semibold text-white">
-              Graminate <sup className="text-sm">ERP</sup>
-            </h2>
             <p className="text-sm text-gray-300">
               Graminate is a suite of business apps that cover all your
               agricultural company needs: CRM, eCommerce, accounting, inventory,

@@ -5,7 +5,9 @@ import { CONTRACT_STATUS } from "@/constants/options";
 import PlatformLayout from "@/layout/PlatformLayout";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import Swal from "sweetalert2";
+import { triggerToast } from "@/stores/toast";
+import Head from "next/head";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 const ContractDetails = () => {
   const router = useRouter();
@@ -90,13 +92,8 @@ const ContractDetails = () => {
     endDate !== initialFormData.endDate;
 
   const handleSave = async () => {
-    // Validate that the start date is not after the end date
     if (startDate && endDate && new Date(startDate) > new Date(endDate)) {
-      Swal.fire(
-        "Error",
-        "End Date of Contract cannot be before Start Date",
-        "error"
-      );
+      triggerToast("End Date of Contract cannot be before Start Date", "error");
       return;
     }
 
@@ -112,42 +109,23 @@ const ContractDetails = () => {
       end_date: endDate,
     };
 
-    console.log("Sending update request with payload:", payload);
-
     try {
-      const response = await fetch("http://localhost:3001/api/contracts/update", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
+      await axiosInstance.put("/contracts/update", payload);
+      triggerToast("Contract updated successfully", "success");
+      setDisplayContractName(contractName);
+
+      setInitialFormData({
+        contractName,
+        partnerClient,
+        amount,
+        status,
+        startDate,
+        endDate,
       });
-
-      const result = await response.json();
-
-      if (response.ok) {
-        Swal.fire("Success", "Contract updated successfully", "success");
-        setDisplayContractName(contractName);
-        setInitialFormData({
-          contractName,
-          partnerClient,
-          amount,
-          status,
-          startDate,
-          endDate,
-        });
-      } else {
-        Swal.fire(
-          "Error",
-          result.error || "Failed to update contract",
-          "error"
-        );
-      }
-    } catch (error) {
-      console.error("Error updating contract:", error);
-      Swal.fire(
-        "Error",
-        "An error occurred while updating the contract.",
+    } catch (error: any) {
+      triggerToast(
+        error.response?.data?.error ||
+          "An error occurred while updating the contract.",
         "error"
       );
     } finally {
@@ -157,6 +135,9 @@ const ContractDetails = () => {
 
   return (
     <PlatformLayout>
+      <Head>
+        <title>Contract | {displayContractName}</title>
+      </Head>
       <div className="px-6">
         <Button
           text="Back"

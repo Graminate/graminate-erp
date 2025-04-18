@@ -5,348 +5,304 @@ import {
   ArcElement,
   Tooltip,
   Legend,
+  ChartConfiguration,
 } from "chart.js";
+import Button from "@/components/ui/Button";
 import NavPanel from "@/components/layout/NavPanel";
 
 Chart.register(DoughnutController, ArcElement, Tooltip, Legend);
 
-import type { StatusCard } from "@/types/card-props";
+type BudgetItem = {
+  id: string;
+  name: string;
+  description?: string;
+  allocated: number;
+  spent: number;
+};
 
-type ButtonType = { name: string; view: string };
+type BudgetStep = {
+  id: string;
+  name: string;
+  items: BudgetItem[];
+};
 
-const StatusCard = ({ steps, currentStep }: StatusCard) => {
-  const [activeView, setActiveView] = useState<string>("");
-  const [allocated, setAllocated] = useState<number>(0);
-  const [spent, setSpent] = useState<number>(0);
-  const [buttons, setButtons] = useState<ButtonType[]>([]);
+type StatusCardProps = {
+  stepData: BudgetStep | undefined;
+  onUpdateSpent: (stepId: string, itemId: string, newSpent: number) => void;
+  currencySymbol?: string;
+};
 
-  // Define button groups for each step:
-  const buttonsForStep1: ButtonType[] = [
-    { name: "Seeds", view: "Seeds" },
-    { name: "Tools", view: "Tools" },
-    { name: "Labour", view: "Labour" },
-  ];
-
-  const buttonsForStep2: ButtonType[] = [
-    { name: "Clearing", view: "Clearing" },
-    { name: "Ploughing", view: "Ploughing" },
-    { name: "Manuring", view: "Manuring" },
-  ];
-
-  const buttonsForStep3: ButtonType[] = [
-    { name: "Sowing", view: "Sowing" },
-    { name: "Grooming", view: "Grooming" },
-  ];
-
-  const buttonsForStep4: ButtonType[] = [
-    { name: "Water", view: "Water" },
-    { name: "Pesticide", view: "Pesticide" },
-    { name: "Fertiliser", view: "Fertiliser" },
-  ];
-
-  const buttonsForStep5: ButtonType[] = [
-    { name: "Harvest", view: "Harvest" },
-    { name: "Process", view: "Process" },
-    { name: "Storage", view: "Storage" },
-  ];
-
-  useEffect(() => {
-    if (currentStep === 1) {
-      setButtons(buttonsForStep1);
-      setActiveView(buttonsForStep1[0].view);
-    } else if (currentStep === 2) {
-      setButtons(buttonsForStep2);
-      setActiveView(buttonsForStep2[0].view);
-    } else if (currentStep === 3) {
-      setButtons(buttonsForStep3);
-      setActiveView(buttonsForStep3[0].view);
-    } else if (currentStep === 4) {
-      setButtons(buttonsForStep4);
-      setActiveView(buttonsForStep4[0].view);
-    } else if (currentStep === 5) {
-      setButtons(buttonsForStep5);
-      setActiveView(buttonsForStep5[0].view);
-    }
-  }, [currentStep]);
-
-  // Chart data
-  const chartData: Record<
-    string,
-    {
-      data: number[];
-      backgroundColor: string[];
-      daysLeft: number;
-      allocated: number;
-      spent: number;
-    }
-  > = {
-    Seeds: {
-      data: [2, 2],
-      backgroundColor: ["#4CAF50", "#FFC107"],
-      daysLeft: 15,
-      allocated: 5000,
-      spent: 3500,
-    },
-    Tools: {
-      data: [4000, 2000],
-      backgroundColor: ["#673AB7", "#FF5722"],
-      daysLeft: 20,
-      allocated: 4000,
-      spent: 2000,
-    },
-    Labour: {
-      data: [7000, 6000],
-      backgroundColor: ["#FF9800", "#8BC34A"],
-      daysLeft: 10,
-      allocated: 7000,
-      spent: 6000,
-    },
-    Clearing: {
-      data: [3000, 2500],
-      backgroundColor: ["#A78BFA", "#FDE68A"],
-      daysLeft: 12,
-      allocated: 3000,
-      spent: 2500,
-    },
-    Ploughing: {
-      data: [5000, 4500],
-      backgroundColor: ["#10B981", "#F9A8D4"],
-      daysLeft: 8,
-      allocated: 5000,
-      spent: 4500,
-    },
-    Manuring: {
-      data: [4000, 3000],
-      backgroundColor: ["#6B7280", "#93C5FD"],
-      daysLeft: 6,
-      allocated: 4000,
-      spent: 3000,
-    },
-    Sowing: {
-      data: [4500, 4000],
-      backgroundColor: ["#8B5CF6", "#E879F9"],
-      daysLeft: 10,
-      allocated: 4500,
-      spent: 4000,
-    },
-    Grooming: {
-      data: [3500, 2000],
-      backgroundColor: ["#34D399", "#60A5FA"],
-      daysLeft: 5,
-      allocated: 3500,
-      spent: 2000,
-    },
-    Water: {
-      data: [8000, 7000],
-      backgroundColor: ["#3B82F6", "#E5E7EB"],
-      daysLeft: 10,
-      allocated: 8000,
-      spent: 7000,
-    },
-    Pesticide: {
-      data: [6000, 5000],
-      backgroundColor: ["#EF4444", "#E5E7EB"],
-      daysLeft: 5,
-      allocated: 6000,
-      spent: 5000,
-    },
-    Fertiliser: {
-      data: [10000, 5000],
-      backgroundColor: ["#F59E0B", "#E5E7EB"],
-      daysLeft: 7,
-      allocated: 10000,
-      spent: 5000,
-    },
-    Harvest: {
-      data: [7500, 6000],
-      backgroundColor: ["#FB923C", "#C084FC"],
-      daysLeft: 15,
-      allocated: 7500,
-      spent: 6000,
-    },
-    Process: {
-      data: [5000, 3500],
-      backgroundColor: ["#4B5563", "#F472B6"],
-      daysLeft: 10,
-      allocated: 5000,
-      spent: 3500,
-    },
-    Storage: {
-      data: [6000, 4500],
-      backgroundColor: ["#10B981", "#6EE7B7"],
-      daysLeft: 20,
-      allocated: 6000,
-      spent: 4500,
-    },
-  };
-
+const StatusCard = ({
+  stepData,
+  onUpdateSpent,
+  currencySymbol = "₹",
+}: StatusCardProps) => {
+  const [activeItemId, setActiveItemId] = useState<string>("");
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const chartRef = useRef<Chart | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const createChart = () => {
-    if (canvasRef.current) {
-      const data = chartData[activeView] || { data: [], backgroundColor: [] }; // Fallback to avoid errors
+  const activeItem = stepData?.items.find((item) => item.id === activeItemId);
+  const remainingBudget = activeItem
+    ? activeItem.allocated - activeItem.spent
+    : 0;
 
-      chartRef.current = new Chart(canvasRef.current, {
-        type: "doughnut",
-        data: {
-          datasets: [
-            {
-              data: data.data,
-              backgroundColor: data.backgroundColor,
-              borderWidth: 0,
+  useEffect(() => {
+    setActiveItemId(stepData?.items[0]?.id ?? "");
+  }, [stepData]);
+
+  useEffect(() => {
+    const checkDarkMode = () => {
+      setIsDarkMode(
+        window.matchMedia &&
+          window.matchMedia("(prefers-color-scheme: dark)").matches
+      );
+    };
+    checkDarkMode();
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    mediaQuery.addEventListener("change", checkDarkMode);
+    return () => mediaQuery.removeEventListener("change", checkDarkMode);
+  }, []);
+
+  const getChartConfig = (
+    item: BudgetItem | undefined
+  ): ChartConfiguration<"doughnut"> => {
+    const spent = item?.spent ?? 0;
+    const allocated = item?.allocated ?? 0;
+    const remainingForChart = Math.max(0, allocated - spent);
+
+    const CHART_COLORS = {
+      spent: "#EF4444",
+      spentDark: "#F87171",
+      remaining: "#3B82F6",
+      remainingDark: "#60A5FA",
+      placeholder: isDarkMode ? "#6B7280" : "#D1D5DB",
+      borderColor: isDarkMode ? "#374151" : "#FFFFFF",
+      legendColor: isDarkMode ? "#D1D5DB" : "#4B5563",
+    };
+
+    const dataValues = allocated > 0 ? [spent, remainingForChart] : [1];
+    const labels = allocated > 0 ? ["Spent", "Remaining"] : ["No Budget"];
+    const backgroundColors =
+      allocated > 0
+        ? isDarkMode
+          ? [CHART_COLORS.spentDark, CHART_COLORS.remainingDark]
+          : [CHART_COLORS.spent, CHART_COLORS.remaining]
+        : [CHART_COLORS.placeholder];
+
+    return {
+      type: "doughnut",
+      data: {
+        labels,
+        datasets: [
+          {
+            data: dataValues,
+            backgroundColor: backgroundColors,
+            borderColor: CHART_COLORS.borderColor,
+            borderWidth: 2,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: "60%",
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: (context) =>
+                allocated <= 0
+                  ? "No budget allocated"
+                  : `${context.label || ""}: ${currencySymbol}${(
+                      context.parsed || 0
+                    ).toLocaleString()}`,
             },
-          ],
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            tooltip: {
-              callbacks: {
-                label: (tooltipItem: any) =>
-                  `${tooltipItem.label}: ₹${
-                    data.data[tooltipItem.dataIndex] || 0
-                  }`,
-              },
-            },
-            legend: {
-              position: "top",
-              labels: {
-                color: "#9CA3AF",
-              },
+          },
+          legend: {
+            display: allocated > 0,
+            position: "bottom",
+            labels: {
+              color: CHART_COLORS.legendColor,
+              padding: 15,
+              usePointStyle: true,
+              pointStyle: "circle",
             },
           },
         },
-      });
-    }
+      },
+    };
   };
 
-  const updateChart = () => {
-    if (chartRef.current) {
-      const data = chartData[activeView] || { data: [], backgroundColor: [] }; // Fallback
-
-      chartRef.current.data.datasets[0].data = data.data;
-      chartRef.current.data.datasets[0].backgroundColor = data.backgroundColor;
-      chartRef.current.update();
-    }
-  };
-
-  const destroyChart = () => {
+  useEffect(() => {
+    if (!canvasRef.current) return;
+    const config = getChartConfig(activeItem);
     if (chartRef.current) {
       chartRef.current.destroy();
       chartRef.current = null;
     }
-  };
-
-  useEffect(() => {
-    if ([1, 2, 3, 4, 5].includes(currentStep)) {
-      if (!chartRef.current) {
-        createChart();
-      } else {
-        updateChart();
-      }
-    } else {
-      destroyChart();
+    if (activeItem) {
+      chartRef.current = new Chart(canvasRef.current, config);
+    } else if (canvasRef.current?.getContext("2d")) {
+      const ctx = canvasRef.current.getContext("2d");
+      ctx?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
-  }, [currentStep, activeView]);
-
-  useEffect(() => {
-    const data = chartData[activeView];
-    setAllocated(data?.allocated || 0);
-    setSpent(data?.spent || 0);
-  }, [activeView]);
+  }, [activeItem, isDarkMode, currencySymbol]);
 
   useEffect(() => {
     return () => {
-      destroyChart();
+      chartRef.current?.destroy();
+      chartRef.current = null;
     };
   }, []);
 
+  const handleUpdateSpent = (amount: number) => {
+    if (stepData && activeItem) {
+      const newSpent = activeItem.spent + amount;
+      if (newSpent >= 0) {
+        onUpdateSpent(stepData.id, activeItem.id, newSpent);
+      }
+    }
+  };
+
+  if (!stepData) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 text-center text-dark dark:text-light h-full flex items-center justify-center">
+        <p>Select a step from the progress bar above to view details.</p>
+      </div>
+    );
+  }
+
+  const navPanelButtons = stepData.items.map((item) => ({
+    name: item.name,
+    view: item.id,
+  }));
+
   return (
-    <div className="bg-gray-500 dark:bg-gray-700 dark:from-gray-700 rounded-lg shadow-lg p-6 md:p-2 sm:p-2 text-gray-800">
-      {([1, 2, 3, 4, 5] as number[]).includes(currentStep) ? (
-        <>
-          <p className="dark:text-light text-xl font-semibold flex justify-center items-center h-full my-2">
-            {steps[currentStep - 1] || `Step ${currentStep}`}
-          </p>
-          <NavPanel
-            buttons={buttons}
-            activeView={activeView}
-            onNavigate={(view: string) => {
-              setActiveView(view);
-              updateChart();
-            }}
-          />
-          <div className="flex flex-col items-center md:items-start">
-            <div className="text-center w-full sm:mt-3">
-              {currentStep === 1 ? (
-                activeView === "Seeds" ? (
-                  <p className="text-dark dark:text-light">Prepare the Seeds</p>
-                ) : activeView === "Tools" ? (
-                  <p className="text-dark dark:text-light">Gather Tools</p>
-                ) : activeView === "Labour" ? (
-                  <p className="text-dark dark:text-light">Assign Labour</p>
-                ) : null
-              ) : currentStep === 2 ? (
-                activeView === "Clearing" ? (
-                  <p className="text-dark dark:text-light">
-                    Clearing Activities
-                  </p>
-                ) : activeView === "Ploughing" ? (
-                  <p className="text-dark dark:text-light">Ploughing Tasks</p>
-                ) : activeView === "Manuring" ? (
-                  <p className="text-dark dark:text-light">Manuring Steps</p>
-                ) : null
-              ) : currentStep === 3 ? (
-                activeView === "Sowing" ? (
-                  <p className="text-dark dark:text-light">Sowing Guide</p>
-                ) : activeView === "Grooming" ? (
-                  <p className="text-dark dark:text-light">
-                    Grooming Instructions
-                  </p>
-                ) : null
-              ) : currentStep === 4 ? (
-                activeView === "Water" ? (
-                  <p className="text-dark dark:text-light">Watering Budget</p>
-                ) : activeView === "Pesticide" ? (
-                  <p className="text-dark dark:text-light">Pesticide Budget</p>
-                ) : activeView === "Fertiliser" ? (
-                  <p className="text-dark dark:text-light">Fertilizer Budget</p>
-                ) : null
-              ) : currentStep === 5 ? (
-                activeView === "Harvest" ? (
-                  <p className="text-dark dark:text-light">Harvest Details</p>
-                ) : activeView === "Process" ? (
-                  <p className="text-dark dark:text-light">Processing Steps</p>
-                ) : activeView === "Storage" ? (
-                  <p className="text-dark dark:text-light">Storage Tips</p>
-                ) : null
-              ) : null}
-            </div>
-          </div>
-          <div className="relative mx-auto flex flex-col md:flex-row px-5 items-center w-full md:mt-5 sm:my-3">
-            <div className="w-full md:w-1/2 mb-4 md:mb-0">
-              <canvas
-                ref={canvasRef}
-                id="status-doughnut"
-                className="w-full"
-              ></canvas>
-            </div>
-            <div className="flex flex-col text-left ml-0 md:ml-4">
-              <p className="text-dark dark:text-light">
-                Allocated: ₹{chartData[activeView]?.allocated || 0}
-              </p>
-              <p className="text-dark dark:text-light">
-                Spent: ₹{chartData[activeView]?.spent || 0}
-              </p>
-            </div>
-          </div>
-        </>
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-4 md:p-6 text-gray-800 dark:text-gray-200 h-full flex flex-col">
+      <h2 className="text-xl md:text-2xl font-semibold text-center mb-4 text-gray-700 dark:text-gray-300">
+        {stepData.name} Details
+      </h2>
+
+      {navPanelButtons.length > 0 ? (
+        <NavPanel
+          buttons={navPanelButtons}
+          activeView={activeItemId}
+          onNavigate={setActiveItemId}
+        />
       ) : (
-        <div className="flex justify-center items-center h-full">
-          <p className="text-gray-100 dark:text-light text-xl font-semibold flex justify-center items-center h-full my-2">
-            {steps[currentStep - 1] || `Step ${currentStep}`}
-          </p>
+        <p className="text-center text-dark dark:text-light mb-4 pb-3 border-b border-gray-300 dark:border-gray-600">
+          No items in this step.
+        </p>
+      )}
+
+      {activeItem ? (
+        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-center flex-grow">
+          <div className="relative h-56 sm:h-64 md:h-72 w-full flex justify-center items-center p-2">
+            <canvas
+              ref={canvasRef}
+              id={`status-doughnut-${stepData.id}-${activeItem.id}`}
+            />
+          </div>
+
+          <div className="flex flex-col space-y-3 md:space-y-4 text-sm md:text-base">
+            <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-300 text-center md:text-left">
+              {activeItem.name}
+            </h3>
+            {activeItem.description && (
+              <p className="text-xs md:text-sm text-dark dark:text-light text-center md:text-left">
+                {activeItem.description}
+              </p>
+            )}
+
+            <div className="space-y-2 border-t border-b border-gray-200 dark:border-gray-700 py-3 my-2">
+              <div className="flex justify-between items-center">
+                {" "}
+                <span className="font-medium text-gray-600 dark:text-gray-400">
+                  Allocated:
+                </span>{" "}
+                <span className="font-bold text-blue-600 dark:text-blue-400">
+                  {currencySymbol}
+                  {activeItem.allocated.toLocaleString()}
+                </span>{" "}
+              </div>
+              <div className="flex justify-between items-center">
+                {" "}
+                <span className="font-medium text-gray-600 dark:text-gray-400">
+                  Spent:
+                </span>{" "}
+                <span className="font-bold text-red-600 dark:text-red-400">
+                  {currencySymbol}
+                  {activeItem.spent.toLocaleString()}
+                </span>{" "}
+              </div>
+              <div className="flex justify-between items-center">
+                {" "}
+                <span className="font-medium text-gray-600 dark:text-gray-400">
+                  Remaining:
+                </span>{" "}
+                <span
+                  className={`font-bold ${
+                    remainingBudget >= 0
+                      ? "text-green-600 dark:text-green-400"
+                      : "text-orange-500 dark:text-orange-400"
+                  }`}
+                >
+                  {" "}
+                  {remainingBudget < 0 ? "-" : ""}
+                  {currencySymbol}
+                  {Math.abs(remainingBudget).toLocaleString()}{" "}
+                </span>{" "}
+              </div>
+            </div>
+
+            {activeItem.allocated > 0 && (
+              <div className="pt-2 text-center md:text-left">
+                <p className="text-xs font-medium mb-2 text-gray-600 dark:text-gray-400">
+                  Adjust Spent:
+                </p>
+                <div className="flex items-center justify-center md:justify-start gap-1 md:gap-2 flex-wrap">
+                  <Button
+                    text="-100"
+                    style="secondary"
+                    onClick={() => handleUpdateSpent(-100)}
+                    isDisabled={activeItem.spent <= 0}
+                  />
+                  <Button
+                    text="+100"
+                    style="secondary"
+                    onClick={() => handleUpdateSpent(100)}
+                  />
+                  <Button
+                    text="-1k"
+                    style="secondary"
+                    onClick={() => handleUpdateSpent(-1000)}
+                    isDisabled={activeItem.spent <= 0}
+                  />
+                  <Button
+                    text="+1k"
+                    style="secondary"
+                    onClick={() => handleUpdateSpent(1000)}
+                  />
+                </div>
+                {remainingBudget < 0 && (
+                  <p className="text-xs text-orange-500 dark:text-orange-400 mt-2 text-center md:text-left">
+                    Warning: Budget exceeded!
+                  </p>
+                )}
+              </div>
+            )}
+            {activeItem.allocated <= 0 && (
+              <p className="text-xs text-dark dark:text-light text-center md:text-left">
+                No budget allocated for adjustments.
+              </p>
+            )}
+          </div>
+        </div>
+      ) : (
+        <div className="flex-grow flex items-center justify-center text-center text-dark dark:text-light p-10">
+          {stepData.items.length > 0
+            ? "Select an item from the panel above."
+            : "No budget items defined for this step."}
         </div>
       )}
     </div>

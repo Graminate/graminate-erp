@@ -1,27 +1,31 @@
 import Button from "@/components/ui/Button";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
-import TextArea from "@/components/ui/TextArea";
 import TextField from "@/components/ui/TextField";
 import PlatformLayout from "@/layout/PlatformLayout";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
-import Swal from "sweetalert2";
-
+import { triggerToast } from "@/stores/toast";
 import { CONTACT_TYPES } from "@/constants/options";
+import Loader from "@/components/ui/Loader";
+import Head from "next/head";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 const ContactDetails = () => {
   const router = useRouter();
   const { user_id, data } = router.query;
   const [contact, setContact] = useState<any | null>(null);
 
-  // Editable fields state
   const [initialFullName, setInitialFullName] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [type, setType] = useState("");
-  const [address, setAddress] = useState("");
+  const [addressLine1, setAddressLine1] = useState("");
+  const [addressLine2, setAddressLine2] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [postalCode, setPostalCode] = useState("");
 
   // Keep initial values for change detection
   const [initialFormData, setInitialFormData] = useState({
@@ -30,10 +34,13 @@ const ContactDetails = () => {
     email: "",
     phoneNumber: "",
     type: "",
-    address: "",
+    addressLine1: "",
+    addressLine2: "",
+    city: "",
+    state: "",
+    postalCode: "",
   });
 
-  // Saving state for update request
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -41,26 +48,41 @@ const ContactDetails = () => {
       try {
         const parsedContact = JSON.parse(data as string);
         setContact(parsedContact);
-        const initFirstName = parsedContact[1] || "";
-        const initLastName = parsedContact[2] || "";
-        const initEmail = parsedContact[3] || "";
-        const initPhoneNumber = parsedContact[4] || "";
-        const initType = parsedContact[5] || "";
-        const initAddress = parsedContact[6] || "";
+
+        const initFirstName = parsedContact.first_name || "";
+        const initLastName = parsedContact.last_name || "";
+        const initEmail = parsedContact.email || "";
+        const initPhoneNumber = parsedContact.phone_number || "";
+        const initType = parsedContact.type || "";
+        const line1 = parsedContact.address_line_1 || "";
+        const line2 = parsedContact.address_line_2 || "";
+        const cityVal = parsedContact.city || "";
+        const stateVal = parsedContact.state || "";
+        const postalVal = parsedContact.postal_code || "";
+
         setInitialFullName(`${initFirstName} ${initLastName}`);
         setFirstName(initFirstName);
         setLastName(initLastName);
         setEmail(initEmail);
         setPhoneNumber(initPhoneNumber);
         setType(initType);
-        setAddress(initAddress);
+        setAddressLine1(line1);
+        setAddressLine2(line2);
+        setCity(cityVal);
+        setState(stateVal);
+        setPostalCode(postalVal);
+
         setInitialFormData({
           firstName: initFirstName,
           lastName: initLastName,
           email: initEmail,
           phoneNumber: initPhoneNumber,
           type: initType,
-          address: initAddress,
+          addressLine1: line1,
+          addressLine2: line2,
+          city: cityVal,
+          state: stateVal,
+          postalCode: postalVal,
         });
       } catch (error) {
         console.error("Error parsing contact data:", error);
@@ -68,7 +90,7 @@ const ContactDetails = () => {
     }
   }, [data]);
 
-  if (!contact) return <p>Loading...</p>;
+  if (!contact) return <Loader />;
 
   const hasChanges =
     firstName !== initialFormData.firstName ||
@@ -76,57 +98,65 @@ const ContactDetails = () => {
     email !== initialFormData.email ||
     phoneNumber !== initialFormData.phoneNumber ||
     type !== initialFormData.type ||
-    address !== initialFormData.address;
+    addressLine1 !== initialFormData.addressLine1 ||
+    addressLine2 !== initialFormData.addressLine2 ||
+    city !== initialFormData.city ||
+    state !== initialFormData.state ||
+    postalCode !== initialFormData.postalCode;
 
   const handleSave = async () => {
     setSaving(true);
 
     const payload = {
-      id: contact[0],
+      id: contact.contact_id || contact[0],
       first_name: firstName,
       last_name: lastName,
       email: email,
       phone_number: phoneNumber,
       type: type,
-      address: address,
+      address_line_1: addressLine1,
+      address_line_2: addressLine2,
+      city: city,
+      state: state,
+      postal_code: postalCode,
     };
 
-    console.log("Sending update request with payload:", payload);
-
     try {
-      const response = await fetch(
-        "http://localhost:3001/api/contacts/update",
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(payload),
-        }
-      );
+      const response = await axiosInstance.put("/contacts/update", payload);
+      triggerToast("Contact updated successfully", "success");
+      const updated = response.data.contact;
 
-      const result = await response.json();
-      console.log("Response from API:", result);
+      setContact([
+        updated.contact_id,
+        updated.first_name,
+        updated.last_name,
+        updated.email,
+        updated.phone_number,
+        updated.type,
+        updated.addressLine1,
+        updated.addressLine2,
+        updated.city,
+        updated.state,
+        updated.postalCode,
+      ]);
 
-      if (response.ok) {
-        Swal.fire("Success", "Contact updated successfully", "success");
-        setContact(result.contact);
-        setInitialFormData({
-          firstName,
-          lastName,
-          email,
-          phoneNumber,
-          type,
-          address,
-        });
-      } else {
-        Swal.fire("Error", result.error || "Failed to update contact", "error");
-      }
-    } catch (error) {
+      setInitialFormData({
+        firstName: updated.first_name,
+        lastName: updated.last_name,
+        email: updated.email,
+        phoneNumber: updated.phone_number,
+        type: updated.type,
+        addressLine1: updated.address_line_1 || "",
+        addressLine2: updated.address_line_2 || "",
+        city: updated.city || "",
+        state: updated.state || "",
+        postalCode: updated.postal_code || "",
+      });
+    } catch (error: any) {
       console.error("Error updating contact:", error);
-      Swal.fire(
-        "Error",
-        "An error occurred while updating the contact.",
+      triggerToast(
+        error.response?.data?.error ||
+          "An error occurred while updating the contact.",
         "error"
       );
     } finally {
@@ -136,6 +166,9 @@ const ContactDetails = () => {
 
   return (
     <PlatformLayout>
+      <Head>
+        <title>Contact | {initialFullName}</title>
+      </Head>
       <div className="px-6">
         <Button
           text="Back"
@@ -178,11 +211,35 @@ const ContactDetails = () => {
               label="Type"
               width="full"
             />
-            <TextArea
-              label="Address"
-              placeholder="Address (optional)"
-              value={address}
-              onChange={(val: string) => setAddress(val)}
+            <TextField
+              label="Address Line 1"
+              value={addressLine1}
+              onChange={(val) => setAddressLine1(val)}
+              width="large"
+            />
+            <TextField
+              label="Address Line 2"
+              value={addressLine2}
+              onChange={(val) => setAddressLine2(val)}
+              width="large"
+            />
+            <TextField
+              label="City"
+              value={city}
+              onChange={(val) => setCity(val)}
+              width="large"
+            />
+            <TextField
+              label="State"
+              value={state}
+              onChange={(val) => setState(val)}
+              width="large"
+            />
+            <TextField
+              label="Postal Code"
+              value={postalCode}
+              onChange={(val) => setPostalCode(val)}
+              width="large"
             />
           </div>
           <div className="flex flex-row mt-6 space-x-4">

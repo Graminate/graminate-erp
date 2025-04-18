@@ -9,6 +9,7 @@ type Props = {
   icon?: "left" | "right" | "";
   calendar?: boolean;
   password?: boolean;
+  number?: boolean;
   value: string;
   onChange: (val: string) => void;
   width?: "small" | "medium" | "large" | "";
@@ -23,6 +24,7 @@ const TextField = ({
   icon = "",
   calendar = false,
   password = false,
+  number = false,
   value,
   onChange,
   width = "",
@@ -81,6 +83,8 @@ const TextField = ({
               ? showPassword
                 ? "text"
                 : "password"
+              : number
+              ? "number"
               : "text"
           }
           id={calendar ? "calendar" : password ? "password" : "text"}

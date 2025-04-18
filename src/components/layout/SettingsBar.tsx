@@ -39,15 +39,16 @@ const SettingsBar = () => {
     },
   ];
 
-  const goBack = () => {
-    router.back();
-  };
-
   return (
     <div className="w-72 px-4 bg-gray-50 dark:bg-gray-900 text-gray-800 dark:text-light border-r border-gray-400 dark:border-gray-200 min-h-screen -m-6">
       {/* Back Button */}
       <div className="flex items-center pt-4">
-        <Button text="Back" style="ghost" arrow="left" onClick={goBack} />
+        <Button
+          text="Back"
+          style="ghost"
+          arrow="left"
+          onClick={() => router.back()}
+        />
       </div>
 
       {/* Settings Header */}

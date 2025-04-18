@@ -5,12 +5,13 @@ import TextField from "@/components/ui/TextField";
 import TextArea from "@/components/ui/TextArea";
 import CustomTable from "@/components/tables/CustomTable";
 import PlatformLayout from "@/layout/PlatformLayout";
-import Swal from "sweetalert2";
+import { triggerToast } from "@/stores/toast";
 import Head from "next/head";
 import domtoimage from "dom-to-image";
 import jsPDF from "jspdf";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import { PAYMENT_STATUS } from "@/constants/options";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 type Item = {
   description: string;
@@ -149,7 +150,7 @@ const ReceiptDetails = () => {
     const payload = {
       invoice_id: receipt.invoice_id,
       user_id,
-      title: receiptTitle, // Ensure the correct title is sent
+      title: receiptTitle,
       bill_to: customer,
       ship_to: shipTo,
       payment_terms: paymentTerms,
@@ -167,48 +168,31 @@ const ReceiptDetails = () => {
     };
 
     try {
-      const response = await fetch(
-        `http://localhost:3001/api/receipts/update`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        }
-      );
+      const response = await axiosInstance.put("/receipts/update", payload);
+      triggerToast("Receipt updated successfully", "success");
+      setInitialFormData({
+        receiptNumber,
+        receiptTitle,
+        customer,
+        shipTo,
+        paymentTerms,
+        dueDate,
+        poNumber,
+        notes,
+        terms,
+        items,
+        tax,
+        discount,
+        shipping,
+        amountPaid,
+      });
 
-      const result = await response.json();
-
-      if (response.ok) {
-        Swal.fire("Success", "Receipt updated successfully", "success");
-
-        // Ensure receiptTitle is stored correctly and fields are updated
-        setInitialFormData({
-          receiptNumber, // This should remain invoice_id
-          receiptTitle, // Retain correct title
-          customer,
-          shipTo,
-          paymentTerms,
-          dueDate,
-          poNumber,
-          notes,
-          terms,
-          items,
-          tax,
-          discount,
-          shipping,
-          amountPaid,
-        });
-
-        // Reload data to reflect changes
-        setReceipt(result.invoice);
-      } else {
-        Swal.fire("Error", result.error || "Failed to update receipt", "error");
-      }
-    } catch (error) {
+      setReceipt(response.data.invoice);
+    } catch (error: any) {
       console.error("Error updating receipt:", error);
-      Swal.fire(
-        "Error",
-        "An error occurred while updating the receipt.",
+      triggerToast(
+        error.response?.data?.error ||
+          "An error occurred while updating the receipt.",
         "error"
       );
     } finally {
@@ -219,7 +203,6 @@ const ReceiptDetails = () => {
     const element = document.getElementById("receipt-container");
     if (!element) return;
 
-    // Temporarily hide buttons before capturing the image
     const buttons = document.querySelectorAll(".exclude-from-pdf");
     buttons.forEach((btn) => ((btn as HTMLElement).style.display = "none"));
 
@@ -233,9 +216,8 @@ const ReceiptDetails = () => {
       pdf.save("receipt.pdf");
     } catch (error) {
       console.error("Error generating PDF:", error);
-      Swal.fire("Error", "Could not generate PDF", "error");
+      triggerToast("Could not generate PDF", "error");
     } finally {
-      // Restore the buttons after the snapshot
       buttons.forEach((btn) => ((btn as HTMLElement).style.display = ""));
     }
   };

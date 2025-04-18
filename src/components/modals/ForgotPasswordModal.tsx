@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import Swal from "sweetalert2";
 import TextField from "@/components/ui/TextField";
 import Button from "@/components/ui/Button";
+import axios from "axios";
+import { API_BASE_URL } from "@/constants/constants";
 
 type Props = {
   isOpen: boolean;
@@ -25,27 +27,7 @@ const ForgotPasswordModal = ({ isOpen, closeModal }: Props) => {
     }
 
     try {
-      const response = await fetch(
-        "http://localhost:3001/api/password/forgot",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ email }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        Swal.fire({
-          title: "Error",
-          text: errorData.error || "Failed to send reset password email.",
-          icon: "error",
-          confirmButtonText: "OK",
-        });
-        return;
-      }
+      await axios.post(`${API_BASE_URL}/password/forgot`, { email });
 
       Swal.fire({
         title: "Email Sent",
@@ -55,11 +37,15 @@ const ForgotPasswordModal = ({ isOpen, closeModal }: Props) => {
       });
 
       closeModal();
-    } catch (error) {
-      console.error("Error:", error);
+    } catch (error: any) {
+      const message =
+        error.response?.data?.error || "Failed to send reset password email.";
+
+      console.error("Error:", message);
+
       Swal.fire({
         title: "Error",
-        text: "An error occurred. Please try again later.",
+        text: message,
         icon: "error",
         confirmButtonText: "OK",
       });

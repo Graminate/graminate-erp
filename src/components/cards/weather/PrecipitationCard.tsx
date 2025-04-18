@@ -1,10 +1,12 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faDroplet } from "@fortawesome/free-solid-svg-icons";
 import Chart from "chart.js/auto";
 import type { ChartConfiguration, Chart as ChartJS } from "chart.js";
+import axios from "axios";
 
 import { Coordinates } from "@/types/card-props";
+import Loader from "@/components/ui/Loader"; // Assuming Loader component exists
 
 const PrecipitationCard = ({ lat, lon }: Coordinates) => {
   const [error, setError] = useState<string | null>(null);
@@ -30,46 +32,47 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
   const chartRef = useRef<ChartJS | null>(null);
   const [hoveredTime, setHoveredTime] = useState<string>("");
   const [hoveredPrecip, setHoveredPrecip] = useState<number>(0);
-  const graphWidth = 300;
-  const graphHeight = 150;
 
   async function fetchPrecipitationData(latitude: number, longitude: number) {
     try {
-      const response = await fetch(
-        `/api/weather?lat=${latitude}&lon=${longitude}`
-      );
-      if (!response.ok) {
-        throw new Error(
-          `Error fetching precipitation data: ${response.statusText}`
-        );
-      }
-      const data = await response.json();
-      return data.hourly;
+      const response = await axios.get("/api/weather", {
+        params: {
+          lat: latitude,
+          lon: longitude,
+        },
+      });
+      return response.data.hourly;
     } catch (err: any) {
-      console.error(err.message);
-      throw new Error("Failed to fetch precipitation data");
+      console.error(
+        err.response?.data?.message || err.message || "Unknown error occurred"
+      );
+      setError("Failed to fetch precipitation data");
+      return null;
     }
   }
 
   useEffect(() => {
     if (lat !== undefined && lon !== undefined) {
+      setWeatherData(null);
+      setError(null);
       fetchPrecipitationData(lat, lon)
         .then((data) => {
-          // Convert time strings into Date objects
-          data.time = data.time.map((t: string) => new Date(t));
-          setWeatherData(data);
+          if (data) {
+            data.time = data.time.map((t: string) => new Date(t));
+            setWeatherData(data);
+          }
         })
         .catch((err: any) => {
-          setError(err.message);
+          // Error is set inside fetch function now
         });
     } else {
       setError(
         "Latitude and Longitude are required to fetch precipitation data."
       );
+      setWeatherData(null);
     }
   }, [lat, lon]);
 
-  // Compute rain sums in Small mode
   useEffect(() => {
     if (weatherData && displayMode === "Small") {
       const now = new Date();
@@ -77,9 +80,11 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
         time: t,
         precipitation: weatherData.precipitation[index] || 0,
       }));
+
       const past6 = hoursData
         .filter(
           (entry: { time: Date; precipitation: number }) =>
+            entry.time <= now &&
             entry.time > new Date(now.getTime() - 6 * 60 * 60 * 1000)
         )
         .reduce(
@@ -87,23 +92,24 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
             sum + entry.precipitation,
           0
         );
+
       const next24 = hoursData
         .filter(
           (entry: { time: Date; precipitation: number }) =>
             entry.time > now &&
-            entry.time < new Date(now.getTime() + 24 * 60 * 60 * 1000)
+            entry.time <= new Date(now.getTime() + 24 * 60 * 60 * 1000)
         )
         .reduce(
           (sum: number, entry: { time: Date; precipitation: number }) =>
             sum + entry.precipitation,
           0
         );
+
       setPast6HoursRain(past6);
       setNext24HoursRain(next24);
     }
   }, [weatherData, displayMode]);
 
-  // Group hourly data by day and determine available days
   useEffect(() => {
     if (weatherData) {
       const groups: {
@@ -144,15 +150,27 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
           day: group.day.toLocaleDateString(undefined, { day: "numeric" }),
         }));
       setAvailableDays(available);
+
       if (!selectedDate && available.length > 0) {
         const todayStr = new Date().toDateString();
-        const found = hourlyDataByDay.find(
+        const foundToday = hourlyDataByDay.find(
           (g) => g.day.toDateString() === todayStr
         );
-        setSelectedDate(found ? found.day : available[0].date);
+        setSelectedDate(foundToday ? foundToday.day : available[0].date);
+      } else if (selectedDate && available.length > 0) {
+        const isSelectedDateAvailable = available.some(
+          (d) => d.date.toDateString() === selectedDate.toDateString()
+        );
+        if (!isSelectedDateAvailable) {
+          const todayStr = new Date().toDateString();
+          const foundToday = hourlyDataByDay.find(
+            (g) => g.day.toDateString() === todayStr
+          );
+          setSelectedDate(foundToday ? foundToday.day : available[0].date);
+        }
       }
     }
-  }, [weatherData]);
+  }, [weatherData]); // Removed selectedDate dependency
 
   useEffect(() => {
     if (selectedDate && hourlyPrecipDataByDay.length > 0) {
@@ -160,59 +178,73 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
         (group) => group.day.toDateString() === selectedDate.toDateString()
       );
       setSelectedHourlyData(sel);
+      // Reset hover state when date changes
+      setHoveredTime("");
+      setHoveredPrecip(0);
     }
   }, [selectedDate, hourlyPrecipDataByDay]);
 
   function getDynamicTicks(max: number): number[] {
+    if (max <= 0) return [0];
+    if (max <= 1) return [0, 0.5, 1];
     if (max <= 2.5) return [0, 1, 2.5];
-    else if (max <= 10) return [0, 2.5, 5];
-    else if (max <= 20) return [0, 10, 20];
-    else if (max <= 30) return [0, 15, 30];
-    else if (max <= 40) return [0, 20, 40];
-    else if (max <= 50) return [0, 25, 50];
-    else if (max <= 60) return [0, 20, 40, 60];
-    else if (max <= 70) return [0, 35, 70];
-    else if (max <= 80) return [0, 40, 80];
-    else if (max <= 90) return [0, 30, 60, 90];
-    else return [0, 25, 50, 70, 100];
+    if (max <= 5) return [0, 2.5, 5];
+    if (max <= 10) return [0, 5, 10];
+    if (max <= 20) return [0, 10, 20];
+    if (max <= 40) return [0, 20, 40];
+    return [0, Math.ceil(max / 2), Math.ceil(max)];
   }
 
-  // Create or update chart in Large mode
   useEffect(() => {
     if (displayMode === "Large" && selectedHourlyData && chartCanvas.current) {
       if (chartRef.current) {
         chartRef.current.destroy();
         chartRef.current = null;
       }
+
+      if (selectedHourlyData.precipHours.length === 0) {
+        return;
+      }
+
       const labels = selectedHourlyData.precipHours.map((pt) =>
         pt.time.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
       );
       const dataValues = selectedHourlyData.precipHours.map(
         (pt) => pt.precipitation
       );
-      const maxPrecip = Math.max(...dataValues);
+      const maxPrecip = Math.max(0, ...dataValues); // Ensure maxPrecip is at least 0
       const dynamicTicks = getDynamicTicks(maxPrecip);
+      const maxYValue =
+        dynamicTicks.length > 1 ? dynamicTicks[dynamicTicks.length - 1] : 1; // Default max Y to 1 if no precipitation
+
       const chartConfig: ChartConfiguration<"bar"> = {
         type: "bar",
         data: {
           labels,
           datasets: [
             {
+              label: "Precipitation",
               data: dataValues,
               backgroundColor: "#1E90FF",
+              barPercentage: 0.7,
+              categoryPercentage: 0.8,
             },
           ],
         },
         options: {
+          responsive: true,
           maintainAspectRatio: false,
           plugins: {
             tooltip: {
               enabled: true,
               mode: "index",
               intersect: false,
+              displayColors: false,
               callbacks: {
+                title: () => "",
                 label: function (context: any) {
-                  setHoveredPrecip(context.parsed.y);
+                  const precip = context.parsed.y;
+                  setHoveredPrecip(precip);
                   setHoveredTime(context.label);
                   return "";
                 },
@@ -229,24 +261,47 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
           scales: {
             x: {
               grid: { display: false },
-              ticks: { display: false },
-              axis: "x",
-              border: { color: "gray" },
+              ticks: {
+                display: true,
+                autoSkip: true,
+                maxTicksLimit: 6,
+                font: { size: 10 },
+                color: "#a0aec0", // Example text color
+              },
+              border: { display: false },
             },
             y: {
               beginAtZero: true,
-              max: dynamicTicks[dynamicTicks.length - 1],
+              max: maxYValue,
+              grid: {
+                drawTicks: false,
+                color: "rgba(200, 200, 200, 0.2)",
+              },
               ticks: {
+                padding: 5,
+                font: { size: 10 },
+                color: "#a0aec0", // Example text color
                 callback: function (value: string | number) {
-                  return value + "mm";
+                  if (
+                    typeof value === "number" &&
+                    dynamicTicks.includes(value)
+                  ) {
+                    return value + "mm";
+                  }
+                  return ""; // Hide other ticks
                 },
+                stepSize:
+                  dynamicTicks.length > 1
+                    ? dynamicTicks[1] - dynamicTicks[0]
+                    : 1, // Heuristic step size
               },
               afterBuildTicks: function (scale: any) {
-                scale.ticks = dynamicTicks.map((value: number) => ({ value }));
+                scale.ticks = dynamicTicks.map((value: number) => ({
+                  value,
+                  label: value + "mm",
+                }));
               },
-              grid: { display: false, drawTicks: false },
-              axis: "y",
-              border: { color: "gray" },
+              border: { display: false },
             },
           },
         },
@@ -256,9 +311,44 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
     return () => {
       if (chartRef.current) {
         chartRef.current.destroy();
+        chartRef.current = null;
       }
     };
-  }, [displayMode, selectedHourlyData]);
+  }, [displayMode, selectedHourlyData]); // dynamicTicks removed as it's calculated inside
+
+  const totalPrecipitation = selectedHourlyData
+    ? selectedHourlyData.precipHours.reduce(
+        (sum, pt) => sum + pt.precipitation,
+        0
+      )
+    : 0;
+
+  let precipSummary = "";
+  if (selectedHourlyData) {
+    if (
+      totalPrecipitation >= 10 ||
+      selectedHourlyData.precipHours.some((pt) => pt.precipitation >= 5)
+    ) {
+      precipSummary = "Heavy rain possible.";
+    } else if (
+      totalPrecipitation >= 2.5 ||
+      selectedHourlyData.precipHours.some((pt) => pt.precipitation >= 1)
+    ) {
+      precipSummary = "Moderate rain possible.";
+    } else if (totalPrecipitation > 0) {
+      precipSummary = "Light rain possible.";
+    } else {
+      precipSummary = "No rain expected.";
+    }
+  }
+
+  const firstHourData = selectedHourlyData?.precipHours[0];
+  const defaultHoverTime =
+    firstHourData?.time.toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    }) || "";
+  const defaultHoverPrecip = firstHourData?.precipitation || 0;
 
   return (
     <div className="p-4 rounded-lg shadow-md max-w-sm mx-auto flex flex-col items-center relative dark:bg-gray-700 bg-gray-500">
@@ -267,7 +357,15 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
           type="button"
           className="w-6 h-6 cursor-pointer text-dark dark:text-light focus:outline-none"
           onClick={() => setDropdownOpen(!dropdownOpen)}
-          aria-label="Toggle dropdown"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              setDropdownOpen(!dropdownOpen);
+              e.preventDefault();
+            }
+          }}
+          tabIndex={0}
+          aria-label="Toggle card size options"
+          aria-expanded={dropdownOpen}
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -287,7 +385,7 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
         {dropdownOpen && (
           <div className="absolute top-8 right-0 bg-white dark:bg-gray-600 dark:text-light text-black rounded-lg shadow-lg z-20 w-32">
             <button
-              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-500 dark:hover:bg-blue-100 cursor-pointer"
+              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 dark:hover:bg-gray-800 rounded-t-lg cursor-pointer"
               type="button"
               onClick={() => {
                 setDisplayMode("Small");
@@ -297,7 +395,7 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
               Small
             </button>
             <button
-              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-500 dark:hover:bg-blue-100 cursor-pointer"
+              className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 dark:hover:bg-gray-800 rounded-b-lg cursor-pointer"
               type="button"
               onClick={() => {
                 setDisplayMode("Large");
@@ -309,125 +407,134 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
           </div>
         )}
       </div>
+
       {error ? (
-        <p className="text-red-500 text-center">Error: {error}</p>
-      ) : weatherData && displayMode === "Small" ? (
-        <div className="flex flex-col p-2">
-          <div className="w-full flex flex-row items-center gap-2">
-            <FontAwesomeIcon
-              icon={faDroplet}
-              className="w-4 h-4 text-blue-200"
-            />
-            <p className="text-sm uppercase tracking-wide text-gray-200 dark:text-light">
-              Precipitation
-            </p>
-          </div>
-          <p className="text-xl font-medium py-2 text-left text-dark dark:text-gray-300">
-            {past6HoursRain.toFixed(1)} mm rain in last 6 hours
-          </p>
-          <p className="text-sm py-2 text-left text-dark dark:text-gray-300">
-            {next24HoursRain.toFixed(1)} mm expected in next 24 hours
-          </p>
+        <p className="text-red-500 text-center py-10">Error: {error}</p>
+      ) : weatherData === null ? (
+        <div className="text-center py-10 text-dark dark:text-light">
+          <Loader />
         </div>
-      ) : weatherData && displayMode === "Large" ? (
-        <div className="w-full">
-          {/* Top Label */}
-          <div className="flex flex-row justify-center items-center gap-2">
-            <FontAwesomeIcon
-              icon={faDroplet}
-              className="w-5 h-5 text-blue-200"
-            />
-            <p className="text-sm uppercase tracking-wide text-gray-200 dark:text-light">
-              Precipitation
-            </p>
-          </div>
-          <div className="text-center text-gray-200 dark:text-light my-2 py-2 flex justify-center">
-            {availableDays.map((dayItem, idx) => (
-              <div key={idx} className="flex flex-col items-center">
-                <span className="text-sm font-bold">{dayItem.weekday}</span>
-                <button
-                  type="button"
-                  className={`mx-3 flex flex-col items-center cursor-pointer px-2 py-1 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-300 ${
-                    selectedDate &&
-                    dayItem.date.toDateString() === selectedDate.toDateString()
-                      ? "bg-green-200 text-white"
-                      : ""
-                  }`}
-                  onClick={() => setSelectedDate(dayItem.date)}
-                >
-                  <span className="text-xs">{dayItem.day}</span>
-                </button>
+      ) : (
+        <>
+          {displayMode === "Small" && (
+            <div className="w-full pb-1">
+              <div className="flex flex-col items-left w-full p-1 text-center rounded-md">
+                <div className="w-full flex flex-row items-center gap-2">
+                  <FontAwesomeIcon
+                    icon={faDroplet}
+                    className="w-4 h-4 text-blue-200"
+                  />
+                  <p className="text-sm uppercase tracking-wide text-gray-200 dark:text-light">
+                    Precipitation
+                  </p>
+                </div>
+                <p className="text-2xl py-2 text-left text-dark dark:text-gray-300">
+                  {past6HoursRain.toFixed(1)} mm
+                </p>
+                <p className="text-sm dark:text-light text-dark text-left pb-2">
+                  In last 6 hours
+                </p>
+                <p className="text-sm dark:text-light text-dark text-left">
+                  {next24HoursRain.toFixed(1)} mm expected in next 24 hours
+                </p>
               </div>
-            ))}
-          </div>
-          {selectedHourlyData && selectedHourlyData.precipHours.length > 0 && (
-            <>
-              <p className="text-center text-gray-200 dark:text-light text-lg">
-                {hoveredTime
-                  ? hoveredTime
-                  : selectedHourlyData.precipHours[0].time.toLocaleTimeString(
-                      [],
-                      {
-                        hour: "2-digit",
-                        minute: "2-digit",
+            </div>
+          )}
+
+          {displayMode === "Large" && (
+            <div className="w-full flex flex-col">
+              <div className="flex flex-row justify-center items-center gap-2 mb-2">
+                <FontAwesomeIcon
+                  icon={faDroplet}
+                  className="w-5 h-5 text-blue-200"
+                />
+                <p className="text-sm uppercase tracking-wide text-gray-200 dark:text-light">
+                  Precipitation
+                </p>
+              </div>
+
+              <div className="text-center text-gray-200 dark:text-light my-2 pt-2 flex justify-around">
+                {availableDays.map((dayItem, idx) => (
+                  <div key={idx} className="flex flex-col items-center">
+                    <span className="text-xs font-semibold">
+                      {dayItem.weekday}
+                    </span>
+                    <button
+                      type="button"
+                      className={`mt-1 flex flex-col items-center cursor-pointer px-2 py-1 rounded-full ${
+                        selectedDate &&
+                        dayItem.date.toDateString() ===
+                          selectedDate.toDateString()
+                          ? "bg-green-200 text-white"
+                          : "hover:bg-gray-400 dark:hover:bg-gray-300"
+                      }`}
+                      onClick={() => setSelectedDate(dayItem.date)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          setSelectedDate(dayItem.date);
+                        }
+                      }}
+                      tabIndex={0}
+                      aria-pressed={
+                        selectedDate &&
+                        dayItem.date.toDateString() ===
+                          selectedDate.toDateString()
+                          ? true
+                          : false
                       }
+                      aria-label={`Select precipitation data for ${dayItem.weekday}, ${dayItem.day}`}
+                    >
+                      <span className="text-sm">{dayItem.day}</span>
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {selectedHourlyData && (
+                <div className="flex flex-row mx-auto justify-center items-baseline gap-2 my-2">
+                  <p className="text-center text-gray-200 dark:text-light text-xl font-semibold">
+                    {(hoveredTime ? hoveredPrecip : defaultHoverPrecip).toFixed(
+                      1
                     )}{" "}
-                - {hoveredPrecip.toFixed(1)} mm
-              </p>
-              <div
-                style={{
-                  width: graphWidth,
-                  height: graphHeight,
-                  margin: "auto",
-                }}
-              >
-                <canvas ref={chartCanvas}></canvas>
-              </div>
-              <p className="text-xs font-semibold text-gray-200 dark:text-light mt-4">
-                {selectedDate?.toDateString() === new Date().toDateString()
-                  ? "Today"
-                  : selectedDate?.toLocaleDateString(undefined, {
-                      day: "numeric",
-                      month: "short",
-                    })}
-                ,{" "}
-                {hoveredTime
-                  ? hoveredTime
-                  : selectedHourlyData.precipHours[0].time.toLocaleTimeString(
-                      [],
-                      {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      }
-                    )}
-              </p>
-              <p className="text-sm text-dark dark:text-light">
-                Total precipitation:{" "}
-                {selectedHourlyData
-                  ? selectedHourlyData.precipHours
-                      .reduce((sum, pt) => sum + pt.precipitation, 0)
-                      .toFixed(1)
-                  : "0"}{" "}
-                mm
-              </p>
-              {selectedHourlyData &&
-                selectedHourlyData.precipHours.length > 0 && (
-                  <p className="text-sm text-dark dark:text-light mt-1">
-                    {selectedHourlyData.precipHours.some(
-                      (pt) => pt.precipitation >= 10
-                    )
-                      ? "Rainfall is high on this day."
-                      : selectedHourlyData.precipHours.some(
-                          (pt) => pt.precipitation >= 5
-                        )
-                      ? "Rainfall is moderate on this day."
-                      : "Rainfall is low on this day."}
+                    mm
+                  </p>
+                </div>
+              )}
+
+              <div className="w-full h-[150px] mx-auto mt-1 mb-3">
+                {selectedHourlyData &&
+                selectedHourlyData.precipHours.length > 0 ? (
+                  <canvas ref={chartCanvas} className="w-full h-full"></canvas>
+                ) : (
+                  <p className="text-center text-sm text-gray-400 dark:text-gray-300 h-full flex items-center justify-center">
+                    No precipitation data available for this day.
                   </p>
                 )}
-            </>
+              </div>
+
+              {selectedHourlyData && (
+                <p className="text-xs text-center font-semibold text-gray-200 dark:text-light mb-2">
+                  {selectedDate?.toDateString() === new Date().toDateString()
+                    ? "Today"
+                    : selectedDate?.toLocaleDateString(undefined, {
+                        weekday: "short",
+                        day: "numeric",
+                        month: "short",
+                      })}
+                  {(hoveredTime || defaultHoverTime) &&
+                    ` at ${hoveredTime || defaultHoverTime}`}
+                </p>
+              )}
+
+              <div className="text-center mb-3">
+                <p className="text-sm text-dark dark:text-light">
+                  Total: {totalPrecipitation.toFixed(1)} mm. {precipSummary}
+                </p>
+              </div>
+            </div>
           )}
-        </div>
-      ) : null}
+        </>
+      )}
     </div>
   );
 };

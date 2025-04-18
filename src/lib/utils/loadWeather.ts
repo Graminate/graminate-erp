@@ -1,3 +1,4 @@
+import axios from "axios";
 import { fetchWeatherApi } from "openmeteo";
 
 export async function getWeather(latitude: number, longitude: number) {
@@ -158,5 +159,40 @@ export async function getWeather(latitude: number, longitude: number) {
   } catch (error) {
     console.error("Error fetching weather data:", error);
     throw new Error("Failed to fetch weather data");
+  }
+}
+
+export async function fetchCityName(
+  latitude: number,
+  longitude: number
+): Promise<string> {
+  try {
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+    if (!apiKey) {
+      throw new Error("Google Maps API key is missing.");
+    }
+
+    const response = await axios.get(
+      "https://maps.googleapis.com/maps/api/geocode/json",
+      {
+        params: {
+          latlng: `${latitude},${longitude}`,
+          key: apiKey,
+        },
+      }
+    );
+
+    const data = response.data;
+    const cityComponent = data.results[0]?.address_components.find(
+      (component: any) => component.types.includes("locality")
+    );
+
+    return cityComponent?.long_name || "Your Location";
+  } catch (err: any) {
+    console.error(
+      err.response?.data?.error_message || err.message || "Unknown error"
+    );
+    return "Unknown city";
   }
 }

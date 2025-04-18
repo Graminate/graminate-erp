@@ -5,12 +5,12 @@ import CalendarHeader from "./CalendarHeader";
 import TaskListView from "../TaskListView";
 import AddTaskView from "./AddTaskView";
 
-type Task = {
+export type Task = {
   name: string;
   time: string;
 };
 
-type Tasks = {
+export type Tasks = {
   [key: string]: Task[];
 };
 
@@ -46,7 +46,13 @@ const Calendar = () => {
   useEffect(() => {
     const stored = localStorage.getItem("tasks");
     if (stored) {
-      setTasks(JSON.parse(stored));
+      try {
+        const parsedTasks = JSON.parse(stored);
+        setTasks(parsedTasks);
+      } catch (error) {
+        console.error("Failed to parse tasks from localStorage", error);
+        setTasks({});
+      }
     }
   }, []);
 
@@ -87,14 +93,34 @@ const Calendar = () => {
         text: "You cannot add tasks to past dates.",
         icon: "error",
         confirmButtonText: "OK",
+        customClass: {
+          popup: "dark:bg-gray-800 dark:text-white",
+          confirmButton: "bg-blue-500 hover:bg-blue-600 text-white",
+        },
+      });
+      return;
+    }
+
+    if (isTodayWithPastTime(selectedDate, newTaskTime)) {
+      Swal.fire({
+        title: "Invalid Time",
+        text: "You cannot add tasks to past times on the current day.",
+        icon: "error",
+        confirmButtonText: "OK",
+        customClass: {
+          popup: "dark:bg-gray-800 dark:text-white",
+          confirmButton: "bg-blue-500 hover:bg-blue-600 text-white",
+        },
       });
       return;
     }
 
     const dateKey = getDateKey(selectedDate);
+    const newTaskObject = { name: newTask.trim(), time: newTaskTime };
+
     setTasks((prevTasks) => {
       const dateTasks = prevTasks[dateKey] ? [...prevTasks[dateKey]] : [];
-      dateTasks.push({ name: newTask.trim(), time: newTaskTime });
+      dateTasks.push(newTaskObject);
       dateTasks.sort((a, b) => {
         return (
           new Date(`1970-01-01T${convertTo24Hour(a.time)}`).getTime() -
@@ -111,17 +137,23 @@ const Calendar = () => {
     setShowTasks(true);
   };
 
-  const removeTask = (index: number) => {
+  const removeTask = (indexToRemove: number) => {
     const dateKey = getDateKey(selectedDate);
     setTasks((prev) => {
-      const updated = { ...prev };
-      if (updated[dateKey]) {
-        updated[dateKey].splice(index, 1);
-        if (updated[dateKey].length === 0) {
-          delete updated[dateKey];
+      const updatedTasks = { ...prev };
+
+      if (updatedTasks[dateKey]) {
+        const updatedDateTasks = updatedTasks[dateKey].filter(
+          (_, index) => index !== indexToRemove
+        );
+
+        if (updatedDateTasks.length === 0) {
+          delete updatedTasks[dateKey];
+        } else {
+          updatedTasks[dateKey] = updatedDateTasks;
         }
       }
-      return updated;
+      return updatedTasks;
     });
   };
 
@@ -146,45 +178,45 @@ const Calendar = () => {
   const calendarDays = generateCalendar(calendarMonth, calendarYear);
 
   const previousMonth = () => {
-    if (calendarMonth === 0) {
-      setCalendarMonth(11);
-      setCalendarYear((prev) => prev - 1);
-    } else {
-      setCalendarMonth((prev) => prev - 1);
-    }
+    setCalendarMonth((prev) => {
+      if (prev === 0) {
+        setCalendarYear(calendarYear - 1);
+        return 11;
+      }
+      return prev - 1;
+    });
     setShowTasks(false);
     setShowAddTask(false);
   };
 
   const nextMonth = () => {
-    if (calendarMonth === 11) {
-      setCalendarMonth(0);
-      setCalendarYear((prev) => prev + 1);
-    } else {
-      setCalendarMonth((prev) => prev + 1);
-    }
+    setCalendarMonth((prev) => {
+      if (prev === 11) {
+        setCalendarYear(calendarYear + 1);
+        return 0;
+      }
+      return prev + 1;
+    });
     setShowTasks(false);
     setShowAddTask(false);
   };
 
-  // Returns a friendly label for the selected date
   const getDayStatus = (date: Date): string => {
     const today = new Date();
-    const todayOnly = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate()
-    );
-    const tomorrowOnly = new Date(todayOnly);
-    tomorrowOnly.setDate(todayOnly.getDate() + 1);
-    const dateOnly = new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate()
-    );
-    if (dateOnly.getTime() === todayOnly.getTime()) return "Today";
-    if (dateOnly.getTime() === tomorrowOnly.getTime()) return "Tomorrow";
-    return date.toDateString();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const checkDate = new Date(date);
+    checkDate.setHours(0, 0, 0, 0);
+
+    if (checkDate.getTime() === today.getTime()) return "Today";
+    if (checkDate.getTime() === tomorrow.getTime()) return "Tomorrow";
+    return date.toLocaleDateString(undefined, {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
   };
 
   const isSelectedDatePast = (() => {
@@ -203,34 +235,45 @@ const Calendar = () => {
 
   const getDayClasses = (day: number | null): string => {
     let classes =
-      "flex items-center justify-center h-10 w-10 rounded-full text-center text-base font-medium cursor-pointer ";
+      "flex items-center justify-center h-10 w-10 rounded-full text-center text-sm font-medium transition-colors duration-150 ease-in-out cursor-pointer ";
+    const currentDay = new Date(calendarYear, calendarMonth, day ?? 0);
+    currentDay.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
     if (day === null) {
-      classes += "text-gray-400 dark:text-dark cursor-not-allowed ";
+      classes += "text-gray-300 dark:text-gray-600 cursor-default ";
     } else {
-      if (
+      const isSelected =
         day === selectedDate.getDate() &&
         calendarMonth === selectedDate.getMonth() &&
-        calendarYear === selectedDate.getFullYear()
-      ) {
-        classes += "bg-green-200 text-white ";
-      } else if (
+        calendarYear === selectedDate.getFullYear();
+      const isToday =
         day === currentDate.getDate() &&
         calendarMonth === currentDate.getMonth() &&
-        calendarYear === currentDate.getFullYear()
-      ) {
-        classes += "text-red-200 ";
+        calendarYear === currentDate.getFullYear();
+      const isPast = currentDay < today;
+
+      if (isSelected) {
+        classes += "bg-green-200 text-white shadow-md ";
+      } else if (isToday) {
+        classes +=
+          "text-dark dark:text-light dark:border-blue-400 hover:bg-green-300 dark:hover:bg-green-100 ";
+      } else if (isPast) {
+        classes +=
+          "text-dark dark:text-light cursor-default hover:bg-gray-400 dark:hover:bg-gray-600 ";
       } else {
         classes +=
-          "hover:bg-gray-300 dark:hover:bg-blue-100 text-dark dark:text-white";
+          "text-gray-700 dark:text-light hover:bg-gray-400 dark:hover:bg-gray-600 ";
       }
     }
     return classes;
   };
 
-  const canAddTask = !isTodayWithPastTime(selectedDate, newTaskTime);
+  const canAddTaskCheck = !isTodayWithPastTime(selectedDate, newTaskTime);
 
   return (
-    <div className="bg-gray-500 dark:bg-gray-700 rounded-lg shadow-lg p-6 w-full dark:text-light relative">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 sm:p-6 w-full max-w-2xl mx-auto text-gray-800 dark:text-gray-100 relative min-h-[400px]">
       {showAddTask ? (
         <AddTaskView
           selectedDate={selectedDate}
@@ -244,6 +287,7 @@ const Calendar = () => {
           setShowAddTask={setShowAddTask}
           selectedReminder={selectedReminder}
           setSelectedReminder={setSelectedReminder}
+          isTaskNameValid={isTaskNameValid}
         />
       ) : showTasks ? (
         <TaskListView
@@ -254,7 +298,7 @@ const Calendar = () => {
           isSelectedDatePast={isSelectedDatePast}
           setShowAddTask={setShowAddTask}
           getDayStatus={getDayStatus}
-          canAddTask={canAddTask}
+          canAddTask={canAddTaskCheck}
         />
       ) : (
         <>
@@ -272,6 +316,7 @@ const Calendar = () => {
             calendarYear={calendarYear}
             handleDateChange={handleDateChange}
             tasks={tasks}
+            getDateKey={getDateKey}
           />
         </>
       )}

@@ -5,6 +5,8 @@ import Swal from "sweetalert2";
 import TextField from "@/components/ui/TextField";
 import Button from "@/components/ui/Button";
 import HomeNavbar from "@/components/layout/Navbar/HomeNavbar";
+import axios from "axios";
+import { API_BASE_URL } from "@/constants/constants";
 
 const ResetPasswordPage = () => {
   const router = useRouter();
@@ -50,6 +52,7 @@ const ResetPasswordPage = () => {
 
     const passwordRegex =
       /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
+
     if (!passwordRegex.test(newPassword)) {
       Swal.fire({
         title: "Weak Password",
@@ -61,22 +64,11 @@ const ResetPasswordPage = () => {
     }
 
     try {
-      const response = await fetch("http://localhost:3001/api/password/reset", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, token, newPassword }),
+      await axios.post(`${API_BASE_URL}/password/reset`, {
+        email,
+        token,
+        newPassword,
       });
-
-      const result = await response.json();
-      if (!response.ok) {
-        Swal.fire({
-          title: "Error",
-          text: result.error,
-          icon: "error",
-          confirmButtonText: "OK",
-        });
-        return;
-      }
 
       Swal.fire({
         title: "Success",
@@ -84,12 +76,15 @@ const ResetPasswordPage = () => {
         icon: "success",
         confirmButtonText: "OK",
       });
+
       router.push("/");
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
       Swal.fire({
         title: "Error",
-        text: "Something went wrong. Please try again later.",
+        text:
+          error.response?.data?.error ||
+          "Something went wrong. Please try again later.",
         icon: "error",
         confirmButtonText: "OK",
       });

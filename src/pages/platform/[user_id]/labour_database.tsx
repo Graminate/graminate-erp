@@ -1,66 +1,62 @@
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
 import Button from "@/components/ui/Button";
-import DataForm from "@/components/form/DataForm";
 import Table from "@/components/tables/Table";
 import PlatformLayout from "@/layout/PlatformLayout";
+import { PAGINATION_ITEMS } from "@/constants/options";
 import Head from "next/head";
+import LabourForm from "@/components/form/LabourForm";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
-type View = "labours";
+type View = "labour";
 
 const LabourDatabase = () => {
   const router = useRouter();
   const { user_id, view: queryView } = router.query;
   const parsedUserId = Array.isArray(user_id) ? user_id[0] : user_id;
   const view: View =
-    typeof queryView === "string" ? (queryView as View) : "labours";
+    typeof queryView === "string" ? (queryView as View) : "labour";
 
   const [labourRecords, setLabourRecords] = useState<any[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
-  const paginationItems = ["25 per page", "50 per page", "100 per page"];
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Fetch labour data for the given user ID.
   useEffect(() => {
     if (!router.isReady || !parsedUserId) return;
 
     const fetchLabours = async () => {
       try {
-        console.log("Fetching labour data for user:", parsedUserId);
-        const response = await fetch(
-          `http://localhost:3001/api/labour/${encodeURIComponent(parsedUserId)}`
+        const response = await axiosInstance.get(
+          `/labour/${encodeURIComponent(parsedUserId)}`
         );
-        const data = await response.json();
-        console.log("Fetched Labour Data:", data);
 
-        if (response.ok) {
-          setLabourRecords(data.labours || []);
-        } else {
-          console.error("Failed to fetch labour data:", data.error);
-        }
-      } catch (error) {
-        console.error("Error fetching labour data:", error);
+        setLabourRecords(response.data.labours || []);
+      } catch (error: any) {
+        console.error(
+          "Error fetching labour data:",
+          error.response?.data?.error || error.message
+        );
       }
     };
 
     fetchLabours();
   }, [router.isReady, parsedUserId]);
 
-  // Derive table data from the fetched labour records.
   const tableData = useMemo(() => {
-    if (view === "labours" && labourRecords.length > 0) {
+    if (view === "labour" && labourRecords.length > 0) {
       return {
         columns: [
+          "#",
           "Full Name",
-          "Date of Birth",
+          "Birth Date",
           "Gender",
           "Role",
           "Phone Number",
           "Aadhar Card",
           "Address",
-          "Created On",
+          "Added On",
         ],
         rows: labourRecords.map((item) => [
           item.labour_id,
@@ -70,7 +66,15 @@ const LabourDatabase = () => {
           item.role,
           item.contact_number,
           item.aadhar_card_number,
-          item.address,
+          [
+            item.address_line_1,
+            item.address_line_2,
+            item.city,
+            item.state,
+            item.postal_code,
+          ]
+            .filter(Boolean)
+            .join(", "),
           new Date(item.created_at).toDateString(),
         ]),
       };
@@ -81,14 +85,13 @@ const LabourDatabase = () => {
   return (
     <PlatformLayout>
       <Head>
-        <title>Graminate | Labour Database</title>
+        <title>Graminate | Employee Database</title>
       </Head>
-      <div className="min-h-screen container mx-auto p-4">
-        {/* Header */}
+      <div className="min-h-screen container mx-auto py-4">
         <div className="flex justify-between items-center dark:bg-dark relative mb-4">
           <div>
             <h1 className="text-lg font-semibold dark:text-white">
-              Worker Database
+              Employee Database
             </h1>
             <p className="text-xs text-dark dark:text-light">
               {labourRecords.length} Record(s)
@@ -96,7 +99,14 @@ const LabourDatabase = () => {
           </div>
           <div className="flex gap-2">
             <Button
-              text="Add Worker"
+              text="View Salaries"
+              style="primary"
+              onClick={() =>
+                router.push(`/platform/${parsedUserId}/labour_payment`)
+              }
+            />
+            <Button
+              text="Add Employee"
               style="primary"
               add
               onClick={() => setIsSidebarOpen(true)}
@@ -104,16 +114,14 @@ const LabourDatabase = () => {
           </div>
         </div>
 
-        {/* Table displaying the labour data */}
         <Table
           data={{ ...tableData, rows: tableData.rows }}
           filteredRows={tableData.rows}
           currentPage={currentPage}
           itemsPerPage={itemsPerPage}
-          paginationItems={paginationItems}
+          paginationItems={PAGINATION_ITEMS}
           searchQuery={searchQuery}
           totalRecordCount={tableData.rows.length}
-     
           onRowClick={(row) => {
             const labourId = row[0];
             const labour = labourRecords.find(
@@ -133,14 +141,13 @@ const LabourDatabase = () => {
         />
 
         {isSidebarOpen && (
-          <DataForm
-            view={view}
+          <LabourForm
+            view="labour"
             onClose={() => setIsSidebarOpen(false)}
             onSubmit={(values: Record<string, string>) => {
-              console.log("Form submitted:", values);
               setIsSidebarOpen(false);
             }}
-            formTitle="Create Labour"
+            formTitle="Add Labour"
           />
         )}
       </div>

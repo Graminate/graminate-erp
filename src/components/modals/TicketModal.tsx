@@ -2,21 +2,21 @@ import React, { useState } from "react";
 import Button from "../ui/Button";
 import TextField from "../ui/TextField";
 
-interface TicketModalProps {
+type TicketModalProps = {
   isOpen: boolean;
   columnName: string;
   currentLimit: string;
   onSave: (limit: string) => void;
   onCancel: () => void;
-}
+};
 
-const TicketModal: React.FC<TicketModalProps> = ({
+const TicketModal = ({
   isOpen,
   columnName,
   currentLimit = "No limit set",
   onSave,
   onCancel,
-}) => {
+}: TicketModalProps) => {
   const [newLimit, setNewLimit] = useState("");
 
   const handleSave = () => {

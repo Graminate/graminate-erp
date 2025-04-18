@@ -9,9 +9,9 @@ declare module "next-auth" {
     } & DefaultSession["user"];
   }
 
-  interface User {
+  type User = {
     id: string;
     name: string;
     email: string;
-  }
+  };
 }
