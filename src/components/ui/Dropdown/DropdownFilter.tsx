@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 
 import type { DropdownFilter } from "@/types/card-props";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
 
 const DropdownFilter = ({
   items,
@@ -65,16 +67,7 @@ const DropdownFilter = ({
           )}
         </span>
         {/* Dropdown Icon */}
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth="1.5"
-          stroke="currentColor"
-          className="w-5 h-5"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
-        </svg>
+        <FontAwesomeIcon icon={faChevronDown} className="size-5" />
       </button>
 
       {/* Dropdown Menu */}

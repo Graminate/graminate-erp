@@ -157,7 +157,7 @@ const Dashboard = () => {
             </p>
           </header>
 
-          <hr className="mb-6 border-gray-200 dark:border-gray-700" />
+          <hr className="mb-6 border-gray-400 dark:border-gray-700" />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
             <Calendar />

@@ -14,8 +14,8 @@ import {
   Legend,
   ArcElement,
 } from "chart.js";
-import InventoryForm from "@/components/form/InventoryForm";
 import axiosInstance from "@/lib/utils/axiosInstance";
+import ActiveProducts from "@/components/cards/ActiveProducts";
 
 ChartJS.register(
   CategoryScale,
@@ -37,6 +37,11 @@ const AnimalHusbandry = () => {
     typeof queryView === "string" ? (queryView as View) : "animal_husbandry";
 
   const [itemRecords, setItemRecords] = useState<any[]>([]);
+  const [items, setItems] = useState([
+    "Milk Production",
+    "Beef Production",
+    "Pork Production",
+  ]);
 
   useEffect(() => {
     if (!router.isReady || !parsedUserId) return;
@@ -67,11 +72,16 @@ const AnimalHusbandry = () => {
       <div className="min-h-screen container mx-auto p-4">
         {/* Header */}
         <div className="flex justify-between items-center dark:bg-dark relative mb-4">
-          <div>
-            <h1 className="text-lg font-semibold dark:text-white">
-              Animal Husbandry
-            </h1>
-          </div>
+          <h1 className="text-lg font-semibold dark:text-white">
+            Animal Husbandry
+          </h1>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <ActiveProducts
+            headerTitle="Husbandry Products"
+            items={items}
+            onReorder={setItems}
+          />
         </div>
       </div>
     </PlatformLayout>

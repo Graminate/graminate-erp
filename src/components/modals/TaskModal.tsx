@@ -1,6 +1,9 @@
 import React, { useState, useEffect, KeyboardEvent } from "react";
 import Button from "@/components/ui/Button";
 import CustomTextArea from "@/components/ui/CustomTextArea";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faEllipsis, faFlag, faX } from "@fortawesome/free-solid-svg-icons";
+import TextField from "../ui/TextField";
 
 type TaskDetails = {
   id: string;
@@ -84,20 +87,7 @@ const TaskModal = ({
               aria-label="Options"
               onClick={toggleDropdown}
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                className="size-5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM12.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0ZM18.75 12a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0Z"
-                />
-              </svg>
+              <FontAwesomeIcon icon={faEllipsis} className="size-5" />
             </button>
             {showDropdown && (
               <div className="absolute right-0 mt-2 w-40 bg-white shadow-md rounded">
@@ -117,20 +107,7 @@ const TaskModal = ({
             aria-label="Close"
             onClick={closeModal}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="1.5"
-              stroke="currentColor"
-              className="size-5"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
+            <FontAwesomeIcon icon={faX} className="size-5" />
           </button>
         </div>
 
@@ -142,11 +119,9 @@ const TaskModal = ({
           {/* Left Column */}
           <div>
             {isEditing ? (
-              <input
-                type="text"
+              <TextField
                 value={editedTitle}
-                onChange={(e) => setEditedTitle(e.target.value)}
-                className="text-gray-200 text-lg font-bold rounded-md w-full p-2"
+                onChange={setEditedTitle}
                 onBlur={saveTitle}
                 onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
                   if (e.key === "Enter") saveTitle();
@@ -164,7 +139,7 @@ const TaskModal = ({
               <p className="text-gray-200 font-bold text-md mb-2">
                 Description
               </p>
-              
+
               <CustomTextArea
                 placeholder="Add your description here..."
                 value={description}
@@ -179,20 +154,7 @@ const TaskModal = ({
             <div className="flex flex-row gap-4 justify-start items-center">
               <Button text="Update" style="primary" />
               {isFlagged && (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth="1.5"
-                  stroke="currentColor"
-                  className="size-6"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M3 3v1.5M3 21v-6m0 0 2.77-.693a9 9 0 0 1 6.208.682l.108.054a9 9 0 0 0 6.086.71l3.114-.732a48.524 48.524 0 0 1-.005-10.499l-3.11.732a9 9 0 0 1-6.085-.711l-.108-.054a9 9 0 0 0-6.208-.682L3 4.5M3 15V4.5"
-                  />
-                </svg>
+                <FontAwesomeIcon icon={faFlag} className="size-6" />
               )}
             </div>
           </div>

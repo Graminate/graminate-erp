@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import BusinessCard from "../cards/BusinessCard";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
 
 type View = "distributor" | "exporter" | "factories";
 
@@ -167,35 +169,9 @@ const FinderBar = ({ activeView }: Props) => {
             </svg>
             Sort
             {showDropdown ? (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                className="w-4 h-4"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M4.5 15.75l7.5-7.5 7.5 7.5"
-                />
-              </svg>
+              <FontAwesomeIcon icon={faChevronUp} className="w-4 h-4" />
             ) : (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                className="w-4 h-4"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M19.5 8.25l-7.5 7.5-7.5-7.5"
-                />
-              </svg>
+              <FontAwesomeIcon icon={faChevronDown} className="w-4 h-4" />
             )}
           </button>
           {showDropdown && (

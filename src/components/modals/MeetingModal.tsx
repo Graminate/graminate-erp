@@ -1,5 +1,7 @@
 import React from "react";
 import ScheduleCard from "@/components/cards/ScheduleCard";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faX } from "@fortawesome/free-solid-svg-icons";
 
 type Props = {
   onClose: () => void;
@@ -19,20 +21,7 @@ const MeetingModal = ({ onClose }: Props) => {
             onClick={onClose}
             aria-label="Close Modal"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              strokeWidth="1.5"
-              stroke="currentColor"
-              className="w-6 h-6"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M6 18 18 6M6 6l12 12"
-              />
-            </svg>
+            <FontAwesomeIcon icon={faX} className="w-6 h-6" />
           </button>
         </div>
 

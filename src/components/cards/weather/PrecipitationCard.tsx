@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faDroplet } from "@fortawesome/free-solid-svg-icons";
+import { faDroplet, faEllipsis } from "@fortawesome/free-solid-svg-icons";
 import Chart from "chart.js/auto";
 import type { ChartConfiguration, Chart as ChartJS } from "chart.js";
 import axios from "axios";
@@ -367,20 +367,7 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
           aria-label="Toggle card size options"
           aria-expanded={dropdownOpen}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth="1.5"
-            stroke="currentColor"
-            className="w-6 h-6"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M6.75 12a.75.75 0 111.5 0 .75.75 0 01-1.5 0zM12.75 12a.75.75 0 111.5 0 .75.75 0 01-1.5 0zM18.75 12a.75.75 0 111.5 0 .75.75 0 01-1.5 0z"
-            />
-          </svg>
+          <FontAwesomeIcon icon={faEllipsis} className="w-6 h-6" />
         </button>
         {dropdownOpen && (
           <div className="absolute top-8 right-0 bg-white dark:bg-gray-600 dark:text-light text-black rounded-lg shadow-lg z-20 w-32">

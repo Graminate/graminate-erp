@@ -1,3 +1,9 @@
+import {
+  faChevronLeft,
+  faChevronRight,
+} from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+
 type CalendarHeaderProps = {
   calendarMonth: number;
   calendarYear: number;
@@ -17,20 +23,7 @@ const CalendarHeader = ({
       onClick={previousMonth}
       aria-label="Previous month"
     >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-5 w-5"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth="2"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M15 19l-7-7 7-7"
-        />
-      </svg>
+      <FontAwesomeIcon icon={faChevronLeft} className="size-5" />
     </button>
     <div className="flex items-center">
       <h2 className="text-lg font-semibold text-dark dark:text-light tracking-wide">
@@ -44,16 +37,7 @@ const CalendarHeader = ({
       onClick={nextMonth}
       aria-label="Next month"
     >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-5 w-5"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth="2"
-      >
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-      </svg>
+      <FontAwesomeIcon icon={faChevronRight} className="size-5" />
     </button>
   </div>
 );

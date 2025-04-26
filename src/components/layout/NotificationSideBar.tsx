@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { faTrash, faGear } from "@fortawesome/free-solid-svg-icons";
+import { faTrash, faGear, faX } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   DndContext,
@@ -81,20 +81,7 @@ const NotificationBar = ({
           className="text-gray-300 hover:bg-gray-400 p-1 rounded-full focus:outline-none"
           onClick={closeNotificationBar}
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
+          <FontAwesomeIcon icon={faX} className="h-6 w-6" />
         </button>
       </div>
 

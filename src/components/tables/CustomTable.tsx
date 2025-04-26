@@ -1,4 +1,5 @@
 import Button from "@/components/ui/Button";
+import TextField from "../ui/TextField";
 
 type Item = {
   description: string;
@@ -61,6 +62,11 @@ const CustomTable = ({ items, onItemsChange }: CustomTableProps) => {
           {items.map((item, index) => (
             <tr key={index}>
               <td className="border border-gray-300 dark:border-gray-200 px-4 py-2">
+                <TextField
+                  value={item.description}
+                  onChange={(val) => updateItem(index, "description", val)}
+                  placeholder="Description of item/service..."
+                />
                 <input
                   type="text"
                   value={item.description}
