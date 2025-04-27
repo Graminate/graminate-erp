@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   Chart,
   DoughnutController,
@@ -64,74 +64,75 @@ const StatusCard = ({
     return () => mediaQuery.removeEventListener("change", checkDarkMode);
   }, []);
 
-  const getChartConfig = (
-    item: BudgetItem | undefined
-  ): ChartConfiguration<"doughnut"> => {
-    const spent = item?.spent ?? 0;
-    const allocated = item?.allocated ?? 0;
-    const remainingForChart = Math.max(0, allocated - spent);
+  const getChartConfig = useCallback(
+    (item: BudgetItem | undefined): ChartConfiguration<"doughnut"> => {
+      const spent = item?.spent ?? 0;
+      const allocated = item?.allocated ?? 0;
+      const remainingForChart = Math.max(0, allocated - spent);
 
-    const CHART_COLORS = {
-      spent: "#EF4444",
-      spentDark: "#F87171",
-      remaining: "#3B82F6",
-      remainingDark: "#60A5FA",
-      placeholder: isDarkMode ? "#6B7280" : "#D1D5DB",
-      borderColor: isDarkMode ? "#374151" : "#FFFFFF",
-      legendColor: isDarkMode ? "#D1D5DB" : "#4B5563",
-    };
+      const CHART_COLORS = {
+        spent: "#EF4444",
+        spentDark: "#F87171",
+        remaining: "#3B82F6",
+        remainingDark: "#60A5FA",
+        placeholder: isDarkMode ? "#6B7280" : "#D1D5DB",
+        borderColor: isDarkMode ? "#374151" : "#FFFFFF",
+        legendColor: isDarkMode ? "#D1D5DB" : "#4B5563",
+      };
 
-    const dataValues = allocated > 0 ? [spent, remainingForChart] : [1];
-    const labels = allocated > 0 ? ["Spent", "Remaining"] : ["No Budget"];
-    const backgroundColors =
-      allocated > 0
-        ? isDarkMode
-          ? [CHART_COLORS.spentDark, CHART_COLORS.remainingDark]
-          : [CHART_COLORS.spent, CHART_COLORS.remaining]
-        : [CHART_COLORS.placeholder];
+      const dataValues = allocated > 0 ? [spent, remainingForChart] : [1];
+      const labels = allocated > 0 ? ["Spent", "Remaining"] : ["No Budget"];
+      const backgroundColors =
+        allocated > 0
+          ? isDarkMode
+            ? [CHART_COLORS.spentDark, CHART_COLORS.remainingDark]
+            : [CHART_COLORS.spent, CHART_COLORS.remaining]
+          : [CHART_COLORS.placeholder];
 
-    return {
-      type: "doughnut",
-      data: {
-        labels,
-        datasets: [
-          {
-            data: dataValues,
-            backgroundColor: backgroundColors,
-            borderColor: CHART_COLORS.borderColor,
-            borderWidth: 2,
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: "60%",
-        plugins: {
-          tooltip: {
-            callbacks: {
-              label: (context) =>
-                allocated <= 0
-                  ? "No budget allocated"
-                  : `${context.label || ""}: ${currencySymbol}${(
-                      context.parsed || 0
-                    ).toLocaleString()}`,
+      return {
+        type: "doughnut",
+        data: {
+          labels,
+          datasets: [
+            {
+              data: dataValues,
+              backgroundColor: backgroundColors,
+              borderColor: CHART_COLORS.borderColor,
+              borderWidth: 2,
             },
-          },
-          legend: {
-            display: allocated > 0,
-            position: "bottom",
-            labels: {
-              color: CHART_COLORS.legendColor,
-              padding: 15,
-              usePointStyle: true,
-              pointStyle: "circle",
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: "60%",
+          plugins: {
+            tooltip: {
+              callbacks: {
+                label: (context) =>
+                  allocated <= 0
+                    ? "No budget allocated"
+                    : `${context.label || ""}: ${currencySymbol}${(
+                        context.parsed || 0
+                      ).toLocaleString()}`,
+              },
+            },
+            legend: {
+              display: allocated > 0,
+              position: "bottom",
+              labels: {
+                color: CHART_COLORS.legendColor,
+                padding: 15,
+                usePointStyle: true,
+                pointStyle: "circle",
+              },
             },
           },
         },
-      },
-    };
-  };
+      };
+    },
+    [isDarkMode, currencySymbol]
+  );
 
   useEffect(() => {
     if (!canvasRef.current) return;
@@ -146,7 +147,7 @@ const StatusCard = ({
       const ctx = canvasRef.current.getContext("2d");
       ctx?.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
     }
-  }, [activeItem, isDarkMode, currencySymbol]);
+  }, [activeItem, getChartConfig]);
 
   useEffect(() => {
     return () => {

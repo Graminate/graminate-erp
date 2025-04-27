@@ -1,4 +1,8 @@
-import { faBoxesStacked, faBowlFood } from "@fortawesome/free-solid-svg-icons";
+import {
+  faBoxesStacked,
+  faBowlFood,
+  IconDefinition,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React from "react";
 
@@ -8,17 +12,14 @@ type Props = {
   getFeedLevelColor: (days: number) => string;
 };
 
-const FeedStatItem = ({
-  icon,
-  value,
-  label,
-  children,
-}: {
-  icon: any;
+type FeedStatItemProps = {
+  icon: IconDefinition;
   value: string | React.ReactNode;
   label: string;
   children?: React.ReactNode;
-}) => (
+};
+
+const FeedStatItem = ({ icon, value, label, children }: FeedStatItemProps) => (
   <div className="flex flex-col items-center justify-center text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg space-y-1 shadow-sm hover:shadow-md transition-shadow duration-200 h-full">
     <FontAwesomeIcon
       icon={icon}

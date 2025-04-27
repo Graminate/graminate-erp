@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSun } from "@fortawesome/free-solid-svg-icons";
 
@@ -7,16 +7,20 @@ import { fetchCityName } from "@/lib/utils/loadWeather";
 import axios from "axios";
 import Loader from "@/components/ui/Loader";
 
+interface DailySunData {
+  time: string[];
+  daylightDuration: number[];
+}
+
 const SunCard = ({ lat, lon }: Coordinates) => {
   const [sunriseTime, setSunriseTime] = useState<string | null>(null);
   const [sunsetTime, setSunsetTime] = useState<string | null>(null);
-  const [locationName, setLocationName] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [displayMode, setDisplayMode] = useState<"Small" | "Large">("Small");
   const [sunTimesArray, setSunTimesArray] = useState<
     { date: string; sunrise: string; sunset: string }[]
   >([]);
-  const [dailySunData, setDailySunData] = useState<any>(null);
+  const [dailySunData, setDailySunData] = useState<DailySunData | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
 
   const [currentXSun, setCurrentXSun] = useState<number>(0);
@@ -41,13 +45,13 @@ const SunCard = ({ lat, lon }: Coordinates) => {
     return h * 60 + m;
   }
 
-  function formatTimeFromMinutes(minutes: number): string {
+  const formatTimeFromMinutes = useCallback((minutes: number): string => {
     const hrs = Math.floor(minutes / 60) % 24;
     const mins = Math.floor(minutes % 60);
     return `${hrs.toString().padStart(2, "0")}:${mins
       .toString()
       .padStart(2, "0")}`;
-  }
+  }, []);
 
   function formatDuration(minutes: number): string {
     if (minutes < 0) minutes = 0;
@@ -66,36 +70,41 @@ const SunCard = ({ lat, lon }: Coordinates) => {
       });
 
       return response.data.daily;
-    } catch (err: any) {
-      console.error(
-        err.response?.data?.message || err.message || "Unknown error occurred"
-      );
+    } catch (err: unknown) {
+      const error =
+        err instanceof Error ? err.message : "Unknown error occurred";
+      console.error(error);
       throw new Error("Failed to fetch sun data");
     }
   }
 
-  function calculateAndFormatSunriseSunset(daylightSeconds: number): {
-    sunrise: string;
-    sunset: string;
-  } {
-    if (isNaN(daylightSeconds) || daylightSeconds <= 0) {
-      return { sunrise: "--:--", sunset: "--:--" };
-    }
-    const daylightHours = daylightSeconds / 3600;
-    const halfDaylight = daylightHours / 2;
+  const calculateAndFormatSunriseSunset = useCallback(
+    (
+      daylightSeconds: number
+    ): {
+      sunrise: string;
+      sunset: string;
+    } => {
+      if (isNaN(daylightSeconds) || daylightSeconds <= 0) {
+        return { sunrise: "--:--", sunset: "--:--" };
+      }
+      const daylightHours = daylightSeconds / 3600;
+      const halfDaylight = daylightHours / 2;
 
-    const solarNoonMinutes = 12 * 60;
-    const sunriseMinutes = solarNoonMinutes - halfDaylight * 60;
-    const sunsetMinutes = solarNoonMinutes + halfDaylight * 60;
+      const solarNoonMinutes = 12 * 60;
+      const sunriseMinutes = solarNoonMinutes - halfDaylight * 60;
+      const sunsetMinutes = solarNoonMinutes + halfDaylight * 60;
 
-    return {
-      sunrise: formatTimeFromMinutes(sunriseMinutes),
-      sunset: formatTimeFromMinutes(sunsetMinutes),
-    };
-  }
+      return {
+        sunrise: formatTimeFromMinutes(sunriseMinutes),
+        sunset: formatTimeFromMinutes(sunsetMinutes),
+      };
+    },
+    [formatTimeFromMinutes]
+  );
 
   const calculateSunPosition = (t: number): { x: number; y: number } => {
-    t = Math.max(0, Math.min(1, t));
+    const clampedT = Math.max(0, Math.min(1, t));
     const pathWidth = 160;
     const pathHeight = 50;
     const midPointX = pathWidth / 2;
@@ -108,9 +117,13 @@ const SunCard = ({ lat, lon }: Coordinates) => {
       p2y = pathHeight;
 
     const currentX =
-      Math.pow(1 - t, 2) * p0x + 2 * (1 - t) * t * p1x + Math.pow(t, 2) * p2x;
+      Math.pow(1 - clampedT, 2) * p0x +
+      2 * (1 - clampedT) * clampedT * p1x +
+      Math.pow(clampedT, 2) * p2x;
     const currentY =
-      Math.pow(1 - t, 2) * p0y + 2 * (1 - t) * t * p1y + Math.pow(t, 2) * p2y;
+      Math.pow(1 - clampedT, 2) * p0y +
+      2 * (1 - clampedT) * clampedT * p1y +
+      Math.pow(clampedT, 2) * p2y;
 
     return { x: currentX, y: currentY - 1 };
   };
@@ -118,17 +131,18 @@ const SunCard = ({ lat, lon }: Coordinates) => {
   useEffect(() => {
     if (lat !== undefined && lon !== undefined) {
       Promise.all([fetchSunData(lat, lon), fetchCityName(lat, lon)])
-        .then(([dailyData, city]) => {
+        .then(([dailyData]) => {
           if (dailyData && dailyData.time && dailyData.daylightDuration) {
             setDailySunData(dailyData);
-            setLocationName(city);
             setError(null);
           } else {
             throw new Error("Incomplete sun data received");
           }
         })
-        .catch((err: any) => {
-          setError(err.message);
+        .catch((err: unknown) => {
+          const error =
+            err instanceof Error ? err.message : "Unknown error occurred";
+          setError(error);
           setDailySunData(null);
           setSunriseTime(null);
           setSunsetTime(null);
@@ -189,7 +203,7 @@ const SunCard = ({ lat, lon }: Coordinates) => {
       }
       setSunTimesArray(arr);
     }
-  }, [dailySunData]);
+  }, [dailySunData, calculateAndFormatSunriseSunset]);
 
   useEffect(() => {
     if (
@@ -209,7 +223,7 @@ const SunCard = ({ lat, lon }: Coordinates) => {
         return;
       }
 
-      let t = (currentMinutes - sunriseMins) / (sunsetMins - sunriseMins);
+      const t = (currentMinutes - sunriseMins) / (sunsetMins - sunriseMins);
       const { x, y } = calculateSunPosition(t);
       setCurrentXSun(x);
       setCurrentYSun(y);
@@ -225,9 +239,6 @@ const SunCard = ({ lat, lon }: Coordinates) => {
       const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
       let displayIndex = 0;
-      const todaysSunriseMinutes = parseTimeToMinutes(
-        sunTimesArray[0]?.sunrise
-      );
       const todaysSunsetMinutes = parseTimeToMinutes(sunTimesArray[0]?.sunset);
 
       if (
@@ -258,7 +269,6 @@ const SunCard = ({ lat, lon }: Coordinates) => {
       return;
 
     const svg = svgRef.current;
-    const rect = svg.getBoundingClientRect();
     const pt = svg.createSVGPoint();
     pt.x = event.clientX;
     pt.y = event.clientY;

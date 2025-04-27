@@ -3,6 +3,7 @@ import {
   faCalendarCheck,
   faHeartbeat,
   faClipboard,
+  IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React from "react";
@@ -14,6 +15,13 @@ type VeterinaryCardProps = {
   vaccineStatus: "Vaccinated" | "Unvaccinated" | "N/A";
   nextVisit: string;
   userId: string;
+};
+
+type VetStatItemProps = {
+  icon: IconDefinition;
+  value: string | React.ReactNode;
+  label: string;
+  valueClassName?: string;
 };
 
 const getVaccineStatusStyles = (
@@ -35,12 +43,7 @@ const VetStatItem = ({
   value,
   label,
   valueClassName = "text-2xl font-semibold text-gray-900 dark:text-white",
-}: {
-  icon: any;
-  value: string | React.ReactNode;
-  label: string;
-  valueClassName?: string;
-}) => (
+}: VetStatItemProps) => (
   <div className="flex flex-col items-center justify-center text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg space-y-1 shadow-sm hover:shadow-md transition-shadow duration-200">
     <FontAwesomeIcon
       icon={icon}
@@ -71,7 +74,8 @@ const VeterinaryCard = ({
   return (
     <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
       <h2 className="text-xl font-semibold text-gray-800 dark:text-white mb-4 text-center sm:text-left">
-        Veterinary Data <span className="text-sm font-light">(Acc. to last vet. visit)</span>
+        Veterinary Data{" "}
+        <span className="text-sm font-light">(Acc. to last vet. visit)</span>
       </h2>
       <div className="grid grid-cols-2 gap-4">
         <VetStatItem

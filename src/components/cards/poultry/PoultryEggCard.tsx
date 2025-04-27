@@ -1,27 +1,36 @@
 import { faEgg, faKiwiBird } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  FontAwesomeIcon,
+} from "@fortawesome/react-fontawesome";
+import { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { Pie } from "react-chartjs-2";
 import React from "react";
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, Title } from "chart.js";
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend,
+  Title,
+  ChartData,
+  ChartOptions,
+} from "chart.js";
 
 ChartJS.register(ArcElement, Tooltip, Legend, Title);
+
+type EggStatItemProps = {
+  icon: IconDefinition;
+  value: string | React.ReactNode;
+  label: string;
+};
 
 type Props = {
   totalEggsStock: number;
   totalChicks: number;
-  eggGradingPieData: any;
-  eggGradingPieOptions: any;
+  eggGradingPieData: ChartData<"pie">;
+  eggGradingPieOptions?: Partial<ChartOptions<"pie">>;
 };
 
-const EggStatItem = ({
-  icon,
-  value,
-  label,
-}: {
-  icon: any;
-  value: string | React.ReactNode;
-  label: string;
-}) => (
+const EggStatItem = ({ icon, value, label }: EggStatItemProps) => (
   <div className="flex flex-col items-center justify-center text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg space-y-1 shadow-sm hover:shadow-md transition-shadow duration-200 h-full">
     <FontAwesomeIcon
       icon={icon}
@@ -42,9 +51,9 @@ const PoultryEggCard = ({
   totalEggsStock,
   totalChicks,
   eggGradingPieData,
-  eggGradingPieOptions,
+  eggGradingPieOptions = {},
 }: Props) => {
-  const defaultOptions = {
+  const defaultOptions: ChartOptions<"pie"> = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {

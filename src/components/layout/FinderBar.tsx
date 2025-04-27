@@ -124,7 +124,7 @@ const FinderBar = ({ activeView }: Props) => {
   };
 
   useEffect(() => {
-    let data = [...businessData[activeView]];
+    const data = [...businessData[activeView]];
     if (sortOption === "rating") {
       data.sort((a, b) => b.stars - a.stars);
     } else if (sortOption === "price") {

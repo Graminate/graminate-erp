@@ -1,17 +1,30 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faDroplet, faEllipsis } from "@fortawesome/free-solid-svg-icons";
 import Chart from "chart.js/auto";
-import type { ChartConfiguration, Chart as ChartJS } from "chart.js";
-import axios from "axios";
+import type { ChartConfiguration, Chart as ChartJS, Scale } from "chart.js";
+import axios, { AxiosError } from "axios";
 
 import { Coordinates } from "@/types/card-props";
-import Loader from "@/components/ui/Loader"; // Assuming Loader component exists
+import Loader from "@/components/ui/Loader";
+
+type WeatherData = {
+  time: Date[];
+  precipitation: number[];
+};
+
+type HourlyPrecipData = {
+  day: Date;
+  precipHours: {
+    time: Date;
+    precipitation: number;
+  }[];
+};
 
 const PrecipitationCard = ({ lat, lon }: Coordinates) => {
   const [error, setError] = useState<string | null>(null);
   const [displayMode, setDisplayMode] = useState<"Small" | "Large">("Small");
-  const [weatherData, setWeatherData] = useState<any>(null);
+  const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
   const [past6HoursRain, setPast6HoursRain] = useState<number>(0);
   const [next24HoursRain, setNext24HoursRain] = useState<number>(0);
@@ -21,11 +34,10 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
   >([]);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedHourlyData, setSelectedHourlyData] = useState<
-    | { day: Date; precipHours: { time: Date; precipitation: number }[] }
-    | undefined
+    HourlyPrecipData | undefined
   >(undefined);
   const [hourlyPrecipDataByDay, setHourlyPrecipDataByDay] = useState<
-    { day: Date; precipHours: { time: Date; precipitation: number }[] }[]
+    HourlyPrecipData[]
   >([]);
 
   const chartCanvas = useRef<HTMLCanvasElement | null>(null);
@@ -33,45 +45,49 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
   const [hoveredTime, setHoveredTime] = useState<string>("");
   const [hoveredPrecip, setHoveredPrecip] = useState<number>(0);
 
-  async function fetchPrecipitationData(latitude: number, longitude: number) {
-    try {
-      const response = await axios.get("/api/weather", {
-        params: {
-          lat: latitude,
-          lon: longitude,
-        },
-      });
-      return response.data.hourly;
-    } catch (err: any) {
-      console.error(
-        err.response?.data?.message || err.message || "Unknown error occurred"
-      );
-      setError("Failed to fetch precipitation data");
-      return null;
-    }
-  }
+  const fetchPrecipitationData = useCallback(
+    async (latitude: number, longitude: number) => {
+      try {
+        const response = await axios.get("/api/weather", {
+          params: {
+            lat: latitude,
+            lon: longitude,
+          },
+        });
+        return {
+          time: response.data.hourly.time.map((t: string) => new Date(t)),
+          precipitation: response.data.hourly.precipitation,
+        } as WeatherData;
+      } catch (err: unknown) {
+        const error = err as AxiosError;
+        console.error(
+          (error.response?.data as { message?: string })?.message ||
+            error.message ||
+            "Unknown error occurred"
+        );
+        setError("Failed to fetch precipitation data");
+        return null;
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     if (lat !== undefined && lon !== undefined) {
       setWeatherData(null);
       setError(null);
-      fetchPrecipitationData(lat, lon)
-        .then((data) => {
-          if (data) {
-            data.time = data.time.map((t: string) => new Date(t));
-            setWeatherData(data);
-          }
-        })
-        .catch((err: any) => {
-          // Error is set inside fetch function now
-        });
+      fetchPrecipitationData(lat, lon).then((data) => {
+        if (data) {
+          setWeatherData(data);
+        }
+      });
     } else {
       setError(
         "Latitude and Longitude are required to fetch precipitation data."
       );
       setWeatherData(null);
     }
-  }, [lat, lon]);
+  }, [lat, lon, fetchPrecipitationData]);
 
   useEffect(() => {
     if (weatherData && displayMode === "Small") {
@@ -128,6 +144,7 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
           precipitation: weatherData.precipitation[index] || 0,
         });
       });
+
       const hourlyDataByDay = Object.values(groups).sort(
         (a, b) => a.day.getTime() - b.day.getTime()
       );
@@ -150,27 +167,52 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
           day: group.day.toLocaleDateString(undefined, { day: "numeric" }),
         }));
       setAvailableDays(available);
+    }
+  }, [weatherData]);
 
-      if (!selectedDate && available.length > 0) {
+  useEffect(() => {
+    if (
+      hourlyPrecipDataByDay.length > 0 &&
+      availableDays.length > 0 &&
+      !selectedDate
+    ) {
+      const todayStr = new Date().toDateString();
+      const foundToday = hourlyPrecipDataByDay.find(
+        (g) => g.day.toDateString() === todayStr
+      );
+      setSelectedDate(foundToday ? foundToday.day : availableDays[0].date);
+    }
+  }, [hourlyPrecipDataByDay, availableDays, selectedDate]);
+
+  useEffect(() => {
+    if (selectedDate && availableDays.length > 0) {
+      const isSelectedDateAvailable = availableDays.some(
+        (d) => d.date.toDateString() === selectedDate.toDateString()
+      );
+      if (!isSelectedDateAvailable) {
         const todayStr = new Date().toDateString();
-        const foundToday = hourlyDataByDay.find(
+        const foundToday = hourlyPrecipDataByDay.find(
           (g) => g.day.toDateString() === todayStr
         );
-        setSelectedDate(foundToday ? foundToday.day : available[0].date);
-      } else if (selectedDate && available.length > 0) {
-        const isSelectedDateAvailable = available.some(
-          (d) => d.date.toDateString() === selectedDate.toDateString()
-        );
-        if (!isSelectedDateAvailable) {
-          const todayStr = new Date().toDateString();
-          const foundToday = hourlyDataByDay.find(
-            (g) => g.day.toDateString() === todayStr
-          );
-          setSelectedDate(foundToday ? foundToday.day : available[0].date);
-        }
+        setSelectedDate(foundToday ? foundToday.day : availableDays[0].date);
       }
     }
-  }, [weatherData]); // Removed selectedDate dependency
+  }, [selectedDate, availableDays, hourlyPrecipDataByDay]);
+
+  useEffect(() => {
+    if (availableDays.length > 0 && selectedDate) {
+      const isSelectedDateAvailable = availableDays.some(
+        (d) => d.date.toDateString() === selectedDate.toDateString()
+      );
+      if (!isSelectedDateAvailable) {
+        const todayStr = new Date().toDateString();
+        const foundToday = hourlyPrecipDataByDay.find(
+          (g) => g.day.toDateString() === todayStr
+        );
+        setSelectedDate(foundToday ? foundToday.day : availableDays[0].date);
+      }
+    }
+  }, [availableDays, selectedDate, hourlyPrecipDataByDay]);
 
   useEffect(() => {
     if (selectedDate && hourlyPrecipDataByDay.length > 0) {
@@ -184,7 +226,7 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
     }
   }, [selectedDate, hourlyPrecipDataByDay]);
 
-  function getDynamicTicks(max: number): number[] {
+  const getDynamicTicks = useCallback((max: number): number[] => {
     if (max <= 0) return [0];
     if (max <= 1) return [0, 0.5, 1];
     if (max <= 2.5) return [0, 1, 2.5];
@@ -193,7 +235,7 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
     if (max <= 20) return [0, 10, 20];
     if (max <= 40) return [0, 20, 40];
     return [0, Math.ceil(max / 2), Math.ceil(max)];
-  }
+  }, []);
 
   useEffect(() => {
     if (displayMode === "Large" && selectedHourlyData && chartCanvas.current) {
@@ -212,10 +254,10 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
       const dataValues = selectedHourlyData.precipHours.map(
         (pt) => pt.precipitation
       );
-      const maxPrecip = Math.max(0, ...dataValues); // Ensure maxPrecip is at least 0
+      const maxPrecip = Math.max(0, ...dataValues);
       const dynamicTicks = getDynamicTicks(maxPrecip);
       const maxYValue =
-        dynamicTicks.length > 1 ? dynamicTicks[dynamicTicks.length - 1] : 1; // Default max Y to 1 if no precipitation
+        dynamicTicks.length > 1 ? dynamicTicks[dynamicTicks.length - 1] : 1;
 
       const chartConfig: ChartConfiguration<"bar"> = {
         type: "bar",
@@ -242,7 +284,7 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
               displayColors: false,
               callbacks: {
                 title: () => "",
-                label: function (context: any) {
+                label: function (context) {
                   const precip = context.parsed.y;
                   setHoveredPrecip(precip);
                   setHoveredTime(context.label);
@@ -266,7 +308,7 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
                 autoSkip: true,
                 maxTicksLimit: 6,
                 font: { size: 10 },
-                color: "#a0aec0", // Example text color
+                color: "#a0aec0",
               },
               border: { display: false },
             },
@@ -280,7 +322,7 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
               ticks: {
                 padding: 5,
                 font: { size: 10 },
-                color: "#a0aec0", // Example text color
+                color: "#a0aec0",
                 callback: function (value: string | number) {
                   if (
                     typeof value === "number" &&
@@ -288,14 +330,14 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
                   ) {
                     return value + "mm";
                   }
-                  return ""; // Hide other ticks
+                  return "";
                 },
                 stepSize:
                   dynamicTicks.length > 1
                     ? dynamicTicks[1] - dynamicTicks[0]
-                    : 1, // Heuristic step size
+                    : 1,
               },
-              afterBuildTicks: function (scale: any) {
+              afterBuildTicks: function (scale: Scale) {
                 scale.ticks = dynamicTicks.map((value: number) => ({
                   value,
                   label: value + "mm",
@@ -314,7 +356,7 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
         chartRef.current = null;
       }
     };
-  }, [displayMode, selectedHourlyData]); // dynamicTicks removed as it's calculated inside
+  }, [displayMode, selectedHourlyData, getDynamicTicks]);
 
   const totalPrecipitation = selectedHourlyData
     ? selectedHourlyData.precipHours.reduce(

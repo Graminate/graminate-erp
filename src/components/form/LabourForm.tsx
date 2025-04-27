@@ -9,6 +9,7 @@ import { faX } from "@fortawesome/free-solid-svg-icons";
 import { SidebarProp } from "@/types/card-props";
 import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
 import axiosInstance from "@/lib/utils/axiosInstance";
+import axios from "axios";
 
 const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
   const router = useRouter();
@@ -149,11 +150,13 @@ const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
       });
       handleClose();
       window.location.reload();
-    } catch (error: any) {
+    } catch (error: unknown) {
       const message =
-        error.response?.data?.error ||
-        error.message ||
-        "An unexpected error occurred";
+        axios.isAxiosError(error) && error.response?.data?.error
+          ? error.response.data.error
+          : error instanceof Error
+          ? error.message
+          : "An unexpected error occurred";
       console.error("Error adding labour:", message);
       alert(message);
     }
