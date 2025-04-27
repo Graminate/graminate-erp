@@ -164,16 +164,15 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
                   className="ml-1 flex items-center text-gray-400 hover:text-white focus:outline-none"
                   onClick={toggleDropdown}
                 >
-                  {isDropdownOpen ? (
-                    <FontAwesomeIcon icon={faChevronUp} className="size-5" />
-                  ) : (
-                    <FontAwesomeIcon icon={faChevronDown} className="size-5" />
-                  )}
+                  <FontAwesomeIcon
+                    icon={isDropdownOpen ? faChevronUp : faChevronDown}
+                    className="size-5 transition-transform duration-200 ease-in-out"
+                  />
                 </button>
 
                 {isDropdownOpen && (
-                  <div className="origin-top-right absolute right-0 top-12 w-96 rounded-md shadow-lg py-4 bg-white dark:bg-dark">
-                    <div className="px-4 pb-3 border-b border-gray-500 dark:border-gray-200">
+                  <div className="origin-top-right absolute right-0 top-12 w-96 rounded-md shadow-lg py-4 bg-white dark:bg-gray-700">
+                    <div className="px-4 pb-3 border-b border-gray-500 dark:border-gray-300">
                       <div className="flex items-center">
                         <img
                           className="h-12 w-12 rounded-full"
@@ -219,7 +218,7 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
                         </a>
                       ))}
                     </div>
-                    <div className="flex items-center justify-between px-4 py-3 text-sm text-dark dark:text-light border-t border-gray-500 dark:border-gray-200">
+                    <div className="flex items-center justify-between px-4 py-3 text-sm text-dark dark:text-light border-t border-gray-500 dark:border-gray-300">
                       <button
                         className="text-sm font-medium text-dark dark:text-light hover:underline"
                         onClick={handleLogout}

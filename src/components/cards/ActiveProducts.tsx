@@ -38,7 +38,7 @@ const ActiveProducts = ({
 
   return (
     <div className="rounded-lg overflow-hidden shadow-md w-full bg-white max-h-64">
-      <div className="bg-green-200 p-4">
+      <div className="bg-green-200 p-3">
         <h2 className="font-semibold text-light">{headerTitle}</h2>
       </div>
       <div className="overflow-y-auto max-h-48">
@@ -55,7 +55,7 @@ const ActiveProducts = ({
               onDragEnd={handleDragEnd}
               onMouseEnter={() => setHoveredItem(index)}
               onMouseLeave={() => setHoveredItem(null)}
-              className={`p-4 cursor-pointer text-dark hover:bg-light duration-150 ease-in-out flex justify-between items-center ${
+              className={`p-3 cursor-pointer text-sm text-dark hover:bg-light duration-150 ease-in-out flex justify-between items-center ${
                 draggedItem === index ? "bg-light" : ""
               }`}
             >
