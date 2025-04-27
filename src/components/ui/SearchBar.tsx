@@ -1,3 +1,5 @@
+import { faSearch } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React from "react";
 
 type Props = {
@@ -38,20 +40,10 @@ const SearchBar: React.FC<Props> = ({
         className="absolute inset-y-0 right-4 flex items-center"
         aria-label="Search"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth="1.5"
-          stroke="currentColor"
+        <FontAwesomeIcon
+          icon={faSearch}
           className="size-5 stroke-gray-800 dark:stroke-white"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
-          />
-        </svg>
+        />
       </button>
     </div>
   );

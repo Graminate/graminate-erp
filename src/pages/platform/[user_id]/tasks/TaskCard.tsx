@@ -1,6 +1,7 @@
 import { Id, Task } from "@/types/types";
+import { faEllipsis } from "@fortawesome/free-solid-svg-icons";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { useState } from "react";
-
 
 type TaskCardProps = {
   task: Task;
@@ -52,20 +53,7 @@ const TaskCard = ({
                 toggleDropdown(task.columnId, task.id);
               }}
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                className="w-5 h-5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6.75 12a.75.75 0 111.5 0 .75.75 0 01-1.5 0zm5 0a.75.75 0 111.5 0 .75.75 0 01-1.5 0zm5 0a.75.75 0 111.5 0 .75.75 0 01-1.5 0z"
-                />
-              </svg>
+              <FontAwesomeIcon icon={faEllipsis} className="size-5" />
             </button>
             {dropdownOpen &&
               dropdownOpen.colId === task.columnId &&

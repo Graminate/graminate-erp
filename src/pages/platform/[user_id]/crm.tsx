@@ -8,6 +8,8 @@ import Head from "next/head";
 import { PAGINATION_ITEMS } from "@/constants/options";
 import CRMForm from "@/components/form/CRMForm";
 import axiosInstance from "@/lib/utils/axiosInstance";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
 
 type View = "contacts" | "companies" | "contracts" | "receipts" | "tasks";
 
@@ -317,23 +319,10 @@ const CRM = () => {
               {view === "contracts" && "Contracts"}
               {view === "receipts" && "Receipts"}
               {view === "tasks" && "Tasks"}
-              <svg
-                className="ml-2 w-4 h-4 transform transition-transform"
-                style={{
-                  transform: dropdownOpen ? "rotate(180deg)" : "rotate(0deg)",
-                }}
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
+              <FontAwesomeIcon
+                icon={dropdownOpen ? faChevronUp : faChevronDown}
+                className="ml-2 w-4 h-4"
+              />
             </button>
             {dropdownOpen && (
               <SearchDropdown items={dropdownItems} navigateTo={navigateTo} />

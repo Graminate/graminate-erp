@@ -24,6 +24,7 @@ import PoultryEggCard from "@/components/cards/poultry/PoultryEggCard";
 import Button from "@/components/ui/Button";
 import AddPoultryDataModal from "@/components/modals/AddPoultryDataModal";
 import axiosInstance from "@/lib/utils/axiosInstance";
+import ActiveProducts from "@/components/cards/ActiveProducts";
 
 ChartJS.register(
   CategoryScale,
@@ -163,6 +164,12 @@ const Poultry = () => {
     dailyFeedConsumption,
     feedInventoryDays,
   });
+  const [items, setItems] = useState([
+    "Flock 1",
+    "Flock 2",
+    "Flock 3",
+    "Flock 4",
+  ]);
 
   const fahrenheit = false;
   function convertToFahrenheit(celsius: number): number {
@@ -541,7 +548,13 @@ const Poultry = () => {
             feedInventoryDays={feedInventoryDays}
             getFeedLevelColor={getFeedLevelColor}
           />
+          <ActiveProducts
+            headerTitle="My Flocks"
+            items={items}
+            onReorder={setItems}
+          />
         </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="bg-white dark:bg-dark p-4 rounded-lg shadow">
             <div className="flex justify-between items-center mb-3">

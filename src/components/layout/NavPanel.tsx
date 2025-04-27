@@ -1,5 +1,7 @@
 import { useState } from "react";
 import type { NavPanel } from "@/types/card-props";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faBars } from "@fortawesome/free-solid-svg-icons";
 
 const NavPanel = ({ buttons, activeView, onNavigate }: NavPanel) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -34,20 +36,7 @@ const NavPanel = ({ buttons, activeView, onNavigate }: NavPanel) => {
             onClick={() => setIsMenuOpen(!isMenuOpen)}
             aria-label="Open menu"
           >
-            <svg
-              className="w-6 h-6"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M4 6h16M4 12h16M4 18h16"
-              />
-            </svg>
+            <FontAwesomeIcon icon={faBars} className="size-6" />
           </button>
 
           {/* Dropdown Menu */}
