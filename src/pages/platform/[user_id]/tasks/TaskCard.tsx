@@ -22,7 +22,12 @@ const TaskCard = ({
   dropdownOpen,
   isOverlay = false,
 }: TaskCardProps) => {
-  const [isHovering, setIsHovering] = useState(false);
+  const [isHovering, setIsHovering] = useState(false); // Hook called first
+
+  if (!task) {
+    // Conditional return is now AFTER the hook
+    return null;
+  }
 
   return (
     <div

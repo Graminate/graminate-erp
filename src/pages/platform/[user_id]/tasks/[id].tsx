@@ -34,9 +34,8 @@ import SortableItem from "./SortableItem";
 import ColumnContainer from "./ColumnContainer";
 import TaskCard from "./TaskCard";
 
-const TasksPage: React.FC = () => {
+const TasksPage = () => {
   const router = useRouter();
-  const { user_id, id: projectId } = router.query;
   const projectTitle =
     typeof router.query.title === "string" ? router.query.title : "";
 
@@ -141,14 +140,14 @@ const TasksPage: React.FC = () => {
   }, []);
 
   const filteredTasks = useMemo(() => {
-    return tasks.filter((task) => {
+    return (tasks || []).filter((task) => {
       const taskLabels = task.type
         ? task.type.split(",").map((l) => l.trim().toLowerCase())
         : [];
-      const filterLabelsLower = selectedFilterLabels.map((l) =>
+      const filterLabelsLower = (selectedFilterLabels || []).map((l) =>
         l.toLowerCase()
       );
-      const searchLower = searchQuery.toLowerCase().trim();
+      const searchLower = (searchQuery || "").toLowerCase().trim();
       const labelMatch =
         filterLabelsLower.length === 0 ||
         filterLabelsLower.some((label) => taskLabels.includes(label));
@@ -622,8 +621,8 @@ const TasksPage: React.FC = () => {
 
           {isListView ? (
             <TaskListView
-              tasks={filteredTasks}
-              columns={columns}
+              tasks={filteredTasks || []}
+              columns={columns || []}
               openTaskModal={openTaskModal}
             />
           ) : (

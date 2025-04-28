@@ -12,14 +12,14 @@ type Column = {
   tasks: Task[];
 };
 
-export const usePaginationSelection = (
-  paginatedRows: any[][],
+export const usePaginationSelection = <T>(
+  paginatedRows: T[][],
   selectAll: boolean,
   setSelectedRows: (rows: boolean[]) => void
 ) => {
   useEffect(() => {
     setSelectedRows(new Array(paginatedRows.length).fill(selectAll));
-  }, [paginatedRows, selectAll]);
+  }, [paginatedRows, selectAll, setSelectedRows]);
 };
 
 export const useClickOutside = (

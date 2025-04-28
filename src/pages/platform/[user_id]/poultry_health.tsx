@@ -10,7 +10,7 @@ import {
   Legend,
   ArcElement,
 } from "chart.js";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { useRouter } from "next/router";
 import Table from "@/components/tables/Table";
 import { PAGINATION_ITEMS } from "@/constants/options";
@@ -27,76 +27,49 @@ ChartJS.register(
   ArcElement
 );
 
+interface HealthRecord {
+  poultry_health_id: string;
+  date: string;
+  veterinary_name: string;
+  bird_type: string;
+  purpose: string;
+  vaccines: string[];
+  mortality_rate?: number;
+}
+
 const PoultryHealth = () => {
   const router = useRouter();
   const { user_id } = router.query;
   const parsedUserId = Array.isArray(user_id) ? user_id[0] : user_id;
-  const [healthRecords, setHealthRecords] = useState<any[]>([]);
-  const [mortalityRate24h, setMortalityRate24h] = useState<number | null>(null);
-  const [vaccineStatus, setVaccineStatus] = useState("Pending");
-  const [nextVisit, setNextVisit] = useState("N/A");
+  const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([]);
 
-  useEffect(() => {
-    if (!healthRecords || healthRecords.length === 0) {
-      setMortalityRate24h(null);
-      return;
-    }
-    const sortedByDate = [...healthRecords].sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-    );
-    // Set vaccine status based on the latest record’s vaccines
-    const latestVaccines = sortedByDate[0]?.vaccines || [];
-    setVaccineStatus(
-      Array.isArray(latestVaccines) && latestVaccines.length > 0
-        ? "Vaccinated"
-        : "Pending"
-    );
-    // Next Visit: choose the next future date
-    const futureDates = healthRecords
-      .map((item) => new Date(item.date))
-      .filter((d) => d > new Date())
-      .sort((a, b) => a.getTime() - b.getTime());
-    setNextVisit(futureDates[0] ? futureDates[0].toLocaleDateString() : "N/A");
-
-    // Mortality Rate: average from the last 3 records
-    const recentRecords = sortedByDate.slice(0, 3);
-    const mortalitySum = recentRecords.reduce(
-      (sum: number, record: any) => sum + (record.mortality_rate || 0),
-      0
-    );
-    const averageMortality =
-      recentRecords.length > 0 ? mortalitySum / recentRecords.length : null;
-    setMortalityRate24h(averageMortality);
-  }, [healthRecords]);
-
-  useEffect(() => {
-    if (router.isReady && parsedUserId) {
-      fetchHealthRecords();
-    }
-  }, [router.isReady, parsedUserId]);
-
-  const fetchHealthRecords = async () => {
+  const fetchHealthRecords = useCallback(async () => {
     if (!parsedUserId) return;
     try {
       const response = await axiosInstance.get(
         `/poultry_health/${encodeURIComponent(parsedUserId)}`
       );
-
       setHealthRecords(response.data.health || []);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(
         "Error fetching poultry health data:",
-        error.response?.data?.error || error.message
+        error instanceof Error ? error.message : "Unknown error"
       );
     }
-  };
+  }, [parsedUserId]);
+
+  useEffect(() => {
+    if (router.isReady && parsedUserId) {
+      fetchHealthRecords();
+    }
+  }, [router.isReady, parsedUserId, fetchHealthRecords]);
 
   const tableData = useMemo(() => {
     if (healthRecords.length > 0) {
       return {
         columns: [
           "#",
-          "Next Appointment",
+          "Appointment",
           "Veterinary Name",
           "Bird Type",
           "Purpose",
@@ -108,9 +81,7 @@ const PoultryHealth = () => {
           item.veterinary_name,
           item.bird_type,
           item.purpose,
-          Array.isArray(item.vaccines)
-            ? item.vaccines.join(", ")
-            : item.vaccines,
+          item.vaccines.join(", "),
         ]),
       };
     }

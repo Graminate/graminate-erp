@@ -9,10 +9,20 @@ import { triggerToast } from "@/stores/toast";
 import Head from "next/head";
 import axiosInstance from "@/lib/utils/axiosInstance";
 
+interface Contract {
+  id: string;
+  dealName: string;
+  partner: string;
+  amount: string;
+  stage: string;
+  startDate: string;
+  endDate: string;
+}
+
 const ContractDetails = () => {
   const router = useRouter();
   const { user_id, data } = router.query;
-  const [contract, setContract] = useState<any | null>(null);
+  const [contract, setContract] = useState<Contract | null>(null);
 
   // Editable fields state
   const [contractName, setContractName] = useState("");
@@ -100,7 +110,7 @@ const ContractDetails = () => {
     setSaving(true);
 
     const payload = {
-      id: contract[0],
+      id: contract.id,
       deal_name: contractName,
       partner: partnerClient,
       amount: amount,
@@ -122,12 +132,16 @@ const ContractDetails = () => {
         startDate,
         endDate,
       });
-    } catch (error: any) {
-      triggerToast(
-        error.response?.data?.error ||
-          "An error occurred while updating the contract.",
-        "error"
-      );
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : error && typeof error === "object" && "response" in error
+          ? (error as { response?: { data?: { error?: string } } }).response
+              ?.data?.error
+          : "An error occurred while updating the contract.";
+
+      triggerToast(errorMessage || "An unexpected error occurred.", "error");
     } finally {
       setSaving(false);
     }

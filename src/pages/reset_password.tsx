@@ -80,13 +80,14 @@ const ResetPasswordPage = () => {
       });
 
       router.push("/");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
+      const errorMessage =
+        (error as { response?: { data?: { error?: string } } })?.response?.data
+          ?.error || "Something went wrong. Please try again later.";
       Swal.fire({
         title: "Error",
-        text:
-          error.response?.data?.error ||
-          "Something went wrong. Please try again later.",
+        text: errorMessage,
         icon: "error",
         confirmButtonText: "OK",
       });

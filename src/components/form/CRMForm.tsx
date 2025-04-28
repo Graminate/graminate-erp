@@ -220,11 +220,9 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       });
       handleClose();
       window.location.reload();
-    } catch (error: any) {
+    } catch (error: unknown) {
       const message =
-        error.response?.data?.error ||
-        error.message ||
-        "An unexpected error occurred";
+        error instanceof Error ? error.message : "An unexpected error occurred";
       console.error("Error adding contact:", message);
       alert(message);
     }
@@ -287,11 +285,9 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       });
       handleClose();
       window.location.reload();
-    } catch (error: any) {
+    } catch (error: unknown) {
       const message =
-        error.response?.data?.error ||
-        error.message ||
-        "An unexpected error occurred";
+        error instanceof Error ? error.message : "An unexpected error occurred";
       console.error("Error adding company:", message);
       alert(message);
     }
@@ -320,11 +316,9 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       });
       handleClose();
       window.location.reload();
-    } catch (error: any) {
+    } catch (error: unknown) {
       const message =
-        error.response?.data?.error ||
-        error.message ||
-        "An unexpected error occurred";
+        error instanceof Error ? error.message : "An unexpected error occurred";
       console.error("Error adding new contract:", message);
       alert(message);
     }
@@ -353,11 +347,9 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       });
       handleClose();
       window.location.reload();
-    } catch (error: any) {
+    } catch (error: unknown) {
       const message =
-        error.response?.data?.error ||
-        error.message ||
-        "An unexpected error occurred";
+        error instanceof Error ? error.message : "An unexpected error occurred";
       console.error("Error adding new receipt:", message);
       alert(message);
     }
@@ -386,11 +378,9 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       });
       handleClose();
       window.location.reload();
-    } catch (error: any) {
+    } catch (error: unknown) {
       const message =
-        error.response?.data?.error ||
-        error.message ||
-        "An unexpected error occurred";
+        error instanceof Error ? error.message : "An unexpected error occurred";
       console.error("Error adding new task:", message);
       alert(message);
     }

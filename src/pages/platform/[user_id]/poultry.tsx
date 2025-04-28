@@ -1,4 +1,4 @@
-import { useEffect, useState, FormEvent } from "react";
+import { useEffect, useState, FormEvent, useCallback } from "react";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
 import { Bar } from "react-chartjs-2";
@@ -111,6 +111,8 @@ const tasks: {
   { id: 5, text: "Order new feed batch", completed: false, priority: "High" },
 ];
 
+type VaccineStatus = "Vaccinated" | "Unvaccinated" | "N/A";
+
 type PoultryFormData = {
   totalChicks: number;
   flockId: string;
@@ -118,19 +120,32 @@ type PoultryFormData = {
   flockAgeDays: number;
   expectedMarketDate: string;
   mortalityRate: number | null;
-  vaccineStatus: string;
+  vaccineStatus: VaccineStatus;
   nextVisit: string;
   totalEggsStock: number;
   dailyFeedConsumption: number;
   feedInventoryDays: number;
 };
 
+interface Alert {
+  id: number; // Changed to number for consistency with counter
+  message: string;
+  type: "Critical" | "Warning" | "Info" | "Default";
+}
+
+interface HealthRecord {
+  date: string;
+  mortality_rate: number | null;
+  vaccines?: string[]; // Assuming vaccines is an array of strings
+  // Add other properties of health record if known
+}
+
 const Poultry = () => {
   const router = useRouter();
   const { user_id } = router.query;
   const parsedUserId = Array.isArray(user_id) ? user_id[0] : user_id;
   const [salesPeriod, setSalesPeriod] = useState("This Month");
-  const [activeAlerts, setActiveAlerts] = useState<any[]>([]);
+  const [activeAlerts, setActiveAlerts] = useState<Alert[]>([]);
   const [temperature, setTemperature] = useState<number | null>(null);
   const [humidity, setHumidity] = useState<number | null>(null);
   const [lightHours, setLightHours] = useState<number | null>(null);
@@ -143,13 +158,10 @@ const Poultry = () => {
   const [expectedMarketDate, setExpectedMarketDate] = useState("2025-04-13");
   const [feedInventoryDays, setFeedInventoryDays] = useState(2);
   const [mortalityRate, setMortalityRate] = useState<number | null>(null);
-  const [vaccineStatus, setVaccineStatus] = useState<
-    "Vaccinated" | "Unvaccinated" | "N/A"
-  >("N/A");
+  const [vaccineStatus, setVaccineStatus] = useState<VaccineStatus>("N/A");
   const [nextVisit, setNextVisit] = useState("2025-05-12");
-  const [latestHealthDate, setLatestHealthDate] = useState<string>("—");
+  // Removed unused state: latestHealthDate, reportStatus
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [reportStatus, setReportStatus] = useState("Pending");
   const [sensorUrl, setSensorUrl] = useState<string | null>(null);
   const [formData, setFormData] = useState<PoultryFormData>({
     totalChicks,
@@ -172,18 +184,18 @@ const Poultry = () => {
   ]);
 
   const fahrenheit = false;
-  function convertToFahrenheit(celsius: number): number {
+  const convertToFahrenheit = useCallback((celsius: number): number => {
     return Math.round((celsius * 9) / 5 + 32);
-  }
+  }, []);
 
-  function formatTemperature(
-    value: number | null,
-    showUnit: boolean = true
-  ): string {
-    if (value === null) return "N/A";
-    const temp = fahrenheit ? convertToFahrenheit(value) : value;
-    return showUnit ? `${temp}°${fahrenheit ? "F" : "C"}` : `${temp}°`;
-  }
+  const formatTemperature = useCallback(
+    (value: number | null, showUnit: boolean = true): string => {
+      if (value === null) return "N/A";
+      const temp = fahrenheit ? convertToFahrenheit(value) : value;
+      return showUnit ? `${temp}°${fahrenheit ? "F" : "C"}` : `${temp}°`;
+    },
+    [fahrenheit, convertToFahrenheit]
+  );
 
   // Fetch health records and calculate next visit and mortality rate
   useEffect(() => {
@@ -191,14 +203,14 @@ const Poultry = () => {
       if (!parsedUserId) return;
 
       try {
-        const response = await axiosInstance.get(
+        const response = await axiosInstance.get<{ health: HealthRecord[] }>(
           `/poultry_health/${parsedUserId}`
         );
 
         const healthRecords = response.data.health || [];
 
         const visitDates = healthRecords
-          .map((record: any) => new Date(record.date))
+          .map((record: HealthRecord) => new Date(record.date))
           .filter((d: Date) => !isNaN(d.getTime()));
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -206,7 +218,7 @@ const Poultry = () => {
           .filter((d: Date) => d.getTime() >= today.getTime())
           .sort((a: Date, b: Date) => a.getTime() - b.getTime());
         if (upcomingDates.length > 0) {
-          setNextVisit(upcomingDates[0].toLocaleDateString("en-CA"));
+          setNextVisit(upcomingDates[0].toLocaleDateString("en-CA")); // Format YYYY-MM-DD
         } else {
           setNextVisit("N/A");
         }
@@ -214,12 +226,13 @@ const Poultry = () => {
         // Mortality Rate: average from the last 3 records
         if (healthRecords.length > 0) {
           const sortedRecords = [...healthRecords].sort(
-            (a: any, b: any) =>
+            (a: HealthRecord, b: HealthRecord) =>
               new Date(b.date).getTime() - new Date(a.date).getTime()
           );
-          const recentRecords = sortedRecords.slice(0, 3);
+          const recentRecords: HealthRecord[] = sortedRecords.slice(0, 3);
           const mortalitySum = recentRecords.reduce(
-            (sum: number, record: any) => sum + (record.mortality_rate || 0),
+            (sum: number, record: HealthRecord) =>
+              sum + (record.mortality_rate || 0),
             0
           );
           const averageMortality =
@@ -227,80 +240,28 @@ const Poultry = () => {
               ? mortalitySum / recentRecords.length
               : null;
           setMortalityRate(averageMortality);
-        } else {
-          setMortalityRate(null);
-        }
 
-        // Set vaccine status from latest record
-        const latestRecord = healthRecords[0];
-        if (healthRecords.length > 0) {
-          const latestRecord = healthRecords[0];
-          const vaccines = latestRecord.vaccines;
+          // Set vaccine status from latest record
+          const latestRecord = sortedRecords[0];
+          const vaccines = latestRecord?.vaccines;
           const isVaccinated = Array.isArray(vaccines) && vaccines.length > 0;
           setVaccineStatus(isVaccinated ? "Vaccinated" : "Unvaccinated");
         } else {
+          setMortalityRate(null);
           setVaccineStatus("N/A");
         }
       } catch (err) {
         console.error("Failed to fetch poultry health data", err);
         setNextVisit("N/A");
         setMortalityRate(null);
+        setVaccineStatus("N/A");
       }
     };
 
     fetchHealthRecordsAndSetNextVisit();
   }, [parsedUserId]);
 
-  useEffect(() => {
-    const fetchLatestHealthVisit = async () => {
-      if (!parsedUserId) return;
-      try {
-        const response = await axiosInstance.get(
-          `/poultry_health/${parsedUserId}`
-        );
-
-        const records = response.data.health;
-        if (Array.isArray(records) && records.length > 0) {
-          const sorted = [...records].sort(
-            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-          );
-          const latest = sorted[0];
-          const latestDate = new Date(latest.date);
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          latestDate.setHours(0, 0, 0, 0);
-          setLatestHealthDate(latestDate.toLocaleDateString());
-          const diffInDays =
-            (today.getTime() - latestDate.getTime()) / (1000 * 3600 * 24);
-          if (diffInDays === 0) {
-            setReportStatus("Done");
-          } else if (diffInDays <= 3 && diffInDays > 0) {
-            setReportStatus("Pending");
-          } else if (diffInDays > 3) {
-            setReportStatus("Over Due");
-          }
-          // Check for upcoming visit in formData
-          const nextVisitDate = formData.nextVisit;
-          if (nextVisitDate) {
-            const visitDate = new Date(nextVisitDate);
-            visitDate.setHours(0, 0, 0, 0);
-            const daysUntilVisit =
-              (visitDate.getTime() - today.getTime()) / (1000 * 3600 * 24);
-            if (daysUntilVisit <= 7 && daysUntilVisit >= 0) {
-              setReportStatus("Upcoming");
-            }
-          }
-        } else {
-          setLatestHealthDate("N/A");
-          setReportStatus("N/A");
-        }
-      } catch (error) {
-        console.error("Failed to fetch latest health visit:", error);
-      }
-    };
-
-    fetchLatestHealthVisit();
-  }, [parsedUserId, formData.nextVisit]);
+  // Removed useEffect that set latestHealthDate and reportStatus as they were unused
 
   useEffect(() => {
     const fetchWeather = async (lat: number, lon: number) => {
@@ -322,8 +283,12 @@ const Poultry = () => {
         setTemperature(newWeatherData.temperature);
         setHumidity(newWeatherData.humidity);
         setLightHours(newWeatherData.lightHours);
-      } catch (err: any) {
-        console.error("Failed to fetch weather", err.message);
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          console.error("Failed to fetch weather", error.message);
+        } else {
+          console.error("An unknown error occurred while fetching weather");
+        }
       }
     };
 
@@ -347,7 +312,7 @@ const Poultry = () => {
     const cached = localStorage.getItem("weatherData");
     if (cached) {
       const parsed = JSON.parse(cached);
-      const isValid = Date.now() - parsed.timestamp < 2 * 60 * 1000;
+      const isValid = Date.now() - parsed.timestamp < 2 * 60 * 1000; // Cache for 2 minutes
       if (isValid) {
         setTemperature(parsed.temperature);
         setHumidity(parsed.humidity);
@@ -359,7 +324,7 @@ const Poultry = () => {
   }, [sensorUrl]);
 
   useEffect(() => {
-    const dynamicAlerts: any[] = [];
+    const dynamicAlerts: Alert[] = [];
     let alertIdCounter = 1;
     if (temperature !== null && temperature >= 35) {
       dynamicAlerts.push({
@@ -383,31 +348,36 @@ const Poultry = () => {
         } remaining)`,
       });
     }
-    if (nextVisit) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const visitDate = new Date(nextVisit);
-      visitDate.setHours(0, 0, 0, 0);
-      const diffInTime = visitDate.getTime() - today.getTime();
-      const diffInDays = Math.ceil(diffInTime / (1000 * 3600 * 24));
-      if (diffInDays <= 7 && diffInDays >= 0) {
-        dynamicAlerts.push({
-          id: alertIdCounter++,
-          type: "Info",
-          message: `Upcoming Veterinary visit in ${diffInDays} day${
-            diffInDays !== 1 ? "s" : ""
-          } (on ${new Date(nextVisit).toLocaleDateString()}).`,
-        });
+    if (nextVisit && nextVisit !== "N/A") {
+      try {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const visitDate = new Date(nextVisit);
+        visitDate.setHours(0, 0, 0, 0);
+        const diffInTime = visitDate.getTime() - today.getTime();
+        const diffInDays = Math.ceil(diffInTime / (1000 * 3600 * 24));
+
+        if (diffInDays <= 7 && diffInDays >= 0) {
+          dynamicAlerts.push({
+            id: alertIdCounter++,
+            type: "Info",
+            message: `Upcoming Veterinary visit in ${diffInDays} day${
+              diffInDays !== 1 ? "s" : ""
+            } (on ${new Date(nextVisit).toLocaleDateString()}).`,
+          });
+        }
+      } catch (e) {
+        console.error("Error parsing nextVisit date for alert:", e);
       }
     }
     setActiveAlerts(dynamicAlerts);
-  }, [temperature, feedInventoryDays, nextVisit]);
+  }, [temperature, feedInventoryDays, nextVisit, formatTemperature]); // Added formatTemperature to dependencies
 
   const dismissAlert = (id: number) => {
     setActiveAlerts((current) => current.filter((alert) => alert.id !== id));
   };
 
-  const getAlertStyle = (type: string): string => {
+  const getAlertStyle = (type: Alert["type"]): string => {
     switch (type) {
       case "Critical":
         return "bg-red-300 border-red-500 text-red-100 dark:bg-red-300 dark:border-red-600 dark:text-red-800";
@@ -424,30 +394,45 @@ const Poultry = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value, type } = e.target;
-    const processedValue =
-      type === "number" ? (value === "" ? "" : Number(value)) : value;
-    setFormData((prev) => ({ ...prev, [name]: processedValue }));
+
+    // Ensure vaccineStatus is correctly typed
+    if (name === "vaccineStatus") {
+      const statusValue = value as VaccineStatus;
+      setFormData((prev) => ({ ...prev, [name]: statusValue }));
+    } else {
+      const processedValue =
+        type === "number" ? (value === "" ? "" : Number(value)) : value;
+      setFormData((prev) => ({ ...prev, [name]: processedValue }));
+    }
   };
 
   const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     console.log("Form Data Submitted:", formData);
-    setTotalChicks(formData.totalChicks);
+
+    // Ensure numbers are handled correctly, especially if input is empty string
+    const newTotalChicks = Number(formData.totalChicks) || 0;
+    const newFlockAgeDays = Number(formData.flockAgeDays) || 0;
+    const newMortalityRate =
+      formData.mortalityRate === null
+        ? null
+        : Number(formData.mortalityRate);
+    const newTotalEggsStock = Number(formData.totalEggsStock) || 0;
+    const newDailyFeedConsumption = Number(formData.dailyFeedConsumption) || 0;
+    const newFeedInventoryDays = Number(formData.feedInventoryDays) || 0;
+
+    setTotalChicks(newTotalChicks);
     setFlockId(formData.flockId);
     setBreedType(formData.breedType);
-    setFlockAgeDays(formData.flockAgeDays);
+    setFlockAgeDays(newFlockAgeDays);
     setExpectedMarketDate(formData.expectedMarketDate);
-    setMortalityRate(formData.mortalityRate);
-    setVaccineStatus(
-      Array.isArray(formData.vaccineStatus) &&
-        formData.vaccineStatus === "Vaccinated"
-        ? "Vaccinated"
-        : "Unvaccinated"
-    );
+    setMortalityRate(newMortalityRate);
+    setVaccineStatus(formData.vaccineStatus); // Directly use the state value which is typed
     setNextVisit(formData.nextVisit);
-    setTotalEggsStock(formData.totalEggsStock);
-    setDailyFeedConsumption(formData.dailyFeedConsumption);
-    setFeedInventoryDays(formData.feedInventoryDays);
+    setTotalEggsStock(newTotalEggsStock);
+    setDailyFeedConsumption(newDailyFeedConsumption);
+    setFeedInventoryDays(newFeedInventoryDays);
+
     setIsModalOpen(false);
   };
 
@@ -482,6 +467,7 @@ const Poultry = () => {
                 <button
                   onClick={() => dismissAlert(alert.id)}
                   className="text-xl font-semibold hover:opacity-75"
+                  aria-label="Dismiss alert"
                 >
                   ×
                 </button>
@@ -499,6 +485,7 @@ const Poultry = () => {
             style="primary"
             onClick={() => {
               setFormData({
+                // Pre-populate modal with current state
                 totalChicks,
                 flockId,
                 breedType,
@@ -587,7 +574,8 @@ const Poultry = () => {
           onSubmit={handleFormSubmit}
           userId={parsedUserId || ""}
           refreshHealthRecords={async () => {
-            console.log("Refreshing health records...");
+            // Keep async stub if needed elsewhere
+            console.log("Refreshing health records (stub)...");
             return Promise.resolve();
           }}
         />

@@ -12,7 +12,6 @@ type TicketModalProps = {
 
 const TicketModal = ({
   isOpen,
-  columnName,
   currentLimit = "No limit set",
   onSave,
   onCancel,

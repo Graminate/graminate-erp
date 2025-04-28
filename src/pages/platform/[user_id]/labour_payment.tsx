@@ -5,6 +5,35 @@ import Head from "next/head";
 import Table from "@/components/tables/Table";
 import axiosInstance from "@/lib/utils/axiosInstance";
 
+interface Labour {
+  id: string | number;
+  name: string;
+  labour_id: string | number;
+  full_name: string;
+  base_salary: number;
+  aadhar_card_number: string;
+  contact_number: string;
+  address_line_1?: string;
+  address_line_2?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  created_at: string;
+}
+
+interface PaymentRecord {
+  id: string | number;
+  labour_id: string | number;
+  payment_date: string;
+  salary_paid: number;
+  bonus: number;
+  overtime_pay: number;
+  housing_allowance: number;
+  travel_allowance: number;
+  meal_allowance: number;
+  payment_status: "Pending" | "Paid" | "Failed" | string;
+}
+
 const LabourPayment = () => {
   const now = new Date();
   const currentMonth = now.getMonth();
@@ -13,8 +42,8 @@ const LabourPayment = () => {
   const { user_id } = router.query;
   const parsedUserId = Array.isArray(user_id) ? user_id[0] : user_id;
 
-  const [labourList, setLabourList] = useState<any[]>([]);
-  const [paymentRecords, setPaymentRecords] = useState<any[]>([]);
+  const [labourList, setLabourList] = useState<Labour[]>([]);
+  const [paymentRecords, setPaymentRecords] = useState<PaymentRecord[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [searchQuery, setSearchQuery] = useState("");
@@ -68,11 +97,25 @@ const LabourPayment = () => {
         const response = await axiosInstance.get(`/labour/${parsedUserId}`);
 
         setLabourList(response.data.labours || []);
-      } catch (error: any) {
-        console.error(
-          "Error fetching labours:",
-          error.response?.data?.error || error.message
-        );
+      } catch (error: unknown) {
+        const getErrorMessage = (err: unknown): string => {
+          if (typeof err === "object" && err !== null) {
+            const apiError = err as {
+              response?: { data?: { error?: string } };
+            };
+            if (apiError.response?.data?.error) {
+              return apiError.response.data.error;
+            }
+
+            const standardError = err as { message?: string };
+            if (standardError.message) {
+              return standardError.message;
+            }
+          }
+          return "An unexpected error occurred.";
+        };
+
+        console.error("Error fetching labours:", getErrorMessage(error));
       }
     };
 
@@ -80,18 +123,32 @@ const LabourPayment = () => {
       try {
         const response = await axiosInstance.get(`/labour/${parsedUserId}`);
         const labours = response.data.labours || [];
-        const allPayments: any[] = [];
+        const allPayments: PaymentRecord[] = [];
 
-        for (const labour of labours) {
-          const response = await axiosInstance.get(
-            `/labour_payment/${labour.labour_id}`
-          );
-          allPayments.push(...(response.data.payments || []));
-        }
+        await Promise.all(
+          labours.map(async (labour: Labour) => {
+            try {
+              const paymentResponse = await axiosInstance.get(
+                `/labour_payment/${labour.labour_id}`
+              );
+              const payments = paymentResponse.data.payments || [];
+              if (Array.isArray(payments)) {
+                allPayments.push(...payments);
+              }
+            } catch (error) {
+              console.error(
+                `Error fetching payments for labour ${labour.labour_id}:`,
+                error instanceof Error ? error.message : String(error)
+              );
+            }
+          })
+        );
 
         setPaymentRecords(allPayments);
-      } catch (error: any) {
-        console.error("Error fetching payment records:", error.message);
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : "Unknown error";
+        console.error("Error fetching payment records:", message);
       }
     };
 
@@ -103,7 +160,12 @@ const LabourPayment = () => {
     return paymentRecords
       .filter((p) => (p.payment_status || "").toLowerCase() === "paid")
       .reduce((sum, p) => {
-        const salary = parseFloat(p.salary_paid as any);
+        const salary =
+          typeof p.salary_paid === "string"
+            ? parseFloat(p.salary_paid)
+            : typeof p.salary_paid === "number"
+            ? p.salary_paid
+            : 0;
         return sum + (isNaN(salary) ? 0 : salary);
       }, 0);
   }, [paymentRecords]);

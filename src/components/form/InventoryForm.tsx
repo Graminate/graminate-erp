@@ -57,11 +57,9 @@ const InventoryForm = ({ onClose, formTitle }: SidebarProp) => {
       });
       handleClose();
       window.location.reload();
-    } catch (error: any) {
+    } catch (error: unknown) {
       const message =
-        error.response?.data?.error ||
-        error.message ||
-        "An unexpected error occurred";
+        error instanceof Error ? error.message : "An unexpected error occurred";
       console.error("Error adding inventory item:", message);
       alert(message);
     }

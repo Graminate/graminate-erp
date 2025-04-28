@@ -13,6 +13,17 @@ import {
 import SalaryModal from "@/components/modals/SalaryModal";
 import axiosInstance from "@/lib/utils/axiosInstance";
 
+type Labour = {
+  labour_id: number;
+  full_name: string;
+  contact_number?: string;
+  address_line_1?: string;
+  address_line_2?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+};
+
 type PaymentRecord = {
   payment_id: number;
   labour_id: number;
@@ -55,7 +66,9 @@ const LabourPaymentDetails = () => {
       try {
         const response = await axiosInstance.get(`/labour/${parsedUserId}`);
         const labours = response.data.labours || [];
-        const labour = labours.find((l: any) => l.labour_id == parsedLabourId);
+        const labour = labours.find(
+          (l: Labour) => l.labour_id === Number(parsedLabourId)
+        );
 
         if (labour) {
           setLabourName(labour.full_name);
@@ -75,20 +88,23 @@ const LabourPaymentDetails = () => {
 
         try {
           const response = await axiosInstance.get(
-            `/labour_payment/${parsedUserId}`
+            `/labour_payment/${parsedLabourId}`
           );
-          setPaymentRecords(response.data.payments || []);
-        } catch (err: any) {
+
+          const payments =
+            response.data.payments || response.data.data?.payments || [];
+          setPaymentRecords(payments);
+        } catch (err: unknown) {
           console.warn(
-            "No payments found:",
-            err.response?.data?.error || err.message
+            "Error fetching payments:",
+            err instanceof Error ? err.message : String(err)
           );
           setPaymentRecords([]);
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error(
           "Error fetching data:",
-          error.response?.data?.error || error.message
+          error instanceof Error ? error.message : String(error)
         );
       }
     };

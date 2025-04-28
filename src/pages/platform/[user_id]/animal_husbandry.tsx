@@ -27,16 +27,11 @@ ChartJS.register(
   ArcElement
 );
 
-type View = "animal_husbandry";
-
 const AnimalHusbandry = () => {
   const router = useRouter();
-  const { user_id, view: queryView } = router.query;
+  const { user_id } = router.query;
   const parsedUserId = Array.isArray(user_id) ? user_id[0] : user_id;
-  const view: View =
-    typeof queryView === "string" ? (queryView as View) : "animal_husbandry";
 
-  const [itemRecords, setItemRecords] = useState<any[]>([]);
   const [items, setItems] = useState([
     "Milk Production",
     "Beef Production",
@@ -48,16 +43,13 @@ const AnimalHusbandry = () => {
 
     const fetchAnimalHusbandry = async () => {
       try {
-        const response = await axiosInstance.get(
-          `/animal_husbandry/${parsedUserId}`
-        );
-
-        setItemRecords(response.data.items || []);
-      } catch (error: any) {
-        console.error(
-          "Error fetching animal_husbandry data:",
-          error.response?.data?.error || error.message
-        );
+        await axiosInstance.get(`/animal_husbandry/${parsedUserId}`);
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          console.error("Error fetching animal_husbandry data:", error.message);
+        } else {
+          console.error("Unknown error fetching animal_husbandry data");
+        }
       }
     };
 

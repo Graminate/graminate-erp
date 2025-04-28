@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/router";
 import Head from "next/head";
+import Image from "next/image";
 import NavPanel from "@/components/layout/NavPanel";
 import PlatformLayout from "@/layout/PlatformLayout";
 import SettingsBar from "@/components/layout/SettingsBar";
@@ -12,6 +13,7 @@ import Button from "@/components/ui/Button";
 import { LANGUAGES, TIME_FORMAT } from "@/constants/options";
 import Loader from "@/components/ui/Loader";
 import axiosInstance from "@/lib/utils/axiosInstance";
+import axios from "axios";
 
 const GeneralPage = () => {
   const router = useRouter();
@@ -23,24 +25,38 @@ const GeneralPage = () => {
   const [subTypes, setSubTypes] = useState<string[]>([]);
   const [isUserTypeLoading, setIsUserTypeLoading] = useState(true);
 
+  const [user, setUser] = useState({
+    profilePicture: "",
+    firstName: "",
+    lastName: "",
+    phoneNumber: "",
+    language: "English",
+    timeFormat: "24-hour",
+  });
+
   useEffect(() => {
     if (!userId) return;
-
-    const fetchUserType = async () => {
+    setIsUserTypeLoading(true);
+    const fetchUserData = async () => {
       try {
         const response = await axiosInstance.get(`/user/${userId}`);
-        const user = response.data.user ?? response.data.data?.user;
+        const userData = response.data.user ?? response.data.data?.user;
+
+        if (!userData) {
+          throw new Error("User data not found in response");
+        }
 
         setUser({
-          profilePicture: user.profile_picture || "",
-          firstName: user.first_name || "",
-          lastName: user.last_name || "",
-          phoneNumber: user.phone_number || "",
-          language: user.language || "English",
-          timeFormat: user.time_format || "24-hour",
+          profilePicture: userData.profile_picture || "",
+          firstName: userData.first_name || "",
+          lastName: userData.last_name || "",
+          phoneNumber: userData.phone_number || "",
+          language: userData.language || "English",
+          timeFormat: userData.time_format || "24-hour",
         });
-        const type = user?.type || "Producer";
-        const rawSubTypes = user?.sub_type;
+
+        const type = userData?.type || "Producer";
+        const rawSubTypes = userData?.sub_type;
 
         const parsedSubTypes = Array.isArray(rawSubTypes)
           ? rawSubTypes
@@ -50,19 +66,30 @@ const GeneralPage = () => {
 
         setUserType(type);
         setSubTypes(parsedSubTypes);
-      } catch (err) {
-        console.error("Error fetching user type", err);
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        if (axios.isAxiosError(error)) {
+          console.error("Axios error details:", error.response?.data);
+        }
+
         setUserType("Producer");
         setSubTypes([]);
+        setUser({
+          profilePicture: "",
+          firstName: "",
+          lastName: "",
+          phoneNumber: "",
+          language: "English",
+          timeFormat: "24-hour",
+        });
       } finally {
         setIsUserTypeLoading(false);
       }
     };
 
-    fetchUserType();
+    fetchUserData();
   }, [userId]);
 
-  // Use useMemo to conditionally build the navigation buttons based on userType.
   const navButtons = useMemo(() => {
     const buttons = [{ name: "Profile", view: "profile" }];
 
@@ -93,19 +120,6 @@ const GeneralPage = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
-  const [selectedLanguage, setSelectedLanguage] = useState(LANGUAGES[0]);
-  const [selectedTimeFormat, setSelectedTimeFormat] = useState(TIME_FORMAT[0]);
-
-  // User state
-  const [user, setUser] = useState({
-    profilePicture: "",
-    firstName: "",
-    lastName: "",
-    phoneNumber: "",
-    language: "English",
-    timeFormat: "24-hour",
-  });
-
   const [weatherSettings, setWeatherSettings] = useState({
     location: "",
     scale: "Celsius",
@@ -113,6 +127,7 @@ const GeneralPage = () => {
   });
 
   const handleSaveChanges = async () => {
+    if (!userId) return;
     setIsSaving(true);
     setSuccessMessage("");
 
@@ -126,43 +141,27 @@ const GeneralPage = () => {
       });
 
       setSuccessMessage("Profile updated successfully!");
-    } catch (error: any) {
-      console.error(
-        "Error updating profile:",
-        error.response?.data?.error || error.message
-      );
+    } catch (error: unknown) {
+      let errorMessage = "An unknown error occurred";
+      if (axios.isAxiosError(error)) {
+        const serverError =
+          error.response?.data?.error || error.response?.data?.message;
+        errorMessage = serverError || error.message;
+        console.error(
+          "Error updating profile:",
+          errorMessage,
+          error.response?.data
+        );
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+        console.error("Error updating profile:", errorMessage);
+      } else {
+        console.error("Error updating profile:", error);
+      }
     } finally {
       setIsSaving(false);
     }
   };
-
-  // Fetch the user data (profile details)
-  useEffect(() => {
-    if (!userId) return;
-
-    const fetchUserData = async () => {
-      try {
-        const response = await axiosInstance.get(`/user/${userId}`);
-        const data = response.data;
-
-        setUser({
-          profilePicture: data.user.profile_picture || "",
-          firstName: data.user.first_name || "",
-          lastName: data.user.last_name || "",
-          phoneNumber: data.user.phone_number || "",
-          language: data.user.language || "English",
-          timeFormat: data.user.time_format || "24-hour",
-        });
-      } catch (error: any) {
-        console.error(
-          "Error fetching user data:",
-          error.response?.data?.error || error.message
-        );
-      }
-    };
-
-    fetchUserData();
-  }, [userId]);
 
   return (
     <>
@@ -205,30 +204,38 @@ const GeneralPage = () => {
 
                   <div className="flex items-center gap-4 mb-8 relative">
                     <div className="relative group w-24 h-24">
-                      <img
+                      <Image
                         src={
                           user.profilePicture ||
-                          `https://eu.ui-avatars.com/api/?name=${user.firstName}+${user.lastName}&size=250`
+                          `https://eu.ui-avatars.com/api/?name=${encodeURIComponent(
+                            user.firstName
+                          )}+${encodeURIComponent(user.lastName)}&size=250`
                         }
                         alt="Profile Picture"
-                        className="w-24 h-24 rounded-full object-cover border border-gray-300 dark:border-gray-600"
+                        width={96}
+                        height={96}
+                        className="rounded-full object-cover border border-gray-300 dark:border-gray-600"
+                        unoptimized={!user.profilePicture}
                       />
 
                       {user.profilePicture && (
-                        <div className="absolute inset-0 bg-transparent flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
                           <button
-                            onClick={() =>
+                            onClick={() => {
+                              // Here you would typically call an API endpoint to remove the picture
+                              // For now, just clearing the local state preview
                               setUser((prev) => ({
                                 ...prev,
                                 profilePicture: "",
-                              }))
-                            }
-                            className="rounded-full p-2"
+                              }));
+                              // TODO: Add API call to remove profile picture on server
+                            }}
+                            className="rounded-full p-2 text-white hover:text-red-400"
                             aria-label="Remove profile picture"
                           >
                             <FontAwesomeIcon
                               icon={faTimes}
-                              className="size-12 text-red-200"
+                              className="size-6"
                             />
                           </button>
                         </div>
@@ -237,7 +244,7 @@ const GeneralPage = () => {
 
                     {/* File Upload Section */}
                     <div className="flex flex-col">
-                      <label className="text-sm font-medium text-dark dark:text-light">
+                      <label className="text-sm font-medium text-dark dark:text-light mb-1">
                         Upload Profile Picture
                       </label>
                       <input
@@ -266,10 +273,11 @@ const GeneralPage = () => {
 
                       <label
                         htmlFor="profile-upload"
-                        className="cursor-pointer bg-green-200 text-white px-3 py-1 rounded text-sm mt-1 text-center w-fit hover:bg-green-100"
+                        className="cursor-pointer bg-green-200 text-white px-3 py-1 rounded text-sm text-center w-fit hover:bg-green-100"
                       >
                         Choose File
                       </label>
+                      <p className="text-xs text-gray-500 mt-1">Max 2MB</p>
                     </div>
                   </div>
 
@@ -282,7 +290,7 @@ const GeneralPage = () => {
                         setUser((prev) => ({ ...prev, firstName: val }))
                       }
                       width="large"
-                      isDisabled={true}
+                      isDisabled={true} // Typically non-editable, adjust if needed
                     />
                     <TextField
                       label="Last Name"
@@ -292,7 +300,7 @@ const GeneralPage = () => {
                         setUser((prev) => ({ ...prev, lastName: val }))
                       }
                       width="large"
-                      isDisabled={true}
+                      isDisabled={true} // Typically non-editable, adjust if needed
                     />
 
                     <div className="flex gap-4">
@@ -331,6 +339,7 @@ const GeneralPage = () => {
                       style="primary"
                       text="Save Changes"
                       onClick={handleSaveChanges}
+                      isDisabled={isSaving} // Disable button while saving
                     />
                   </div>
 
@@ -349,7 +358,7 @@ const GeneralPage = () => {
                       Weather Settings
                     </h2>
                     <p className="text-gray-300 mb-6">
-                      This applies across your account.
+                      Configure your weather preferences.
                     </p>
                   </div>
 
@@ -388,14 +397,23 @@ const GeneralPage = () => {
                             aiSuggestions: !prev.aiSuggestions,
                           }))
                         }
-                        className="w-5 h-5"
+                        className="w-5 h-5 rounded text-green-600 focus:ring-green-500 dark:focus:ring-green-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
                       />
                       <label
                         htmlFor="ai-suggestions"
                         className="text-sm dark:text-light"
                       >
-                        Enable AI Suggestions
+                        Enable AI Suggestions for weather insights
                       </label>
+                    </div>
+                    {/* Add Save button for Weather Settings */}
+                    <div className="mt-6">
+                      <Button
+                        style="primary"
+                        text="Save Weather Settings"
+                        // onClick={handleSaveWeatherSettings} // TODO: Create this handler
+                        // isLoading={isSavingWeather} // TODO: Add state for this
+                      />
                     </div>
                   </div>
                 </div>
@@ -407,6 +425,7 @@ const GeneralPage = () => {
                   <h2 className="text-lg font-semibold mb-4 dark:text-light">
                     Poultry Settings
                   </h2>
+                  {/* TODO: Add Poultry specific settings form */}
                 </div>
               )}
 
@@ -416,6 +435,7 @@ const GeneralPage = () => {
                   <h2 className="text-lg font-semibold mb-4 dark:text-light">
                     Fishery Settings
                   </h2>
+                  {/* TODO: Add Fishery specific settings form */}
                 </div>
               )}
 
@@ -425,6 +445,7 @@ const GeneralPage = () => {
                   <h2 className="text-lg font-semibold mb-4 dark:text-light">
                     Animal Husbandry Settings
                   </h2>
+                  {/* TODO: Add Animal Husbandry specific settings form */}
                 </div>
               )}
             </section>

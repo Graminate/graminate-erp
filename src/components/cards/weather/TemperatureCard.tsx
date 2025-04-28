@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Coordinates } from "@/types/card-props";
 import { fetchCityName } from "@/lib/utils/loadWeather";
 import axios from "axios";
@@ -38,115 +38,132 @@ const TemperatureCard = ({ lat, lon, fahrenheit }: Coordinates) => {
     "Small"
   );
 
-  function convertToFahrenheit(celsius: number): number {
+  const convertToFahrenheit = useCallback((celsius: number): number => {
     return Math.round((celsius * 9) / 5 + 32);
-  }
+  }, []);
 
-  function formatTemperature(
-    value: number | null,
-    showUnit: boolean = true
-  ): string {
-    if (value === null) return "N/A";
-    const temp = fahrenheit ? convertToFahrenheit(value) : value;
-    return showUnit ? `${temp}°${fahrenheit ? "F" : "C"}` : `${temp}°`;
-  }
+  const formatTemperature = useCallback(
+    (value: number | null, showUnit: boolean = true): string => {
+      if (value === null) return "N/A";
+      const temp = fahrenheit ? convertToFahrenheit(value) : value;
+      return showUnit ? `${temp}°${fahrenheit ? "F" : "C"}` : `${temp}°`;
+    },
+    [fahrenheit, convertToFahrenheit]
+  );
 
-  async function fetchWeather(latitude: number, longitude: number) {
-    try {
-      const response = await axios.get("/api/weather", {
-        params: { lat: latitude, lon: longitude },
-      });
-
-      const data = response.data;
-      const todayDate = new Date(data.current.time).toISOString().split("T")[0];
-
-      const dailyData: DailyForecast[] = data.daily.time
-        .map((date: string, index: number): DailyForecast => {
-          const day = new Date(date).toLocaleDateString("en-US", {
-            weekday: "short",
-          });
-
-          let icon = "☀️";
-          if (data.daily.snowfallSum[index] > 0) icon = "❄️";
-          else if (data.daily.rainSum[index] > 0) icon = "🌧";
-          else if (data.daily.showersSum[index] > 0) icon = "🌦";
-          else if (data.daily.precipitationSum[index] > 0) icon = "🌧";
-          else if (data.daily.cloudCover?.[index] > 50) icon = "☁️";
-
-          return {
-            day,
-            maxTemp: Math.round(data.daily.temperature2mMax[index]),
-            minTemp: Math.round(data.daily.temperature2mMin[index]),
-            icon,
-          };
-        })
-        .filter((_: any, index: number) => index < 7);
-
-      const hourlyTime = data.hourly.time;
-      const hourlyTemperature = Object.values(data.hourly.temperature2m);
-      const hourlyData: HourlyForecast[] = hourlyTime.map(
-        (time: string, index: number) => ({
-          time: time.split("T")[1].split(":")[0],
-          date: time.split("T")[0],
-          temperature: Math.round(hourlyTemperature[index] as number),
-          icon: getHourlyWeatherIcon(
-            data.hourly.rain?.[index],
-            data.hourly.snowfall?.[index],
-            data.hourly.cloudCover?.[index],
-            data.hourly.isDay?.[index]
-          ),
-        })
-      );
-
-      const now = new Date(data.current.time);
-      const endOfForecast = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-      const filteredHourlyData = hourlyData.filter((hour) => {
-        const hourDate = new Date(`${hour.date}T${hour.time}:00:00`);
-        return hourDate >= now && hourDate < endOfForecast;
-      });
-
-      const filteredDailyData = dailyData
-        .filter((dayData, index) => {
-          const dayDate = new Date(data.daily.time[index]);
-          const today = new Date();
-          today.setHours(0, 0, 0, 0);
-          dayDate.setHours(0, 0, 0, 0);
-          return dayDate > today;
-        })
-        .slice(0, 6);
-
-      return {
-        temperature: Math.round(data.current.temperature2m),
-        apparentTemperature: Math.round(data.current.apparentTemperature),
-        isDay: data.current.isDay,
-        rain: data.current.rain,
-        snowfall: data.current.snowfall,
-        cloudCover: data.current.cloudCover,
-        maxTemp: Math.round(data.daily.temperature2mMax[0]),
-        minTemp: Math.round(data.daily.temperature2mMin[0]),
-        hourlyForecast: filteredHourlyData,
-        dailyForecast: filteredDailyData,
+  const fetchWeather = useCallback(
+    async (latitude: number, longitude: number) => {
+      const getHourlyWeatherIcon = (
+        rain?: number,
+        snowfall?: number,
+        cloudCover?: number,
+        isDayHour?: number
+      ): string => {
+        if (snowfall && snowfall > 0) return "❄️";
+        if (rain && rain > 0) return "🌧";
+        if (cloudCover && cloudCover > 50) return "☁️";
+        return isDayHour === 1 ? "☀️" : "🌙";
       };
-    } catch (err: any) {
-      console.error(
-        err.response?.data?.message || err.message || "Unknown error occurred"
-      );
-      throw new Error("Failed to fetch weather data");
-    }
-  }
 
-  function getHourlyWeatherIcon(
-    rain?: number,
-    snowfall?: number,
-    cloudCover?: number,
-    isDayHour?: number
-  ): string {
-    if (snowfall && snowfall > 0) return "❄️";
-    if (rain && rain > 0) return "🌧";
-    if (cloudCover && cloudCover > 50) return "☁️";
+      try {
+        const response = await axios.get("/api/weather", {
+          params: { lat: latitude, lon: longitude },
+        });
 
-    return isDayHour === 1 ? "☀️" : "🌙";
-  }
+        const data = response.data;
+
+        const dailyData: DailyForecast[] = data.daily.time
+          .map((date: string, index: number): DailyForecast => {
+            const day = new Date(date).toLocaleDateString("en-US", {
+              weekday: "short",
+            });
+
+            let icon = "☀️";
+            if (data.daily.snowfallSum[index] > 0) icon = "❄️";
+            else if (data.daily.rainSum[index] > 0) icon = "🌧";
+            else if (data.daily.showersSum[index] > 0) icon = "🌦";
+            else if (data.daily.precipitationSum[index] > 0) icon = "🌧";
+            else if (data.daily.cloudCover?.[index] > 50) icon = "☁️";
+
+            return {
+              day,
+              maxTemp: Math.round(data.daily.temperature2mMax[index]),
+              minTemp: Math.round(data.daily.temperature2mMin[index]),
+              icon,
+            };
+          })
+          .filter((_: unknown, index: number) => index < 7);
+
+        const hourlyTime = data.hourly.time;
+        const hourlyTemperature = Object.values(data.hourly.temperature2m);
+        const hourlyData: HourlyForecast[] = hourlyTime.map(
+          (time: string, index: number) => ({
+            time: time.split("T")[1].split(":")[0],
+            date: time.split("T")[0],
+            temperature: Math.round(hourlyTemperature[index] as number),
+            icon: getHourlyWeatherIcon(
+              data.hourly.rain?.[index],
+              data.hourly.snowfall?.[index],
+              data.hourly.cloudCover?.[index],
+              data.hourly.isDay?.[index]
+            ),
+          })
+        );
+
+        const now = new Date(data.current.time);
+        const endOfForecast = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+        const filteredHourlyData = hourlyData.filter((hour) => {
+          const hourDate = new Date(`${hour.date}T${hour.time}:00:00`);
+          return hourDate >= now && hourDate < endOfForecast;
+        });
+
+        const filteredDailyData = dailyData
+          .filter((dayData, index) => {
+            const dayDate = new Date(data.daily.time[index]);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            dayDate.setHours(0, 0, 0, 0);
+            return dayDate > today;
+          })
+          .slice(0, 6);
+
+        return {
+          temperature: Math.round(data.current.temperature2m),
+          apparentTemperature: Math.round(data.current.apparentTemperature),
+          isDay: data.current.isDay,
+          rain: data.current.rain,
+          snowfall: data.current.snowfall,
+          cloudCover: data.current.cloudCover,
+          maxTemp: Math.round(data.daily.temperature2mMax[0]),
+          minTemp: Math.round(data.daily.temperature2mMin[0]),
+          hourlyForecast: filteredHourlyData,
+          dailyForecast: filteredDailyData,
+        };
+      } catch (err: unknown) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Unknown error occurred";
+        console.error(errorMessage);
+        throw new Error("Failed to fetch weather data");
+      }
+    },
+    []
+  );
+
+  const getHourlyWeatherIcon = useCallback(
+    (
+      rain?: number,
+      snowfall?: number,
+      cloudCover?: number,
+      isDayHour?: number
+    ): string => {
+      if (snowfall && snowfall > 0) return "❄️";
+      if (rain && rain > 0) return "🌧";
+      if (cloudCover && cloudCover > 50) return "☁️";
+
+      return isDayHour === 1 ? "☀️" : "🌙";
+    },
+    []
+  );
 
   useEffect(() => {
     if (lat !== undefined && lon !== undefined) {
@@ -165,13 +182,15 @@ const TemperatureCard = ({ lat, lon, fahrenheit }: Coordinates) => {
           setLocationName(city);
           setError(null);
         })
-        .catch((err: any) => {
-          setError(err.message);
+        .catch((err: unknown) => {
+          const errorMessage =
+            err instanceof Error ? err.message : "Unknown error occurred";
+          setError(errorMessage);
         });
     } else {
       setError("Latitude and Longitude are required to fetch weather data.");
     }
-  }, [lat, lon]);
+  }, [lat, lon, fetchWeather]);
 
   return (
     <div
@@ -251,7 +270,7 @@ const TemperatureCard = ({ lat, lon, fahrenheit }: Coordinates) => {
               displayMode === "Large") && (
               <div className="flex justify-between w-full items-start">
                 <div className="text-left">
-                  <p className="text-lg font-semibold">{locationName}</p>{" "}
+                  <p className="text-lg font-semibold">{locationName}</p>
                   <p className="text-4xl font-bold mt-1">
                     {formatTemperature(temperature)}
                   </p>
@@ -279,13 +298,13 @@ const TemperatureCard = ({ lat, lon, fahrenheit }: Coordinates) => {
 
           {(displayMode === "Medium" || displayMode === "Large") && (
             <>
-              <hr className="my-4 w-full border-white/50" />{" "}
+              <hr className="my-4 w-full border-white/50" />
               <div className="w-full overflow-x-auto">
                 <div className="flex space-x-4 pb-2">
                   {hourlyForecast.map((hour, index) => (
                     <div key={index} className="text-center flex-shrink-0 w-14">
                       <p className="text-sm">{hour.time}:00</p>
-                      <p className="text-3xl my-1">{hour.icon}</p>{" "}
+                      <p className="text-3xl my-1">{hour.icon}</p>
                       <p className="text-md font-medium">
                         {formatTemperature(hour.temperature, false)}
                       </p>
@@ -297,7 +316,7 @@ const TemperatureCard = ({ lat, lon, fahrenheit }: Coordinates) => {
           )}
           {displayMode === "Large" && (
             <>
-              <hr className="my-3 w-full border-white/50" />{" "}
+              <hr className="my-3 w-full border-white/50" />
               <div className="w-full flex flex-col items-center space-y-1">
                 {dailyForecast.map((day, index) => (
                   <div

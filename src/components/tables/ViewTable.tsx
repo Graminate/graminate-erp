@@ -1,5 +1,5 @@
 import { useAllRowsSelected } from "@/hooks/tables";
-import React, { useState, useEffect, JSX } from "react";
+import React, { useState, JSX } from "react";
 
 type FilterTasksFn = (column: {
   id: string;
@@ -73,13 +73,6 @@ const ViewTable = ({ columns, filterTasks, searchQuery, headers }: Props) => {
     } else {
       setSelectedRows(new Set());
     }
-  };
-
-  const areAllRowsSelected = () => {
-    const allTaskIds = columns.flatMap((column) =>
-      filterTasks(column).map((task) => task.id)
-    );
-    return allTaskIds.every((id) => selectedRows.has(id));
   };
 
   const hasData = columns.some((column) => filterTasks(column).length > 0);

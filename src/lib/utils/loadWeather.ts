@@ -1,6 +1,12 @@
 import axios from "axios";
 import { fetchWeatherApi } from "openmeteo";
 
+interface AddressComponent {
+  types: string[];
+  long_name: string;
+  short_name: string;
+}
+
 export async function getWeather(latitude: number, longitude: number) {
   const params = {
     latitude,
@@ -65,25 +71,22 @@ export async function getWeather(latitude: number, longitude: number) {
     timezone: "auto",
   };
 
-  const url = "https://api.open-meteo.com/v1/forecast";
-
   try {
-    const responses = await fetchWeatherApi(url, params);
+    const responses = await fetchWeatherApi(
+      "https://api.open-meteo.com/v1/forecast",
+      params
+    );
 
-    // Extract data
     const response = responses[0];
 
-    // Attributes for timezone and location
     const utcOffsetSeconds = response.utcOffsetSeconds();
     const current = response.current()!;
     const hourly = response.hourly()!;
     const daily = response.daily()!;
 
-    // Helper function to form time ranges
     const range = (start: number, stop: number, step: number) =>
       Array.from({ length: (stop - start) / step }, (_, i) => start + i * step);
 
-    // Construct weather data object
     const weatherData = {
       current: {
         time: new Date((Number(current.time()) + utcOffsetSeconds) * 1000),
@@ -185,14 +188,30 @@ export async function fetchCityName(
 
     const data = response.data;
     const cityComponent = data.results[0]?.address_components.find(
-      (component: any) => component.types.includes("locality")
+      (component: AddressComponent) => component.types.includes("locality")
     );
 
     return cityComponent?.long_name || "Your Location";
-  } catch (err: any) {
-    console.error(
-      err.response?.data?.error_message || err.message || "Unknown error"
-    );
+  } catch (err: unknown) {
+    let errorMessage = "Unknown error";
+
+    if (err instanceof Error) {
+      errorMessage = err.message;
+    } else if (
+      typeof err === "object" &&
+      err !== null &&
+      "response" in err &&
+      typeof err.response === "object" &&
+      err.response !== null &&
+      "data" in err.response &&
+      typeof err.response.data === "object" &&
+      err.response.data !== null &&
+      "error_message" in err.response.data
+    ) {
+      errorMessage = String(err.response.data.error_message);
+    }
+
+    console.error(errorMessage);
     return "Unknown city";
   }
 }

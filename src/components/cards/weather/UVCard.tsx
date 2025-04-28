@@ -10,13 +10,29 @@ import axios from "axios";
 import Loader from "@/components/ui/Loader";
 
 type UVHourly = { time: Date; uv: number };
+interface DailyData {
+  time: Date[];
+  uvIndexMax: number[];
+  uvIndexMin: number[];
+  daylightDuration: number[];
+}
+
+interface HourlyData {
+  time: Date[];
+  uvIndexHourly: number[];
+}
+
+interface WeatherData {
+  daily: DailyData;
+  hourly: HourlyData;
+}
 
 const UVCard = ({ lat, lon }: Coordinates) => {
   const [lowestRiskLevel, setLowestRiskLevel] = useState<string>("");
   const [highestRiskLevel, setHighestRiskLevel] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
   const [displayMode, setDisplayMode] = useState<"Small" | "Large">("Small");
-  const [weatherData, setWeatherData] = useState<any>(null);
+  const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [uvIndexToday, setUvIndexToday] = useState<number | null>(null);
   const [hourlyUVDataByDay, setHourlyUVDataByDay] = useState<
     { day: Date; uvHours: UVHourly[] }[]
@@ -69,10 +85,10 @@ const UVCard = ({ lat, lon }: Coordinates) => {
 
       const data = response.data;
       return { daily: data.daily, hourly: data.hourly };
-    } catch (err: any) {
-      console.error(
-        err.response?.data?.message || err.message || "Unknown error occurred"
-      );
+    } catch (err: unknown) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Unknown error occurred";
+      console.error(errorMessage);
       throw new Error("Failed to fetch UV data");
     }
   }
@@ -88,7 +104,6 @@ const UVCard = ({ lat, lon }: Coordinates) => {
       return { label: "Very High", color: "red" };
     return { label: "Extreme", color: "purple" };
   }
-
   const weekDates = Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
     d.setDate(d.getDate() + i);
@@ -102,18 +117,24 @@ const UVCard = ({ lat, lon }: Coordinates) => {
   useEffect(() => {
     if (lat !== undefined && lon !== undefined) {
       Promise.all([fetchUVData(lat, lon), fetchCityName(lat, lon)])
-        .then(([fetchedData, _city]) => {
-          fetchedData.daily.time = fetchedData.daily.time.map(
-            (d: string) => new Date(d)
-          );
-          fetchedData.hourly.time = fetchedData.hourly.time.map(
-            (d: string) => new Date(d)
-          );
-          setWeatherData(fetchedData);
+        .then(([fetchedData]) => {
+          const processedData: WeatherData = {
+            daily: {
+              ...fetchedData.daily,
+              time: fetchedData.daily.time.map((d: string) => new Date(d)),
+            },
+            hourly: {
+              ...fetchedData.hourly,
+              time: fetchedData.hourly.time.map((d: string) => new Date(d)),
+            },
+          };
+          setWeatherData(processedData);
           setError(null);
         })
-        .catch((err: any) => {
-          setError(err.message);
+        .catch((err: unknown) => {
+          const errorMessage =
+            err instanceof Error ? err.message : "Unknown error occurred";
+          setError(errorMessage);
         });
     } else {
       setError("Latitude and Longitude are required.");
@@ -126,13 +147,13 @@ const UVCard = ({ lat, lon }: Coordinates) => {
       let startIndex = weatherData.daily.time.findIndex(
         (d: Date) => d.toISOString().split("T")[0] >= today
       );
-      if (startIndex === -1 || startIndex === undefined) startIndex = 0;
+      if (startIndex === -1) startIndex = 0;
 
       const maxUV = weatherData.daily.uvIndexMax?.[startIndex] ?? 0;
       const minUV = weatherData.daily.uvIndexMin?.[startIndex] ?? maxUV;
 
-      const hourlyTimes = weatherData.hourly.time as Date[];
-      const hourlyUVs = weatherData.hourly.uvIndexHourly as number[];
+      const hourlyTimes = weatherData.hourly.time;
+      const hourlyUVs = weatherData.hourly.uvIndexHourly;
 
       const now = new Date();
       let closestUV = 0;
@@ -161,14 +182,9 @@ const UVCard = ({ lat, lon }: Coordinates) => {
           const nowMinutes = now.getHours() * 60 + now.getMinutes();
           const sunriseMins = parseTimeToMinutes(sunrise);
           const sunsetMins = parseTimeToMinutes(sunset);
-          if (nowMinutes >= sunriseMins && nowMinutes <= sunsetMins) {
-            closestUV = 0;
-          } else {
-            closestUV = 0;
-          }
+          closestUV =
+            nowMinutes >= sunriseMins && nowMinutes <= sunsetMins ? 0 : 0;
         }
-      } else {
-        closestUV = 0;
       }
 
       setUvIndexToday(closestUV < 0 ? 0 : closestUV);
@@ -180,12 +196,11 @@ const UVCard = ({ lat, lon }: Coordinates) => {
 
   useEffect(() => {
     if (weatherData) {
-      const uvData = weatherData.daily.time.map((day: Date, i: number) => {
+      const uvData = weatherData.daily.time.map((day: Date) => {
         const uvHours: UVHourly[] = weatherData.hourly.time
           .map((hour: Date, idx: number) => {
             if (hour.toDateString() === day.toDateString()) {
               const uvValue = weatherData.hourly.uvIndexHourly[idx];
-
               return {
                 time: hour,
                 uv: uvValue < 0 ? 0 : uvValue,
@@ -193,9 +208,7 @@ const UVCard = ({ lat, lon }: Coordinates) => {
             }
             return null;
           })
-          .filter(
-            (x: UVHourly | null): x is UVHourly => x !== null && x.uv > 0
-          );
+          .filter((x): x is UVHourly => x !== null && x.uv > 0);
         return { day, uvHours };
       });
       setHourlyUVDataByDay(uvData);

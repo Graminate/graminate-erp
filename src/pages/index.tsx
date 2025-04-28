@@ -88,18 +88,26 @@ const SignIn = () => {
     }
 
     try {
-      const response = await axios.post(
-        `${API_BASE_URL}/user/login`,
-        loginData
-      );
+      const response = await axios.post<{
+        access_token: string;
+        user: { user_id: string };
+      }>(`${API_BASE_URL}/user/login`, loginData);
       const { access_token, user } = response.data;
       localStorage.setItem("token", access_token);
       router.push(`/platform/${user.user_id}`);
-    } catch (err) {
-      const error = err as any;
-      const status = error?.response?.status;
-      const serverMessage =
-        error?.response?.data?.error || error?.response?.data?.message;
+    } catch (err: unknown) {
+      let status: number | undefined;
+      let serverMessage: string | undefined = "An unknown error occurred.";
+
+      if (axios.isAxiosError(err)) {
+        status = err.response?.status;
+        serverMessage =
+          err.response?.data?.error ||
+          err.response?.data?.message ||
+          err.message;
+      } else if (err instanceof Error) {
+        serverMessage = err.message;
+      }
 
       if (status === 401 && serverMessage === "User does not exist") {
         Swal.fire({
@@ -116,6 +124,7 @@ const SignIn = () => {
           confirmButtonText: "OK",
         });
       }
+      console.error("Login Error:", err);
     }
   };
 
@@ -178,11 +187,18 @@ const SignIn = () => {
       });
 
       setIsOtpModalOpen(true);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      let errorMessage = "Failed to send OTP. Please try again.";
+      if (axios.isAxiosError(error)) {
+        errorMessage =
+          error.response?.data?.message || error.message || errorMessage;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
       console.error("Error sending OTP:", error);
       Swal.fire({
         title: "Error",
-        text: "Failed to send OTP. Please try again.",
+        text: errorMessage,
         icon: "error",
         confirmButtonText: "OK",
       });
@@ -191,7 +207,7 @@ const SignIn = () => {
 
   const handleOtpValidation = async (otp: string) => {
     try {
-      const verifyResponse = await axios.post(
+      const verifyResponse = await axios.post<{ success: boolean }>(
         `${API_BASE_URL}/otp/verify-otp`,
         {
           email: userEmailForOtp,
@@ -222,8 +238,19 @@ const SignIn = () => {
 
       setIsOtpModalOpen(false);
       toggleForm();
-    } catch (error: any) {
-      if (error.response?.status === 409) {
+    } catch (error: unknown) {
+      let errorMessage = "An error occurred. Please try again later.";
+      let status: number | undefined;
+
+      if (axios.isAxiosError(error)) {
+        status = error.response?.status;
+        errorMessage =
+          error.response?.data?.message || error.message || errorMessage;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+
+      if (status === 409) {
         Swal.fire({
           title: "User already exists",
           text: "Please use a different email or phone number.",
@@ -233,9 +260,7 @@ const SignIn = () => {
       } else {
         Swal.fire({
           title: "Error",
-          text:
-            error.response?.data?.message ||
-            "An error occurred. Please try again later.",
+          text: errorMessage,
           icon: "error",
           confirmButtonText: "OK",
         });
@@ -310,7 +335,7 @@ const SignIn = () => {
                   </p>
                 </form>
                 <p className="text-center mt-4 text-sm text-gray-600 dark:text-gray-300">
-                  Don't have an account?{" "}
+                  Don&apos;t have an account?{" "}
                   <button
                     className="text-blue-200 hover:underline focus:outline-none"
                     type="button"

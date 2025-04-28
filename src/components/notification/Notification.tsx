@@ -6,7 +6,7 @@ export const Notification = ({
   notification,
 }: {
   id: number;
-  notification: any;
+  notification: { title: string; description: string };
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id });

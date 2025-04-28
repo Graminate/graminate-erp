@@ -3,6 +3,7 @@ import {
   faDroplet,
   faSun,
   faThermometerHalf,
+  IconDefinition,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React from "react";
@@ -15,15 +16,13 @@ type EnvironmentCardProps = {
   onCustomUrlSubmit: (url: string) => void;
 };
 
-const MetricItem = ({
-  icon,
-  value,
-  label,
-}: {
-  icon: any;
+type MetricItemProps = {
+  icon: IconDefinition;
   value: string | React.ReactNode;
   label: string;
-}) => (
+};
+
+const MetricItem = ({ icon, value, label }: MetricItemProps) => (
   <div className="flex flex-col items-center justify-center text-center p-4 bg-gray-50 dark:bg-gray-700 rounded-lg space-y-1 shadow-sm hover:shadow-md transition-shadow duration-200">
     <FontAwesomeIcon
       icon={icon}

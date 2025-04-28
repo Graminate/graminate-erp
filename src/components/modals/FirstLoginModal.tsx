@@ -55,6 +55,18 @@ const FirstLoginModal = ({ isOpen, onSubmit }: FirstLoginModalProps) => {
     });
   };
 
+  const handleSubmit = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      await onSubmit(businessName.trim(), businessType, selectedSubTypes);
+    } catch (error: unknown) {
+      console.error("Submission error:", error);
+      triggerToast("Failed to save details. Please try again later.", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [businessName, businessType, onSubmit, selectedSubTypes]);
+
   const handleBusinessTypeSubmit = useCallback(
     (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault();
@@ -64,20 +76,8 @@ const FirstLoginModal = ({ isOpen, onSubmit }: FirstLoginModalProps) => {
         handleSubmit();
       }
     },
-    [businessType]
+    [businessType, handleSubmit] // Added handleSubmit to dependencies
   );
-
-  // Final submission for users that did not select Producer.
-  const handleSubmit = useCallback(async () => {
-    setIsLoading(true);
-    try {
-      await onSubmit(businessName.trim(), businessType, selectedSubTypes);
-    } catch (error) {
-      triggerToast("Failed to save details. Please try again later.", "error");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [businessName, businessType, onSubmit]);
 
   // Submission for Producer users including their selected sub-types.
   const handleSubTypeSubmit = useCallback(
@@ -86,7 +86,8 @@ const FirstLoginModal = ({ isOpen, onSubmit }: FirstLoginModalProps) => {
       setIsLoading(true);
       try {
         await onSubmit(businessName.trim(), businessType, selectedSubTypes);
-      } catch (error) {
+      } catch (error: unknown) {
+        console.error("Submission error:", error); // Added error logging
         triggerToast(
           "Failed to save details. Please try again later.",
           "error"

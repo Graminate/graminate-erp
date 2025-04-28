@@ -10,6 +10,23 @@ import axiosInstance from "@/lib/utils/axiosInstance";
 
 type View = "labour";
 
+interface LabourRecord {
+  labour_id: string;
+  full_name: string;
+  date_of_birth: string;
+  gender: string;
+  role: string;
+  contact_number: string;
+  aadhar_card_number: string;
+  address_line_1: string;
+  address_line_2?: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  created_at: string;
+  // Add other fields as needed
+}
+
 const LabourDatabase = () => {
   const router = useRouter();
   const { user_id, view: queryView } = router.query;
@@ -17,7 +34,7 @@ const LabourDatabase = () => {
   const view: View =
     typeof queryView === "string" ? (queryView as View) : "labour";
 
-  const [labourRecords, setLabourRecords] = useState<any[]>([]);
+  const [labourRecords, setLabourRecords] = useState<LabourRecord[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
@@ -33,11 +50,12 @@ const LabourDatabase = () => {
         );
 
         setLabourRecords(response.data.labours || []);
-      } catch (error: any) {
-        console.error(
-          "Error fetching labour data:",
-          error.response?.data?.error || error.message
-        );
+      } catch (error: unknown) {
+        if (error instanceof Error) {
+          console.error("Error fetching labour data:", error.message);
+        } else {
+          console.error("Unknown error fetching labour data");
+        }
       }
     };
 
@@ -144,7 +162,7 @@ const LabourDatabase = () => {
           <LabourForm
             view="labour"
             onClose={() => setIsSidebarOpen(false)}
-            onSubmit={(values: Record<string, string>) => {
+            onSubmit={() => {
               setIsSidebarOpen(false);
             }}
             formTitle="Add Labour"

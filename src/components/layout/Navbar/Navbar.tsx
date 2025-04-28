@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import NotificationBar from "../NotificationSideBar";
-
+import Image from "next/image";
 import type { User } from "@/types/card-props";
 import type { Navbar } from "@/types/card-props";
 import axiosInstance from "@/lib/utils/axiosInstance";
@@ -26,7 +26,6 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
   const [isDropdownOpen, setDropdownOpen] = useState<boolean>(false);
   const [isNotificationBarOpen, setNotificationBarOpen] =
     useState<boolean>(false);
-  const [notificationCount, setNotificationCount] = useState<number>(0);
 
   const notifications = [
     { title: "New Message.", description: "You have a new message" },
@@ -35,6 +34,8 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
       description: "A customer sent you a product request",
     },
   ];
+
+  const notificationCount = notifications.length;
 
   const userNavigation = [
     { name: "Pricing", href: `/platform/${userId}/pricing`, external: true },
@@ -60,10 +61,10 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
             data.imageUrl ||
             `https://eu.ui-avatars.com/api/?name=${data.first_name}+${data.last_name}&size=250`,
         });
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error(
           "Error fetching user details:",
-          error.response?.data?.error || error.message
+          error instanceof Error ? error.message : "Unknown error"
         );
       }
     }
@@ -78,10 +79,10 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
       localStorage.removeItem("chatMessages");
       localStorage.removeItem("token");
       router.push("/");
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(
         "Error during logout:",
-        error.response?.data?.error || error.message || "Logout failed."
+        error instanceof Error ? error.message : "Logout failed"
       );
     }
   };
@@ -107,10 +108,12 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
             <div className="relative z-10 flex px-2 lg:px-0">
               <div className="flex flex-shrink-0 items-center">
                 <div className="flex flex-row items-center gap-4">
-                  <img
+                  <Image
                     src={imageSrc}
                     alt="Graminate Logo"
                     className="h-10 w-auto"
+                    width={100}
+                    height={40}
                   />
                   <span className="hidden sm:inline text-bold text-3xl text-light">
                     Graminate
@@ -151,10 +154,12 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
                   onClick={toggleDropdown}
                   aria-expanded={isDropdownOpen}
                 >
-                  <img
+                  <Image
                     className="h-7 w-7 rounded-full"
                     src={user.imageUrl}
                     alt={user.name}
+                    width={28}
+                    height={28}
                   />
                 </button>
                 <span className="ml-2 text-white text-sm font-medium hidden lg:inline">
@@ -174,10 +179,12 @@ const Navbar = ({ imageSrc = "/images/logo.png", userId }: Navbar) => {
                   <div className="origin-top-right absolute right-0 top-12 w-96 rounded-md shadow-lg py-4 bg-white dark:bg-gray-700">
                     <div className="px-4 pb-3 border-b border-gray-500 dark:border-gray-300">
                       <div className="flex items-center">
-                        <img
+                        <Image
                           className="h-12 w-12 rounded-full"
                           src={user.imageUrl}
                           alt={user.name}
+                          width={48}
+                          height={48}
                         />
                         <div className="ml-3 flex-1 flex-col gap-1">
                           <p className="text-lg font-semibold text-dark dark:text-light">

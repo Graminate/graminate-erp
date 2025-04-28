@@ -9,9 +9,15 @@ import { triggerToast } from "@/stores/toast";
 import { GENDER, YESNO } from "@/constants/options";
 import axiosInstance from "@/lib/utils/axiosInstance";
 
+interface LabourData {
+  labour_id: number;
+  name: string;
+  rate: number;
+}
+
 const LabourDetails = () => {
   const router = useRouter();
-  const [labour, setLabour] = useState<any | null>(null);
+  const [labour, setLabour] = useState<LabourData | null>(null);
   const [displayName, setDisplayName] = useState("");
   const [fullName, setFullName] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
@@ -286,13 +292,27 @@ const LabourDetails = () => {
         mealAllowance: payload.meal_allowance?.toString() || "",
         paymentFrequency: payload.payment_frequency || "Monthly",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error updating labour:", error);
-      triggerToast(
-        error.response?.data?.error ||
-          "An error occurred while updating the labour.",
-        "error"
-      );
+
+      let errorMessage = "An error occurred while updating the labour.";
+
+      if (typeof error === "object" && error !== null) {
+        const potentialError = error as {
+          response?: { data?: { error?: string } };
+        };
+        if (potentialError.response?.data?.error) {
+          errorMessage = potentialError.response.data.error;
+        } else if ("message" in error && typeof error.message === "string") {
+          errorMessage = error.message;
+        }
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === "string") {
+        errorMessage = error;
+      }
+
+      triggerToast(errorMessage, "error");
     } finally {
       setSaving(false);
     }

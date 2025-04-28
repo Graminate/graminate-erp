@@ -110,20 +110,21 @@ export const useManageMarkers = (
     });
 
     markerInstancesRef.current = newMarkerInstances;
-  }, [map, markers]);
+  }, [map, markers, markerInstancesRef]);
 };
 
 export const useClearMarkersOnUnmount = (
   markerInstancesRef: React.MutableRefObject<Map<string, google.maps.Marker>>
 ) => {
   useEffect(() => {
+    const ref = markerInstancesRef; // Capture ref for cleanup
     return () => {
-      if (markerInstancesRef.current) {
-        markerInstancesRef.current.forEach((marker) => {
+      if (ref.current) {
+        ref.current.forEach((marker) => {
           marker.setMap(null);
         });
-        markerInstancesRef.current.clear();
+        ref.current.clear();
       }
     };
-  }, []);
+  }, [markerInstancesRef]);
 };

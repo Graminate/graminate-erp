@@ -7,11 +7,11 @@ type TaskListViewProps = {
   openTaskModal: (task: Task) => void;
 };
 
-const TaskListView: React.FC<TaskListViewProps> = ({
-  tasks,
-  columns,
+const TaskListView = ({
+  tasks = [],
+  columns = [],
   openTaskModal,
-}) => {
+}: TaskListViewProps) => {
   const getColumnName = (columnId: Id) => {
     return columns.find((col) => col.id === columnId)?.title || "Unknown";
   };
