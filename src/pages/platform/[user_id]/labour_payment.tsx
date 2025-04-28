@@ -5,6 +5,35 @@ import Head from "next/head";
 import Table from "@/components/tables/Table";
 import axiosInstance from "@/lib/utils/axiosInstance";
 
+interface Labour {
+  id: string | number;
+  name: string;
+  labour_id: string | number;
+  full_name: string;
+  base_salary: number;
+  aadhar_card_number: string;
+  contact_number: string;
+  address_line_1?: string;
+  address_line_2?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  created_at: string;
+}
+
+interface PaymentRecord {
+  id: string | number;
+  labour_id: string | number;
+  payment_date: string;
+  salary_paid: number;
+  bonus: number;
+  overtime_pay: number;
+  housing_allowance: number;
+  travel_allowance: number;
+  meal_allowance: number;
+  payment_status: "Pending" | "Paid" | "Failed" | string;
+}
+
 const LabourPayment = () => {
   const now = new Date();
   const currentMonth = now.getMonth();
@@ -13,8 +42,8 @@ const LabourPayment = () => {
   const { user_id } = router.query;
   const parsedUserId = Array.isArray(user_id) ? user_id[0] : user_id;
 
-  const [labourList, setLabourList] = useState<any[]>([]);
-  const [paymentRecords, setPaymentRecords] = useState<any[]>([]);
+  const [labourList, setLabourList] = useState<Labour[]>([]);
+  const [paymentRecords, setPaymentRecords] = useState<PaymentRecord[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [searchQuery, setSearchQuery] = useState("");
@@ -68,11 +97,25 @@ const LabourPayment = () => {
         const response = await axiosInstance.get(`/labour/${parsedUserId}`);
 
         setLabourList(response.data.labours || []);
-      } catch (error: any) {
-        console.error(
-          "Error fetching labours:",
-          error.response?.data?.error || error.message
-        );
+      } catch (error: unknown) {
+        const getErrorMessage = (err: unknown): string => {
+          if (typeof err === "object" && err !== null) {
+            const apiError = err as {
+              response?: { data?: { error?: string } };
+            };
+            if (apiError.response?.data?.error) {
+              return apiError.response.data.error;
+            }
+
+            const standardError = err as { message?: string };
+            if (standardError.message) {
+              return standardError.message;
+            }
+          }
+          return "An unexpected error occurred.";
+        };
+
+        console.error("Error fetching labours:", getErrorMessage(error));
       }
     };
 

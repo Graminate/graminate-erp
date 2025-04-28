@@ -32,7 +32,6 @@ type ColumnContainerProps = {
 const ColumnContainer = ({
   column,
   tasks,
-  deleteColumn,
   updateColumnTitle,
   openTicketModal,
   columnLimits,

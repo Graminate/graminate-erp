@@ -12,6 +12,7 @@ import jsPDF from "jspdf";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import { PAYMENT_STATUS } from "@/constants/options";
 import axiosInstance from "@/lib/utils/axiosInstance";
+import { AxiosError } from "axios";
 
 type Item = {
   description: string;
@@ -20,10 +21,22 @@ type Item = {
   amount: number;
 };
 
+interface Receipt {
+  invoice_id: string;
+  total: number;
+  items: Array<{
+    name: string;
+    price: number;
+    quantity: number;
+  }>;
+  paymentMethod: "cash" | "card" | "other";
+  created_at: string;
+}
+
 const ReceiptDetails = () => {
   const router = useRouter();
   const { user_id, data } = router.query;
-  const [receipt, setReceipt] = useState<any | null>(null);
+  const [receipt, setReceipt] = useState<Receipt | null>(null);
   const [receiptNumber, setReceiptNumber] = useState("");
   const [receiptTitle, setReceiptTitle] = useState("");
   const [customer, setCustomer] = useState("");
@@ -188,10 +201,10 @@ const ReceiptDetails = () => {
       });
 
       setReceipt(response.data.invoice);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error updating receipt:", error);
       triggerToast(
-        error.response?.data?.error ||
+        ((error as AxiosError).response?.data as { error?: string })?.error ||
           "An error occurred while updating the receipt.",
         "error"
       );

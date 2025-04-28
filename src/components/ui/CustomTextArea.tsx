@@ -40,7 +40,6 @@ const CustomTextArea = ({
   const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setTempValue(e.target.value);
   };
-
   const handleSave = async () => {
     try {
       const url = descriptionId
@@ -55,7 +54,7 @@ const CustomTextArea = ({
 
       onInput(tempValue);
       setIsFocused(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error saving description:", error);
       alert("Endpoint doesn't exist until now.");
     }

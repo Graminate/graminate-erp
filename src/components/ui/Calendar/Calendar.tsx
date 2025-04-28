@@ -22,7 +22,9 @@ const isTodayWithPastTime = (date: Date, time: string): boolean => {
     date.getDate() === now.getDate();
   if (!isToday) return false;
   const [timePart, modifier] = time.split(" ");
-  let [hours, minutes] = timePart.split(":").map(Number);
+  const timeParts = timePart.split(":").map(Number);
+  let hours = timeParts[0];
+  const minutes = timeParts[1];
   if (modifier === "PM" && hours < 12) hours += 12;
   if (modifier === "AM" && hours === 12) hours = 0;
   const taskTime = new Date(date);
@@ -159,7 +161,9 @@ const Calendar = () => {
 
   const convertTo24Hour = (time: string): string => {
     const [timePart, modifier] = time.split(" ");
-    let [hours, minutes] = timePart.split(":").map(Number);
+    const timeParts = timePart.split(":").map(Number);
+    let hours = timeParts[0];
+    const minutes = timeParts[1];
     if (modifier === "PM" && hours < 12) hours += 12;
     if (modifier === "AM" && hours === 12) hours = 0;
     return `${hours.toString().padStart(2, "0")}:${minutes

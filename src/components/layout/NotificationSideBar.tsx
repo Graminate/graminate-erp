@@ -9,6 +9,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  DragEndEvent,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -17,7 +18,6 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { Notification } from "../notification/Notification";
-
 import type { NotificationBar } from "@/types/card-props";
 
 const NotificationBar = ({
@@ -27,16 +27,14 @@ const NotificationBar = ({
   userId,
 }: NotificationBar) => {
   const [items, setItems] = useState(notifications.map((_, i) => i));
-  const [isFilterDropdownOpen, setFilterDropdownOpen] = useState(false);
-  const [isActionsDropdownOpen, setActionsDropdownOpen] = useState(false);
   const router = useRouter();
 
-  const handleDragEnd = (event: any) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    if (active.id !== over.id) {
+    if (active.id !== over?.id) {
       setItems((prev) => {
-        const oldIndex = prev.indexOf(active.id);
-        const newIndex = prev.indexOf(over.id);
+        const oldIndex = prev.indexOf(active.id as number);
+        const newIndex = prev.indexOf(over?.id as number);
         return arrayMove(prev, oldIndex, newIndex);
       });
     }
@@ -48,16 +46,6 @@ const NotificationBar = ({
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
-
-  const toggleFilterDropdown = () => {
-    setFilterDropdownOpen(!isFilterDropdownOpen);
-    setActionsDropdownOpen(false);
-  };
-
-  const toggleActionsDropdown = () => {
-    setActionsDropdownOpen(!isActionsDropdownOpen);
-    setFilterDropdownOpen(false);
-  };
 
   const navigateToSettings = () => {
     closeNotificationBar();
@@ -86,7 +74,6 @@ const NotificationBar = ({
       </div>
 
       <div className="p-4">
-        {/* Filter & Actions */}
         <div className="flex items-center justify-between mb-2 relative">
           <div className="flex space-x-2">{/* Buttons (if any) here */}</div>
 

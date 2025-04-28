@@ -34,9 +34,8 @@ import SortableItem from "./SortableItem";
 import ColumnContainer from "./ColumnContainer";
 import TaskCard from "./TaskCard";
 
-const TasksPage: React.FC = () => {
+const TasksPage = () => {
   const router = useRouter();
-  const { user_id, id: projectId } = router.query;
   const projectTitle =
     typeof router.query.title === "string" ? router.query.title : "";
 

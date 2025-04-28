@@ -45,15 +45,39 @@ export const useSalaryModalPrefill = (
 
   useEffect(() => {
     if (editMode && initialData) {
-      setPaymentDate(initialData.payment_date.slice(0, 10));
-      setSalaryPaid(initialData.salary_paid.toString());
-      setBonus(initialData.bonus.toString());
-      setOvertimePay(initialData.overtime_pay.toString());
-      setHousingAllowance(initialData.housing_allowance.toString());
-      setTravelAllowance(initialData.travel_allowance.toString());
-      setMealAllowance(initialData.meal_allowance.toString());
-      setPaymentStatus(initialData.payment_status);
+      // Ensure initialData and its properties exist before accessing them
+      setPaymentDate(
+        initialData.payment_date ? initialData.payment_date.slice(0, 10) : ""
+      );
+      setSalaryPaid(
+        initialData.salary_paid != null
+          ? initialData.salary_paid.toString()
+          : ""
+      );
+      setBonus(initialData.bonus != null ? initialData.bonus.toString() : "");
+      setOvertimePay(
+        initialData.overtime_pay != null
+          ? initialData.overtime_pay.toString()
+          : ""
+      );
+      setHousingAllowance(
+        initialData.housing_allowance != null
+          ? initialData.housing_allowance.toString()
+          : ""
+      );
+      setTravelAllowance(
+        initialData.travel_allowance != null
+          ? initialData.travel_allowance.toString()
+          : ""
+      );
+      setMealAllowance(
+        initialData.meal_allowance != null
+          ? initialData.meal_allowance.toString()
+          : ""
+      );
+      setPaymentStatus(initialData.payment_status || "Pending"); // Default if null/undefined
     } else {
+      // Resetting state when not in edit mode or no initial data
       setPaymentDate("");
       setSalaryPaid("");
       setBonus("");
@@ -63,5 +87,16 @@ export const useSalaryModalPrefill = (
       setMealAllowance("");
       setPaymentStatus("Pending");
     }
-  }, [editMode, initialData]);
+  }, [
+    editMode,
+    initialData,
+    setPaymentDate,
+    setSalaryPaid,
+    setBonus,
+    setOvertimePay,
+    setHousingAllowance,
+    setTravelAllowance,
+    setMealAllowance,
+    setPaymentStatus,
+  ]);
 };

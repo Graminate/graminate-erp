@@ -101,7 +101,7 @@ const PoultryHealthDetails = () => {
         month: "long",
         day: "numeric",
       });
-    } catch (e) {
+    } catch {
       return "Invalid Date";
     }
   };

@@ -46,7 +46,7 @@ const Dashboard = () => {
         } else {
           throw new Error("Invalid response: user not found");
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         if (!isMounted) return;
 
         let errorTitle = "Error";
@@ -126,7 +126,7 @@ const Dashboard = () => {
       );
 
       setIsSetupModalOpen(false);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error updating business info:", error);
       Swal.fire({
         title: "Error",

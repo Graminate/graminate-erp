@@ -56,7 +56,10 @@ const AddPoultryDataModal = ({
     remarks: "",
   });
 
-  const handleVetChange = (field: string, value: any) => {
+  const handleVetChange = (
+    field: keyof typeof vetForm,
+    value: string | number
+  ) => {
     setVetForm((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -76,14 +79,13 @@ const AddPoultryDataModal = ({
         vetForm.birdsIn > 0
           ? Math.round((vetForm.birdsDied / vetForm.birdsIn) * 10000) / 100
           : null;
-      // Update parent's formData with the computed mortality
+
       onChange({
         target: {
           name: "mortalityRate24h",
           value: mortality,
-          type: "number",
         },
-      } as any);
+      } as unknown as React.ChangeEvent<HTMLInputElement>);
 
       // Validation: Required fields only
       const missingFields: string[] = [];
@@ -182,62 +184,75 @@ const AddPoultryDataModal = ({
                 <TextField
                   label="Flock ID"
                   value={formData.flockId}
-                  onChange={(val) =>
-                    onChange({
-                      target: { name: "flockId", value: val, type: "text" },
-                    } as any)
-                  }
+                  onChange={(val) => {
+                    const event = {
+                      target: {
+                        name: "flockId",
+                        value: val,
+                        type: typeof val === "number" ? "number" : "text",
+                      },
+                    } as React.ChangeEvent<HTMLInputElement>;
+                    onChange(event);
+                  }}
                 />
                 <TextField
                   label="Breed Type"
                   value={formData.breedType}
-                  onChange={(val) =>
-                    onChange({
-                      target: { name: "breedType", value: val, type: "text" },
-                    } as any)
-                  }
+                  onChange={(val) => {
+                    const event = {
+                      target: {
+                        name: "breedType",
+                        value: val,
+                        type: "text",
+                      },
+                    } as React.ChangeEvent<HTMLInputElement>;
+                    onChange(event);
+                  }}
                 />
                 <TextField
                   label="Total Birds"
                   number
                   value={formData.totalChicks.toString()}
-                  onChange={(val) =>
-                    onChange({
+                  onChange={(val) => {
+                    const event = {
                       target: {
                         name: "totalChicks",
-                        value: val,
+                        value: Number(val),
                         type: "number",
                       },
-                    } as any)
-                  }
+                    } as unknown as React.ChangeEvent<HTMLInputElement>;
+                    onChange(event);
+                  }}
                 />
                 <TextField
                   label="Flock Age (Days)"
                   number
                   value={formData.flockAgeDays.toString()}
-                  onChange={(val) =>
-                    onChange({
+                  onChange={(val) => {
+                    const event = {
                       target: {
                         name: "flockAgeDays",
-                        value: val,
+                        value: Number(val),
                         type: "number",
                       },
-                    } as any)
-                  }
+                    } as unknown as React.ChangeEvent<HTMLInputElement>;
+                    onChange(event);
+                  }}
                 />
                 <TextField
                   label="Expected Market Date"
                   calendar
                   value={formData.expectedMarketDate}
-                  onChange={(val) =>
-                    onChange({
+                  onChange={(val) => {
+                    const event = {
                       target: {
                         name: "expectedMarketDate",
                         value: val,
                         type: "date",
                       },
-                    } as any)
-                  }
+                    } as React.ChangeEvent<HTMLInputElement>;
+                    onChange(event);
+                  }}
                 />
               </div>
             </fieldset>
@@ -355,15 +370,16 @@ const AddPoultryDataModal = ({
                   label="Total Eggs in Stock"
                   number
                   value={formData.totalEggsStock.toString()}
-                  onChange={(val) =>
-                    onChange({
+                  onChange={(val) => {
+                    const event = {
                       target: {
                         name: "totalEggsStock",
-                        value: val,
+                        value: Number(val),
                         type: "number",
                       },
-                    } as any)
-                  }
+                    } as unknown as React.ChangeEvent<HTMLInputElement>;
+                    onChange(event);
+                  }}
                 />
               </div>
             </fieldset>
@@ -380,29 +396,31 @@ const AddPoultryDataModal = ({
                   label="Daily Feed (kg)"
                   number
                   value={formData.dailyFeedConsumption.toString()}
-                  onChange={(val) =>
-                    onChange({
+                  onChange={(val) => {
+                    const event = {
                       target: {
                         name: "dailyFeedConsumption",
-                        value: val,
+                        value: Number(val),
                         type: "number",
                       },
-                    } as any)
-                  }
+                    } as unknown as React.ChangeEvent<HTMLInputElement>;
+                    onChange(event);
+                  }}
                 />
                 <TextField
                   label="Feed Inventory (Days Left)"
                   number
                   value={formData.feedInventoryDays.toString()}
-                  onChange={(val) =>
-                    onChange({
+                  onChange={(val) => {
+                    const event = {
                       target: {
                         name: "feedInventoryDays",
-                        value: val,
+                        value: Number(val),
                         type: "number",
                       },
-                    } as any)
-                  }
+                    } as unknown as React.ChangeEvent<HTMLInputElement>;
+                    onChange(event);
+                  }}
                 />
               </div>
             </fieldset>

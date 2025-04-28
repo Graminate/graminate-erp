@@ -8,7 +8,6 @@ type PlatformLayoutProps = {
 }
 
 const LoginLayout = ({ children }: PlatformLayoutProps) => {
-  const [isOpen] = useState(false);
   const [userId, setUserId] = useState<string>("");
   const router = useRouter();
 

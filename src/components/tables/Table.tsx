@@ -11,10 +11,17 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import axiosInstance from "@/lib/utils/axiosInstance";
 
+type RowType = unknown[];
+
+type TableData = {
+  columns: string[];
+  rows: RowType[];
+};
+
 type Props = {
-  onRowClick?: (row: any[]) => void;
-  data: { columns: string[]; rows: any[][] };
-  filteredRows: any[][];
+  onRowClick?: (row: RowType) => void;
+  data: TableData;
+  filteredRows: RowType[];
   currentPage: number;
   setCurrentPage: (page: number) => void;
   itemsPerPage: number;
@@ -62,12 +69,10 @@ const Table = ({
     return filteredRows.slice(start, end);
   }, [filteredRows, currentPage, itemsPerPage]);
 
-  const selectedRowCount = selectedRows.filter(
-    (isSelected) => isSelected
-  ).length;
+  const selectedRowCount = selectedRows.filter(Boolean).length;
 
   const sortedAndPaginatedRows = useMemo(() => {
-    let rows = [...paginatedRows];
+    const rows = [...paginatedRows];
     if (sortColumn !== null) {
       rows.sort((a, b) => {
         const valueA = a[sortColumn];
@@ -92,7 +97,7 @@ const Table = ({
       .map((isSelected, idx) =>
         isSelected ? sortedAndPaginatedRows[idx] : null
       )
-      .filter((row) => row !== null);
+      .filter((row): row is RowType => row !== null);
 
     return selected.length > 0 ? selected : sortedAndPaginatedRows;
   };
@@ -107,9 +112,19 @@ const Table = ({
 
     if (format === "pdf") {
       const doc = new jsPDF();
+      const pdfBodyData = exportRows.map((row) =>
+        row.map((cell) => {
+          if (cell === null || cell === undefined) {
+            return "";
+          }
+
+          return String(cell);
+        })
+      );
+
       autoTable(doc, {
         head: [data.columns],
-        body: exportRows,
+        body: pdfBodyData,
         styles: { fontSize: 8 },
         headStyles: { fillColor: [52, 73, 94] },
       });
@@ -134,6 +149,7 @@ const Table = ({
       URL.revokeObjectURL(url);
     }
   };
+
   const handleSelectAllChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const checked = e.target.checked;
     setSelectAll(checked);
@@ -148,7 +164,7 @@ const Table = ({
     setSelectedRows((prev) => {
       const newSelected = [...prev];
       newSelected[rowIndex] = checked;
-      setSelectAll(newSelected.every((val) => val));
+      setSelectAll(newSelected.every(Boolean));
       return newSelected;
     });
   };
@@ -159,7 +175,9 @@ const Table = ({
     paginatedRows.forEach((row, index) => {
       if (selectedRows[index]) {
         const id = row[0];
-        rowsToDelete.push(id);
+        if (typeof id === "number") {
+          rowsToDelete.push(id);
+        }
       }
     });
 
@@ -196,24 +214,28 @@ const Table = ({
 
     if (result.isConfirmed) {
       try {
-        let endpoint = "";
-        if (view === "contacts") endpoint = "contacts";
-        else if (view === "companies") endpoint = "companies";
-        else if (view === "contracts") endpoint = "contracts";
-        else if (view === "receipts") endpoint = "receipts";
-        else if (view === "tasks") endpoint = "tasks";
-        else if (view === "labour") endpoint = "labour";
-        else if (view === "poultry_health") endpoint = "poultry_health";
-        else endpoint = "inventory";
+        const endpointMap: Record<string, string> = {
+          contacts: "contacts",
+          companies: "companies",
+          contracts: "contracts",
+          receipts: "receipts",
+          tasks: "tasks",
+          labour: "labour",
+          poultry_health: "poultry_health",
+          inventory: "inventory",
+        };
+
+        const endpoint = endpointMap[view] || "inventory";
 
         await Promise.all(
           rowsToDelete.map(async (id) => {
             try {
               await axiosInstance.delete(`/${endpoint}/delete/${id}`);
-            } catch (error: any) {
+            } catch (error) {
               const message =
-                error.response?.data?.error ||
-                `Failed to delete ${endpoint.slice(0, -1)} with id ${id}`;
+                error instanceof Error
+                  ? error.message
+                  : `Failed to delete ${endpoint.slice(0, -1)} with id ${id}`;
               console.error(message);
               throw new Error(message);
             }
@@ -243,9 +265,12 @@ const Table = ({
   };
 
   const handleSelect = (item: string) => {
-    if (item === "25 per page") setItemsPerPage(25);
-    else if (item === "50 per page") setItemsPerPage(50);
-    else if (item === "100 per page") setItemsPerPage(100);
+    const itemsPerPageMap: Record<string, number> = {
+      "25 per page": 25,
+      "50 per page": 50,
+      "100 per page": 100,
+    };
+    setItemsPerPage(itemsPerPageMap[item] || 25);
   };
 
   return (
@@ -320,7 +345,6 @@ const Table = ({
                       "Table has been reset.",
                       "success"
                     ).then(() => location.reload());
-                    let endpoint = "";
                   } catch (err) {
                     console.error(err);
                     Swal.fire("Error", "Failed to reset table.", "error");
@@ -442,24 +466,52 @@ const Table = ({
                     data.columns[cellIndex] === "Status" ? (
                       <div className="flex gap-[2px] text-sm">
                         {(() => {
-                          const quantity =
-                            row[data.columns.indexOf("Quantity")];
+                          const quantityIndex =
+                            data.columns.indexOf("Quantity");
+
+                          if (quantityIndex === -1) {
+                            console.error(
+                              "Table Configuration Error: 'Quantity' column not found."
+                            );
+                            return "?";
+                          }
+
+                          const quantityValue = row[quantityIndex];
+
+                          if (typeof quantityValue !== "number") {
+                            console.warn(
+                              "Data Error: Quantity value is not a number for row:",
+                              row
+                            );
+
+                            return (
+                              <FontAwesomeIcon
+                                icon={faCircle}
+                                className="text-red-200"
+                              />
+                            );
+                          }
+                          const quantity = quantityValue;
+
                           const max = Math.max(
-                            ...filteredRows.map(
-                              (r) => r[data.columns.indexOf("Quantity")]
-                            )
+                            0,
+                            ...filteredRows
+                              .map((r) => r[quantityIndex])
+                              .filter((q): q is number => typeof q === "number")
                           );
-                          const ratio = quantity / max;
+
+                          const ratio = max > 0 ? quantity / max : 0;
+
                           let count = 0;
                           let color = "";
 
-                          if (ratio < 0.25) {
+                          if (quantity <= 0 || (max > 0 && ratio < 0.25)) {
                             count = 1;
                             color = "text-red-200";
-                          } else if (ratio < 0.5) {
+                          } else if (max > 0 && ratio < 0.5) {
                             count = 2;
                             color = "text-orange-400";
-                          } else if (ratio < 0.75) {
+                          } else if (max > 0 && ratio < 0.75) {
                             count = 3;
                             color = "text-yellow-200";
                           } else {
@@ -476,8 +528,14 @@ const Table = ({
                           ));
                         })()}
                       </div>
-                    ) : (
+                    ) : typeof cell === "string" ||
+                      typeof cell === "number" ||
+                      typeof cell === "boolean" ||
+                      cell === null ||
+                      cell === undefined ? (
                       cell
+                    ) : (
+                      String(cell)
                     )}
                   </td>
                 ))}

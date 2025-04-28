@@ -35,7 +35,7 @@ export default async function handler(
     const answer = chatResponse.choices[0]?.message?.content?.trim();
 
     return res.status(200).json({ answer });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("OpenAI API error:", error);
     return res
       .status(500)

@@ -5,6 +5,7 @@ import TextField from "@/components/ui/TextField";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import { useSalaryModalPrefill } from "@/hooks/modals";
 import axiosInstance from "@/lib/utils/axiosInstance";
+import axios from "axios";
 
 type PaymentData = {
   payment_id: number;
@@ -109,7 +110,7 @@ const SalaryModal = ({
     } catch (error) {
       console.error("Error submitting salary data:", error);
       const errorMessage =
-        (error as any).response?.data?.message ||
+        (axios.isAxiosError(error) && error.response?.data?.message) ||
         "An unexpected error occurred.";
       toastMessage.set({ message: errorMessage, type: "error" });
       showToast.set(true);

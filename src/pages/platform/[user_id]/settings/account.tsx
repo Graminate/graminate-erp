@@ -156,7 +156,7 @@ const AccountPage = () => {
             }
           >
             <p className="text-sm text-gray-600 dark:text-gray-300">
-              You won't be able to revert this! Deleting your account will
+              You won&apos;t be able to revert this! Deleting your account will
               permanently remove all your data.
             </p>
           </DeleteAccountModal>

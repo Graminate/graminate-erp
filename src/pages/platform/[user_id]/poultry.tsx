@@ -125,12 +125,18 @@ type PoultryFormData = {
   feedInventoryDays: number;
 };
 
+interface Alert {
+  id: string;
+  message: string;
+  type: "Critical" | "Warning" | "Info" | "Default";
+}
+
 const Poultry = () => {
   const router = useRouter();
   const { user_id } = router.query;
   const parsedUserId = Array.isArray(user_id) ? user_id[0] : user_id;
   const [salesPeriod, setSalesPeriod] = useState("This Month");
-  const [activeAlerts, setActiveAlerts] = useState<any[]>([]);
+  const [activeAlerts, setActiveAlerts] = useState<Alert[]>([]);
   const [temperature, setTemperature] = useState<number | null>(null);
   const [humidity, setHumidity] = useState<number | null>(null);
   const [lightHours, setLightHours] = useState<number | null>(null);
@@ -403,7 +409,7 @@ const Poultry = () => {
     setActiveAlerts(dynamicAlerts);
   }, [temperature, feedInventoryDays, nextVisit]);
 
-  const dismissAlert = (id: number) => {
+  const dismissAlert = (id: string) => {
     setActiveAlerts((current) => current.filter((alert) => alert.id !== id));
   };
 
