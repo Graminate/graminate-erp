@@ -9,7 +9,7 @@ import { triggerToast } from "@/stores/toast";
 import { COMPANY_TYPES } from "@/constants/options";
 import axiosInstance from "@/lib/utils/axiosInstance";
 
-interface Company {
+type Company = {
   company_id: string;
   name: string;
 }

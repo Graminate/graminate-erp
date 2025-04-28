@@ -26,7 +26,7 @@ ChartJS.register(
   ArcElement
 );
 
-interface FisheryItem {
+type FisheryItem = {
   id: string | number;
   name: string;
 }

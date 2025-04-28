@@ -9,7 +9,7 @@ import { triggerToast } from "@/stores/toast";
 import { GENDER, YESNO } from "@/constants/options";
 import axiosInstance from "@/lib/utils/axiosInstance";
 
-interface LabourData {
+type LabourData = {
   labour_id: number;
   name: string;
   rate: number;

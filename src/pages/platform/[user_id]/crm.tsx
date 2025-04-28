@@ -13,8 +13,7 @@ import { faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
 
 type View = "contacts" | "companies" | "contracts" | "receipts" | "tasks";
 
-// Define specific types for data
-interface Contact {
+type Contact = {
   contact_id: number;
   first_name: string;
   last_name: string;
@@ -26,10 +25,10 @@ interface Contact {
   city?: string;
   state?: string;
   postal_code?: string;
-  created_at: string; // Assuming date comes as string
-}
+  created_at: string;
+};
 
-interface Company {
+type Company = {
   company_id: number;
   company_name: string;
   owner_name: string;
@@ -41,40 +40,39 @@ interface Company {
   state?: string;
   postal_code?: string;
   type: string;
-}
+};
 
-interface Contract {
+type Contract = {
   deal_id: number;
   deal_name: string;
   partner: string;
   amount: number;
   stage: string;
-  start_date: string; // Assuming date comes as string
-  end_date: string; // Assuming date comes as string
-}
+  start_date: string;
+  end_date: string;
+};
 
-interface Receipt {
+type Receipt = {
   invoice_id: number;
   title: string;
   bill_to: string;
   amount_paid: number;
   amount_due: number;
-  due_date: string; // Assuming date comes as string
+  due_date: string;
   status: string;
 }
 
-interface Task {
+type Task = {
   task_id: number;
   project: string;
   task: string;
   status: string;
   description: string;
   priority: string;
-  deadline?: string; // Assuming date comes as string or is optional
-  created_on: string; // Assuming date comes as string
+  deadline?: string;
+  created_on: string;
 }
 
-// Define a union type for all possible fetched data items
 type FetchedDataItem = Contact | Company | Contract | Receipt | Task;
 
 const CRM = () => {
