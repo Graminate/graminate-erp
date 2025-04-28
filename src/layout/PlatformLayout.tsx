@@ -1,5 +1,4 @@
-import { useRef } from "react";
-import React, { useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/router";
 import Navbar from "@/components/layout/Navbar/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
@@ -17,7 +16,6 @@ type Props = {
 const PlatformLayout = ({ children }: Props) => {
   const [isLoadingAuth, setIsLoadingAuth] = useState(true);
   const [isAuthorized, setIsAuthorized] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [userId, setUserId] = useState<string>("");
   const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
   const router = useRouter();
@@ -80,7 +78,7 @@ const PlatformLayout = ({ children }: Props) => {
         });
 
         setIsAuthorized(true);
-      } catch (error: any) {
+      } catch (error: unknown) {
         setIsAuthorized(false);
         let errorText = "Session expired or unauthorized access.";
 
@@ -143,7 +141,7 @@ const PlatformLayout = ({ children }: Props) => {
       <Navbar userId={userId} />
       <div className="flex flex-1 min-h-screen">
         <Sidebar
-          isOpen={sidebarOpen}
+          isOpen={true} // Set to true since we removed the state
           userId={userId}
           onSectionChange={handleSectionChange}
         />

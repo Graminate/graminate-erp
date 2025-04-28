@@ -140,14 +140,14 @@ const TasksPage = () => {
   }, []);
 
   const filteredTasks = useMemo(() => {
-    return tasks.filter((task) => {
+    return (tasks || []).filter((task) => {
       const taskLabels = task.type
         ? task.type.split(",").map((l) => l.trim().toLowerCase())
         : [];
-      const filterLabelsLower = selectedFilterLabels.map((l) =>
+      const filterLabelsLower = (selectedFilterLabels || []).map((l) =>
         l.toLowerCase()
       );
-      const searchLower = searchQuery.toLowerCase().trim();
+      const searchLower = (searchQuery || "").toLowerCase().trim();
       const labelMatch =
         filterLabelsLower.length === 0 ||
         filterLabelsLower.some((label) => taskLabels.includes(label));
@@ -621,8 +621,8 @@ const TasksPage = () => {
 
           {isListView ? (
             <TaskListView
-              tasks={filteredTasks}
-              columns={columns}
+              tasks={filteredTasks || []}
+              columns={columns || []}
               openTaskModal={openTaskModal}
             />
           ) : (

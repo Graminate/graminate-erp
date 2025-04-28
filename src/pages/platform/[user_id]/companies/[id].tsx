@@ -9,10 +9,15 @@ import { triggerToast } from "@/stores/toast";
 import { COMPANY_TYPES } from "@/constants/options";
 import axiosInstance from "@/lib/utils/axiosInstance";
 
+interface Company {
+  company_id: string;
+  name: string;
+}
+
 const CompanyDetails = () => {
   const router = useRouter();
   const { user_id, data } = router.query;
-  const [company, setCompany] = useState<any | null>(null);
+  const [company, setCompany] = useState<Company | null>(null);
 
   const [initialCompanyName, setInitialCompanyName] = useState("");
   const [companyName, setCompanyName] = useState("");
@@ -147,13 +152,13 @@ const CompanyDetails = () => {
         postalCode: updated.postal_code || "",
         type: updated.type,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error updating company:", error);
-      triggerToast(
-        error.response?.data?.error ||
-          "An error occurred while updating the company.",
-        "error"
-      );
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "An error occurred while updating the company.";
+      triggerToast(errorMessage, "error");
     } finally {
       setSaving(false);
     }

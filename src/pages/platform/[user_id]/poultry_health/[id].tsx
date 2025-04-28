@@ -7,17 +7,35 @@ import Head from "next/head";
 import jsPDF from "jspdf";
 import domtoimage from "dom-to-image";
 
+interface PoultryHealthRecord {
+  poultry_health_id: string;
+  date: string;
+  created_at: string;
+  bird_type: string;
+  purpose: string;
+  veterinary_name: string;
+  birds_in?: number;
+  birds_died?: number;
+  deworming: boolean;
+  vaccines: string[] | string;
+  symptoms: string[] | string;
+  medications?: string;
+  actions_taken?: string;
+  remarks?: string;
+  mortality_rate?: number;
+}
+
 const PoultryHealthDetails = () => {
   const router = useRouter();
   const { user_id, data } = router.query;
-  const [record, setRecord] = useState<any | null>(null);
+  const [record, setRecord] = useState<PoultryHealthRecord | null>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const reportRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (data) {
       try {
-        const parsed = JSON.parse(data as string);
+        const parsed = JSON.parse(data as string) as PoultryHealthRecord;
         setRecord(parsed);
       } catch (error) {
         console.error("Error parsing poultry health data:", error);
@@ -91,10 +109,14 @@ const PoultryHealthDetails = () => {
 
   if (!record) return <Loader />;
 
-  const formatList = (list: any[] | string) =>
-    Array.isArray(list) ? list.filter(Boolean).join(", ") : list || "—";
+  const formatList = (list: string[] | string): string => {
+    if (Array.isArray(list)) {
+      return list.filter(Boolean).join(", ");
+    }
+    return list || "—";
+  };
 
-  const formatDate = (dateString: string | Date) => {
+  const formatDate = (dateString: string | Date): string => {
     try {
       return new Date(dateString).toLocaleDateString(undefined, {
         year: "numeric",

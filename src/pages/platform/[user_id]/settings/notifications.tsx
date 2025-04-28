@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useRouter } from "next/router";
 import SettingsBar from "@/components/layout/SettingsBar";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
@@ -55,15 +55,17 @@ const NotificationPage = () => {
 
   const [userType, setUserType] = useState<string | null>(null);
 
-  // Get the user_id from the route params
-  const params = useParams();
+  const router = useRouter();
 
   useEffect(() => {
     const fetchUserType = async () => {
       try {
-        const res = await fetch(`${API_BASE_URL}/user/type/${params.user_id}`, {
-          credentials: "include",
-        });
+        const res = await fetch(
+          `${API_BASE_URL}/user/type/${router.query.user_id}`,
+          {
+            credentials: "include",
+          }
+        );
         if (res.ok) {
           const data = await res.json();
           setUserType(data.type);
@@ -75,10 +77,10 @@ const NotificationPage = () => {
       }
     };
 
-    if (params.user_id) {
+    if (router.isReady && router.query.user_id) {
       fetchUserType();
     }
-  }, [params.user_id]);
+  }, [router.isReady, router.query.user_id]);
 
   const showWeatherAlerts = userType == "Producer";
 
@@ -164,7 +166,6 @@ const NotificationPage = () => {
                   />
                 </SectionCard>
 
-                {/* Conditionally render the Weather Alerts section */}
                 {showWeatherAlerts && (
                   <SectionCard
                     title="Weather Alerts"
@@ -246,13 +247,13 @@ const SectionCard = ({
       </div>
       <button
         onClick={onToggle}
-        className={`ml-4 relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent 
+        className={`ml-4 relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent
           transition-colors duration-200 ${
             enabled ? "bg-green-200" : "bg-gray-300"
           }`}
       >
         <span
-          className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform 
+          className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform
           duration-200 ${enabled ? "translate-x-5" : "translate-x-0"}`}
         />
       </button>

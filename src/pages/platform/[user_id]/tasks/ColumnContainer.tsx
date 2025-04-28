@@ -31,7 +31,7 @@ type ColumnContainerProps = {
 
 const ColumnContainer = ({
   column,
-  tasks,
+  tasks = [],
   updateColumnTitle,
   openTicketModal,
   columnLimits,
@@ -50,7 +50,15 @@ const ColumnContainer = ({
   const [newTaskType, setNewTaskType] = useState("");
   const [columnDropdownOpen, setColumnDropdownOpen] = useState(false);
 
-  const tasksIds = useMemo(() => tasks.map((task) => task.id), [tasks]);
+  const validTasks = useMemo(() => tasks.filter(Boolean), [tasks]);
+  const tasksIds = useMemo(
+    () => validTasks.map((task) => task.id),
+    [validTasks]
+  );
+
+  if (!column) {
+    return null;
+  }
 
   const toggleColumnDropdownInternal = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -71,7 +79,7 @@ const ColumnContainer = ({
   const columnLimit = columnLimits[column.id]
     ? parseInt(columnLimits[column.id], 10)
     : Infinity;
-  const limitExceeded = !isNaN(columnLimit) && tasks.length > columnLimit;
+  const limitExceeded = !isNaN(columnLimit) && validTasks.length > columnLimit;
 
   return (
     <div
@@ -110,7 +118,7 @@ const ColumnContainer = ({
               limitExceeded ? "text-light bg-red-200" : "text-light bg-blue-200"
             } dark:bg-gray-700 rounded-full px-2 py-0.5 flex-shrink-0`}
           >
-            {tasks.length}
+            {validTasks.length}
             {columnLimits[column.id] && ` / ${columnLimits[column.id]}`}
           </span>
         </div>
@@ -150,15 +158,6 @@ const ColumnContainer = ({
                 >
                   Set column limit
                 </button>
-                {/* <button
-                  className="block hover:bg-gray-400 dark:hover:bg-gray-700 px-4 py-2 rounded-b w-full text-left text-red-200"
-                  onClick={() => {
-                    deleteColumn && deleteColumn(column.id);
-                    setColumnDropdownOpen(false);
-                  }}
-                >
-                  Delete Column
-                </button> */}
               </div>
             )}
           </div>
@@ -170,7 +169,7 @@ const ColumnContainer = ({
           items={tasksIds}
           strategy={verticalListSortingStrategy}
         >
-          {tasks.map((task) => (
+          {validTasks.map((task) => (
             <SortableItem key={task.id} id={task.id}>
               <TaskCard
                 task={task}

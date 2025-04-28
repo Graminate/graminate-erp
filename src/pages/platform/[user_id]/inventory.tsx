@@ -40,6 +40,18 @@ const getBarColor = (quantity: number, max: number) => {
   return "#04ad79";
 };
 
+interface ItemRecord {
+  id: string;
+  name: string;
+  quantity: number;
+  inventory_id: string;
+  item_name: string;
+  item_group: string;
+  units: string;
+  price_per_unit: number;
+  status: string;
+}
+
 const Inventory = () => {
   const router = useRouter();
   const { user_id, view: queryView } = router.query;
@@ -47,7 +59,7 @@ const Inventory = () => {
   const view: View =
     typeof queryView === "string" ? (queryView as View) : "inventory";
 
-  const [itemRecords, setItemRecords] = useState<any[]>([]);
+  const [itemRecords, setItemRecords] = useState<ItemRecord[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
@@ -62,11 +74,18 @@ const Inventory = () => {
 
         console.log("Fetched Inventory Data:", response.data);
         setItemRecords(response.data.items || []);
-      } catch (error: any) {
-        console.error(
-          "Error fetching inventory data:",
-          error.response?.data?.error || error.message
-        );
+      } catch (error) {
+        if (error instanceof Error) {
+          const err = error as {
+            response?: { data?: { error?: string } };
+          };
+          console.error(
+            "Error fetching inventory data:",
+            err.response?.data?.error || error.message
+          );
+        } else {
+          console.error("Unknown error:", error);
+        }
       }
     };
 

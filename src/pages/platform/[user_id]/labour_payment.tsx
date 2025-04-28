@@ -123,18 +123,32 @@ const LabourPayment = () => {
       try {
         const response = await axiosInstance.get(`/labour/${parsedUserId}`);
         const labours = response.data.labours || [];
-        const allPayments: any[] = [];
+        const allPayments: PaymentRecord[] = [];
 
-        for (const labour of labours) {
-          const response = await axiosInstance.get(
-            `/labour_payment/${labour.labour_id}`
-          );
-          allPayments.push(...(response.data.payments || []));
-        }
+        await Promise.all(
+          labours.map(async (labour: Labour) => {
+            try {
+              const paymentResponse = await axiosInstance.get(
+                `/labour_payment/${labour.labour_id}`
+              );
+              const payments = paymentResponse.data.payments || [];
+              if (Array.isArray(payments)) {
+                allPayments.push(...payments);
+              }
+            } catch (error) {
+              console.error(
+                `Error fetching payments for labour ${labour.labour_id}:`,
+                error instanceof Error ? error.message : String(error)
+              );
+            }
+          })
+        );
 
         setPaymentRecords(allPayments);
-      } catch (error: any) {
-        console.error("Error fetching payment records:", error.message);
+      } catch (error: unknown) {
+        const message =
+          error instanceof Error ? error.message : "Unknown error";
+        console.error("Error fetching payment records:", message);
       }
     };
 
@@ -146,7 +160,12 @@ const LabourPayment = () => {
     return paymentRecords
       .filter((p) => (p.payment_status || "").toLowerCase() === "paid")
       .reduce((sum, p) => {
-        const salary = parseFloat(p.salary_paid as any);
+        const salary =
+          typeof p.salary_paid === "string"
+            ? parseFloat(p.salary_paid)
+            : typeof p.salary_paid === "number"
+            ? p.salary_paid
+            : 0;
         return sum + (isNaN(salary) ? 0 : salary);
       }, 0);
   }, [paymentRecords]);
