@@ -80,11 +80,10 @@ export const FOOTER_LINKS = {
 
 export const COMPANY_TYPES = ["Supplier", "Distributor", "Factories", "Buyer"];
 export const CONTACT_TYPES = [
-  "Supplier",
-  "Distributor",
-  "Factory",
-  "Buyer",
-  "Client",
+  "Regular Customer",
+  "Wholesaler",
+  "Industrial Unit",
+  "Others",
 ];
 
 export const CONTRACT_STATUS = [

@@ -2,9 +2,10 @@ import {
   faEye,
   faEyeSlash,
   faInfoCircle,
+  faChevronDown,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 
 type Props = {
   label?: string;
@@ -21,6 +22,9 @@ type Props = {
   width?: "small" | "medium" | "large" | "";
   onBlur?: () => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  onFocus?: () => void;
+  suggestions?: string[];
+  isLoading?: boolean;
 };
 
 const TextField = ({
@@ -36,8 +40,31 @@ const TextField = ({
   value,
   onChange,
   width = "",
+  onBlur,
+  onKeyDown,
+  onFocus,
+  suggestions = [],
+  isLoading = false,
 }: Props) => {
   const [showPassword, setShowPassword] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const textFieldRef = useRef<HTMLDivElement>(null);
+
+  const handleClickOutside = (event: MouseEvent) => {
+    if (
+      textFieldRef.current &&
+      !textFieldRef.current.contains(event.target as Node)
+    ) {
+      setShowSuggestions(false);
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
   const getFieldClass = () => {
     switch (type) {
@@ -67,8 +94,15 @@ const TextField = ({
     setShowPassword(!showPassword);
   };
 
+  const handleFocus = () => {
+    if (onFocus) onFocus();
+    if (suggestions.length > 0) {
+      setShowSuggestions(true);
+    }
+  };
+
   return (
-    <div className={`w-full ${getWidthClass()}`}>
+    <div className={`w-full ${getWidthClass()}`} ref={textFieldRef}>
       {label && (
         <label
           htmlFor={calendar ? "calendar" : password ? "password" : "text"}
@@ -99,6 +133,9 @@ const TextField = ({
           placeholder={placeholder}
           value={value}
           onChange={(e) => onChange(e.target.value)}
+          onFocus={handleFocus}
+          onBlur={onBlur}
+          onKeyDown={onKeyDown}
         />
 
         {/* Password Toggle Button */}
@@ -116,7 +153,43 @@ const TextField = ({
             )}
           </button>
         )}
+
+        {/* Suggestions Toggle Button */}
+        {suggestions.length > 0 && !password && (
+          <button
+            type="button"
+            className="absolute inset-y-0 right-0 flex items-center pr-2 cursor-pointer"
+            onClick={() => setShowSuggestions(!showSuggestions)}
+            aria-label="Toggle suggestions"
+          >
+            <FontAwesomeIcon icon={faChevronDown} className="size-4" />
+          </button>
+        )}
       </div>
+
+      {/* Suggestions Dropdown */}
+      {showSuggestions && suggestions.length > 0 && (
+        <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
+          {isLoading ? (
+            <div className="px-4 py-2 text-gray-500 dark:text-gray-400">
+              Loading...
+            </div>
+          ) : (
+            suggestions.map((suggestion, index) => (
+              <div
+                key={index}
+                className="px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer"
+                onClick={() => {
+                  onChange(suggestion);
+                  setShowSuggestions(false);
+                }}
+              >
+                {suggestion}
+              </div>
+            ))
+          )}
+        </div>
+      )}
 
       {/* Error Message */}
       {type === "error" && (

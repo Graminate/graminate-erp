@@ -277,7 +277,9 @@ const GeneralPage = () => {
                       >
                         Choose File
                       </label>
-                      <p className="text-xs text-gray-500 mt-1">Max 2MB</p>
+                      <p className="text-xs text-dark dark:text-light mt-1">
+                        Max 2MB
+                      </p>
                     </div>
                   </div>
 
