@@ -176,10 +176,10 @@ const Poultry = () => {
     feedInventoryDays,
   });
   const [items, setItems] = useState([
-    "Flock 1",
-    "Flock 2",
-    "Flock 3",
-    "Flock 4",
+    "Broiler Chicken",
+    "Hen Layers",
+    "Broiler Duck",
+    "Duck Layers",
   ]);
 
   const fahrenheit = false;
@@ -561,7 +561,7 @@ const Poultry = () => {
             </div>
           </div>
         </div>
-        <PoultryTaskCard initialTasks={tasks} />
+        <PoultryTaskCard userId={Number(parsedUserId)} />
       </div>
       {isModalOpen && (
         <AddPoultryDataModal

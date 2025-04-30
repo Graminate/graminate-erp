@@ -83,7 +83,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     project: "",
     task: "",
     status: "To Do",
-    description: "",
+
     priority: "",
     deadline: "",
   });
@@ -285,11 +285,17 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       });
       handleClose();
       window.location.reload();
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "An unexpected error occurred";
-      console.error("Error adding company:", message);
-      alert(message);
+    } catch (error: any) {
+      if (error.response) {
+        console.error("Error details:", error.response.data);
+        alert(error.response.data?.error || "Failed to add company");
+      } else if (error.request) {
+        console.error("No response received:", error.request);
+        alert("No response from server");
+      } else {
+        console.error("Request setup error:", error.message);
+        alert("Request failed: " + error.message);
+      }
     }
   };
 
@@ -361,28 +367,27 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       user_id,
       project: taskValues.project,
       task: taskValues.task,
-      status: taskValues.status,
-      description: taskValues.description,
-      priority: taskValues.priority,
+      status: "Pending", // Set default status
+      priority: taskValues.priority || "Medium", // Set default priority
       deadline: taskValues.deadline,
     };
+
     try {
-      await axiosInstance.post("/tasks/add", payload);
-      setTaskValues({
-        project: "",
-        task: "",
-        status: "",
-        description: "",
-        priority: "",
-        deadline: "",
-      });
-      handleClose();
-      window.location.reload();
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "An unexpected error occurred";
-      console.error("Error adding new task:", message);
-      alert(message);
+      const response = await axiosInstance.post("/tasks/add", payload);
+      if (response.data && response.data.task) {
+        setTaskValues({
+          project: "",
+          task: "",
+          status: "Pending",
+          priority: "Medium",
+          deadline: "",
+        });
+        handleClose();
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error("Error adding new task:", error);
+      alert("Failed to create task. Please try again.");
     }
   };
 
@@ -826,7 +831,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                 </div>
               </form>
             )}
-            {/* --- Tasks Form (Example Structure - Needs specific fields) --- */}
+            {/* --- Tasks Form --- */}
             {view === "tasks" && (
               <form
                 className="flex flex-col gap-4 w-full"
@@ -847,15 +852,6 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                   value={taskValues.task}
                   onChange={(val: string) =>
                     setTaskValues({ ...taskValues, task: val })
-                  }
-                />
-
-                <TextField
-                  label="Description"
-                  placeholder="Optional task description"
-                  value={taskValues.description}
-                  onChange={(val: string) =>
-                    setTaskValues({ ...taskValues, description: val })
                   }
                 />
 
