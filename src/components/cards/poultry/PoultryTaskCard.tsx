@@ -8,7 +8,7 @@ import { PRIORITY_OPTIONS } from "@/constants/options";
 import axiosInstance from "@/lib/utils/axiosInstance";
 
 type Priority = "High" | "Medium" | "Low";
-type TaskStatus = "Pending" | "Completed";
+type TaskStatus = "To Do" | "In Progress" | "Checks" | "Completed";
 
 type Task = {
   task_id: number;
@@ -88,15 +88,18 @@ const PoultryTaskCard = ({ userId }: PoultryTaskCardProps) => {
     fetchTasks();
   }, [userId]);
 
-  // Task sorting logic
   const sortTasks = (list: Task[], asc = prioritySortAsc) => {
     const sorted = [...list].sort((a, b) => {
       const aRank = priorityRank[a.priority];
       const bRank = priorityRank[b.priority];
       return asc ? aRank - bRank : bRank - aRank;
     });
+
+    // New sorting order for statuses
     return [
-      ...sorted.filter((t) => t.status === "Pending"),
+      ...sorted.filter((t) => t.status === "To Do"),
+      ...sorted.filter((t) => t.status === "In Progress"),
+      ...sorted.filter((t) => t.status === "Checks"),
       ...sorted.filter((t) => t.status === "Completed"),
     ];
   };
@@ -107,7 +110,15 @@ const PoultryTaskCard = ({ userId }: PoultryTaskCardProps) => {
       const task = taskList.find((t) => t.task_id === taskId);
       if (!task) return;
 
-      const newStatus = task.status === "Pending" ? "Completed" : "Pending";
+      const statusOrder: TaskStatus[] = [
+        "To Do",
+        "In Progress",
+        "Checks",
+        "Completed",
+      ];
+      const currentIndex = statusOrder.indexOf(task.status);
+      const newStatus = statusOrder[(currentIndex + 1) % statusOrder.length];
+
       const response = await axiosInstance.put(`/tasks/update/${taskId}`, {
         status: newStatus,
       });
@@ -121,7 +132,6 @@ const PoultryTaskCard = ({ userId }: PoultryTaskCardProps) => {
     }
   };
 
-  // Add new poultry task
   const addNewTask = async () => {
     if (!newTaskText.trim() || !userId) return;
 
@@ -130,7 +140,7 @@ const PoultryTaskCard = ({ userId }: PoultryTaskCardProps) => {
         user_id: userId,
         project: "Poultry",
         task: newTaskText.trim(),
-        status: "Pending",
+        status: "To Do",
         priority: newTaskPriority,
       });
 
@@ -180,7 +190,7 @@ const PoultryTaskCard = ({ userId }: PoultryTaskCardProps) => {
         </h2>
         <div className="flex items-center gap-2">
           <span className="text-dark text-xs font-semibold px-2.5 py-0.5 rounded dark:text-light">
-            {taskList.filter((t) => t.status === "Pending").length} Pending /{" "}
+            {taskList.filter((t) => t.status !== "Completed").length} Active /{" "}
             {taskList.length} Total
           </span>
           <button

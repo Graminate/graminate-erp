@@ -185,8 +185,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     project: "",
     task: "",
     status: "To Do",
-
-    priority: "",
+    priority: "Medium",
     deadline: "",
   });
   const companyType = ["Supplier", "Distributor", "Factories", "Buyer"];
@@ -469,8 +468,8 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       user_id,
       project: taskValues.project,
       task: taskValues.task,
-      status: "Pending", // Set default status
-      priority: taskValues.priority || "Medium", // Set default priority
+      status: "To Do", // Changed from "Pending" to "To Do"
+      priority: taskValues.priority || "Medium",
       deadline: taskValues.deadline,
     };
 
@@ -480,7 +479,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
         setTaskValues({
           project: "",
           task: "",
-          status: "Pending",
+          status: "To Do", // Also update the reset value here
           priority: "Medium",
           deadline: "",
         });

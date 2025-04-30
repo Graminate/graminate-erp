@@ -5,7 +5,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEllipsis, faFlag, faX } from "@fortawesome/free-solid-svg-icons";
 import TextField from "../ui/TextField";
 
-
 type TaskModalProps = {
   isOpen: boolean;
   taskDetails: {
@@ -13,6 +12,7 @@ type TaskModalProps = {
     columnId: string;
     title: string;
     type: string;
+    status: string;
   };
   projectName: string;
   availableLabels: string[];
@@ -22,6 +22,7 @@ type TaskModalProps = {
     title: string;
     columnId: string;
     type: string;
+    status: string;
   }) => void;
 };
 
@@ -34,9 +35,7 @@ const TaskModal = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(taskDetails.title);
   const [description, setDescription] = useState("");
-  const [existingDescriptionId] = useState<
-    string | null
-  >(null);
+  const [existingDescriptionId] = useState<string | null>(null);
   const [isFlagged, setIsFlagged] = useState(false);
   const [showDropdown, setShowDropdown] = useState(false);
 

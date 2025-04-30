@@ -33,11 +33,12 @@ import TaskListView from "./TaskListView";
 import SortableItem from "./SortableItem";
 import ColumnContainer from "./ColumnContainer";
 import TaskCard from "./TaskCard";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 const TasksPage = () => {
   const router = useRouter();
-  const projectTitle =
-    typeof router.query.title === "string" ? router.query.title : "";
+  const projectTitle = router.query.project as string;
+  const userId = router.query.user_id as string;
 
   const initialColumns: Column[] = [
     { id: "todo", title: "TO DO" },
@@ -46,48 +47,11 @@ const TasksPage = () => {
     { id: "done", title: "DONE" },
   ];
 
-  const initialTasks: Task[] = [
-    {
-      id: 1,
-      columnId: "todo",
-      title: "Analyze user requirements for the new dashboard feature",
-      type: "Research",
-    },
-    {
-      id: 2,
-      columnId: "todo",
-      title: "Create initial wireframes based on requirements",
-      type: "Design",
-    },
-    {
-      id: 3,
-      columnId: "progress",
-      title: "Develop user authentication module",
-      type: "Dev, Urgent",
-    },
-    {
-      id: 4,
-      columnId: "progress",
-      title: "Set up CI/CD pipeline",
-      type: "DevOps",
-    },
-    {
-      id: 5,
-      columnId: "check",
-      title: "Setup project repository on GitHub",
-      type: "Setup",
-    },
-    {
-      id: 6,
-      columnId: "check",
-      title: "Setup project repository on GitHub",
-      type: "Setup",
-    },
-  ];
-
   const [columns, setColumns] = useState<Column[]>(initialColumns);
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+
+  const [tasks, setTasks] = useState<Task[]>([]);
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
@@ -115,8 +79,8 @@ const TasksPage = () => {
     []
   );
   const [dropdownItems, setDropdownItems] = useState<string[]>(() => {
-    const labelsFromTasks = initialTasks.flatMap((t) =>
-      t.type ? t.type.split(",").map((l) => l.trim()) : []
+    const labelsFromTasks = tasks.flatMap(
+      (t: Task) => t.type?.split(",").map((l: string) => l.trim()) ?? []
     );
     return [
       ...new Set([
@@ -135,6 +99,56 @@ const TasksPage = () => {
   });
 
   const [isBrowser, setIsBrowser] = useState(false);
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+      if (!projectTitle || !userId) return;
+
+      try {
+        setIsLoading(true);
+        const response = await axiosInstance.get(`/tasks/${userId}`, {
+          params: { project: projectTitle },
+        });
+
+        const fetchedTasks =
+          response.data.length > 0
+            ? response.data.map((task: any) => ({
+                id: task.task_id,
+                title: task.task,
+                type: task.type || "",
+                columnId: mapStatusToColumnId(task.status),
+                status: task.status,
+              }))
+            : []; // Empty array if no tasks
+
+        setTasks(fetchedTasks);
+      } catch (error) {
+        console.error("Failed to fetch tasks:", error);
+        setTasks([]); // Set to empty array on error
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTasks();
+  }, [projectTitle, userId]);
+
+  // Helper function to map status to columnId
+  const mapStatusToColumnId = (status: string): Id => {
+    switch (status) {
+      case "To Do":
+        return "todo";
+      case "In Progress":
+        return "progress";
+      case "Checks":
+        return "check";
+      case "Completed":
+        return "done";
+      default:
+        return "todo"; // Default to "todo" if status doesn't match
+    }
+  };
+
   useEffect(() => {
     setIsBrowser(typeof document !== "undefined");
   }, []);
@@ -225,22 +239,55 @@ const TasksPage = () => {
     );
   };
 
-  const addTask = (columnId: Id, title: string, type: string) => {
-    const newTask: Task = {
-      id: generateId("task"),
-      columnId,
-      title: title.trim(),
-      type: type.trim() || "",
-    };
-    setTasks((prev) => [...prev, newTask]);
-    const newLabel = type.trim();
-    if (
-      newLabel &&
-      !dropdownItems
-        .map((item) => item.toLowerCase())
-        .includes(newLabel.toLowerCase())
-    ) {
-      setDropdownItems((prev) => [...prev, newLabel].sort());
+  const addTask = async (columnId: Id, title: string, type: string) => {
+    try {
+      const status = mapColumnIdToStatus(columnId);
+
+      const response = await axiosInstance.post("/tasks/add", {
+        user_id: userId,
+        project: projectTitle,
+        task: title.trim(),
+        type: type.trim() || "",
+        status: status,
+      });
+
+      const newTask: Task = {
+        id: response.data.task_id,
+        columnId,
+        title: title.trim(),
+        type: type.trim() || "",
+        status: status,
+      };
+
+      setTasks((prev) => [...prev, newTask]);
+
+      const newLabel = type.trim();
+      if (
+        newLabel &&
+        !dropdownItems
+          .map((item) => item.toLowerCase())
+          .includes(newLabel.toLowerCase())
+      ) {
+        setDropdownItems((prev) => [...prev, newLabel].sort());
+      }
+    } catch (error) {
+      console.error("Failed to add task:", error);
+    }
+  };
+
+  // Helper function to map columnId to status
+  const mapColumnIdToStatus = (columnId: Id): string => {
+    switch (columnId) {
+      case "todo":
+        return "To Do";
+      case "progress":
+        return "In Progress";
+      case "check":
+        return "Checks";
+      case "done":
+        return "Completed";
+      default:
+        return "To Do";
     }
   };
 
@@ -262,25 +309,36 @@ const TasksPage = () => {
     });
   };
 
-  const updateTask = (updatedTask: Task) => {
-    setTasks((prev) =>
-      prev.map((task) => (task.id === updatedTask.id ? updatedTask : task))
-    );
-    const labels = updatedTask.type
-      ? updatedTask.type
-          .split(",")
-          .map((l) => l.trim())
-          .filter(Boolean)
-      : [];
-    labels.forEach((label) => {
-      if (
-        !dropdownItems
-          .map((item) => item.toLowerCase())
-          .includes(label.toLowerCase())
-      ) {
-        setDropdownItems((prev) => [...prev, label].sort());
-      }
-    });
+  const updateTask = async (updatedTask: Task) => {
+    try {
+      await axiosInstance.put(`/tasks/update/${updatedTask.id}`, {
+        task: updatedTask.title,
+        type: updatedTask.type,
+        status: mapColumnIdToStatus(updatedTask.columnId),
+      });
+
+      setTasks((prev) =>
+        prev.map((task) => (task.id === updatedTask.id ? updatedTask : task))
+      );
+
+      const labels = updatedTask.type
+        ? updatedTask.type
+            .split(",")
+            .map((l) => l.trim())
+            .filter(Boolean)
+        : [];
+      labels.forEach((label) => {
+        if (
+          !dropdownItems
+            .map((item) => item.toLowerCase())
+            .includes(label.toLowerCase())
+        ) {
+          setDropdownItems((prev) => [...prev, label].sort());
+        }
+      });
+    } catch (error) {
+      console.error("Failed to update task:", error);
+    }
   };
 
   const openLabelPopup = (taskId: Id) => {
@@ -775,6 +833,7 @@ const TasksPage = () => {
                 ...selectedTask,
                 id: String(selectedTask.id),
                 columnId: String(selectedTask.columnId),
+                status: mapColumnIdToStatus(selectedTask.columnId), // Add this line
               }}
               updateTask={updateTask}
               projectName={projectTitle}

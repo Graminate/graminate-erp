@@ -68,7 +68,7 @@ const TaskCard = ({
                   onClick={(e) => e.stopPropagation()}
                 >
                   <button
-                    className="block hover:bg-gray-100 dark:hover:bg-gray-700 px-4 py-2 rounded-t w-full text-left"
+                    className="block hover:bg-gray-400 dark:hover:bg-gray-700 px-4 py-2 rounded-t w-full text-left"
                     onClick={(e) => {
                       e.stopPropagation();
                       openLabelPopup(task.id);
@@ -77,7 +77,7 @@ const TaskCard = ({
                     Add label
                   </button>
                   <button
-                    className="block hover:bg-gray-100 dark:hover:bg-gray-700 px-4 py-2 rounded-b w-full text-left text-red-600"
+                    className="block hover:bg-gray-400 dark:hover:bg-gray-700 px-4 py-2 rounded-b w-full text-left text-red-600"
                     onClick={(e) => {
                       e.stopPropagation();
                       deleteTask(task.id);

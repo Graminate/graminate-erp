@@ -384,14 +384,26 @@ const CRM = () => {
   };
 
   const handleRowClick = (item: FetchedDataItem) => {
-    let id: number | string | undefined;
-    let path = "";
     const userIdString = Array.isArray(user_id) ? user_id[0] : user_id;
 
     if (!userIdString) {
       console.error("User ID is missing, cannot navigate.");
       return;
     }
+
+    if ("task_id" in item) {
+      const taskItem = item as Task;
+      router.push({
+        pathname: `/platform/${userIdString}/tasks/${taskItem.task_id}`,
+        query: {
+          project: taskItem.project,
+        },
+      });
+      return;
+    }
+
+    let id: number | string | undefined;
+    let path = "";
 
     if ("contact_id" in item) {
       id = item.contact_id;
@@ -405,20 +417,6 @@ const CRM = () => {
     } else if ("invoice_id" in item) {
       id = item.invoice_id;
       path = `receipts/${id}`;
-    } else if ("task_id" in item) {
-      const tasksInCategory = tasksData.filter(
-        (t) => t.project === item.project
-      );
-      const rowData = JSON.stringify(tasksInCategory);
-      router.push({
-        pathname: `/platform/${userIdString}/tasks`,
-        query: {
-          category: item.project,
-          data: rowData,
-          view: "tasks",
-        },
-      });
-      return;
     } else {
       console.warn("Could not determine ID for the clicked item:", item);
       return;
@@ -521,16 +519,23 @@ const CRM = () => {
           searchQuery={searchQuery}
           totalRecordCount={totalRecordCount}
           onRowClick={(row) => {
-            const item = fetchedData.find((dataItem) =>
-              Object.values(row).includes(
-                ("contact_id" in dataItem && dataItem.contact_id) ||
-                  ("company_id" in dataItem && dataItem.company_id) ||
-                  ("deal_id" in dataItem && dataItem.deal_id) ||
-                  ("invoice_id" in dataItem && dataItem.invoice_id) ||
-                  ("task_id" in dataItem && dataItem.task_id)
-              )
-            );
-            if (item) handleRowClick(item);
+            if (view === "tasks") {
+              const projectName = row[0];
+              const taskItem = fetchedData.find(
+                (item) => "project" in item && item.project === projectName
+              );
+              if (taskItem) handleRowClick(taskItem);
+            } else {
+              const item = fetchedData.find((dataItem) =>
+                Object.values(row).includes(
+                  ("contact_id" in dataItem && dataItem.contact_id) ||
+                    ("company_id" in dataItem && dataItem.company_id) ||
+                    ("deal_id" in dataItem && dataItem.deal_id) ||
+                    ("invoice_id" in dataItem && dataItem.invoice_id)
+                )
+              );
+              if (item) handleRowClick(item);
+            }
           }}
           view={view}
           setCurrentPage={setCurrentPage}
