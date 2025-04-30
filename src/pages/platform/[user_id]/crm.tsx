@@ -335,7 +335,7 @@ const CRM = () => {
             "Project",
             "Tasks",
             "Status Summary",
-            "Priority Summary",
+            "Priority",
             "Created On",
           ],
           rows: Object.entries(groupedTasks).map(([project, tasks]) => [

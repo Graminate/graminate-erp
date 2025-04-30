@@ -3,7 +3,11 @@ import TextField from "@/components/ui/TextField";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import Button from "@/components/ui/Button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
+import {
+  faChevronDown,
+  faChevronUp,
+  faX,
+} from "@fortawesome/free-solid-svg-icons";
 import { PRIORITY_OPTIONS } from "@/constants/options";
 import axiosInstance from "@/lib/utils/axiosInstance";
 
@@ -95,7 +99,6 @@ const PoultryTaskCard = ({ userId }: PoultryTaskCardProps) => {
       return asc ? aRank - bRank : bRank - aRank;
     });
 
-    // New sorting order for statuses
     return [
       ...sorted.filter((t) => t.status === "To Do"),
       ...sorted.filter((t) => t.status === "In Progress"),
@@ -104,20 +107,12 @@ const PoultryTaskCard = ({ userId }: PoultryTaskCardProps) => {
     ];
   };
 
-  // Toggle task completion status
   const toggleTaskCompletion = async (taskId: number) => {
     try {
       const task = taskList.find((t) => t.task_id === taskId);
       if (!task) return;
 
-      const statusOrder: TaskStatus[] = [
-        "To Do",
-        "In Progress",
-        "Checks",
-        "Completed",
-      ];
-      const currentIndex = statusOrder.indexOf(task.status);
-      const newStatus = statusOrder[(currentIndex + 1) % statusOrder.length];
+      const newStatus = task.status === "Completed" ? "To Do" : "Completed";
 
       const response = await axiosInstance.put(`/tasks/update/${taskId}`, {
         status: newStatus,
@@ -248,7 +243,7 @@ const PoultryTaskCard = ({ userId }: PoultryTaskCardProps) => {
               type="checkbox"
               checked={task.status === "Completed"}
               onChange={() => toggleTaskCompletion(task.task_id)}
-              className="w-4 h-4 text-blue-600 bg-gray-100 rounded border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 mr-3 flex-shrink-0"
+              className="w-4 h-4 text-blue-600 bg-gray-500 rounded border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 mr-3 flex-shrink-0"
             />
             <span
               className={`text-sm flex-1 ${
@@ -263,7 +258,7 @@ const PoultryTaskCard = ({ userId }: PoultryTaskCardProps) => {
             {task.status === "Completed" ? (
               <button
                 onClick={() => deleteTask(task.task_id)}
-                className="ml-2 text-xs font-semibold bg-red-200 dark:bg-red-200 text-light px-2 py-1 rounded hover:bg-red-200 dark:hover:bg-red-300 transition-colors"
+                className="ml-2 text-xs font-semibold bg-red-200 text-light px-2 py-1 rounded  hover:bg-red-100 transition-colors"
               >
                 Delete
               </button>
@@ -275,10 +270,10 @@ const PoultryTaskCard = ({ userId }: PoultryTaskCardProps) => {
                     onClick={() => handlePriorityChange(task.task_id, priority)}
                     className={`text-xs font-medium px-2 py-1 rounded ${
                       priority === "High"
-                        ? "bg-red-100 text-light hover:bg-red-200"
+                        ? "bg-red-200 text-light"
                         : priority === "Medium"
-                        ? "bg-yellow-200 text-dark hover:bg-yellow-300"
-                        : "bg-green-200 text-light hover:bg-green-300"
+                        ? "bg-yellow-200 text-dark"
+                        : "bg-green-200 text-light"
                     }`}
                   >
                     {priority}
@@ -286,9 +281,9 @@ const PoultryTaskCard = ({ userId }: PoultryTaskCardProps) => {
                 ))}
                 <button
                   onClick={() => setEditingPriority(null)}
-                  className="text-xs font-medium px-2 py-1 rounded bg-gray-200 text-dark hover:bg-gray-300"
+                  className="text-xs font-medium px-2 py-1 rounded bg-gray-400 text-dark hover:bg-gray-300"
                 >
-                  ×
+                  <FontAwesomeIcon icon={faX} className="size-2" />
                 </button>
               </div>
             ) : (
@@ -298,8 +293,8 @@ const PoultryTaskCard = ({ userId }: PoultryTaskCardProps) => {
                   task.priority === "High"
                     ? "bg-red-100 text-light hover:bg-red-200"
                     : task.priority === "Medium"
-                    ? "bg-yellow-200 text-dark hover:bg-yellow-300"
-                    : "bg-green-200 text-light hover:bg-green-300"
+                    ? "bg-yellow-200 text-dark"
+                    : "bg-green-200 text-light"
                 }`}
               >
                 {task.priority}
