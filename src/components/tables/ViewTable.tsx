@@ -1,5 +1,6 @@
 import { useAllRowsSelected } from "@/hooks/tables";
 import React, { useState, JSX } from "react";
+import Checkbox from "../ui/Checkbox";
 
 type FilterTasksFn = (column: {
   id: string;
@@ -82,11 +83,12 @@ const ViewTable = ({ columns, filterTasks, searchQuery, headers }: Props) => {
       <thead>
         <tr>
           <th className="p-2 border border-gray-300 dark:border-gray-200 bg-gray-400 dark:bg-gray-800 text-left">
-            <input
-              type="checkbox"
-              className="form-checkbox h-4 w-4"
+            <Checkbox
+              id="select-all-checkbox"
               checked={isAllSelected}
               onChange={toggleSelectAll}
+              className="h-4 w-4"
+              aria-label={isAllSelected ? "Deselect all" : "Select all"}
             />
           </th>
           {headers.map((header) => (
@@ -110,13 +112,14 @@ const ViewTable = ({ columns, filterTasks, searchQuery, headers }: Props) => {
                 className="cursor-pointer hover:bg-gray-500 dark:hover:bg-gray-700"
               >
                 <td className="p-2 border border-gray-300 dark:border-gray-200">
-                  <input
-                    type="checkbox"
-                    className="form-checkbox h-4 w-4"
+                  <Checkbox
+                    id={`task-checkbox-${task.id}`}
                     checked={selectedRows.has(task.id)}
                     onChange={(e) =>
                       toggleRowSelection(task.id, e.target.checked)
                     }
+                    className="h-4 w-4"
+                    aria-label={`Select task ${task.id}`}
                   />
                 </td>
                 <td className="p-2 border border-gray-300 dark:border-gray-200 text-base font-light dark:text-gray-400">

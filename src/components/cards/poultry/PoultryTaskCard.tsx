@@ -10,6 +10,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { PRIORITY_OPTIONS } from "@/constants/options";
 import axiosInstance from "@/lib/utils/axiosInstance";
+import Checkbox from "@/components/ui/Checkbox";
 
 type Priority = "High" | "Medium" | "Low";
 type TaskStatus = "To Do" | "In Progress" | "Checks" | "Completed";
@@ -239,11 +240,11 @@ const PoultryTaskCard = ({ userId }: PoultryTaskCardProps) => {
             key={task.task_id}
             className="flex items-center p-1.5 rounded hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
           >
-            <input
-              type="checkbox"
+            <Checkbox
+              id={`task-${task.task_id}`}
               checked={task.status === "Completed"}
               onChange={() => toggleTaskCompletion(task.task_id)}
-              className="w-4 h-4 text-blue-600 bg-gray-500 rounded border-gray-300 focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 mr-3 flex-shrink-0"
+              className="mr-3 flex-shrink-0"
             />
             <span
               className={`text-sm flex-1 ${

@@ -1,7 +1,9 @@
+import axiosInstance from "@/lib/utils/axiosInstance";
 import { Id, Task } from "@/types/types";
 import { faEllipsis } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { useState } from "react";
+import Swal from "sweetalert2";
 
 type TaskCardProps = {
   task: Task;
@@ -22,12 +24,25 @@ const TaskCard = ({
   dropdownOpen,
   isOverlay = false,
 }: TaskCardProps) => {
-  const [isHovering, setIsHovering] = useState(false); // Hook called first
+  const [isHovering, setIsHovering] = useState(false);
 
   if (!task) {
-    // Conditional return is now AFTER the hook
     return null;
   }
+
+  const handleDelete = async (taskId: Id) => {
+    try {
+      await axiosInstance.delete(`/tasks/delete/${taskId}`);
+      deleteTask(taskId); // This will update the UI by removing the task
+    } catch (error) {
+      console.error("Failed to delete task:", error);
+      Swal.fire(
+        "Error",
+        "Failed to delete the task. Please try again.",
+        "error"
+      );
+    }
+  };
 
   return (
     <div
@@ -80,7 +95,7 @@ const TaskCard = ({
                     className="block hover:bg-gray-400 dark:hover:bg-gray-700 px-4 py-2 rounded-b w-full text-left text-red-600"
                     onClick={(e) => {
                       e.stopPropagation();
-                      deleteTask(task.id);
+                      handleDelete(task.id);
                     }}
                   >
                     Delete

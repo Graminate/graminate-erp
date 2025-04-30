@@ -34,6 +34,7 @@ import SortableItem from "./SortableItem";
 import ColumnContainer from "./ColumnContainer";
 import TaskCard from "./TaskCard";
 import axiosInstance from "@/lib/utils/axiosInstance";
+import axios from "axios";
 
 const TasksPage = () => {
   const router = useRouter();
@@ -243,14 +244,18 @@ const TasksPage = () => {
     try {
       const status = mapColumnIdToStatus(columnId);
 
+      // Make the API call here (only once)
       const response = await axiosInstance.post("/tasks/add", {
-        user_id: userId,
+        user_id: Number(userId),
         project: projectTitle,
         task: title.trim(),
-        type: type.trim() || "",
         status: status,
+        description: "",
+        priority: "Medium",
+        type: type.trim() || "",
       });
 
+      // Update the UI with the new task
       const newTask: Task = {
         id: response.data.task_id,
         columnId,
@@ -261,17 +266,24 @@ const TasksPage = () => {
 
       setTasks((prev) => [...prev, newTask]);
 
+      // Update labels dropdown if new label was added
       const newLabel = type.trim();
       if (
         newLabel &&
-        !dropdownItems
-          .map((item) => item.toLowerCase())
-          .includes(newLabel.toLowerCase())
+        !dropdownItems.some(
+          (item) => item.toLowerCase() === newLabel.toLowerCase()
+        )
       ) {
         setDropdownItems((prev) => [...prev, newLabel].sort());
       }
     } catch (error) {
       console.error("Failed to add task:", error);
+      Swal.fire(
+        "Error",
+        (axios.isAxiosError(error) && error.response?.data?.message) ||
+          "Failed to create task",
+        "error"
+      );
     }
   };
 
@@ -705,7 +717,8 @@ const TasksPage = () => {
                         <ColumnContainer
                           column={col}
                           tasks={tasksForColumn}
-                          // deleteColumn={deleteColumn}
+                          userId={Number(userId)}
+                          projectTitle={projectTitle}
                           updateColumnTitle={updateColumnTitle}
                           openTicketModal={openTicketModal}
                           columnLimits={columnLimits}
@@ -732,6 +745,8 @@ const TasksPage = () => {
                         tasks={tasks.filter(
                           (t) => t.columnId === activeColumn.id
                         )}
+                        userId={Number(userId)}
+                        projectTitle={projectTitle}
                         deleteColumn={() => {}}
                         updateColumnTitle={() => {}}
                         openTicketModal={() => {}}

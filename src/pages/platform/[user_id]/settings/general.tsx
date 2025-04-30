@@ -14,6 +14,7 @@ import { LANGUAGES, TIME_FORMAT } from "@/constants/options";
 import Loader from "@/components/ui/Loader";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import axios from "axios";
+import Checkbox from "@/components/ui/Checkbox";
 
 const GeneralPage = () => {
   const router = useRouter();
@@ -389,8 +390,7 @@ const GeneralPage = () => {
                     />
 
                     <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         id="ai-suggestions"
                         checked={weatherSettings.aiSuggestions}
                         onChange={() =>
@@ -399,7 +399,7 @@ const GeneralPage = () => {
                             aiSuggestions: !prev.aiSuggestions,
                           }))
                         }
-                        className="w-5 h-5 rounded text-green-600 focus:ring-green-500 dark:focus:ring-green-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600"
+                        className="w-5 h-5 text-green-600 focus:ring-green-500 dark:focus:ring-green-600 dark:ring-offset-gray-800 focus:ring-2"
                       />
                       <label
                         htmlFor="ai-suggestions"

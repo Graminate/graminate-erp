@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
-
 import type { DropdownFilter } from "@/types/card-props";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronDown } from "@fortawesome/free-solid-svg-icons";
+import Checkbox from "../Checkbox";
 
 const DropdownFilter = ({
   items,
@@ -82,11 +82,11 @@ const DropdownFilter = ({
               key={item}
               className="flex items-center px-4 py-2 cursor-pointer dark:hover:bg-blue-100 hover:bg-gray-400"
             >
-              <input
-                type="checkbox"
-                className="form-checkbox text-blue-600 h-4 w-4 rounded border-gray-300 focus:ring-blue-500"
+              <Checkbox
+                id={`filter-${item}`}
                 checked={isItemSelected(item)}
                 onChange={() => toggleItem(item)}
+                className="h-4 w-4 text-blue-600"
               />
               <span className="ml-2 text-sm text-dark dark:text-light">
                 {item}
