@@ -5,7 +5,7 @@ import Head from "next/head";
 import Table from "@/components/tables/Table";
 import axiosInstance from "@/lib/utils/axiosInstance";
 
-interface Labour {
+type Labour = {
   id: string | number;
   name: string;
   labour_id: string | number;
@@ -19,9 +19,9 @@ interface Labour {
   state?: string;
   postal_code?: string;
   created_at: string;
-}
+};
 
-interface PaymentRecord {
+type PaymentRecord = {
   id: string | number;
   labour_id: string | number;
   payment_date: string;
@@ -32,7 +32,7 @@ interface PaymentRecord {
   travel_allowance: number;
   meal_allowance: number;
   payment_status: "Pending" | "Paid" | "Failed" | string;
-}
+};
 
 const LabourPayment = () => {
   const now = new Date();

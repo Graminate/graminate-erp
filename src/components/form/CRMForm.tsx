@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/router";
 import TextField from "@/components/ui/TextField";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
@@ -17,6 +17,108 @@ import axiosInstance from "@/lib/utils/axiosInstance";
 const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
   const router = useRouter();
   const { user_id } = router.query;
+
+  const [subTypes, setSubTypes] = useState<string[]>([]);
+  const [isLoadingSubTypes, setIsLoadingSubTypes] = useState(true);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  useEffect(() => {
+    const fetchUserSubTypes = async () => {
+      setIsLoadingSubTypes(true);
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No auth token found");
+
+        const response = await axiosInstance.get(`/user/${user_id}`);
+
+        const user = response.data?.data?.user ?? response.data?.user;
+        if (!user) throw new Error("User payload missing");
+
+        setSubTypes(Array.isArray(user.sub_type) ? user.sub_type : []);
+      } catch (err) {
+        console.error("Error fetching user sub_types:", err);
+        setSubTypes([]);
+      } finally {
+        setIsLoadingSubTypes(false);
+      }
+    };
+
+    if (user_id) {
+      fetchUserSubTypes();
+    }
+  }, [user_id]);
+
+  const handleProjectInputChange = (val: string) => {
+    setTaskValues({ ...taskValues, project: val });
+
+    if (val.length > 0) {
+      const filtered = subTypes.filter((subType) =>
+        subType.toLowerCase().includes(val.toLowerCase())
+      );
+      setSuggestions(filtered);
+      setShowSuggestions(true);
+    } else {
+      setSuggestions(subTypes); // Show all suggestions when input is empty
+      setShowSuggestions(true);
+    }
+  };
+
+  const selectSuggestion = (suggestion: string) => {
+    setTaskValues({ ...taskValues, project: suggestion });
+    setShowSuggestions(false);
+  };
+
+  const handleProjectInputFocus = () => {
+    if (subTypes.length > 0) {
+      setSuggestions(subTypes);
+      setShowSuggestions(true);
+    }
+  };
+
+  useEffect(() => {
+    const fetchUserSubTypes = async () => {
+      setIsLoadingSubTypes(true);
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No auth token found");
+
+        const response = await axiosInstance.get(`/user/${user_id}`);
+
+        // Adjust this path based on your API response structure
+        const user = response.data?.data?.user ?? response.data?.user;
+        if (!user) throw new Error("User payload missing");
+
+        setSubTypes(Array.isArray(user.sub_type) ? user.sub_type : []);
+      } catch (err) {
+        console.error("Error fetching user sub_types:", err);
+        setSubTypes([]);
+      } finally {
+        setIsLoadingSubTypes(false);
+      }
+    };
+
+    if (user_id) {
+      fetchUserSubTypes();
+    }
+  }, [user_id]);
 
   const isValidE164 = (phone: string) => {
     return /^\+?[0-9]{10,15}$/.test(phone);
@@ -83,8 +185,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     project: "",
     task: "",
     status: "To Do",
-    description: "",
-    priority: "",
+    priority: "Medium",
     deadline: "",
   });
   const companyType = ["Supplier", "Distributor", "Factories", "Buyer"];
@@ -285,11 +386,17 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       });
       handleClose();
       window.location.reload();
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "An unexpected error occurred";
-      console.error("Error adding company:", message);
-      alert(message);
+    } catch (error: any) {
+      if (error.response) {
+        console.error("Error details:", error.response.data);
+        alert(error.response.data?.error || "Failed to add company");
+      } else if (error.request) {
+        console.error("No response received:", error.request);
+        alert("No response from server");
+      } else {
+        console.error("Request setup error:", error.message);
+        alert("Request failed: " + error.message);
+      }
     }
   };
 
@@ -361,28 +468,27 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       user_id,
       project: taskValues.project,
       task: taskValues.task,
-      status: taskValues.status,
-      description: taskValues.description,
-      priority: taskValues.priority,
+      status: "To Do", // Changed from "Pending" to "To Do"
+      priority: taskValues.priority || "Medium",
       deadline: taskValues.deadline,
     };
+
     try {
-      await axiosInstance.post("/tasks/add", payload);
-      setTaskValues({
-        project: "",
-        task: "",
-        status: "",
-        description: "",
-        priority: "",
-        deadline: "",
-      });
-      handleClose();
-      window.location.reload();
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : "An unexpected error occurred";
-      console.error("Error adding new task:", message);
-      alert(message);
+      const response = await axiosInstance.post("/tasks/add", payload);
+      if (response.data && response.data.task) {
+        setTaskValues({
+          project: "",
+          task: "",
+          status: "To Do", // Also update the reset value here
+          priority: "Medium",
+          deadline: "",
+        });
+        handleClose();
+        window.location.reload();
+      }
+    } catch (error) {
+      console.error("Error adding new task:", error);
+      alert("Failed to create task. Please try again.");
     }
   };
 
@@ -826,20 +932,37 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                 </div>
               </form>
             )}
-            {/* --- Tasks Form (Example Structure - Needs specific fields) --- */}
             {view === "tasks" && (
               <form
                 className="flex flex-col gap-4 w-full"
                 onSubmit={handleSubmitTasks}
               >
-                <TextField
-                  label="Project / Category"
-                  placeholder="e.g. Poultry / Animal Husbandry / Apiculture"
-                  value={taskValues.project}
-                  onChange={(val: string) =>
-                    setTaskValues({ ...taskValues, project: val })
-                  }
-                />
+                <div className="relative">
+                  <TextField
+                    label="Task Category"
+                    placeholder="e.g. Poultry / Animal Husbandry / Apiculture"
+                    value={taskValues.project}
+                    onChange={handleProjectInputChange}
+                    onFocus={handleProjectInputFocus}
+                    isLoading={isLoadingSubTypes}
+                  />
+                  {suggestions.length > 0 && showSuggestions && (
+                    <div
+                      ref={suggestionsRef}
+                      className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 rounded-md shadow-lg"
+                    >
+                      {suggestions.map((suggestion, index) => (
+                        <div
+                          key={index}
+                          className="p-4 hover:bg-light dark:hover:bg-gray-800 text-sm cursor-pointer"
+                          onClick={() => selectSuggestion(suggestion)}
+                        >
+                          {suggestion}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
                 <TextField
                   label="Task"
@@ -847,15 +970,6 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                   value={taskValues.task}
                   onChange={(val: string) =>
                     setTaskValues({ ...taskValues, task: val })
-                  }
-                />
-
-                <TextField
-                  label="Description"
-                  placeholder="Optional task description"
-                  value={taskValues.description}
-                  onChange={(val: string) =>
-                    setTaskValues({ ...taskValues, description: val })
                   }
                 />
 

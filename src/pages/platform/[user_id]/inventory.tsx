@@ -40,7 +40,7 @@ const getBarColor = (quantity: number, max: number) => {
   return "#04ad79";
 };
 
-interface ItemRecord {
+type ItemRecord = {
   id: string;
   name: string;
   quantity: number;
@@ -50,7 +50,7 @@ interface ItemRecord {
   units: string;
   price_per_unit: number;
   status: string;
-}
+};
 
 const Inventory = () => {
   const router = useRouter();

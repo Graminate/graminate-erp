@@ -7,7 +7,7 @@ import { fetchCityName } from "@/lib/utils/loadWeather";
 import axios from "axios";
 import Loader from "@/components/ui/Loader";
 
-interface DailySunData {
+type DailySunData = {
   time: string[];
   daylightDuration: number[];
 }

@@ -7,7 +7,7 @@ import Head from "next/head";
 import jsPDF from "jspdf";
 import domtoimage from "dom-to-image";
 
-interface PoultryHealthRecord {
+type PoultryHealthRecord = {
   poultry_health_id: string;
   date: string;
   created_at: string;

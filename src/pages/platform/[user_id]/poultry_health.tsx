@@ -27,7 +27,7 @@ ChartJS.register(
   ArcElement
 );
 
-interface HealthRecord {
+type HealthRecord = {
   poultry_health_id: string;
   date: string;
   veterinary_name: string;

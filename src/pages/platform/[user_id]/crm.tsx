@@ -13,8 +13,7 @@ import { faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
 
 type View = "contacts" | "companies" | "contracts" | "receipts" | "tasks";
 
-// Define specific types for data
-interface Contact {
+type Contact = {
   contact_id: number;
   first_name: string;
   last_name: string;
@@ -26,10 +25,10 @@ interface Contact {
   city?: string;
   state?: string;
   postal_code?: string;
-  created_at: string; // Assuming date comes as string
-}
+  created_at: string;
+};
 
-interface Company {
+type Company = {
   company_id: number;
   company_name: string;
   owner_name: string;
@@ -41,40 +40,40 @@ interface Company {
   state?: string;
   postal_code?: string;
   type: string;
-}
+};
 
-interface Contract {
+type Contract = {
   deal_id: number;
   deal_name: string;
   partner: string;
   amount: number;
   stage: string;
-  start_date: string; // Assuming date comes as string
-  end_date: string; // Assuming date comes as string
-}
+  start_date: string;
+  end_date: string;
+};
 
-interface Receipt {
+type Receipt = {
   invoice_id: number;
   title: string;
   bill_to: string;
   amount_paid: number;
   amount_due: number;
-  due_date: string; // Assuming date comes as string
+  due_date: string;
   status: string;
-}
+};
 
-interface Task {
+type Task = {
   task_id: number;
+  user_id: number;
   project: string;
   task: string;
   status: string;
   description: string;
   priority: string;
-  deadline?: string; // Assuming date comes as string or is optional
-  created_on: string; // Assuming date comes as string
-}
+  deadline?: string;
+  created_on: string;
+};
 
-// Define a union type for all possible fetched data items
 type FetchedDataItem = Contact | Company | Contract | Receipt | Task;
 
 const CRM = () => {
@@ -94,9 +93,10 @@ const CRM = () => {
   const [contractsData, setContractsData] = useState<Contract[]>([]);
   const [receiptsData, setReceiptsData] = useState<Receipt[]>([]);
   const [tasksData, setTasksData] = useState<Task[]>([]);
-  const [fetchedData, setFetchedData] = useState<FetchedDataItem[]>([]); // Use the union type
+  const [fetchedData, setFetchedData] = useState<FetchedDataItem[]>([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
   const dropdownItems = [
     { label: "Contacts", view: "contacts" },
     { label: "Companies", view: "companies" },
@@ -107,49 +107,53 @@ const CRM = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(25);
-
   const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     if (!router.isReady || !user_id) return;
+
     const userIdString = Array.isArray(user_id) ? user_id[0] : user_id;
     if (!userIdString) return;
 
     setLoading(true);
 
-    Promise.all([
-      axiosInstance.get<{ contacts: Contact[] }>(`/contacts/${userIdString}`),
-      axiosInstance.get<{ companies: Company[] }>(`/companies/${userIdString}`),
-      axiosInstance.get<{ contracts: Contract[] }>(
-        `/contracts/${userIdString}`
-      ),
-      axiosInstance.get<{ receipts: Receipt[] }>(`/receipts/${userIdString}`),
-      axiosInstance.get<{ tasks: Task[] }>(`/tasks/${userIdString}`),
-    ])
-      .then(
-        ([contactsRes, companiesRes, contractsRes, receiptsRes, tasksRes]) => {
-          setContactsData(contactsRes.data.contacts || []);
-          setCompaniesData(companiesRes.data.companies || []);
-          setContractsData(contractsRes.data.contracts || []);
-          setReceiptsData(receiptsRes.data.receipts || []);
-          setTasksData(tasksRes.data.tasks || []);
-        }
-      )
-      .catch((error) => {
-        console.error(
-          "Error fetching data:",
-          error.response?.data || error.message
-        );
-        // Optionally clear data on error
+    const fetchData = async () => {
+      try {
+        const [contactsRes, companiesRes, contractsRes, receiptsRes, tasksRes] =
+          await Promise.all([
+            axiosInstance.get<{ contacts: Contact[] }>(
+              `/contacts/${userIdString}`
+            ),
+            axiosInstance.get<{ companies: Company[] }>(
+              `/companies/${userIdString}`
+            ),
+            axiosInstance.get<{ contracts: Contract[] }>(
+              `/contracts/${userIdString}`
+            ),
+            axiosInstance.get<{ receipts: Receipt[] }>(
+              `/receipts/${userIdString}`
+            ),
+            axiosInstance.get<{ tasks: Task[] }>(`/tasks/${userIdString}`),
+          ]);
+
+        setContactsData(contactsRes.data.contacts || []);
+        setCompaniesData(companiesRes.data.companies || []);
+        setContractsData(contractsRes.data.contracts || []);
+        setReceiptsData(receiptsRes.data.receipts || []);
+        setTasksData(tasksRes.data.tasks || []);
+      } catch (error) {
+        console.error("Error fetching data:", error);
         setContactsData([]);
         setCompaniesData([]);
         setContractsData([]);
         setReceiptsData([]);
         setTasksData([]);
-      })
-      .finally(() => {
+      } finally {
         setLoading(false);
-      });
+      }
+    };
+
+    fetchData();
   }, [router.isReady, user_id]);
 
   useEffect(() => {
@@ -180,6 +184,19 @@ const CRM = () => {
     receiptsData,
     tasksData,
   ]);
+
+  const getDominantPriority = (tasks: Task[]): string => {
+    const priorityCounts = tasks.reduce((counts, task) => {
+      counts[task.priority] = (counts[task.priority] || 0) + 1;
+      return counts;
+    }, {} as Record<string, number>);
+
+    const [dominantPriority] = Object.entries(priorityCounts).sort(
+      (a, b) => b[1] - a[1]
+    )[0] || ["Medium"];
+
+    return dominantPriority;
+  };
 
   const tableData = useMemo(() => {
     switch (view) {
@@ -217,6 +234,7 @@ const CRM = () => {
               new Date(item.created_at).toLocaleDateString(),
             ]),
         };
+
       case "companies":
         if (fetchedData.length === 0) return { columns: [], rows: [] };
         return {
@@ -249,6 +267,7 @@ const CRM = () => {
               item.type,
             ]),
         };
+
       case "contracts":
         if (fetchedData.length === 0) return { columns: [], rows: [] };
         return {
@@ -273,6 +292,7 @@ const CRM = () => {
               new Date(item.end_date).toLocaleDateString(),
             ]),
         };
+
       case "receipts":
         if (fetchedData.length === 0) return { columns: [], rows: [] };
         return {
@@ -297,34 +317,38 @@ const CRM = () => {
               item.status,
             ]),
         };
+
       case "tasks":
         if (fetchedData.length === 0) return { columns: [], rows: [] };
+        const groupedTasks = fetchedData.reduce((acc, task) => {
+          if ("project" in task && !acc[task.project]) {
+            acc[task.project] = [];
+          }
+          if ("project" in task) {
+            acc[task.project].push(task);
+          }
+          return acc;
+        }, {} as Record<string, Task[]>);
+
         return {
           columns: [
-            "ID",
-            "Project / Category",
-            "Task",
-            "Status",
-            "Description",
+            "Task Category",
+            "Tasks",
+            "Status Summary",
             "Priority",
-            "Deadline",
             "Created On",
           ],
-          rows: fetchedData
-            .filter((item): item is Task => "task_id" in item)
-            .map((item) => [
-              item.task_id,
-              item.project,
-              item.task,
-              item.status,
-              item.description,
-              item.priority,
-              item.deadline
-                ? new Date(item.deadline).toLocaleDateString()
-                : "N/A",
-              new Date(item.created_on).toLocaleDateString(),
-            ]),
+          rows: Object.entries(groupedTasks).map(([project, tasks]) => [
+            project,
+            tasks.map((t) => t.task).join(", "),
+            `${tasks.filter((t) => t.status === "Completed").length}/${
+              tasks.length
+            } Completed`,
+            getDominantPriority(tasks),
+            new Date(tasks[0].created_on).toLocaleDateString(),
+          ]),
         };
+
       default:
         return { columns: [], rows: [] };
     }
@@ -345,6 +369,7 @@ const CRM = () => {
   }, [filteredRows, currentPage, itemsPerPage]);
 
   const totalRecordCount = filteredRows.length;
+
   const navigateTo = (newView: string) => {
     if (
       ["contacts", "companies", "contracts", "receipts", "tasks"].includes(
@@ -359,55 +384,57 @@ const CRM = () => {
   };
 
   const handleRowClick = (item: FetchedDataItem) => {
-    // Change parameter type from array to the actual item type
-    let id: number | string | undefined; // Variable to hold the ID
-
-    // Type guards to find the correct ID property based on the item's actual type
-    if ("contact_id" in item) {
-      id = item.contact_id;
-    } else if ("company_id" in item) {
-      id = item.company_id;
-    } else if ("deal_id" in item) {
-      id = item.deal_id;
-    } else if ("invoice_id" in item) {
-      id = item.invoice_id;
-    } else if ("task_id" in item) {
-      id = item.task_id;
-    }
-
-    if (id === undefined || id === null) {
-      console.warn("Could not determine ID for the clicked item:", item);
-      return; // Cannot proceed without an ID
-    }
-
-    const rowData = JSON.stringify(item); // Use the passed item directly
     const userIdString = Array.isArray(user_id) ? user_id[0] : user_id;
 
-    // Determine the correct view based on the item type to ensure correct navigation path
-    let resolvedView: View = view; // Default to current view, but refine based on item type
-    if ("contact_id" in item) resolvedView = "contacts";
-    else if ("company_id" in item) resolvedView = "companies";
-    else if ("deal_id" in item) resolvedView = "contracts";
-    else if ("invoice_id" in item) resolvedView = "receipts";
-    else if ("task_id" in item) resolvedView = "tasks";
-
-    if (userIdString) {
-      router.push({
-        pathname: `/platform/${userIdString}/${resolvedView}/${id}`, // Use the resolved view based on item type
-        query: { data: rowData },
-      });
-    } else {
+    if (!userIdString) {
       console.error("User ID is missing, cannot navigate.");
+      return;
     }
+
+    if ("task_id" in item) {
+      const taskItem = item as Task;
+      router.push({
+        pathname: `/platform/${userIdString}/tasks/${taskItem.task_id}`,
+        query: {
+          project: taskItem.project,
+        },
+      });
+      return;
+    }
+
+    let id: number | string | undefined;
+    let path = "";
+
+    if ("contact_id" in item) {
+      id = item.contact_id;
+      path = `contacts/${id}`;
+    } else if ("company_id" in item) {
+      id = item.company_id;
+      path = `companies/${id}`;
+    } else if ("deal_id" in item) {
+      id = item.deal_id;
+      path = `contracts/${id}`;
+    } else if ("invoice_id" in item) {
+      id = item.invoice_id;
+      path = `receipts/${id}`;
+    } else {
+      console.warn("Could not determine ID for the clicked item:", item);
+      return;
+    }
+
+    const rowData = JSON.stringify(item);
+    router.push({
+      pathname: `/platform/${userIdString}/${path}`,
+      query: {
+        data: rowData,
+        view,
+      },
+    });
   };
 
   const handleFormSubmit = (values: Record<string, string>) => {
     console.log("Form submitted:", values);
-    // Here you would typically make an API call to create the new item
-    // For now, just close the sidebar
     setIsSidebarOpen(false);
-    // Potentially refetch data after submission
-    // Example: refetchData();
   };
 
   const formTitle = useMemo(() => {
@@ -483,7 +510,6 @@ const CRM = () => {
             />
           </div>
         </div>
-
         <Table
           data={{ ...tableData, rows: paginatedRows }}
           filteredRows={filteredRows}
@@ -493,16 +519,23 @@ const CRM = () => {
           searchQuery={searchQuery}
           totalRecordCount={totalRecordCount}
           onRowClick={(row) => {
-            const item = fetchedData.find((dataItem) =>
-              Object.values(row).includes(
-                ("contact_id" in dataItem && dataItem.contact_id) ||
-                  ("company_id" in dataItem && dataItem.company_id) ||
-                  ("deal_id" in dataItem && dataItem.deal_id) ||
-                  ("invoice_id" in dataItem && dataItem.invoice_id) ||
-                  ("task_id" in dataItem && dataItem.task_id)
-              )
-            );
-            if (item) handleRowClick(item);
+            if (view === "tasks") {
+              const projectName = row[0];
+              const taskItem = fetchedData.find(
+                (item) => "project" in item && item.project === projectName
+              );
+              if (taskItem) handleRowClick(taskItem);
+            } else {
+              const item = fetchedData.find((dataItem) =>
+                Object.values(row).includes(
+                  ("contact_id" in dataItem && dataItem.contact_id) ||
+                    ("company_id" in dataItem && dataItem.company_id) ||
+                    ("deal_id" in dataItem && dataItem.deal_id) ||
+                    ("invoice_id" in dataItem && dataItem.invoice_id)
+                )
+              );
+              if (item) handleRowClick(item);
+            }
           }}
           view={view}
           setCurrentPage={setCurrentPage}
@@ -510,7 +543,6 @@ const CRM = () => {
           setSearchQuery={setSearchQuery}
           loading={loading}
         />
-
         {isSidebarOpen && (
           <CRMForm
             view={view}

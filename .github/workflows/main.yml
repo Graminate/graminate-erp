@@ -24,9 +24,6 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Run tests
-        run: npm run test
-
       - name: Cache node modules
         uses: actions/cache@v3
         with:

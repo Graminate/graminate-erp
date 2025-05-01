@@ -127,18 +127,17 @@ type PoultryFormData = {
   feedInventoryDays: number;
 };
 
-interface Alert {
-  id: number; // Changed to number for consistency with counter
+type Alert = {
+  id: number;
   message: string;
   type: "Critical" | "Warning" | "Info" | "Default";
-}
+};
 
-interface HealthRecord {
+type HealthRecord = {
   date: string;
   mortality_rate: number | null;
-  vaccines?: string[]; // Assuming vaccines is an array of strings
-  // Add other properties of health record if known
-}
+  vaccines?: string[];
+};
 
 const Poultry = () => {
   const router = useRouter();
@@ -177,10 +176,10 @@ const Poultry = () => {
     feedInventoryDays,
   });
   const [items, setItems] = useState([
-    "Flock 1",
-    "Flock 2",
-    "Flock 3",
-    "Flock 4",
+    "Broiler Chicken",
+    "Hen Layers",
+    "Broiler Duck",
+    "Duck Layers",
   ]);
 
   const fahrenheit = false;
@@ -414,9 +413,7 @@ const Poultry = () => {
     const newTotalChicks = Number(formData.totalChicks) || 0;
     const newFlockAgeDays = Number(formData.flockAgeDays) || 0;
     const newMortalityRate =
-      formData.mortalityRate === null
-        ? null
-        : Number(formData.mortalityRate);
+      formData.mortalityRate === null ? null : Number(formData.mortalityRate);
     const newTotalEggsStock = Number(formData.totalEggsStock) || 0;
     const newDailyFeedConsumption = Number(formData.dailyFeedConsumption) || 0;
     const newFeedInventoryDays = Number(formData.feedInventoryDays) || 0;
@@ -564,7 +561,7 @@ const Poultry = () => {
             </div>
           </div>
         </div>
-        <PoultryTaskCard initialTasks={tasks} />
+        <PoultryTaskCard userId={Number(parsedUserId)} />
       </div>
       {isModalOpen && (
         <AddPoultryDataModal

@@ -1,10 +1,8 @@
 import React, { useState, useEffect, KeyboardEvent } from "react";
-import Button from "@/components/ui/Button";
 import CustomTextArea from "@/components/ui/CustomTextArea";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEllipsis, faFlag, faX } from "@fortawesome/free-solid-svg-icons";
+import { faEllipsis, faX } from "@fortawesome/free-solid-svg-icons";
 import TextField from "../ui/TextField";
-
 
 type TaskModalProps = {
   isOpen: boolean;
@@ -13,6 +11,7 @@ type TaskModalProps = {
     columnId: string;
     title: string;
     type: string;
+    status: string;
   };
   projectName: string;
   availableLabels: string[];
@@ -22,7 +21,9 @@ type TaskModalProps = {
     title: string;
     columnId: string;
     type: string;
+    status: string;
   }) => void;
+  deleteTask: (taskId: string) => Promise<void>;
 };
 
 const TaskModal = ({
@@ -30,15 +31,22 @@ const TaskModal = ({
   taskDetails,
   projectName,
   onClose,
+  deleteTask,
 }: TaskModalProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(taskDetails.title);
   const [description, setDescription] = useState("");
-  const [existingDescriptionId] = useState<
-    string | null
-  >(null);
-  const [isFlagged, setIsFlagged] = useState(false);
+  const [existingDescriptionId] = useState<string | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
+
+  const handleDelete = async () => {
+    try {
+      await deleteTask(taskDetails.id);
+      onClose();
+    } catch (error) {
+      console.error("Error deleting task:", error);
+    }
+  };
 
   useEffect(() => {
     const savedTitle = localStorage.getItem(`task-${taskDetails.id}`);
@@ -64,15 +72,10 @@ const TaskModal = ({
     setShowDropdown((prev) => !prev);
   };
 
-  const toggleFlag = () => {
-    setIsFlagged((prev) => !prev);
-    setShowDropdown(false);
-  };
-
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/60 bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 h-[80%] w-[1200px] shadow-lg relative">
         {/* Ellipse Button and Close Button */}
         <div className="absolute top-3 right-3 flex items-center space-x-2">
@@ -89,9 +92,12 @@ const TaskModal = ({
               <div className="absolute right-0 mt-2 w-40 bg-white shadow-md rounded">
                 <button
                   className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-400"
-                  onClick={toggleFlag}
+                  onClick={handleDelete}
                 >
-                  {isFlagged ? "Remove Flag" : "Add Flag"}
+                  Delete
+                </button>
+                <button className="block w-full text-left px-4 py-2 text-sm hover:bg-gray-400">
+                  Print
                 </button>
               </div>
             )}
@@ -108,7 +114,7 @@ const TaskModal = ({
         </div>
 
         <p className="text-gray-300 text-sm">
-          {projectName} / {taskDetails.id}
+          {projectName} / TASK-{taskDetails.id}
         </p>
 
         <div className="grid grid-cols-[60%_40%] gap-4 mt-4">
@@ -125,7 +131,7 @@ const TaskModal = ({
               />
             ) : (
               <button
-                className="w-full text-gray-200 text-lg hover:bg-gray-50 hover:cursor-pointer bg-transparent rounded-md p-0"
+                className="w-full text-gray-200 text-lg hover:bg-gray-400 hover:cursor-pointer bg-transparent rounded-md p-0"
                 onClick={startEditing}
               >
                 <span className="flex p-2 font-bold">{editedTitle}</span>
@@ -147,12 +153,7 @@ const TaskModal = ({
 
           {/* Right Column */}
           <div>
-            <div className="flex flex-row gap-4 justify-start items-center">
-              <Button text="Update" style="primary" />
-              {isFlagged && (
-                <FontAwesomeIcon icon={faFlag} className="size-6" />
-              )}
-            </div>
+            <div className="flex flex-row gap-4 justify-start items-center"></div>
           </div>
         </div>
       </div>

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import BusinessCard from "../cards/BusinessCard";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
+import RadioButton from "../ui/Radio";
 
 type View = "distributor" | "exporter" | "factories";
 
@@ -175,39 +176,38 @@ const FinderBar = ({ activeView }: Props) => {
             )}
           </button>
           {showDropdown && (
-            <div className="absolute right-0 w-60 bg-white rounded shadow-md mt-1 z-10">
+            <div className="absolute right-0 w-60 bg-white dark:bg-gray-800 rounded shadow-md mt-1 z-10">
               <label className="block px-4 py-2">
-                <input
-                  type="radio"
+                <RadioButton
+                  id="sort-relevance"
                   name="sort"
+                  label="Relevance"
                   value="relevance"
                   checked={sortOption === "relevance"}
                   onChange={() => handleSort("relevance")}
-                  className="mr-2"
+                  className="mr-4"
                 />
-                Relevance
               </label>
               <label className="block px-4 py-2">
-                <input
-                  type="radio"
+                <RadioButton
+                  id="sort-rating"
                   name="sort"
+                  label="Rating"
                   value="rating"
                   checked={sortOption === "rating"}
                   onChange={() => handleSort("rating")}
-                  className="mr-2"
                 />
-                Rating
               </label>
               <label className="block px-4 py-2">
-                <input
-                  type="radio"
+                <RadioButton
+                  id="sort-price"
                   name="sort"
+                  label="Price"
                   value="price"
                   checked={sortOption === "price"}
                   onChange={() => handleSort("price")}
-                  className="mr-2"
+                  className="mr-4"
                 />
-                Price
               </label>
             </div>
           )}

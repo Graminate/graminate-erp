@@ -1,6 +1,9 @@
 import React from "react";
 import ClockPicker from "./ClockPicker";
 import TextField from "../TextField";
+import DropdownSmall from "../Dropdown/DropdownSmall";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faClock } from "@fortawesome/free-solid-svg-icons";
 
 type AddTaskViewProps = {
   selectedDate: Date;
@@ -15,6 +18,16 @@ type AddTaskViewProps = {
   selectedReminder: string;
   setSelectedReminder: (value: string) => void;
   isTaskNameValid: boolean;
+  priority: string;
+  setPriority: (value: string) => void;
+  projectInput: string;
+  handleProjectInputChange: (value: string) => void;
+  suggestions: string[];
+  showSuggestions: boolean;
+  isLoadingSuggestions: boolean;
+  selectSuggestion: (suggestion: string) => void;
+  suggestionsRef: React.RefObject<HTMLDivElement>;
+  setShowSuggestions: (value: boolean) => void;
 };
 
 const AddTaskView = ({
@@ -28,6 +41,15 @@ const AddTaskView = ({
   addTask,
   setShowAddTask,
   isTaskNameValid,
+  priority,
+  setPriority,
+  projectInput,
+  handleProjectInputChange,
+  suggestions,
+  showSuggestions,
+  selectSuggestion,
+  suggestionsRef,
+  setShowSuggestions,
 }: AddTaskViewProps) => {
   const handleAddTaskClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -36,8 +58,8 @@ const AddTaskView = ({
 
   return (
     <div className="animate-fadeIn">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
           Add Task
         </h3>
       </div>
@@ -52,7 +74,7 @@ const AddTaskView = ({
 
       <div className="space-y-5">
         <TextField
-          label="Task Name"
+          label="Task"
           placeholder="Enter task name..."
           value={newTask}
           onChange={setNewTask}
@@ -63,29 +85,41 @@ const AddTaskView = ({
           }
         />
 
-        <TextField
-          label="Category"
-          placeholder="Enter Category"
-          value={newTask}
-          onChange={setNewTask}
-          errorMessage={
-            !isTaskNameValid && !newTask.trim()
-              ? "Category cannot be empty"
-              : ""
-          }
-        />
+        <div className="relative mb-4">
+          <TextField
+            label="Task Category"
+            placeholder="Enter task category"
+            value={projectInput}
+            onChange={handleProjectInputChange}
+            onFocus={() => setShowSuggestions(true)}
+          />
+          {showSuggestions && suggestions.length > 0 && (
+            <div
+              ref={suggestionsRef as React.RefObject<HTMLDivElement>}
+              className="absolute z-50 mt-1 w-full max-h-60 overflow-auto rounded-md bg-white dark:bg-gray-700 py-1 text-base shadow-lg focus:outline-none sm:text-sm"
+            >
+              {suggestions.map((suggestion: string, index: number) => (
+                <div
+                  key={index}
+                  className="px-4 py-2 hover:bg-gray-500 dark:hover:bg-gray-600 cursor-pointer text-sm text-gray-800 dark:text-gray-200"
+                  onClick={() => selectSuggestion(suggestion)}
+                >
+                  {suggestion}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
-        <TextField
-          label="Sub-Category"
-          placeholder="Enter Sub-Category (optional)"
-          value={newTask}
-          onChange={setNewTask}
-          errorMessage={
-            !isTaskNameValid && !newTask.trim()
-              ? "Task name cannot be empty"
-              : ""
-          }
-        />
+        <div className="mb-4">
+          <DropdownSmall
+            label="Priority"
+            placeholder="Select priority"
+            items={["Low", "Medium", "High"]}
+            selected={priority}
+            onSelect={(item: string) => setPriority(item)}
+          />
+        </div>
 
         <div className="relative">
           <label
@@ -106,18 +140,7 @@ const AddTaskView = ({
             aria-expanded={isClockVisible}
           >
             <span>{newTaskTime}</span>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 text-gray-400"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v4.586l-3.293 3.293a1 1 0 101.414 1.414L10 10.414V5z"
-                clipRule="evenodd"
-              />
-            </svg>
+            <FontAwesomeIcon icon={faClock} className="size-5 text-gray-300" />
           </button>
           {isClockVisible && (
             <div className="absolute z-10 mt-1 w-full sm:w-72 right-0">
@@ -132,7 +155,6 @@ const AddTaskView = ({
             </div>
           )}
         </div>
-
 
         <div className="flex justify-end space-x-3 pt-4">
           <button

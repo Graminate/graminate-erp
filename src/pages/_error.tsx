@@ -4,11 +4,11 @@ import Head from "next/head";
 import Link from "next/link";
 import router from "next/router";
 
-interface ErrorProps {
+type ErrorProps = {
   statusCode?: number;
   message?: string;
   isTypeError?: boolean;
-}
+};
 
 const errorMessages: Record<number, string> = {
   400: "Bad Request – The server could not understand the request.",

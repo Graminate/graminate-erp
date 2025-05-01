@@ -1,7 +1,7 @@
 import axios from "axios";
 import { fetchWeatherApi } from "openmeteo";
 
-interface AddressComponent {
+type Address = {
   types: string[];
   long_name: string;
   short_name: string;
@@ -188,7 +188,7 @@ export async function fetchCityName(
 
     const data = response.data;
     const cityComponent = data.results[0]?.address_components.find(
-      (component: AddressComponent) => component.types.includes("locality")
+      (component: Address) => component.types.includes("locality")
     );
 
     return cityComponent?.long_name || "Your Location";

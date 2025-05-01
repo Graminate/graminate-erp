@@ -10,19 +10,19 @@ import axios from "axios";
 import Loader from "@/components/ui/Loader";
 
 type UVHourly = { time: Date; uv: number };
-interface DailyData {
+type DailyData = {
   time: Date[];
   uvIndexMax: number[];
   uvIndexMin: number[];
   daylightDuration: number[];
 }
 
-interface HourlyData {
+type HourlyData = {
   time: Date[];
   uvIndexHourly: number[];
 }
 
-interface WeatherData {
+type WeatherData = {
   daily: DailyData;
   hourly: HourlyData;
 }

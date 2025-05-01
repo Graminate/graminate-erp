@@ -10,6 +10,7 @@ import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import axiosInstance from "@/lib/utils/axiosInstance";
+import Checkbox from "../ui/Checkbox";
 
 type RowType = unknown[];
 
@@ -330,7 +331,7 @@ const Table = ({
                   text: `This will reset your ${entityToTruncate} records.`,
                   icon: "warning",
                   showCancelButton: true,
-                  confirmButtonText: "Yes, Reset!",
+                  confirmButtonText: "Reset",
                   cancelButtonText: "Cancel",
                 });
 
@@ -399,11 +400,12 @@ const Table = ({
             <tr>
               {!hideChecks && (
                 <th className="p-3 text-left font-medium text-dark dark:text-gray-300 bg-gray-500 hover:bg-gray-400 dark:bg-gray-800 dark:border-gray-700">
-                  <input
-                    type="checkbox"
-                    className="form-checkbox h-4 w-4 text-gray-600"
+                  <Checkbox
+                    id="select-all-checkbox"
                     checked={selectAll}
                     onChange={handleSelectAllChange}
+                    className="h-4 w-4 text-gray-600"
+                    aria-label={selectAll ? "Deselect all" : "Select all"}
                   />
                 </th>
               )}
@@ -447,11 +449,12 @@ const Table = ({
               >
                 {!hideChecks && (
                   <td className="p-3 border-b border-gray-300 dark:border-gray-700 text-base font-light text-gray-700 dark:text-gray-300">
-                    <input
-                      type="checkbox"
-                      className="form-checkbox h-4 w-4 text-gray-200 dark:text-light"
+                    <Checkbox
+                      id={`row-checkbox-${rowIndex}`}
                       checked={selectedRows[rowIndex] || false}
                       onChange={(e) => handleRowCheckboxChange(rowIndex, e)}
+                      className="h-4 w-4 text-gray-200 dark:text-light"
+                      aria-label={`Select row ${rowIndex + 1}`}
                     />
                   </td>
                 )}

@@ -26,10 +26,10 @@ ChartJS.register(
   ArcElement
 );
 
-interface FisheryItem {
+type FisheryItem = {
   id: string | number;
   name: string;
-}
+};
 
 const Fishery = () => {
   const router = useRouter();
@@ -84,14 +84,14 @@ const Fishery = () => {
           <div>
             <h1 className="text-lg font-semibold dark:text-white">
               Fishery Management{" "}
-              {parsedUserId ? `for User ${parsedUserId}` : ""}
+              {/* {parsedUserId ? `for User ${parsedUserId}` : ""} */}
             </h1>
           </div>
         </div>
 
         <div>
           {isLoading && <p>Loading fishery data...</p>}
-          {errorMsg && <p className="text-red-500">Error: {errorMsg}</p>}
+          {/* {errorMsg && <p className="text-red-500">Error: {errorMsg}</p>} */}
           {!isLoading && !errorMsg && (
             <>
               <h2 className="text-md font-medium mb-2 dark:text-white">

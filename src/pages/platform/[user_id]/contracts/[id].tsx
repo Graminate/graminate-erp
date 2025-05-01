@@ -9,7 +9,7 @@ import { triggerToast } from "@/stores/toast";
 import Head from "next/head";
 import axiosInstance from "@/lib/utils/axiosInstance";
 
-interface Contract {
+type Contract = {
   id: string;
   dealName: string;
   partner: string;

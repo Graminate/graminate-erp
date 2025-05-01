@@ -2,6 +2,8 @@ import React, { useState, useCallback } from "react";
 import { triggerToast } from "@/stores/toast";
 import Button from "../ui/Button";
 import TextField from "../ui/TextField";
+import Checkbox from "../ui/Checkbox";
+import RadioButton from "../ui/Radio";
 
 type Step = "businessName" | "businessType" | "subType";
 
@@ -182,17 +184,15 @@ const FirstLoginModal = ({ isOpen, onSubmit }: FirstLoginModalProps) => {
                   key={type}
                   className="flex items-center space-x-3 p-3 border rounded-md border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors duration-150"
                 >
-                  <input
-                    type="radio"
+                  <RadioButton
+                    id={`business-type-${type}`}
                     name="businessType"
+                    label={type}
                     value={type}
                     checked={businessType === type}
                     onChange={handleBusinessTypeChange}
-                    className="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:focus:ring-primary-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800"
+                    className="mr-2"
                   />
-                  <span className="text-sm font-medium text-dark dark:text-light">
-                    {type}
-                  </span>
                 </label>
               ))}
             </div>
@@ -244,13 +244,13 @@ const FirstLoginModal = ({ isOpen, onSubmit }: FirstLoginModalProps) => {
                   key={option}
                   className="flex items-center space-x-3 p-3 border rounded-md border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors duration-150"
                 >
-                  <input
-                    type="checkbox"
+                  <Checkbox
+                    id={`subtype-${option}`}
                     name="subType"
                     value={option}
                     checked={selectedSubTypes.includes(option)}
                     onChange={handleSubTypeChange}
-                    className="h-4 w-4 text-primary-600 border-gray-300 focus:ring-primary-500 dark:border-gray-600 dark:bg-gray-700 dark:focus:ring-primary-600 dark:ring-offset-gray-800 dark:focus:ring-offset-gray-800"
+                    className="h-4 w-4"
                   />
                   <span className="text-sm font-medium text-dark dark:text-light">
                     {option}

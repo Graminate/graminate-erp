@@ -7,14 +7,17 @@ import {
 import Button from "@/components/ui/Button";
 import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
 import TextArea from "@/components/ui/TextArea";
-
 import SortableItem from "./SortableItem";
 import TaskCard from "./TaskCard";
 import { Column, Id, Task } from "@/types/types";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faEllipsis } from "@fortawesome/free-solid-svg-icons";
 
 type ColumnContainerProps = {
   column: Column;
   tasks: Task[];
+  userId: number;
+  projectTitle: string;
   deleteColumn?: (id: Id) => void;
   updateColumnTitle?: (id: Id, title: string) => void;
   openTicketModal: (colId: Id) => void;
@@ -70,7 +73,17 @@ const ColumnContainer = ({
       Swal.fire("Error", "Task title cannot be empty.", "error");
       return;
     }
-    addTask(column.id, newTaskTitle, newTaskType);
+
+    if (validTasks.length >= columnLimit) {
+      Swal.fire(
+        "Limit Reached",
+        `This column has reached its limit of ${columnLimit} tasks.`,
+        "error"
+      );
+      return;
+    }
+
+    addTask(column.id, newTaskTitle.trim(), newTaskType.trim());
     setNewTaskTitle("");
     setNewTaskType("");
     setIsAddingTask(false);
@@ -129,20 +142,7 @@ const ColumnContainer = ({
               className="dark:text-light hover:bg-gray-300 dark:hover:bg-gray-700 rounded p-1"
               onClick={toggleColumnDropdownInternal}
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth="1.5"
-                stroke="currentColor"
-                className="w-5 h-5"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6.75 12a.75.75 0 111.5 0 .75.75 0 01-1.5 0zm5 0a.75.75 0 111.5 0 .75.75 0 01-1.5 0zm5 0a.75.75 0 111.5 0 .75.75 0 01-1.5 0z"
-                />
-              </svg>
+              <FontAwesomeIcon icon={faEllipsis} className="size-5" />
             </button>
             {columnDropdownOpen && (
               <div
@@ -188,7 +188,7 @@ const ColumnContainer = ({
         <>
           {isAddingTask ? (
             <div className="mt-auto py-3 bg-gray-500 dark:bg-gray-700">
-              <div className="border border-gray-300 dark:border-gray-300 rounded-lg">
+              <div className=" bg-white dark:border-gray-300 rounded-lg">
                 <TextArea
                   placeholder="What needs to be done?"
                   value={newTaskTitle}
@@ -229,6 +229,7 @@ const ColumnContainer = ({
                 add
                 width="large"
                 onClick={() => setIsAddingTask(true)}
+                isDisabled={validTasks.length >= columnLimit}
               />
             </div>
           )}

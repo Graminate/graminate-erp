@@ -5,6 +5,7 @@ export type Task = {
   columnId: Id;
   title: string;
   type: string;
+  status?: string;
 };
 
 export type Column = {

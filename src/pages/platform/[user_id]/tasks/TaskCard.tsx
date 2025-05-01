@@ -22,13 +22,15 @@ const TaskCard = ({
   dropdownOpen,
   isOverlay = false,
 }: TaskCardProps) => {
-  const [isHovering, setIsHovering] = useState(false); // Hook called first
+  const [isHovering, setIsHovering] = useState(false);
 
   if (!task) {
-    // Conditional return is now AFTER the hook
     return null;
   }
 
+  const handleDelete = (taskId: Id) => {
+    deleteTask(taskId);
+  };
   return (
     <div
       className={`bg-white dark:bg-gray-700 p-3 rounded-md shadow relative ${
@@ -67,20 +69,14 @@ const TaskCard = ({
                   className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-800 shadow-lg rounded text-sm text-gray-800 dark:text-light z-20"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <button
-                    className="block hover:bg-gray-100 dark:hover:bg-gray-700 px-4 py-2 rounded-t w-full text-left"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openLabelPopup(task.id);
-                    }}
-                  >
-                    Add label
+                  <button className="block hover:bg-gray-400 dark:hover:bg-gray-700 px-4 py-2 rounded-t w-full text-left">
+                    Priority
                   </button>
                   <button
-                    className="block hover:bg-gray-100 dark:hover:bg-gray-700 px-4 py-2 rounded-b w-full text-left text-red-600"
+                    className="block hover:bg-gray-400 dark:hover:bg-gray-700 px-4 py-2 rounded-b w-full text-left text-red-600"
                     onClick={(e) => {
                       e.stopPropagation();
-                      deleteTask(task.id);
+                      handleDelete(task.id);
                     }}
                   >
                     Delete

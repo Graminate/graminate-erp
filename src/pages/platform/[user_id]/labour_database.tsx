@@ -10,7 +10,7 @@ import axiosInstance from "@/lib/utils/axiosInstance";
 
 type View = "labour";
 
-interface LabourRecord {
+type LabourRecord = {
   labour_id: string;
   full_name: string;
   date_of_birth: string;
@@ -24,8 +24,7 @@ interface LabourRecord {
   state: string;
   postal_code: string;
   created_at: string;
-  // Add other fields as needed
-}
+};
 
 const LabourDatabase = () => {
   const router = useRouter();

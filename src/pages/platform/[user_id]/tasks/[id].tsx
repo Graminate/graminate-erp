@@ -33,11 +33,13 @@ import TaskListView from "./TaskListView";
 import SortableItem from "./SortableItem";
 import ColumnContainer from "./ColumnContainer";
 import TaskCard from "./TaskCard";
+import axiosInstance from "@/lib/utils/axiosInstance";
+import axios from "axios";
 
 const TasksPage = () => {
   const router = useRouter();
-  const projectTitle =
-    typeof router.query.title === "string" ? router.query.title : "";
+  const projectTitle = router.query.project as string;
+  const userId = router.query.user_id as string;
 
   const initialColumns: Column[] = [
     { id: "todo", title: "TO DO" },
@@ -46,48 +48,11 @@ const TasksPage = () => {
     { id: "done", title: "DONE" },
   ];
 
-  const initialTasks: Task[] = [
-    {
-      id: 1,
-      columnId: "todo",
-      title: "Analyze user requirements for the new dashboard feature",
-      type: "Research",
-    },
-    {
-      id: 2,
-      columnId: "todo",
-      title: "Create initial wireframes based on requirements",
-      type: "Design",
-    },
-    {
-      id: 3,
-      columnId: "progress",
-      title: "Develop user authentication module",
-      type: "Dev, Urgent",
-    },
-    {
-      id: 4,
-      columnId: "progress",
-      title: "Set up CI/CD pipeline",
-      type: "DevOps",
-    },
-    {
-      id: 5,
-      columnId: "check",
-      title: "Setup project repository on GitHub",
-      type: "Setup",
-    },
-    {
-      id: 6,
-      columnId: "check",
-      title: "Setup project repository on GitHub",
-      type: "Setup",
-    },
-  ];
-
   const [columns, setColumns] = useState<Column[]>(initialColumns);
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+
+  const [tasks, setTasks] = useState<Task[]>([]);
   const columnsId = useMemo(() => columns.map((col) => col.id), [columns]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [activeColumn, setActiveColumn] = useState<Column | null>(null);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
@@ -115,8 +80,8 @@ const TasksPage = () => {
     []
   );
   const [dropdownItems, setDropdownItems] = useState<string[]>(() => {
-    const labelsFromTasks = initialTasks.flatMap((t) =>
-      t.type ? t.type.split(",").map((l) => l.trim()) : []
+    const labelsFromTasks = tasks.flatMap(
+      (t: Task) => t.type?.split(",").map((l: string) => l.trim()) ?? []
     );
     return [
       ...new Set([
@@ -135,6 +100,55 @@ const TasksPage = () => {
   });
 
   const [isBrowser, setIsBrowser] = useState(false);
+
+  useEffect(() => {
+    const fetchTasks = async () => {
+      if (!projectTitle || !userId) return;
+
+      try {
+        setIsLoading(true);
+        const response = await axiosInstance.get(`/tasks/${userId}`, {
+          params: { project: projectTitle },
+        });
+
+        const fetchedTasks = response.data.tasks || [];
+
+        const mappedTasks = fetchedTasks.map((task: any) => ({
+          id: task.task_id,
+          title: task.task,
+          type: task.type || "",
+          columnId: mapStatusToColumnId(task.status),
+          status: task.status,
+        }));
+
+        setTasks(mappedTasks);
+      } catch (error) {
+        console.error("Failed to fetch tasks:", error);
+        setTasks([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTasks();
+  }, [projectTitle, userId]);
+
+  // Helper function to map status to columnId
+  const mapStatusToColumnId = (status: string): Id => {
+    switch (status) {
+      case "To Do":
+        return "todo";
+      case "In Progress":
+        return "progress";
+      case "Checks":
+        return "check";
+      case "Completed":
+        return "done";
+      default:
+        return "todo"; // Default to "todo" if status doesn't match
+    }
+  };
+
   useEffect(() => {
     setIsBrowser(typeof document !== "undefined");
   }, []);
@@ -199,7 +213,7 @@ const TasksPage = () => {
   //     showCancelButton: true,
   //     confirmButtonColor: "#d33",
   //     cancelButtonColor: "#3085d6",
-  //     confirmButtonText: "Yes, delete it!",
+  //     confirmButtonText: "Delete",
   //     cancelButtonText: "Cancel",
   //   }).then((result) => {
   //     if (result.isConfirmed) {
@@ -225,62 +239,135 @@ const TasksPage = () => {
     );
   };
 
-  const addTask = (columnId: Id, title: string, type: string) => {
-    const newTask: Task = {
-      id: generateId("task"),
-      columnId,
-      title: title.trim(),
-      type: type.trim() || "",
-    };
-    setTasks((prev) => [...prev, newTask]);
-    const newLabel = type.trim();
-    if (
-      newLabel &&
-      !dropdownItems
-        .map((item) => item.toLowerCase())
-        .includes(newLabel.toLowerCase())
-    ) {
-      setDropdownItems((prev) => [...prev, newLabel].sort());
+  const addTask = async (columnId: Id, title: string, type: string) => {
+    try {
+      const status = mapColumnIdToStatus(columnId);
+
+      // Make the API call here (only once)
+      const response = await axiosInstance.post("/tasks/add", {
+        user_id: Number(userId),
+        project: projectTitle,
+        task: title.trim(),
+        status: status,
+        description: "",
+        priority: "Medium",
+        type: type.trim() || "",
+      });
+
+      const newTask: Task = {
+        id: response.data.task_id,
+        columnId,
+        title: title.trim(),
+        type: type.trim() || "",
+        status: status,
+      };
+
+      setTasks((prev) => [...prev, newTask]);
+
+      const newLabel = type.trim();
+      if (
+        newLabel &&
+        !dropdownItems.some(
+          (item) => item.toLowerCase() === newLabel.toLowerCase()
+        )
+      ) {
+        setDropdownItems((prev) => [...prev, newLabel].sort());
+      }
+    } catch (error) {
+      console.error("Failed to add task:", error);
+      Swal.fire(
+        "Error",
+        (axios.isAxiosError(error) && error.response?.data?.message) ||
+          "Failed to create task",
+        "error"
+      );
     }
   };
 
-  const deleteTask = (taskId: Id) => {
-    Swal.fire({
-      title: "Delete Task?",
-      text: "Are you sure you want to delete this task?",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete",
-      cancelButtonText: "Cancel",
-    }).then((result) => {
-      if (result.isConfirmed) {
-        setTasks((prev) => prev.filter((task) => task.id !== taskId));
-        setDropdownOpen(null);
-      }
-    });
+  // Helper function to map columnId to status
+  const mapColumnIdToStatus = (columnId: Id): string => {
+    switch (columnId) {
+      case "todo":
+        return "To Do";
+      case "progress":
+        return "In Progress";
+      case "check":
+        return "Checks";
+      case "done":
+        return "Completed";
+      default:
+        return "To Do";
+    }
   };
 
-  const updateTask = (updatedTask: Task) => {
-    setTasks((prev) =>
-      prev.map((task) => (task.id === updatedTask.id ? updatedTask : task))
-    );
-    const labels = updatedTask.type
-      ? updatedTask.type
-          .split(",")
-          .map((l) => l.trim())
-          .filter(Boolean)
-      : [];
-    labels.forEach((label) => {
-      if (
-        !dropdownItems
-          .map((item) => item.toLowerCase())
-          .includes(label.toLowerCase())
-      ) {
-        setDropdownItems((prev) => [...prev, label].sort());
+  const deleteTask = async (taskId: Id) => {
+    try {
+      const result = await Swal.fire({
+        title: "Delete Task?",
+        text: "Are you sure you want to delete this task? This action cannot be undone.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#04ad79",
+        cancelButtonColor: "#bbbbbc",
+        confirmButtonText: "Yes",
+        cancelButtonText: "Cancel",
+      });
+
+      if (result.isConfirmed) {
+        await axiosInstance.delete(`/tasks/delete/${taskId}`);
+        setTasks((prev) => prev.filter((task) => task.id !== taskId));
+        setDropdownOpen(null);
+        if (isTaskModalOpen && selectedTask?.id === taskId) closeTaskModal();
+        Swal.fire({
+          title: "Deleted!",
+          text: "Your task has been deleted.",
+          icon: "success",
+          confirmButtonColor: "#04ad79",
+        }).then(() => {
+          window.location.reload();
+        });
       }
-    });
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      Swal.fire(
+        "Error",
+        (axios.isAxiosError(error) && error.response?.data?.message) ||
+          "Failed to delete task",
+        "error"
+      );
+    }
+  };
+
+  const updateTask = async (updatedTask: Task) => {
+    try {
+      await axiosInstance.put(`/tasks/update/${updatedTask.id}`, {
+        task: updatedTask.title,
+        type: updatedTask.type,
+        status: mapColumnIdToStatus(updatedTask.columnId),
+      });
+
+      setTasks((prev) =>
+        prev.map((task) => (task.id === updatedTask.id ? updatedTask : task))
+      );
+
+      const labels = updatedTask.type
+        ? updatedTask.type
+            .split(",")
+            .map((l) => l.trim())
+            .filter(Boolean)
+        : [];
+      labels.forEach((label) => {
+        if (
+          !dropdownItems
+            .map((item) => item.toLowerCase())
+            .includes(label.toLowerCase())
+        ) {
+          setDropdownItems((prev) => [...prev, label].sort());
+        }
+      });
+    } catch (error) {
+      console.error("Failed to update task:", error);
+    }
   };
 
   const openLabelPopup = (taskId: Id) => {
@@ -647,7 +734,8 @@ const TasksPage = () => {
                         <ColumnContainer
                           column={col}
                           tasks={tasksForColumn}
-                          // deleteColumn={deleteColumn}
+                          userId={Number(userId)}
+                          projectTitle={projectTitle}
                           updateColumnTitle={updateColumnTitle}
                           openTicketModal={openTicketModal}
                           columnLimits={columnLimits}
@@ -674,6 +762,8 @@ const TasksPage = () => {
                         tasks={tasks.filter(
                           (t) => t.columnId === activeColumn.id
                         )}
+                        userId={Number(userId)}
+                        projectTitle={projectTitle}
                         deleteColumn={() => {}}
                         updateColumnTitle={() => {}}
                         openTicketModal={() => {}}
@@ -705,52 +795,6 @@ const TasksPage = () => {
             </DndContext>
           )}
 
-          {isLabelPopupOpen && selectedTaskIdForLabel && (
-            <div
-              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-              onClick={(e) => {
-                if (e.target === e.currentTarget) toggleLabelPopup();
-              }}
-            >
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md shadow-lg mx-4">
-                <h3 className="text-lg font-bold text-gray-800 dark:text-light">
-                  Add labels to task{" "}
-                  {typeof selectedTaskIdForLabel === "string" &&
-                  selectedTaskIdForLabel.startsWith("task-")
-                    ? selectedTaskIdForLabel.toUpperCase()
-                    : selectedTaskIdForLabel}
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 mb-4">
-                  Current labels:{" "}
-                  {tasks.find((t) => t.id === selectedTaskIdForLabel)?.type ||
-                    "None"}
-                </p>
-                <div className="mt-4 flex gap-2">
-                  <div className="flex-grow">
-                    <TextField
-                      placeholder="New label name"
-                      value={newLabel}
-                      onChange={setNewLabel}
-                    />
-                  </div>
-                  <Button
-                    text="Add"
-                    style="secondary"
-                    isDisabled={!newLabel.trim()}
-                    onClick={addLabel}
-                  />
-                </div>
-                <div className="flex justify-end gap-3 mt-6">
-                  <Button
-                    text="Done"
-                    style="primary"
-                    onClick={toggleLabelPopup}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
           <TicketModal
             isOpen={isTicketModalOpen}
             columnName={
@@ -775,8 +819,10 @@ const TasksPage = () => {
                 ...selectedTask,
                 id: String(selectedTask.id),
                 columnId: String(selectedTask.columnId),
+                status: mapColumnIdToStatus(selectedTask.columnId),
               }}
               updateTask={updateTask}
+              deleteTask={deleteTask}
               projectName={projectTitle}
               availableLabels={dropdownItems}
               onClose={closeTaskModal}

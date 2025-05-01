@@ -10,7 +10,7 @@ import Loader from "@/components/ui/Loader";
 import Head from "next/head";
 import axiosInstance from "@/lib/utils/axiosInstance";
 
-interface Contact {
+type Contact = {
   contact_id: string;
   first_name: string;
   last_name: string;

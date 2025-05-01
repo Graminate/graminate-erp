@@ -37,7 +37,7 @@ const ActiveProducts = ({
   };
 
   return (
-    <div className="rounded-lg overflow-hidden shadow-md w-full bg-white max-h-64">
+    <div className="rounded-lg overflow-hidden shadow-md w-full bg-white dark:bg-gray-800 max-h-64">
       <div className="bg-green-200 p-3">
         <h2 className="font-semibold text-light">{headerTitle}</h2>
       </div>
@@ -55,21 +55,21 @@ const ActiveProducts = ({
               onDragEnd={handleDragEnd}
               onMouseEnter={() => setHoveredItem(index)}
               onMouseLeave={() => setHoveredItem(null)}
-              className={`p-3 cursor-pointer text-sm text-dark hover:bg-light duration-150 ease-in-out flex justify-between items-center ${
-                draggedItem === index ? "bg-light" : ""
+              className={`p-3 cursor-pointer text-sm text-dark dark:text-light hover:bg-light dark:hover:bg-gray-700 duration-150 ease-in-out flex justify-between items-center ${
+                draggedItem === index ? "bg-light dark:bg-gray-700" : ""
               }`}
             >
               <span>{item}</span>
               {(hoveredItem === index || draggedItem === index) && (
                 <FontAwesomeIcon
                   icon={faGripVertical}
-                  className="size-4 text-gray-300"
+                  className="size-4 text-light"
                 />
               )}
             </div>
           ))
         ) : (
-          <div className="px-4 py-3 text-gray-500 italic">
+          <div className="px-4 py-3 text-light italic">
             No items to display.
           </div>
         )}

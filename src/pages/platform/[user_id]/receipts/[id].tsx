@@ -21,7 +21,7 @@ type Item = {
   amount: number;
 };
 
-interface Receipt {
+type Receipt = {
   invoice_id: string;
   total: number;
   items: Array<{
@@ -31,7 +31,7 @@ interface Receipt {
   }>;
   paymentMethod: "cash" | "card" | "other";
   created_at: string;
-}
+};
 
 const ReceiptDetails = () => {
   const router = useRouter();

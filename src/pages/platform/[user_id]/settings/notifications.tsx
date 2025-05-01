@@ -5,6 +5,7 @@ import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
 import Button from "@/components/ui/Button";
 import { API_BASE_URL } from "@/constants/constants";
+import Checkbox from "@/components/ui/Checkbox";
 
 type NotificationSettings = {
   orders: {
@@ -128,18 +129,38 @@ const NotificationPage = () => {
                   enabled={settings.orders.enabled}
                   onToggle={() => handleToggle("orders")}
                 >
-                  <CheckboxOption
-                    label="Email Notifications"
-                    checked={settings.orders.email}
-                    onChange={() => handleCheckboxChange("orders", "email")}
-                    disabled={!settings.orders.enabled}
-                  />
-                  <CheckboxOption
-                    label="SMS Alerts"
-                    checked={settings.orders.sms}
-                    onChange={() => handleCheckboxChange("orders", "sms")}
-                    disabled={!settings.orders.enabled}
-                  />
+                  <label
+                    className={`flex items-center space-x-3 ${
+                      !settings.orders.enabled ? "opacity-50" : "cursor-pointer"
+                    }`}
+                  >
+                    <Checkbox
+                      id="orders-email-notifications"
+                      checked={settings.orders.email}
+                      onChange={() => handleCheckboxChange("orders", "email")}
+                      disabled={!settings.orders.enabled}
+                      className="h-4 w-4 text-green-600"
+                    />
+                    <span className="text-sm text-dark dark:text-light">
+                      Email Notifications
+                    </span>
+                  </label>
+                  <label
+                    className={`flex items-center space-x-3 ${
+                      !settings.orders.enabled ? "opacity-50" : "cursor-pointer"
+                    }`}
+                  >
+                    <Checkbox
+                      id="orders-sms-alerts"
+                      checked={settings.orders.sms}
+                      onChange={() => handleCheckboxChange("orders", "sms")}
+                      disabled={!settings.orders.enabled}
+                      className="h-4 w-4 text-green-600"
+                    />
+                    <span className="text-sm text-dark dark:text-light">
+                      SMS Alerts
+                    </span>
+                  </label>
                 </SectionCard>
 
                 <SectionCard
@@ -148,22 +169,46 @@ const NotificationPage = () => {
                   enabled={settings.inventory.enabled}
                   onToggle={() => handleToggle("inventory")}
                 >
-                  <CheckboxOption
-                    label="Low Stock Warnings"
-                    checked={settings.inventory.lowStock}
-                    onChange={() =>
-                      handleCheckboxChange("inventory", "lowStock")
-                    }
-                    disabled={!settings.inventory.enabled}
-                  />
-                  <CheckboxOption
-                    label="Replenishment Reminders"
-                    checked={settings.inventory.replenish}
-                    onChange={() =>
-                      handleCheckboxChange("inventory", "replenish")
-                    }
-                    disabled={!settings.inventory.enabled}
-                  />
+                  <label
+                    className={`flex items-center space-x-3 ${
+                      !settings.inventory.enabled
+                        ? "opacity-50"
+                        : "cursor-pointer"
+                    }`}
+                  >
+                    <Checkbox
+                      id="inventory-low-stock"
+                      checked={settings.inventory.lowStock}
+                      onChange={() =>
+                        handleCheckboxChange("inventory", "lowStock")
+                      }
+                      disabled={!settings.inventory.enabled}
+                      className="h-4 w-4 text-green-600"
+                    />
+                    <span className="text-sm text-dark dark:text-light">
+                      Low Stock Warnings
+                    </span>
+                  </label>
+                  <label
+                    className={`flex items-center space-x-3 ${
+                      !settings.inventory.enabled
+                        ? "opacity-50"
+                        : "cursor-pointer"
+                    }`}
+                  >
+                    <Checkbox
+                      id="inventory-replenish"
+                      checked={settings.inventory.replenish}
+                      onChange={() =>
+                        handleCheckboxChange("inventory", "replenish")
+                      }
+                      disabled={!settings.inventory.enabled}
+                      className="h-4 w-4 text-green-600"
+                    />
+                    <span className="text-sm text-dark dark:text-light">
+                      Replenishment Reminders
+                    </span>
+                  </label>
                 </SectionCard>
 
                 {showWeatherAlerts && (
@@ -173,20 +218,46 @@ const NotificationPage = () => {
                     enabled={settings.weather.enabled}
                     onToggle={() => handleToggle("weather")}
                   >
-                    <CheckboxOption
-                      label="Severe Weather Alerts"
-                      checked={settings.weather.alerts}
-                      onChange={() => handleCheckboxChange("weather", "alerts")}
-                      disabled={!settings.weather.enabled}
-                    />
-                    <CheckboxOption
-                      label="Daily Forecasts"
-                      checked={settings.weather.forecasts}
-                      onChange={() =>
-                        handleCheckboxChange("weather", "forecasts")
-                      }
-                      disabled={!settings.weather.enabled}
-                    />
+                    <label
+                      className={`flex items-center space-x-3 ${
+                        !settings.weather.enabled
+                          ? "opacity-50"
+                          : "cursor-pointer"
+                      }`}
+                    >
+                      <Checkbox
+                        id="weather-alerts"
+                        checked={settings.weather.alerts}
+                        onChange={() =>
+                          handleCheckboxChange("weather", "alerts")
+                        }
+                        disabled={!settings.weather.enabled}
+                        className="h-4 w-4 text-green-600"
+                      />
+                      <span className="text-sm text-dark dark:text-light">
+                        Severe Weather Alerts
+                      </span>
+                    </label>
+                    <label
+                      className={`flex items-center space-x-3 ${
+                        !settings.weather.enabled
+                          ? "opacity-50"
+                          : "cursor-pointer"
+                      }`}
+                    >
+                      <Checkbox
+                        id="weather-forecasts"
+                        checked={settings.weather.forecasts}
+                        onChange={() =>
+                          handleCheckboxChange("weather", "forecasts")
+                        }
+                        disabled={!settings.weather.enabled}
+                        className="h-4 w-4 text-green-600"
+                      />
+                      <span className="text-sm text-dark dark:text-light">
+                        Daily Forecasts
+                      </span>
+                    </label>
                   </SectionCard>
                 )}
 
@@ -196,20 +267,41 @@ const NotificationPage = () => {
                   enabled={settings.system.enabled}
                   onToggle={() => handleToggle("system")}
                 >
-                  <CheckboxOption
-                    label="Maintenance Notices"
-                    checked={settings.system.maintenance}
-                    onChange={() =>
-                      handleCheckboxChange("system", "maintenance")
-                    }
-                    disabled={!settings.system.enabled}
-                  />
-                  <CheckboxOption
-                    label="Software Updates"
-                    checked={settings.system.updates}
-                    onChange={() => handleCheckboxChange("system", "updates")}
-                    disabled={!settings.system.enabled}
-                  />
+                  <label
+                    className={`flex items-center space-x-3 ${
+                      !settings.system.enabled ? "opacity-50" : "cursor-pointer"
+                    }`}
+                  >
+                    <Checkbox
+                      id="system-maintenance"
+                      checked={settings.system.maintenance}
+                      onChange={() =>
+                        handleCheckboxChange("system", "maintenance")
+                      }
+                      disabled={!settings.system.enabled}
+                      className="h-4 w-4 text-green-600"
+                    />
+                    <span className="text-sm text-dark dark:text-light">
+                      Maintenance Notices
+                    </span>
+                  </label>
+
+                  <label
+                    className={`flex items-center space-x-3 ${
+                      !settings.system.enabled ? "opacity-50" : "cursor-pointer"
+                    }`}
+                  >
+                    <Checkbox
+                      id="system-updates"
+                      checked={settings.system.updates}
+                      onChange={() => handleCheckboxChange("system", "updates")}
+                      disabled={!settings.system.enabled}
+                      className="h-4 w-4 text-green-600"
+                    />
+                    <span className="text-sm text-dark dark:text-light">
+                      Software Updates
+                    </span>
+                  </label>
                 </SectionCard>
               </div>
             </div>
@@ -262,33 +354,6 @@ const SectionCard = ({
       {children}
     </div>
   </div>
-);
-
-const CheckboxOption = ({
-  label,
-  checked,
-  onChange,
-  disabled,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: () => void;
-  disabled?: boolean;
-}) => (
-  <label
-    className={`flex items-center space-x-3 ${
-      disabled ? "opacity-50" : "cursor-pointer"
-    }`}
-  >
-    <input
-      type="checkbox"
-      checked={checked}
-      onChange={onChange}
-      disabled={disabled}
-      className="h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500 dark:border-gray-600 dark:bg-gray-700"
-    />
-    <span className="text-sm text-dark dark:text-light">{label}</span>
-  </label>
 );
 
 export default NotificationPage;
