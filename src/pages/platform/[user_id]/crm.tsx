@@ -332,7 +332,7 @@ const CRM = () => {
 
         return {
           columns: [
-            "Project",
+            "Task Category",
             "Tasks",
             "Status Summary",
             "Priority",

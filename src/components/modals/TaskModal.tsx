@@ -107,7 +107,7 @@ const TaskModal = ({
         </div>
 
         <p className="text-gray-300 text-sm">
-          {projectName} / {taskDetails.id}
+          {projectName} / TASK-{taskDetails.id}
         </p>
 
         <div className="grid grid-cols-[60%_40%] gap-4 mt-4">

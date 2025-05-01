@@ -932,7 +932,6 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                 </div>
               </form>
             )}
-            {/* --- Tasks Form --- */}
             {view === "tasks" && (
               <form
                 className="flex flex-col gap-4 w-full"
@@ -940,7 +939,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
               >
                 <div className="relative">
                   <TextField
-                    label="Project / Category"
+                    label="Task Category"
                     placeholder="e.g. Poultry / Animal Husbandry / Apiculture"
                     value={taskValues.project}
                     onChange={handleProjectInputChange}

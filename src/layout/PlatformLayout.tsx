@@ -18,18 +18,32 @@ const PlatformLayout = ({ children }: Props) => {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [userId, setUserId] = useState<string>("");
   const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const router = useRouter();
   const { user_id } = router.query;
 
   const chatRef = useRef<HTMLDivElement>(null);
 
+  // Prevent body scrolling when sidebar is open on mobile
   useEffect(() => {
-    if (user_id) {
-      setUserId(user_id as string);
+    if (isSidebarOpen) {
+      document.body.style.overflow = "hidden";
+      document.documentElement.style.overflow = "hidden";
     } else {
-      setUserId("");
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
     }
-  }, [user_id]);
+
+    return () => {
+      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
+    };
+  }, [isSidebarOpen]);
+
+  // Close sidebar when route changes
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [router.pathname]);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -43,10 +57,16 @@ const PlatformLayout = ({ children }: Props) => {
     };
 
     document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isChatOpen]);
+
+  useEffect(() => {
+    if (user_id) {
+      setUserId(user_id as string);
+    } else {
+      setUserId("");
+    }
+  }, [user_id]);
 
   const handleSectionChange = (section: string) => {
     console.log("Sidebar Section changed:", section);
@@ -55,7 +75,6 @@ const PlatformLayout = ({ children }: Props) => {
   const verifySession = useCallback(
     async (currentUserId: string) => {
       setIsLoadingAuth(true);
-
       const token = localStorage.getItem("token");
       if (!token) {
         setIsAuthorized(false);
@@ -76,12 +95,10 @@ const PlatformLayout = ({ children }: Props) => {
         await axiosInstance.get(`/user/${currentUserId}`, {
           timeout: 10000,
         });
-
         setIsAuthorized(true);
       } catch (error: unknown) {
         setIsAuthorized(false);
         let errorText = "Session expired or unauthorized access.";
-
         if (axios.isAxiosError(error)) {
           const axiosError = error as AxiosError;
           if (axiosError.response?.status === 401) {
@@ -90,7 +107,6 @@ const PlatformLayout = ({ children }: Props) => {
             errorText = `User not found`;
           }
         }
-
         Swal.fire({
           title: "Access Denied",
           text: errorText,
@@ -138,16 +154,43 @@ const PlatformLayout = ({ children }: Props) => {
 
   return (
     <div className="flex flex-col min-h-screen bg-light dark:bg-dark text-dark dark:text-light">
-      <Navbar userId={userId} />
-      <div className="flex flex-1 min-h-screen">
+      {/* Navbar */}
+      <div className="z-50">
+        <Navbar
+          userId={userId}
+          isSidebarOpen={isSidebarOpen}
+          toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+        />
+      </div>
+
+      {/* Main content area */}
+      <div className="flex flex-1 min-h-screen relative">
+        {/* Mobile overlay */}
+        {isSidebarOpen && (
+          <div
+            className="fixed inset-0 bg-black/40 bg-opacity-50 z-40 lg:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+
+        {/* Sidebar */}
         <Sidebar
-          isOpen={true} // Set to true since we removed the state
+          isOpen={isSidebarOpen}
           userId={userId}
           onSectionChange={handleSectionChange}
         />
-        <div className="flex-1 p-4">{children}</div>
+
+        {/* Main content */}
+        <div
+          className={`flex-1 p-4 ${
+            isSidebarOpen ? "overflow-hidden" : ""
+          }`}
+        >
+          {children}
+        </div>
       </div>
 
+      {/* Chat button */}
       <button
         onClick={() => setIsChatOpen((prev) => !prev)}
         className="fixed bottom-4 right-4 bg-green-200 text-white p-4 rounded-full shadow-lg hover:bg-green-100 z-50"

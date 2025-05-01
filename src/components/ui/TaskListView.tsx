@@ -10,7 +10,6 @@ type TaskListViewProps = {
   isSelectedDatePast: boolean;
   setShowAddTask: (value: boolean) => void;
   getDayStatus: (date: Date) => string;
-  canAddTask: boolean;
 };
 
 const TaskListView = ({
@@ -21,14 +20,13 @@ const TaskListView = ({
   isSelectedDatePast,
   setShowAddTask,
   getDayStatus,
-  canAddTask,
 }: TaskListViewProps) => (
   <>
     <h3 className="text-lg font-bold mb-4 text-dark dark:text-light">
       Tasks for {getDayStatus(selectedDate)}
     </h3>
 
-    <div className="mt-4 flex justify-between space-x-4">
+    <div className="mt-4 flex justify-between space-x-4 mb-4">
       <Button
         text=""
         style="ghost"
@@ -36,13 +34,13 @@ const TaskListView = ({
         onClick={() => setShowTasks(false)}
       />
 
-      {!isSelectedDatePast && canAddTask && (
+      {!isSelectedDatePast && (
         <button
           aria-label="add tasks"
           className="bg-green-200 hover:bg-green-100 text-white px-2 py-1 rounded-full"
           onClick={() => setShowAddTask(true)}
         >
-          <FontAwesomeIcon icon={faPlus}/>
+          <FontAwesomeIcon icon={faPlus} />
         </button>
       )}
     </div>

@@ -2,6 +2,8 @@ import React from "react";
 import ClockPicker from "./ClockPicker";
 import TextField from "../TextField";
 import DropdownSmall from "../Dropdown/DropdownSmall";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faClock } from "@fortawesome/free-solid-svg-icons";
 
 type AddTaskViewProps = {
   selectedDate: Date;
@@ -56,8 +58,8 @@ const AddTaskView = ({
 
   return (
     <div className="animate-fadeIn">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-semibold text-gray-800 dark:text-white">
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
           Add Task
         </h3>
       </div>
@@ -72,7 +74,7 @@ const AddTaskView = ({
 
       <div className="space-y-5">
         <TextField
-          label="Task Name"
+          label="Task"
           placeholder="Enter task name..."
           value={newTask}
           onChange={setNewTask}
@@ -85,8 +87,8 @@ const AddTaskView = ({
 
         <div className="relative mb-4">
           <TextField
-            label="Project / Category"
-            placeholder="Category"
+            label="Task Category"
+            placeholder="Enter task category"
             value={projectInput}
             onChange={handleProjectInputChange}
             onFocus={() => setShowSuggestions(true)}
@@ -138,18 +140,7 @@ const AddTaskView = ({
             aria-expanded={isClockVisible}
           >
             <span>{newTaskTime}</span>
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5 text-gray-400"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v4.586l-3.293 3.293a1 1 0 101.414 1.414L10 10.414V5z"
-                clipRule="evenodd"
-              />
-            </svg>
+            <FontAwesomeIcon icon={faClock} className="size-5 text-gray-300" />
           </button>
           {isClockVisible && (
             <div className="absolute z-10 mt-1 w-full sm:w-72 right-0">
