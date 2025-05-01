@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 import ClockPicker from "./ClockPicker";
 import TextField from "../TextField";
-// Removed incorrect import of setPriority from "os"
 import DropdownSmall from "../Dropdown/DropdownSmall";
 
 type AddTaskViewProps = {
@@ -19,6 +18,14 @@ type AddTaskViewProps = {
   isTaskNameValid: boolean;
   priority: string;
   setPriority: (value: string) => void;
+  projectInput: string;
+  handleProjectInputChange: (value: string) => void;
+  suggestions: string[];
+  showSuggestions: boolean;
+  isLoadingSuggestions: boolean;
+  selectSuggestion: (suggestion: string) => void;
+  suggestionsRef: React.RefObject<HTMLDivElement>;
+  setShowSuggestions: (value: boolean) => void;
 };
 
 const AddTaskView = ({
@@ -34,6 +41,13 @@ const AddTaskView = ({
   isTaskNameValid,
   priority,
   setPriority,
+  projectInput,
+  handleProjectInputChange,
+  suggestions,
+  showSuggestions,
+  selectSuggestion,
+  suggestionsRef,
+  setShowSuggestions,
 }: AddTaskViewProps) => {
   const handleAddTaskClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -69,18 +83,31 @@ const AddTaskView = ({
           }
         />
 
-        {/* Project / Category */}
-        <TextField
-          label="Category"
-          placeholder="Enter Category"
-          value={newTask}
-          onChange={setNewTask}
-          errorMessage={
-            !isTaskNameValid && !newTask.trim()
-              ? "Category cannot be empty"
-              : ""
-          }
-        />
+        <div className="relative mb-4">
+          <TextField
+            label="Project / Category"
+            placeholder="Category"
+            value={projectInput}
+            onChange={handleProjectInputChange}
+            onFocus={() => setShowSuggestions(true)}
+          />
+          {showSuggestions && suggestions.length > 0 && (
+            <div
+              ref={suggestionsRef as React.RefObject<HTMLDivElement>}
+              className="absolute z-50 mt-1 w-full max-h-60 overflow-auto rounded-md bg-white dark:bg-gray-700 py-1 text-base shadow-lg focus:outline-none sm:text-sm"
+            >
+              {suggestions.map((suggestion: string, index: number) => (
+                <div
+                  key={index}
+                  className="px-4 py-2 hover:bg-gray-500 dark:hover:bg-gray-600 cursor-pointer text-sm text-gray-800 dark:text-gray-200"
+                  onClick={() => selectSuggestion(suggestion)}
+                >
+                  {suggestion}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="mb-4">
           <DropdownSmall

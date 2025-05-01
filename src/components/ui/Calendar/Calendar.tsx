@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Swal from "sweetalert2";
 import CalendarGrid from "./CalendarGrid";
 import CalendarHeader from "./CalendarHeader";
 import TaskListView from "../TaskListView";
 import AddTaskView from "./AddTaskView";
+import axiosInstance from "@/lib/utils/axiosInstance";
+import { useRouter } from "next/router";
 
 export type Task = {
   name: string;
@@ -33,6 +35,9 @@ const isTodayWithPastTime = (date: Date, time: string): boolean => {
 };
 
 const Calendar = () => {
+  const router = useRouter();
+  const { user_id } = router.query;
+
   const [tasks, setTasks] = useState<Tasks>({});
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [newTask, setNewTask] = useState("");
@@ -45,6 +50,72 @@ const Calendar = () => {
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
   const [priority, setPriority] = useState<string>("Medium");
+  const [projectInput, setProjectInput] = useState("");
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [subTypes, setSubTypes] = useState<string[]>([]);
+  const [isLoadingSubTypes, setIsLoadingSubTypes] = useState(true);
+
+  const suggestionsRef = useRef<HTMLDivElement>(null!);
+
+  // Fetch user sub_types
+  useEffect(() => {
+    const fetchUserSubTypes = async () => {
+      setIsLoadingSubTypes(true);
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) throw new Error("No auth token found");
+
+        const response = await axiosInstance.get(`/user/${user_id}`);
+
+        const user = response.data?.data?.user ?? response.data?.user;
+        if (!user) throw new Error("User payload missing");
+
+        setSubTypes(Array.isArray(user.sub_type) ? user.sub_type : []);
+      } catch (err) {
+        console.error("Error fetching user sub_types:", err);
+        setSubTypes([]);
+      } finally {
+        setIsLoadingSubTypes(false);
+      }
+    };
+
+    if (user_id) {
+      fetchUserSubTypes();
+    }
+  }, [user_id]);
+
+  const handleProjectInputChange = (value: string) => {
+    setProjectInput(value);
+    if (value.length > 0) {
+      const filtered = subTypes.filter((subType) =>
+        subType.toLowerCase().includes(value.toLowerCase())
+      );
+      setSuggestions(filtered);
+      setShowSuggestions(true);
+    } else {
+      setSuggestions(subTypes);
+      setShowSuggestions(true);
+    }
+  };
+
+  const selectSuggestion = (suggestion: string) => {
+    setProjectInput(suggestion);
+    setShowSuggestions(false);
+  };
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   useEffect(() => {
     const stored = localStorage.getItem("tasks");
@@ -295,6 +366,14 @@ const Calendar = () => {
           isTaskNameValid={isTaskNameValid}
           priority={priority}
           setPriority={setPriority}
+          projectInput={projectInput}
+          handleProjectInputChange={handleProjectInputChange}
+          suggestions={suggestions}
+          showSuggestions={showSuggestions}
+          isLoadingSuggestions={isLoadingSubTypes}
+          selectSuggestion={selectSuggestion}
+          suggestionsRef={suggestionsRef}
+          setShowSuggestions={setShowSuggestions}
         />
       ) : showTasks ? (
         <TaskListView
