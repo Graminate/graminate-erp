@@ -267,19 +267,13 @@ const AddPoultryDataModal = ({
               <div className="grid grid-rows-1 gap-6">
                 <div className="flex flex-row gap-2">
                   <TextField
-                    label="Appointment Visit Date"
-                    calendar
-                    value={vetForm.date}
-                    onChange={(val) => handleVetChange("date", val)}
-                  />
-                  <TextField
                     label="Veterinary Name"
                     value={vetForm.veterinaryName}
                     onChange={(val) => handleVetChange("veterinaryName", val)}
                   />
                 </div>
 
-                <div className="flex flex-row gap-2 justify-center">
+                <div className="grid sm:grid-col-1 md:grid-cols-3 gap-5">
                   <DropdownLarge
                     items={["Chicken", "Duck"]}
                     selectedItem={vetForm.birdType}
@@ -324,7 +318,7 @@ const AddPoultryDataModal = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-6 mt-4">
+              <div className="grid sm:grid-col-1 md:grid-cols-2 gap-6 mt-4">
                 <TextArea
                   label="Vaccines"
                   placeholder="Enter vaccine details"
@@ -354,6 +348,12 @@ const AddPoultryDataModal = ({
                   value={vetForm.remarks}
                   placeholder="Any additional remarks or notes"
                   onChange={(val) => handleVetChange("remarks", val)}
+                />
+                <TextField
+                  label="Next Appointment Date"
+                  calendar
+                  value={vetForm.date}
+                  onChange={(val) => handleVetChange("date", val)}
                 />
               </div>
             </fieldset>

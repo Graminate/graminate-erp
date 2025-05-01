@@ -44,6 +44,7 @@ const Calendar = () => {
   const [selectedReminder, setSelectedReminder] = useState<string>("");
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
+  const [priority, setPriority] = useState<string>("Medium");
 
   useEffect(() => {
     const stored = localStorage.getItem("tasks");
@@ -292,6 +293,8 @@ const Calendar = () => {
           selectedReminder={selectedReminder}
           setSelectedReminder={setSelectedReminder}
           isTaskNameValid={isTaskNameValid}
+          priority={priority}
+          setPriority={setPriority}
         />
       ) : showTasks ? (
         <TaskListView

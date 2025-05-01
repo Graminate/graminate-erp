@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import ClockPicker from "./ClockPicker";
 import TextField from "../TextField";
+// Removed incorrect import of setPriority from "os"
+import DropdownSmall from "../Dropdown/DropdownSmall";
 
 type AddTaskViewProps = {
   selectedDate: Date;
@@ -15,6 +17,8 @@ type AddTaskViewProps = {
   selectedReminder: string;
   setSelectedReminder: (value: string) => void;
   isTaskNameValid: boolean;
+  priority: string;
+  setPriority: (value: string) => void;
 };
 
 const AddTaskView = ({
@@ -28,6 +32,8 @@ const AddTaskView = ({
   addTask,
   setShowAddTask,
   isTaskNameValid,
+  priority,
+  setPriority,
 }: AddTaskViewProps) => {
   const handleAddTaskClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -63,6 +69,7 @@ const AddTaskView = ({
           }
         />
 
+        {/* Project / Category */}
         <TextField
           label="Category"
           placeholder="Enter Category"
@@ -75,17 +82,15 @@ const AddTaskView = ({
           }
         />
 
-        <TextField
-          label="Sub-Category"
-          placeholder="Enter Sub-Category (optional)"
-          value={newTask}
-          onChange={setNewTask}
-          errorMessage={
-            !isTaskNameValid && !newTask.trim()
-              ? "Task name cannot be empty"
-              : ""
-          }
-        />
+        <div className="mb-4">
+          <DropdownSmall
+            label="Priority"
+            placeholder="Select priority"
+            items={["Low", "Medium", "High"]}
+            selected={priority}
+            onSelect={(item: string) => setPriority(item)}
+          />
+        </div>
 
         <div className="relative">
           <label
@@ -132,7 +137,6 @@ const AddTaskView = ({
             </div>
           )}
         </div>
-
 
         <div className="flex justify-end space-x-3 pt-4">
           <button
