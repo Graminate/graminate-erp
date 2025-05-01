@@ -331,7 +331,7 @@ const Table = ({
                   text: `This will reset your ${entityToTruncate} records.`,
                   icon: "warning",
                   showCancelButton: true,
-                  confirmButtonText: "Yes, Reset!",
+                  confirmButtonText: "Reset",
                   cancelButtonText: "Cancel",
                 });
 

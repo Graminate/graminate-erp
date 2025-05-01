@@ -111,21 +111,20 @@ const TasksPage = () => {
           params: { project: projectTitle },
         });
 
-        const fetchedTasks =
-          response.data.length > 0
-            ? response.data.map((task: any) => ({
-                id: task.task_id,
-                title: task.task,
-                type: task.type || "",
-                columnId: mapStatusToColumnId(task.status),
-                status: task.status,
-              }))
-            : []; // Empty array if no tasks
+        const fetchedTasks = response.data.tasks || [];
 
-        setTasks(fetchedTasks);
+        const mappedTasks = fetchedTasks.map((task: any) => ({
+          id: task.task_id,
+          title: task.task,
+          type: task.type || "",
+          columnId: mapStatusToColumnId(task.status),
+          status: task.status,
+        }));
+
+        setTasks(mappedTasks);
       } catch (error) {
         console.error("Failed to fetch tasks:", error);
-        setTasks([]); // Set to empty array on error
+        setTasks([]);
       } finally {
         setIsLoading(false);
       }
@@ -214,7 +213,7 @@ const TasksPage = () => {
   //     showCancelButton: true,
   //     confirmButtonColor: "#d33",
   //     cancelButtonColor: "#3085d6",
-  //     confirmButtonText: "Yes, delete it!",
+  //     confirmButtonText: "Delete",
   //     cancelButtonText: "Cancel",
   //   }).then((result) => {
   //     if (result.isConfirmed) {

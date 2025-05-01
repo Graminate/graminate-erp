@@ -133,14 +133,14 @@ const CRM = () => {
             axiosInstance.get<{ receipts: Receipt[] }>(
               `/receipts/${userIdString}`
             ),
-            axiosInstance.get<Task[]>(`/tasks/${userIdString}`),
+            axiosInstance.get<{ tasks: Task[] }>(`/tasks/${userIdString}`),
           ]);
 
         setContactsData(contactsRes.data.contacts || []);
         setCompaniesData(companiesRes.data.companies || []);
         setContractsData(contractsRes.data.contracts || []);
         setReceiptsData(receiptsRes.data.receipts || []);
-        setTasksData(tasksRes.data || []);
+        setTasksData(tasksRes.data.tasks || []);
       } catch (error) {
         console.error("Error fetching data:", error);
         setContactsData([]);
