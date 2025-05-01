@@ -1,9 +1,7 @@
-import axiosInstance from "@/lib/utils/axiosInstance";
 import { Id, Task } from "@/types/types";
 import { faEllipsis } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { useState } from "react";
-import Swal from "sweetalert2";
 
 type TaskCardProps = {
   task: Task;
@@ -30,20 +28,9 @@ const TaskCard = ({
     return null;
   }
 
-  const handleDelete = async (taskId: Id) => {
-    try {
-      await axiosInstance.delete(`/tasks/delete/${taskId}`);
-      deleteTask(taskId); // This will update the UI by removing the task
-    } catch (error) {
-      console.error("Failed to delete task:", error);
-      Swal.fire(
-        "Error",
-        "Failed to delete the task. Please try again.",
-        "error"
-      );
-    }
+  const handleDelete = (taskId: Id) => {
+    deleteTask(taskId);
   };
-
   return (
     <div
       className={`bg-white dark:bg-gray-700 p-3 rounded-md shadow relative ${
@@ -82,14 +69,8 @@ const TaskCard = ({
                   className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-800 shadow-lg rounded text-sm text-gray-800 dark:text-light z-20"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <button
-                    className="block hover:bg-gray-400 dark:hover:bg-gray-700 px-4 py-2 rounded-t w-full text-left"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openLabelPopup(task.id);
-                    }}
-                  >
-                    Add label
+                  <button className="block hover:bg-gray-400 dark:hover:bg-gray-700 px-4 py-2 rounded-t w-full text-left">
+                    Priority
                   </button>
                   <button
                     className="block hover:bg-gray-400 dark:hover:bg-gray-700 px-4 py-2 rounded-b w-full text-left text-red-600"

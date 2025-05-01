@@ -255,7 +255,6 @@ const TasksPage = () => {
         type: type.trim() || "",
       });
 
-      // Update the UI with the new task
       const newTask: Task = {
         id: response.data.task_id,
         columnId,
@@ -266,7 +265,6 @@ const TasksPage = () => {
 
       setTasks((prev) => [...prev, newTask]);
 
-      // Update labels dropdown if new label was added
       const newLabel = type.trim();
       if (
         newLabel &&
@@ -303,22 +301,42 @@ const TasksPage = () => {
     }
   };
 
-  const deleteTask = (taskId: Id) => {
-    Swal.fire({
-      title: "Delete Task?",
-      text: "Are you sure you want to delete this task?",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete",
-      cancelButtonText: "Cancel",
-    }).then((result) => {
+  const deleteTask = async (taskId: Id) => {
+    try {
+      const result = await Swal.fire({
+        title: "Delete Task?",
+        text: "Are you sure you want to delete this task? This action cannot be undone.",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#04ad79",
+        cancelButtonColor: "#bbbbbc",
+        confirmButtonText: "Yes",
+        cancelButtonText: "Cancel",
+      });
+
       if (result.isConfirmed) {
+        await axiosInstance.delete(`/tasks/delete/${taskId}`);
         setTasks((prev) => prev.filter((task) => task.id !== taskId));
         setDropdownOpen(null);
+        if (isTaskModalOpen && selectedTask?.id === taskId) closeTaskModal();
+        Swal.fire({
+          title: "Deleted!",
+          text: "Your task has been deleted.",
+          icon: "success",
+          confirmButtonColor: "#04ad79",
+        }).then(() => {
+          window.location.reload();
+        });
       }
-    });
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      Swal.fire(
+        "Error",
+        (axios.isAxiosError(error) && error.response?.data?.message) ||
+          "Failed to delete task",
+        "error"
+      );
+    }
   };
 
   const updateTask = async (updatedTask: Task) => {
@@ -778,52 +796,6 @@ const TasksPage = () => {
             </DndContext>
           )}
 
-          {isLabelPopupOpen && selectedTaskIdForLabel && (
-            <div
-              className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-              onClick={(e) => {
-                if (e.target === e.currentTarget) toggleLabelPopup();
-              }}
-            >
-              <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md shadow-lg mx-4">
-                <h3 className="text-lg font-bold text-gray-800 dark:text-light">
-                  Add labels to task{" "}
-                  {typeof selectedTaskIdForLabel === "string" &&
-                  selectedTaskIdForLabel.startsWith("task-")
-                    ? selectedTaskIdForLabel.toUpperCase()
-                    : selectedTaskIdForLabel}
-                </h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 mb-4">
-                  Current labels:{" "}
-                  {tasks.find((t) => t.id === selectedTaskIdForLabel)?.type ||
-                    "None"}
-                </p>
-                <div className="mt-4 flex gap-2">
-                  <div className="flex-grow">
-                    <TextField
-                      placeholder="New label name"
-                      value={newLabel}
-                      onChange={setNewLabel}
-                    />
-                  </div>
-                  <Button
-                    text="Add"
-                    style="secondary"
-                    isDisabled={!newLabel.trim()}
-                    onClick={addLabel}
-                  />
-                </div>
-                <div className="flex justify-end gap-3 mt-6">
-                  <Button
-                    text="Done"
-                    style="primary"
-                    onClick={toggleLabelPopup}
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
           <TicketModal
             isOpen={isTicketModalOpen}
             columnName={
@@ -848,9 +820,10 @@ const TasksPage = () => {
                 ...selectedTask,
                 id: String(selectedTask.id),
                 columnId: String(selectedTask.columnId),
-                status: mapColumnIdToStatus(selectedTask.columnId), // Add this line
+                status: mapColumnIdToStatus(selectedTask.columnId),
               }}
               updateTask={updateTask}
+              deleteTask={deleteTask}
               projectName={projectTitle}
               availableLabels={dropdownItems}
               onClose={closeTaskModal}

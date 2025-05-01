@@ -12,13 +12,12 @@ import TaskCard from "./TaskCard";
 import { Column, Id, Task } from "@/types/types";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEllipsis } from "@fortawesome/free-solid-svg-icons";
-import axiosInstance from "@/lib/utils/axiosInstance";
 
 type ColumnContainerProps = {
   column: Column;
   tasks: Task[];
-  userId: number; // Added userId prop
-  projectTitle: string; // Added projectTitle prop
+  userId: number;
+  projectTitle: string;
   deleteColumn?: (id: Id) => void;
   updateColumnTitle?: (id: Id, title: string) => void;
   openTicketModal: (colId: Id) => void;
@@ -36,8 +35,6 @@ type ColumnContainerProps = {
 const ColumnContainer = ({
   column,
   tasks = [],
-  userId,
-  projectTitle,
   updateColumnTitle,
   openTicketModal,
   columnLimits,
@@ -62,21 +59,6 @@ const ColumnContainer = ({
     [validTasks]
   );
 
-  const mapColumnIdToStatus = (columnId: Id): string => {
-    switch (columnId) {
-      case "todo":
-        return "To Do";
-      case "progress":
-        return "In Progress";
-      case "check":
-        return "Checks";
-      case "done":
-        return "Completed";
-      default:
-        return "To Do";
-    }
-  };
-
   if (!column) {
     return null;
   }
@@ -92,10 +74,16 @@ const ColumnContainer = ({
       return;
     }
 
-    // Just call the parent's addTask function
-    addTask(column.id, newTaskTitle.trim(), newTaskType.trim());
+    if (validTasks.length >= columnLimit) {
+      Swal.fire(
+        "Limit Reached",
+        `This column has reached its limit of ${columnLimit} tasks.`,
+        "error"
+      );
+      return;
+    }
 
-    // Reset the form
+    addTask(column.id, newTaskTitle.trim(), newTaskType.trim());
     setNewTaskTitle("");
     setNewTaskType("");
     setIsAddingTask(false);
@@ -241,6 +229,7 @@ const ColumnContainer = ({
                 add
                 width="large"
                 onClick={() => setIsAddingTask(true)}
+                isDisabled={validTasks.length >= columnLimit}
               />
             </div>
           )}
