@@ -72,34 +72,47 @@ const TaskModal = ({
 
   const handleDelete = async () => {
     setShowDropdown(false);
-    Swal.fire({
-      title: "Are you sure?",
-      text: "You won't be able to revert this!",
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#e53e3e",
-      cancelButtonColor: "#718096",
-      confirmButtonText: "Yes, delete it!",
-    }).then(async (result) => {
-      if (result.isConfirmed) {
-        try {
-          await deleteTask(taskDetails.id);
-          Swal.fire("Deleted!", "Your task has been deleted.", "success");
-          onClose();
-        } catch (error) {
-          console.error("Error deleting task:", error);
-          Swal.fire("Error!", "Could not delete the task.", "error");
-        }
-      }
-    });
+    try {
+      await deleteTask(taskDetails.id);
+      onClose();
+    } catch (error) {
+      console.error("Error deleting task:", error);
+      Swal.fire("Error!", "Could not delete the task.", "error");
+    }
   };
 
-  const handleStatusChange = (newStatus: string) => {
-    updateTaskField("status", newStatus);
+  const handleStatusChange = async (newStatus: string) => {
+    const updatedTask = {
+      ...taskData,
+      status: newStatus,
+      columnId: mapStatusToColumnId(newStatus),
+    };
+    await updateTask(updatedTask);
+    setTaskData(updatedTask);
   };
 
-  const handlePriorityChange = (newPriority: string) => {
-    updateTaskField("priority", newPriority);
+  const handlePriorityChange = async (newPriority: string) => {
+    const updatedTask = {
+      ...taskData,
+      priority: newPriority,
+    };
+    await updateTask(updatedTask);
+    setTaskData(updatedTask);
+  };
+
+  const mapStatusToColumnId = (status: string): string => {
+    switch (status) {
+      case "To Do":
+        return "todo";
+      case "In Progress":
+        return "progress";
+      case "Checks":
+        return "check";
+      case "Completed":
+        return "done";
+      default:
+        return "todo";
+    }
   };
 
   useEffect(() => {
