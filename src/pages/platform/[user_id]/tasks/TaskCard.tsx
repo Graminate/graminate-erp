@@ -18,7 +18,6 @@ const TaskCard = ({
   openTaskModal,
   toggleDropdown,
   deleteTask,
-  openLabelPopup,
   dropdownOpen,
   isOverlay = false,
 }: TaskCardProps) => {
@@ -28,9 +27,23 @@ const TaskCard = ({
     return null;
   }
 
+  const getPriorityColor = (priority: string) => {
+    switch (priority?.toLowerCase()) {
+      case "high":
+        return "bg-red-200 text-light dark:bg-red-200 dark:text-light";
+      case "medium":
+        return "bg-yellow-200 text-dark dark:bg-yellow-900 dark:text-dark";
+      case "low":
+        return "bg-green-200 text-light dark:bg-green-200 dark:text-light";
+      default:
+        return "bg-gray-400 text-dark dark:bg-gray-400 dark:text-dark";
+    }
+  };
+
   const handleDelete = (taskId: Id) => {
     deleteTask(taskId);
   };
+
   return (
     <div
       className={`bg-white dark:bg-gray-700 p-3 rounded-md shadow relative ${
@@ -69,9 +82,6 @@ const TaskCard = ({
                   className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-800 shadow-lg rounded text-sm text-gray-800 dark:text-light z-20"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <button className="block hover:bg-gray-400 dark:hover:bg-gray-700 px-4 py-2 rounded-t w-full text-left">
-                    Priority
-                  </button>
                   <button
                     className="block hover:bg-gray-400 dark:hover:bg-gray-700 px-4 py-2 rounded-b w-full text-left text-red-600"
                     onClick={(e) => {
@@ -100,8 +110,17 @@ const TaskCard = ({
           )}
         </div>
       )}
-      <div className="flex justify-end mt-1">
-        <span className="text-xs text-dark dark:text-light ">
+      <div className="flex justify-between items-center mt-2">
+        {task.priority && (
+          <span
+            className={`text-xs px-2 py-1 rounded-full ${getPriorityColor(
+              task.priority
+            )}`}
+          >
+            {task.priority}
+          </span>
+        )}
+        <span className="text-xs text-dark dark:text-light">
           Task-
           {typeof task.id === "string" && task.id.startsWith("task-")
             ? task.id.toUpperCase()

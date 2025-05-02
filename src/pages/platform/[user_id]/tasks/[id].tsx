@@ -4,9 +4,7 @@ import Swal from "sweetalert2";
 import Button from "@/components/ui/Button";
 import TicketModal from "@/components/modals/TicketModal";
 import TaskModal from "@/components/modals/TaskModal";
-import DropdownFilter from "@/components/ui/Dropdown/DropdownFilter";
 import SearchBar from "@/components/ui/SearchBar";
-import TextField from "@/components/ui/TextField";
 import PlatformLayout from "@/layout/PlatformLayout";
 import TicketView from "@/components/ui/Switch/TicketView";
 
@@ -36,7 +34,7 @@ import TaskCard from "./TaskCard";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import axios from "axios";
 
-const TasksPage = () => {
+const Tasks = () => {
   const router = useRouter();
   const projectTitle = router.query.project as string;
   const userId = router.query.user_id as string;
@@ -116,9 +114,10 @@ const TasksPage = () => {
         const mappedTasks = fetchedTasks.map((task: any) => ({
           id: task.task_id,
           title: task.task,
-          type: task.type || "",
+          type: task.type,
           columnId: mapStatusToColumnId(task.status),
           status: task.status,
+          priority: task.priority,
         }));
 
         setTasks(mappedTasks);
@@ -133,7 +132,6 @@ const TasksPage = () => {
     fetchTasks();
   }, [projectTitle, userId]);
 
-  // Helper function to map status to columnId
   const mapStatusToColumnId = (status: string): Id => {
     switch (status) {
       case "To Do":
@@ -145,7 +143,7 @@ const TasksPage = () => {
       case "Completed":
         return "done";
       default:
-        return "todo"; // Default to "todo" if status doesn't match
+        return "todo";
     }
   };
 
@@ -181,98 +179,36 @@ const TasksPage = () => {
     })
   );
 
-  const generateId = (prefix: string = "item") => {
-    return `${prefix}-${Date.now()}-${Math.random()
-      .toString(36)
-      .substring(2, 7)}`;
-  };
-
-  // const addNewColumn = () => {
-  //   const title = newColumnTitle.trim();
-  //   if (!title) {
-  //     Swal.fire("Error", "Column title is required", "error");
-  //     return;
-  //   }
-  //   const newCol: Column = {
-  //     id: generateId("col"),
-  //     title: title,
-  //   };
-  //   setColumns((prev) => [...prev, newCol]);
-  //   setNewColumnTitle("");
-  //   setIsAddingColumn(false);
-  // };
-
-  // const deleteColumn = (id: Id) => {
-  //   const columnToDelete = columns.find((col) => col.id === id);
-  //   const tasksInColumn = tasks.filter((task) => task.columnId === id).length;
-
-  //   Swal.fire({
-  //     title: `Delete "${columnToDelete?.title}"?`,
-  //     text: `This column has ${tasksInColumn} task(s). Deleting the column will also delete all its tasks! This cannot be undone.`,
-  //     icon: "warning",
-  //     showCancelButton: true,
-  //     confirmButtonColor: "#d33",
-  //     cancelButtonColor: "#3085d6",
-  //     confirmButtonText: "Delete",
-  //     cancelButtonText: "Cancel",
-  //   }).then((result) => {
-  //     if (result.isConfirmed) {
-  //       setColumns((prev) => prev.filter((col) => col.id !== id));
-  //       setTasks((prev) => prev.filter((task) => task.columnId !== id));
-  //       setColumnLimits((prev) => {
-  //         const newLimits = { ...prev };
-  //         delete newLimits[id];
-  //         return newLimits;
-  //       });
-  //       Swal.fire(
-  //         "Deleted!",
-  //         "Column and its tasks have been deleted.",
-  //         "success"
-  //       );
-  //     }
-  //   });
-  // };
-
   const updateColumnTitle = (id: Id, title: string) => {
     setColumns((prev) =>
       prev.map((col) => (col.id === id ? { ...col, title: title } : col))
     );
   };
 
-  const addTask = async (columnId: Id, title: string, type: string) => {
+  const addTask = async (columnId: Id, title: string, priority: string) => {
     try {
       const status = mapColumnIdToStatus(columnId);
 
-      // Make the API call here (only once)
       const response = await axiosInstance.post("/tasks/add", {
         user_id: Number(userId),
         project: projectTitle,
         task: title.trim(),
         status: status,
         description: "",
-        priority: "Medium",
-        type: type.trim() || "",
+        priority: priority,
+        type: "",
       });
 
       const newTask: Task = {
         id: response.data.task_id,
         columnId,
         title: title.trim(),
-        type: type.trim() || "",
+        type: "", // No longer using labels
         status: status,
+        priority: priority, // Include priority in the task object
       };
 
       setTasks((prev) => [...prev, newTask]);
-
-      const newLabel = type.trim();
-      if (
-        newLabel &&
-        !dropdownItems.some(
-          (item) => item.toLowerCase() === newLabel.toLowerCase()
-        )
-      ) {
-        setDropdownItems((prev) => [...prev, newLabel].sort());
-      }
     } catch (error) {
       console.error("Failed to add task:", error);
       Swal.fire(
@@ -284,7 +220,6 @@ const TasksPage = () => {
     }
   };
 
-  // Helper function to map columnId to status
   const mapColumnIdToStatus = (columnId: Id): string => {
     switch (columnId) {
       case "todo":
@@ -338,35 +273,41 @@ const TasksPage = () => {
     }
   };
 
-  const updateTask = async (updatedTask: Task) => {
+  const updateTask = async (updatedTask: {
+    id: string;
+    title: string;
+    columnId: string;
+    status: string;
+    priority?: string;
+  }) => {
     try {
-      await axiosInstance.put(`/tasks/update/${updatedTask.id}`, {
-        task: updatedTask.title,
-        type: updatedTask.type,
-        status: mapColumnIdToStatus(updatedTask.columnId),
-      });
-
-      setTasks((prev) =>
-        prev.map((task) => (task.id === updatedTask.id ? updatedTask : task))
+      const response = await axiosInstance.put(
+        `/tasks/update/${updatedTask.id}`,
+        {
+          task: updatedTask.title,
+          status: updatedTask.status,
+          priority: updatedTask.priority,
+        }
       );
 
-      const labels = updatedTask.type
-        ? updatedTask.type
-            .split(",")
-            .map((l) => l.trim())
-            .filter(Boolean)
-        : [];
-      labels.forEach((label) => {
-        if (
-          !dropdownItems
-            .map((item) => item.toLowerCase())
-            .includes(label.toLowerCase())
-        ) {
-          setDropdownItems((prev) => [...prev, label].sort());
-        }
-      });
+      setTasks((prev) =>
+        prev.map((task) =>
+          task.id === updatedTask.id
+            ? {
+                ...task,
+                title: updatedTask.title,
+                status: updatedTask.status,
+                priority: updatedTask.priority || task.priority,
+                columnId: mapStatusToColumnId(updatedTask.status),
+              }
+            : task
+        )
+      );
+
+      return response.data;
     } catch (error) {
       console.error("Failed to update task:", error);
+      throw error;
     }
   };
 
@@ -375,45 +316,6 @@ const TasksPage = () => {
     setNewLabel("");
     setIsLabelPopupOpen(true);
     setDropdownOpen(null);
-  };
-
-  const toggleLabelPopup = () => {
-    setIsLabelPopupOpen((prev) => !prev);
-  };
-
-  const addLabel = () => {
-    const labelToAdd = newLabel.trim();
-    if (!labelToAdd || !selectedTaskIdForLabel) return;
-
-    setTasks((prevTasks) =>
-      prevTasks.map((task) => {
-        if (task.id === selectedTaskIdForLabel) {
-          const currentLabels = task.type
-            ? task.type
-                .split(",")
-                .map((l) => l.trim())
-                .filter(Boolean)
-            : [];
-          if (
-            !currentLabels
-              .map((l) => l.toLowerCase())
-              .includes(labelToAdd.toLowerCase())
-          ) {
-            if (
-              !dropdownItems
-                .map((i) => i.toLowerCase())
-                .includes(labelToAdd.toLowerCase())
-            ) {
-              setDropdownItems((prev) => [...prev, labelToAdd].sort());
-            }
-            const newType = [...currentLabels, labelToAdd].join(", ");
-            return { ...task, type: newType };
-          }
-        }
-        return task;
-      })
-    );
-    setNewLabel("");
   };
 
   const openTicketModal = (colId: Id) => {
@@ -456,6 +358,10 @@ const TasksPage = () => {
   const closeTaskModal = () => {
     setIsTaskModalOpen(false);
     setSelectedTask(null);
+    // Reload the page after a short delay to allow the modal to close smoothly
+    setTimeout(() => {
+      window.location.reload();
+    }, 100);
   };
 
   const toggleDropdown = (colId: Id, taskId: Id) => {
@@ -685,13 +591,6 @@ const TasksPage = () => {
                 />
               </div>
               <div className="flex flex-row items-center gap-2">
-                <DropdownFilter
-                  items={dropdownItems}
-                  direction="down"
-                  placeholder="Filter Labels"
-                  selectedItems={selectedFilterLabels}
-                  onChange={setSelectedFilterLabels}
-                />
                 {selectedFilterLabels.length > 0 && (
                   <Button
                     text="Clear"
@@ -834,4 +733,4 @@ const TasksPage = () => {
   );
 };
 
-export default TasksPage;
+export default Tasks;

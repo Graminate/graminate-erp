@@ -4,8 +4,9 @@ export type Task = {
   id: Id;
   columnId: Id;
   title: string;
-  type: string;
+  type?: string;
   status?: string;
+  priority?: string;
 };
 
 export type Column = {

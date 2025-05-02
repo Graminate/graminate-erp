@@ -2,12 +2,12 @@ import { faList } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React from "react";
 
-type Props = {
+type TicketViewProps = {
   isListView: boolean;
   toggleView: (view: boolean) => void;
 };
 
-const TicketView = ({ isListView, toggleView }: Props) => {
+const TicketView = ({ isListView, toggleView }: TicketViewProps) => {
   return (
     <div className="flex items-center space-x-2 hover:bg-gray-400 dark:hover:bg-gray-800 rounded-md">
       {/* Kanban View Icon */}

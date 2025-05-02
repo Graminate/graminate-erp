@@ -52,6 +52,7 @@ const ColumnContainer = ({
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskType, setNewTaskType] = useState("");
   const [columnDropdownOpen, setColumnDropdownOpen] = useState(false);
+  const [newTaskPriority, setNewTaskPriority] = useState("Medium");
 
   const validTasks = useMemo(() => tasks.filter(Boolean), [tasks]);
   const tasksIds = useMemo(
@@ -83,9 +84,10 @@ const ColumnContainer = ({
       return;
     }
 
-    addTask(column.id, newTaskTitle.trim(), newTaskType.trim());
+    // Updated to include priority instead of type
+    addTask(column.id, newTaskTitle.trim(), newTaskPriority);
     setNewTaskTitle("");
-    setNewTaskType("");
+    setNewTaskPriority("Medium"); // Reset to default
     setIsAddingTask(false);
   };
 
@@ -198,11 +200,11 @@ const ColumnContainer = ({
 
               <div className="mt-3 flex flex-col mx-auto gap-2">
                 <DropdownSmall
-                  items={dropdownItems}
+                  items={["Low", "Medium", "High"]}
                   direction="down"
-                  placeholder="Label (Optional)"
-                  selected={newTaskType}
-                  onSelect={setNewTaskType}
+                  placeholder="Select Priority"
+                  selected={newTaskPriority}
+                  onSelect={setNewTaskPriority}
                 />
 
                 <div className="flex justify-start gap-2 ">
