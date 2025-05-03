@@ -87,8 +87,13 @@ const TaskModal = ({
       status: newStatus,
       columnId: mapStatusToColumnId(newStatus),
     };
-    await updateTask(updatedTask);
     setTaskData(updatedTask);
+
+    try {
+      await updateTask(updatedTask);
+    } catch (error) {
+      setTaskData(taskData);
+    }
   };
 
   const handlePriorityChange = async (newPriority: string) => {
@@ -96,8 +101,14 @@ const TaskModal = ({
       ...taskData,
       priority: newPriority,
     };
-    await updateTask(updatedTask);
+
     setTaskData(updatedTask);
+
+    try {
+      await updateTask(updatedTask);
+    } catch (error) {
+      setTaskData(taskData);
+    }
   };
 
   const mapStatusToColumnId = (status: string): string => {
@@ -114,6 +125,10 @@ const TaskModal = ({
         return "todo";
     }
   };
+
+  useEffect(() => {
+    console.log("TaskData updated:", taskData);
+  }, [taskData]);
 
   useEffect(() => {
     setEditedTitle(taskDetails.title);
@@ -242,13 +257,16 @@ const TaskModal = ({
               </h3>
               <div className="space-y-5">
                 <DropdownLarge
+                  key={`status-${taskData.id}`}
                   items={statusOptions}
                   selectedItem={taskData.status}
                   onSelect={handleStatusChange}
                   label="Status"
                   width="full"
                 />
+
                 <DropdownLarge
+                  key={`priority-${taskData.id}`}
                   items={priorityOptions}
                   selectedItem={taskData.priority}
                   onSelect={handlePriorityChange}

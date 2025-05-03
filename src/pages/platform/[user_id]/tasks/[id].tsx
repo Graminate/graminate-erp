@@ -290,20 +290,6 @@ const Tasks = () => {
         }
       );
 
-      setTasks((prev) =>
-        prev.map((task) =>
-          task.id === updatedTask.id
-            ? {
-                ...task,
-                title: updatedTask.title,
-                status: updatedTask.status,
-                priority: updatedTask.priority || task.priority,
-                columnId: mapStatusToColumnId(updatedTask.status),
-              }
-            : task
-        )
-      );
-
       return response.data;
     } catch (error) {
       console.error("Failed to update task:", error);
