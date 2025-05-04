@@ -951,10 +951,11 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                       ref={suggestionsRef}
                       className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 rounded-md shadow-lg"
                     >
+                     <p className="text-xs p-2 text-gray-300">Suggestions...</p>
                       {suggestions.map((suggestion, index) => (
                         <div
                           key={index}
-                          className="p-4 hover:bg-light dark:hover:bg-gray-800 text-sm cursor-pointer"
+                          className="px-4 py-2 hover:bg-light dark:hover:bg-gray-800 text-sm cursor-pointer"
                           onClick={() => selectSuggestion(suggestion)}
                         >
                           {suggestion}

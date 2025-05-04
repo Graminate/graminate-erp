@@ -201,9 +201,9 @@ const Tasks = () => {
         id: response.data.task_id,
         columnId,
         title: title.trim(),
-        type: "", // No longer using labels
+        type: "",
         status: status,
-        priority: priority, // Include priority in the task object
+        priority: priority,
       };
 
       setTasks((prev) => [...prev, newTask]);
