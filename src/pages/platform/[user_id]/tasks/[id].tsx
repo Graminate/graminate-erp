@@ -56,8 +56,6 @@ const Tasks = () => {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
   const [isListView, setIsListView] = useState(false);
-  // const [isAddingColumn, setIsAddingColumn] = useState(false);
-  // const [newColumnTitle, setNewColumnTitle] = useState("");
   const [dropdownOpen, setDropdownOpen] = useState<{
     colId: Id;
     taskId: Id;
@@ -98,6 +96,10 @@ const Tasks = () => {
   });
 
   const [isBrowser, setIsBrowser] = useState(false);
+
+  useEffect(() => {
+    setIsBrowser(typeof document !== "undefined");
+  }, []);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -146,10 +148,6 @@ const Tasks = () => {
         return "todo";
     }
   };
-
-  useEffect(() => {
-    setIsBrowser(typeof document !== "undefined");
-  }, []);
 
   const filteredTasks = useMemo(() => {
     return (tasks || []).filter((task) => {
@@ -253,14 +251,7 @@ const Tasks = () => {
         setTasks((prev) => prev.filter((task) => task.id !== taskId));
         setDropdownOpen(null);
         if (isTaskModalOpen && selectedTask?.id === taskId) closeTaskModal();
-        Swal.fire({
-          title: "Deleted!",
-          text: "Your task has been deleted.",
-          icon: "success",
-          confirmButtonColor: "#04ad79",
-        }).then(() => {
-          window.location.reload();
-        });
+        window.location.reload();
       }
     } catch (error) {
       console.error("Error deleting task:", error);

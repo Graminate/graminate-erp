@@ -127,10 +127,6 @@ const TaskModal = ({
   };
 
   useEffect(() => {
-    console.log("TaskData updated:", taskData);
-  }, [taskData]);
-
-  useEffect(() => {
     setEditedTitle(taskDetails.title);
     setTaskData({
       ...taskDetails,

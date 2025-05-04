@@ -152,6 +152,7 @@ const Table = ({
   };
 
   const handleSelectAllChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    e.stopPropagation();
     const checked = e.target.checked;
     setSelectAll(checked);
     setSelectedRows(new Array(paginatedRows.length).fill(checked));
@@ -161,6 +162,7 @@ const Table = ({
     rowIndex: number,
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
+    e.stopPropagation();
     const checked = e.target.checked;
     setSelectedRows((prev) => {
       const newSelected = [...prev];
@@ -341,11 +343,7 @@ const Table = ({
                     await axiosInstance.post(`/${entityToTruncate}/reset`, {
                       userId,
                     });
-                    Swal.fire(
-                      "Reset!",
-                      "Table has been reset.",
-                      "success"
-                    ).then(() => location.reload());
+                    window.location.reload();
                   } catch (err) {
                     console.error(err);
                     Swal.fire("Error", "Failed to reset table.", "error");
@@ -399,7 +397,10 @@ const Table = ({
           <thead>
             <tr>
               {!hideChecks && (
-                <th className="p-3 text-left font-medium text-dark dark:text-gray-300 bg-gray-500 hover:bg-gray-400 dark:bg-gray-800 dark:border-gray-700">
+                <th
+                  className="p-3 text-left font-medium text-dark dark:text-gray-300 bg-gray-500 hover:bg-gray-400 dark:bg-gray-800 dark:border-gray-700"
+                  onClick={(e) => e.stopPropagation()}
+                >
                   <Checkbox
                     id="select-all-checkbox"
                     checked={selectAll}
@@ -448,7 +449,10 @@ const Table = ({
                 }}
               >
                 {!hideChecks && (
-                  <td className="p-3 border-b border-gray-300 dark:border-gray-700 text-base font-light text-gray-700 dark:text-gray-300">
+                  <td
+                    className="p-3 border-b border-gray-300 dark:border-gray-700 text-base font-light text-gray-700 dark:text-gray-300"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <Checkbox
                       id={`row-checkbox-${rowIndex}`}
                       checked={selectedRows[rowIndex] || false}
