@@ -5,6 +5,7 @@ import { faEllipsis, faX } from "@fortawesome/free-solid-svg-icons";
 import TextField from "../ui/TextField";
 import DropdownLarge from "../ui/Dropdown/DropdownLarge";
 import Swal from "sweetalert2";
+import Button from "../ui/Button";
 
 type TaskModalProps = {
   isOpen: boolean;
@@ -14,6 +15,7 @@ type TaskModalProps = {
     title: string;
     status: string;
     priority?: string;
+    description?: string;
   };
   projectName: string;
   availableLabels: string[];
@@ -24,6 +26,7 @@ type TaskModalProps = {
     columnId: string;
     status: string;
     priority?: string;
+    description?: string;
   }) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
 };
@@ -36,26 +39,31 @@ const TaskModal = ({
   deleteTask,
   updateTask,
 }: TaskModalProps) => {
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editedTitle, setEditedTitle] = useState(taskDetails.title);
-  const [description, setDescription] = useState("");
-  const [existingDescriptionId] = useState<string | null>(null);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [editedDescription, setEditedDescription] = useState(
+    taskDetails.description ?? ""
+  );
   const [showDropdown, setShowDropdown] = useState(false);
   const priorityOptions = ["Low", "Medium", "High"];
   const statusOptions = ["To Do", "In Progress", "Checks", "Completed"];
   const [taskData, setTaskData] = useState({
     ...taskDetails,
     priority: taskDetails.priority || "Medium",
+    description: taskDetails.description ?? "",
   });
 
-  const updateTaskField = async (field: string, value: string) => {
-    const originalValue = taskData[field as keyof typeof taskData];
-    setTaskData((prev) => ({ ...prev, [field]: value }));
+  const updateTaskField = async (
+    field: keyof typeof taskData,
+    value: string
+  ) => {
+    const originalValue = taskData[field];
+    const updatedTaskData = { ...taskData, [field]: value };
+    setTaskData(updatedTaskData);
+
     try {
-      await updateTask({
-        ...taskData,
-        [field]: value,
-      });
+      await updateTask(updatedTaskData);
     } catch (error) {
       console.error(`Failed to update ${field}:`, error);
       setTaskData((prev) => ({
@@ -92,7 +100,13 @@ const TaskModal = ({
     try {
       await updateTask(updatedTask);
     } catch (error) {
+      console.error("Failed to update status:", error);
       setTaskData(taskData);
+      Swal.fire({
+        title: "Update Failed",
+        text: `Could not update status`,
+        icon: "error",
+      });
     }
   };
 
@@ -107,7 +121,13 @@ const TaskModal = ({
     try {
       await updateTask(updatedTask);
     } catch (error) {
+      console.error("Failed to update priority:", error);
       setTaskData(taskData);
+      Swal.fire({
+        title: "Update Failed",
+        text: `Could not update priority`,
+        icon: "error",
+      });
     }
   };
 
@@ -127,14 +147,16 @@ const TaskModal = ({
   };
 
   useEffect(() => {
+    const currentDescription = taskDetails.description ?? "";
     setEditedTitle(taskDetails.title);
+    setEditedDescription(currentDescription);
     setTaskData({
       ...taskDetails,
       priority: taskDetails.priority || "Medium",
+      description: currentDescription,
     });
-
-    setDescription("");
-    setIsEditing(false);
+    setIsEditingTitle(false);
+    setIsEditingDescription(false);
     setShowDropdown(false);
   }, [taskDetails]);
 
@@ -142,15 +164,17 @@ const TaskModal = ({
     if (onClose) onClose();
   };
 
-  const startEditing = () => {
-    setIsEditing(true);
+  const startEditingTitle = () => {
+    setIsEditingTitle(true);
   };
 
   const saveTitle = () => {
-    if (editedTitle !== taskData.title) {
-      updateTaskField("title", editedTitle);
+    if (editedTitle.trim() && editedTitle !== taskData.title) {
+      updateTaskField("title", editedTitle.trim());
+    } else if (!editedTitle.trim()) {
+      setEditedTitle(taskData.title);
     }
-    setIsEditing(false);
+    setIsEditingTitle(false);
   };
 
   const handleTitleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
@@ -158,8 +182,24 @@ const TaskModal = ({
       saveTitle();
     } else if (e.key === "Escape") {
       setEditedTitle(taskData.title);
-      setIsEditing(false);
+      setIsEditingTitle(false);
     }
+  };
+
+  const startEditingDescription = () => {
+    setIsEditingDescription(true);
+  };
+
+  const handleSaveDescription = () => {
+    if (editedDescription !== taskData.description) {
+      updateTaskField("description", editedDescription);
+    }
+    setIsEditingDescription(false);
+  };
+
+  const handleCancelDescription = () => {
+    setEditedDescription(taskData.description);
+    setIsEditingDescription(false);
   };
 
   const toggleDropdown = () => {
@@ -208,10 +248,10 @@ const TaskModal = ({
         </div>
 
         <div className="flex-grow grid grid-cols-1 md:grid-cols-3 gap-6 overflow-y-auto pr-2 -mr-2">
-          {/* Left Column (Takes 2/3 on md screens) */}
+          {/* Left Column */}
           <div className="md:col-span-2 space-y-6">
             <div>
-              {isEditing ? (
+              {isEditingTitle ? (
                 <TextField
                   value={editedTitle}
                   onChange={setEditedTitle}
@@ -220,8 +260,8 @@ const TaskModal = ({
                 />
               ) : (
                 <button
-                  className="w-full text-left text-dark dark:text-light text-2xl font-semibold hover:bg-gray-500 dark:hover:bg-gray-700 rounded px-2 py-1 -ml-2"
-                  onClick={startEditing}
+                  className="w-full text-left text-dark dark:text-light text-xl font-semibold hover:bg-gray-500 dark:hover:bg-gray-700 rounded px-2 py-1"
+                  onClick={startEditingTitle}
                   aria-label="Edit task title"
                 >
                   {taskData.title}
@@ -236,18 +276,54 @@ const TaskModal = ({
               >
                 Description
               </label>
-              <CustomTextArea
-                placeholder="Add a more detailed description..."
-                value={description}
-                onInput={setDescription}
-                descriptionId={existingDescriptionId}
-              />
+              {isEditingDescription ? (
+                <>
+                  <CustomTextArea
+                    placeholder="Add a more detailed description..."
+                    value={editedDescription}
+                    onInput={setEditedDescription}
+                  />
+                  <div className="flex space-x-2 mt-2">
+                    <Button
+                      text="Save"
+                      onClick={handleSaveDescription}
+                      style="primary"
+                    />
+
+                    <Button
+                      text="Cancel"
+                      onClick={handleCancelDescription}
+                      style="secondary"
+                    />
+                  </div>
+                </>
+              ) : (
+                <div
+                  className="w-full min-h-[80px] p-3 text-sm rounded border border-transparent hover:border-gray-300 dark:hover:border-gray-600 cursor-text whitespace-pre-wrap dark:text-light"
+                  onClick={startEditingDescription}
+                  role="button"
+                  tabIndex={0}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter" || e.key === " ")
+                      startEditingDescription();
+                  }} // Accessibility
+                  aria-label="Edit description"
+                >
+                  {taskData.description ? (
+                    taskData.description
+                  ) : (
+                    <span className="text-gray-500 dark:text-gray-400">
+                      Add a more detailed description...
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Right Column (Takes 1/3 on md screens) */}
-          <div className="border border-gray-400 dark:border-gray-200 md:col-span-1 space-y-6">
-            <div className="p-4 rounded-md">
+          {/* Right Column */}
+          <div className="border border-gray-300 dark:border-gray-600 md:col-span-1 space-y-6 rounded-md h-fit">
+            <div className="p-4">
               <h3 className="text-dark dark:text-light font-semibold mb-8">
                 Details
               </h3>

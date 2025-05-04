@@ -116,6 +116,7 @@ const Tasks = () => {
         const mappedTasks = fetchedTasks.map((task: any) => ({
           id: task.task_id,
           title: task.task,
+          description: task.description || "",
           type: task.type,
           columnId: mapStatusToColumnId(task.status),
           status: task.status,
@@ -270,6 +271,7 @@ const Tasks = () => {
     columnId: string;
     status: string;
     priority?: string;
+    description?: string;
   }) => {
     try {
       const response = await axiosInstance.put(
@@ -278,9 +280,9 @@ const Tasks = () => {
           task: updatedTask.title,
           status: updatedTask.status,
           priority: updatedTask.priority,
+          description: updatedTask.description,
         }
       );
-
       return response.data;
     } catch (error) {
       console.error("Failed to update task:", error);
