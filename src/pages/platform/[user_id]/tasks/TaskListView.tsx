@@ -16,6 +16,19 @@ const TaskListView = ({
     return columns.find((col) => col.id === columnId)?.title || "Unknown";
   };
 
+  const getPriorityColor = (priority: string) => {
+    switch (priority?.toLowerCase()) {
+      case "high":
+        return "bg-red-200 text-light dark:bg-red-200 dark:text-light";
+      case "medium":
+        return "bg-yellow-200 text-dark dark:bg-yellow-900 dark:text-dark";
+      case "low":
+        return "bg-green-200 text-light dark:bg-green-200 dark:text-light";
+      default:
+        return "bg-gray-400 text-dark dark:bg-gray-400 dark:text-dark";
+    }
+  };
+
   const handleRowClick = (task: Task) => {
     openTaskModal(task);
   };
@@ -43,7 +56,7 @@ const TaskListView = ({
               Status
             </th>
             <th scope="col" className="py-3 px-6">
-              Labels
+              Priority
             </th>
           </tr>
         </thead>
@@ -66,19 +79,16 @@ const TaskListView = ({
               <td className="py-4 px-6 text-dark dark:text-light">
                 {getColumnName(task.columnId)}
               </td>
-              <td className="py-4 px-6 text-dark dark:text-light">
-                {task.type
-                  ? task.type.split(",").map((label) =>
-                      label.trim() ? (
-                        <span
-                          key={label.trim()}
-                          className="text-xs bg-gray-300 text-light px-2.5 py-1.5 rounded-full dark:bg-gray-700 dark:text-light mr-1 mb-1 inline-block"
-                        >
-                          {label.trim()}
-                        </span>
-                      ) : null
-                    )
-                  : "None"}
+              <td className="py-4 px-6">
+                {task.priority && (
+                  <span
+                    className={`text-xs px-2 py-1 rounded-full ${getPriorityColor(
+                      task.priority
+                    )}`}
+                  >
+                    {task.priority}
+                  </span>
+                )}
               </td>
             </tr>
           ))}

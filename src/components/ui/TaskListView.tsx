@@ -10,6 +10,7 @@ type TaskListViewProps = {
   isSelectedDatePast: boolean;
   setShowAddTask: (value: boolean) => void;
   getDayStatus: (date: Date) => string;
+  canAddTask: boolean;
 };
 
 const TaskListView = ({

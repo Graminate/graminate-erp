@@ -2,12 +2,12 @@ import { useRef, useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/router";
 import Navbar from "@/components/layout/Navbar/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
-import Swal from "sweetalert2";
 import axios, { AxiosError } from "axios";
 import ChatWindow from "@/layout/ChatWindow";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faRobot } from "@fortawesome/free-solid-svg-icons";
 import axiosInstance from "@/lib/utils/axiosInstance";
+import InfoModal from "@/components/modals/InfoModal";
 
 type Props = {
   children: React.ReactNode;
@@ -19,6 +19,12 @@ const PlatformLayout = ({ children }: Props) => {
   const [userId, setUserId] = useState<string>("");
   const [isChatOpen, setIsChatOpen] = useState<boolean>(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    title: "",
+    text: "",
+    variant: "error" as "success" | "error" | "info" | "warning",
+  });
   const router = useRouter();
   const { user_id } = router.query;
 
@@ -78,15 +84,11 @@ const PlatformLayout = ({ children }: Props) => {
       const token = localStorage.getItem("token");
       if (!token) {
         setIsAuthorized(false);
-        Swal.fire({
+        setModalState({
+          isOpen: true,
           title: "Unauthorized",
           text: "Please log in first.",
-          icon: "error",
-          confirmButtonText: "OK",
-          allowOutsideClick: false,
-          allowEscapeKey: false,
-        }).then(() => {
-          router.push("/");
+          variant: "error",
         });
         return;
       }
@@ -107,15 +109,11 @@ const PlatformLayout = ({ children }: Props) => {
             errorText = `User not found`;
           }
         }
-        Swal.fire({
+        setModalState({
+          isOpen: true,
           title: "Access Denied",
           text: errorText,
-          icon: "error",
-          confirmButtonText: "OK",
-          allowOutsideClick: false,
-          allowEscapeKey: false,
-        }).then(() => {
-          router.push("/");
+          variant: "error",
         });
       } finally {
         setIsLoadingAuth(false);
@@ -153,57 +151,70 @@ const PlatformLayout = ({ children }: Props) => {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-light dark:bg-dark text-dark dark:text-light">
-      {/* Navbar */}
-      <div className="z-50">
-        <Navbar
-          userId={userId}
-          isSidebarOpen={isSidebarOpen}
-          toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
-        />
-      </div>
+    <>
+      {!router.isReady || isLoadingAuth || !isAuthorized ? null : (
+        <div className="flex flex-col min-h-screen bg-light dark:bg-dark text-dark dark:text-light">
+          {/* Existing layout JSX */}
+          {/* Navbar */}
+          <div className="z-50">
+            <Navbar
+              userId={userId}
+              isSidebarOpen={isSidebarOpen}
+              toggleSidebar={() => setIsSidebarOpen(!isSidebarOpen)}
+            />
+          </div>
 
-      {/* Main content area */}
-      <div className="flex flex-1 min-h-screen relative">
-        {/* Mobile overlay */}
-        {isSidebarOpen && (
-          <div
-            className="fixed inset-0 bg-black/40 bg-opacity-50 z-40 lg:hidden"
-            onClick={() => setIsSidebarOpen(false)}
-          />
-        )}
+          {/* Main content area */}
+          <div className="flex flex-1 min-h-screen relative">
+            {/* Mobile overlay */}
+            {isSidebarOpen && (
+              <div
+                className="fixed inset-0 bg-black/40 bg-opacity-50 z-40 lg:hidden"
+                onClick={() => setIsSidebarOpen(false)}
+              />
+            )}
 
-        {/* Sidebar */}
-        <Sidebar
-          isOpen={isSidebarOpen}
-          userId={userId}
-          onSectionChange={handleSectionChange}
-        />
+            {/* Sidebar */}
+            <Sidebar
+              isOpen={isSidebarOpen}
+              userId={userId}
+              onSectionChange={handleSectionChange}
+            />
 
-        {/* Main content */}
-        <div
-          className={`flex-1 p-4 ${
-            isSidebarOpen ? "overflow-hidden" : ""
-          }`}
-        >
-          {children}
-        </div>
-      </div>
+            {/* Main content */}
+            <div
+              className={`flex-1 p-4 ${isSidebarOpen ? "overflow-hidden" : ""}`}
+            >
+              {children}
+            </div>
+          </div>
 
-      {/* Chat button */}
-      <button
-        onClick={() => setIsChatOpen((prev) => !prev)}
-        className="fixed bottom-4 right-4 bg-green-200 text-white p-4 rounded-full shadow-lg hover:bg-green-100 z-50"
-      >
-        <FontAwesomeIcon icon={faRobot} />
-      </button>
+          {/* Chat button */}
+          <button
+            onClick={() => setIsChatOpen((prev) => !prev)}
+            className="fixed bottom-4 right-4 bg-green-200 text-white p-4 rounded-full shadow-lg hover:bg-green-100 z-50"
+          >
+            <FontAwesomeIcon icon={faRobot} />
+          </button>
 
-      {isChatOpen && (
-        <div ref={chatRef}>
-          <ChatWindow />
+          {isChatOpen && (
+            <div ref={chatRef}>
+              <ChatWindow />
+            </div>
+          )}
         </div>
       )}
-    </div>
+      <InfoModal
+        isOpen={modalState.isOpen}
+        onClose={() => {
+          setModalState((prev) => ({ ...prev, isOpen: false }));
+          router.push("/");
+        }}
+        title={modalState.title}
+        text={modalState.text}
+        variant={modalState.variant}
+      />
+    </>
   );
 };
 

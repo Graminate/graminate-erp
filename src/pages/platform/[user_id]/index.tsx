@@ -4,9 +4,9 @@ import axios from "axios";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Calendar from "@/components/ui/Calendar/Calendar";
 import Head from "next/head";
-import Swal from "sweetalert2";
 import FirstLoginModal from "@/components/modals/FirstLoginModal";
 import axiosInstance from "@/lib/utils/axiosInstance";
+import InfoModal from "@/components/modals/InfoModal";
 
 type User = {
   user_id: string;
@@ -27,6 +27,21 @@ const Dashboard = () => {
   const [userData, setUserData] = useState<User | null>(null);
   const [isUserDataLoading, setIsUserDataLoading] = useState<boolean>(true);
   const [isSetupModalOpen, setIsSetupModalOpen] = useState<boolean>(false);
+  const [successModal, setSuccessModal] = useState({
+    isOpen: false,
+    title: "",
+    text: "",
+  });
+  const [errorModal, setErrorModal] = useState({
+    isOpen: false,
+    title: "",
+    text: "",
+  });
+  const [fetchErrorModal, setFetchErrorModal] = useState({
+    isOpen: false,
+    title: "",
+    text: "",
+  });
 
   useEffect(() => {
     if (!router.isReady || !userId) return;
@@ -67,15 +82,11 @@ const Dashboard = () => {
           console.error("Non-Axios error fetching user data:", error);
         }
 
-        await Swal.fire({
+        setFetchErrorModal({
+          isOpen: true,
           title: errorTitle,
           text: errorText,
-          icon: "error",
-          confirmButtonText: "OK",
-          allowOutsideClick: false,
-          allowEscapeKey: false,
         });
-        router.push("/");
       } finally {
         if (isMounted) {
           setIsUserDataLoading(false);
@@ -105,13 +116,10 @@ const Dashboard = () => {
         sub_type: subType,
       });
 
-      await Swal.fire({
+      setSuccessModal({
+        isOpen: true,
         title: "Welcome!",
         text: "Your account is now set up. Let’s get started 🚀",
-        icon: "success",
-        confirmButtonText: "Ok",
-      }).then(() => {
-        window.location.reload();
       });
 
       setUserData((prev) =>
@@ -124,15 +132,12 @@ const Dashboard = () => {
             }
           : prev
       );
-
-      setIsSetupModalOpen(false);
     } catch (error: unknown) {
       console.error("Error updating business info:", error);
-      Swal.fire({
+      setErrorModal({
+        isOpen: true,
         title: "Error",
         text: "Failed to update business info. Please try again.",
-        icon: "error",
-        confirmButtonText: "OK",
       });
     }
   };
@@ -164,6 +169,7 @@ const Dashboard = () => {
           </div>
         </div>
       </PlatformLayout>
+
       {isSetupModalOpen && userId && (
         <FirstLoginModal
           isOpen={isSetupModalOpen}
@@ -172,6 +178,36 @@ const Dashboard = () => {
           onClose={() => setIsSetupModalOpen(false)}
         />
       )}
+
+      <InfoModal
+        isOpen={successModal.isOpen}
+        onClose={() => {
+          setSuccessModal((prev) => ({ ...prev, isOpen: false }));
+          window.location.reload();
+        }}
+        title={successModal.title}
+        text={successModal.text}
+        variant="success"
+      />
+
+      <InfoModal
+        isOpen={errorModal.isOpen}
+        onClose={() => setErrorModal((prev) => ({ ...prev, isOpen: false }))}
+        title={errorModal.title}
+        text={errorModal.text}
+        variant="error"
+      />
+
+      <InfoModal
+        isOpen={fetchErrorModal.isOpen}
+        onClose={() => {
+          setFetchErrorModal((prev) => ({ ...prev, isOpen: false }));
+          router.push("/");
+        }}
+        title={fetchErrorModal.title}
+        text={fetchErrorModal.text}
+        variant="error"
+      />
     </>
   );
 };

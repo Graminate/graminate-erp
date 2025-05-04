@@ -9,12 +9,19 @@ import ForgotPasswordModal from "@/components/modals/ForgotPasswordModal";
 import OTPModal from "@/components/modals/OTPModal";
 import axios from "axios";
 import { API_BASE_URL } from "@/constants/constants";
+import InfoModal from "@/components/modals/InfoModal";
 
 const SignIn = () => {
   const router = useRouter();
 
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
   const [userEmailForOtp, setUserEmailForOtp] = useState("");
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    title: "",
+    text: "",
+    variant: "info" as "success" | "error" | "info" | "warning",
+  });
 
   const [isForgotPasswordModalOpen, setIsForgotPasswordModalOpen] =
     useState(false);
@@ -110,21 +117,20 @@ const SignIn = () => {
       }
 
       if (status === 401 && serverMessage === "User does not exist") {
-        Swal.fire({
+        setModalState({
+          isOpen: true,
           title: "User Not Found",
           text: "Email not registered. Please sign up first.",
-          icon: "error",
-          confirmButtonText: "OK",
+          variant: "error",
         });
       } else {
-        Swal.fire({
+        setModalState({
+          isOpen: true,
           title: "Login Failed",
           text: serverMessage || "Invalid email or password.",
-          icon: "error",
-          confirmButtonText: "OK",
+          variant: "error",
         });
       }
-      console.error("Login Error:", err);
     }
   };
 
@@ -196,11 +202,11 @@ const SignIn = () => {
         errorMessage = error.message;
       }
       console.error("Error sending OTP:", error);
-      Swal.fire({
+      setModalState({
+        isOpen: true,
         title: "Error",
         text: errorMessage,
-        icon: "error",
-        confirmButtonText: "OK",
+        variant: "error",
       });
     }
   };
@@ -218,22 +224,22 @@ const SignIn = () => {
       const verifyData = verifyResponse.data;
 
       if (!verifyData.success) {
-        Swal.fire({
+        setModalState({
+          isOpen: true,
           title: "Invalid OTP",
           text: "The OTP entered is incorrect. Please try again.",
-          icon: "error",
-          confirmButtonText: "OK",
+          variant: "error",
         });
         return;
       }
 
       await axios.post(`${API_BASE_URL}/user/register`, registerData);
 
-      Swal.fire({
+      setModalState({
+        isOpen: true,
         title: "Registration Successful!",
         text: "You can now log in.",
-        icon: "success",
-        confirmButtonText: "OK",
+        variant: "success",
       });
 
       setIsOtpModalOpen(false);
@@ -251,18 +257,18 @@ const SignIn = () => {
       }
 
       if (status === 409) {
-        Swal.fire({
+        setModalState({
+          isOpen: true,
           title: "User already exists",
           text: "Please use a different email or phone number.",
-          icon: "error",
-          confirmButtonText: "OK",
+          variant: "error",
         });
       } else {
-        Swal.fire({
+        setModalState({
+          isOpen: true,
           title: "Error",
           text: errorMessage,
-          icon: "error",
-          confirmButtonText: "OK",
+          variant: "error",
         });
       }
       console.error("Error during OTP validation and registration:", error);
@@ -472,6 +478,14 @@ const SignIn = () => {
           </div>
         </div>
       </LoginLayout>
+
+      <InfoModal
+        isOpen={modalState.isOpen}
+        onClose={() => setModalState((prev) => ({ ...prev, isOpen: false }))}
+        title={modalState.title}
+        text={modalState.text}
+        variant={modalState.variant}
+      />
 
       <ForgotPasswordModal
         isOpen={isForgotPasswordModalOpen}

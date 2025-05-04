@@ -98,6 +98,7 @@ const AddTaskView = ({
               ref={suggestionsRef as React.RefObject<HTMLDivElement>}
               className="absolute z-50 mt-1 w-full max-h-60 overflow-auto rounded-md bg-white dark:bg-gray-700 py-1 text-base shadow-lg focus:outline-none sm:text-sm"
             >
+              <p className="text-xs p-2 text-gray-300">Suggestions...</p>
               {suggestions.map((suggestion: string, index: number) => (
                 <div
                   key={index}

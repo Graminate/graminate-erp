@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from "react";
-import Swal from "sweetalert2";
 import {
   SortableContext,
   verticalListSortingStrategy,
@@ -12,6 +11,7 @@ import TaskCard from "./TaskCard";
 import { Column, Id, Task } from "@/types/types";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faEllipsis } from "@fortawesome/free-solid-svg-icons";
+import InfoModal from "@/components/modals/InfoModal";
 
 type ColumnContainerProps = {
   column: Column;
@@ -39,7 +39,6 @@ const ColumnContainer = ({
   openTicketModal,
   columnLimits,
   addTask,
-  dropdownItems,
   openTaskModal,
   toggleDropdown,
   deleteTask,
@@ -50,8 +49,14 @@ const ColumnContainer = ({
   const [editMode, setEditMode] = useState(false);
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
-  const [newTaskType, setNewTaskType] = useState("");
   const [columnDropdownOpen, setColumnDropdownOpen] = useState(false);
+  const [newTaskPriority, setNewTaskPriority] = useState("Medium");
+  const [infoModalState, setInfoModalState] = useState({
+    isOpen: false,
+    title: "",
+    text: "",
+    variant: "info" as "success" | "error" | "info" | "warning",
+  });
 
   const validTasks = useMemo(() => tasks.filter(Boolean), [tasks]);
   const tasksIds = useMemo(
@@ -70,22 +75,28 @@ const ColumnContainer = ({
 
   const handleAddTask = () => {
     if (!newTaskTitle.trim()) {
-      Swal.fire("Error", "Task title cannot be empty.", "error");
+      setInfoModalState({
+        isOpen: true,
+        title: "Task cannot be added",
+        text: "Please provide a title for the task",
+        variant: "error",
+      });
       return;
     }
 
     if (validTasks.length >= columnLimit) {
-      Swal.fire(
-        "Limit Reached",
-        `This column has reached its limit of ${columnLimit} tasks.`,
-        "error"
-      );
+      setInfoModalState({
+        isOpen: true,
+        title: "Limit Reached",
+        text: `This column has reached its limit of ${columnLimit} tasks.`,
+        variant: "error",
+      });
       return;
     }
 
-    addTask(column.id, newTaskTitle.trim(), newTaskType.trim());
+    addTask(column.id, newTaskTitle.trim(), newTaskPriority);
     setNewTaskTitle("");
-    setNewTaskType("");
+    setNewTaskPriority("Medium");
     setIsAddingTask(false);
   };
 
@@ -198,11 +209,11 @@ const ColumnContainer = ({
 
               <div className="mt-3 flex flex-col mx-auto gap-2">
                 <DropdownSmall
-                  items={dropdownItems}
+                  items={["Low", "Medium", "High"]}
                   direction="down"
-                  placeholder="Label (Optional)"
-                  selected={newTaskType}
-                  onSelect={setNewTaskType}
+                  placeholder="Select Priority"
+                  selected={newTaskPriority}
+                  onSelect={setNewTaskPriority}
                 />
 
                 <div className="flex justify-start gap-2 ">
@@ -235,6 +246,16 @@ const ColumnContainer = ({
           )}
         </>
       )}
+
+      <InfoModal
+        isOpen={infoModalState.isOpen}
+        onClose={() =>
+          setInfoModalState((prev) => ({ ...prev, isOpen: false }))
+        }
+        title={infoModalState.title}
+        text={infoModalState.text}
+        variant={infoModalState.variant}
+      />
     </div>
   );
 };

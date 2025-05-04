@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import Swal from "sweetalert2";
 import CalendarGrid from "./CalendarGrid";
 import CalendarHeader from "./CalendarHeader";
 import TaskListView from "../TaskListView";
 import AddTaskView from "./AddTaskView";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import { useRouter } from "next/router";
+import InfoModal from "@/components/modals/InfoModal";
 
 export type Task = {
   name: string;
@@ -55,10 +55,10 @@ const Calendar = () => {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [subTypes, setSubTypes] = useState<string[]>([]);
   const [isLoadingSubTypes, setIsLoadingSubTypes] = useState(true);
+  const [showInvalidTimeModal, setShowInvalidTimeModal] = useState(false);
 
   const suggestionsRef = useRef<HTMLDivElement>(null!);
 
-  // Fetch user sub_types
   useEffect(() => {
     const fetchUserSubTypes = async () => {
       setIsLoadingSubTypes(true);
@@ -149,43 +149,8 @@ const Calendar = () => {
     }
     setIsTaskNameValid(true);
 
-    const today = new Date();
-    const todayOnly = new Date(
-      today.getFullYear(),
-      today.getMonth(),
-      today.getDate()
-    );
-    const selectedOnly = new Date(
-      selectedDate.getFullYear(),
-      selectedDate.getMonth(),
-      selectedDate.getDate()
-    );
-
-    if (selectedOnly < todayOnly) {
-      Swal.fire({
-        title: "Invalid Date",
-        text: "You cannot add tasks to past dates.",
-        icon: "error",
-        confirmButtonText: "OK",
-        customClass: {
-          popup: "dark:bg-gray-800 dark:text-white",
-          confirmButton: "bg-blue-500 hover:bg-blue-600 text-white",
-        },
-      });
-      return;
-    }
-
     if (isTodayWithPastTime(selectedDate, newTaskTime)) {
-      Swal.fire({
-        title: "Invalid Time",
-        text: "You cannot add tasks to past times on the current day.",
-        icon: "error",
-        confirmButtonText: "OK",
-        customClass: {
-          popup: "dark:bg-gray-800 dark:text-white",
-          confirmButton: "bg-blue-500 hover:bg-blue-600 text-white",
-        },
-      });
+      setShowInvalidTimeModal(true);
       return;
     }
 
@@ -350,6 +315,14 @@ const Calendar = () => {
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 sm:p-6 w-full max-w-2xl mx-auto text-gray-800 dark:text-gray-100 relative min-h-[400px]">
+      <InfoModal
+        isOpen={showInvalidTimeModal}
+        onClose={() => setShowInvalidTimeModal(false)}
+        title="Invalid Time"
+        text="You cannot add tasks to past times on the current day."
+        variant="error"
+        confirmButtonText="OK"
+      />
       {showAddTask ? (
         <AddTaskView
           selectedDate={selectedDate}

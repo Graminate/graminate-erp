@@ -9,6 +9,7 @@ type Props = {
   type?: "form" | "";
   label?: string;
   width?: "full" | "half" | "auto";
+  isDatePicker?: boolean;
 };
 
 const DropdownLarge = ({
@@ -18,6 +19,7 @@ const DropdownLarge = ({
   type = "",
   label = "",
   width = "auto",
+  isDatePicker = false,
 }: Props) => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement | null>(null);
@@ -49,6 +51,22 @@ const DropdownLarge = ({
       document.removeEventListener("click", handleClickOutside);
     };
   }, []);
+
+  if (isDatePicker) {
+    return (
+      <div className="w-full">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          {label}
+        </label>
+        <input
+          type="date"
+          value={selectedItem === "Set deadline" ? "" : selectedItem}
+          onChange={(e) => onSelect(e.target.value)}
+          className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-dark dark:text-light"
+        />
+      </div>
+    );
+  }
 
   return (
     <div>
