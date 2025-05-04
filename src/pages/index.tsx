@@ -88,86 +88,42 @@ const SignIn = () => {
     }
 
     try {
-      type LoginSuccessResponse = {
+      const response = await axios.post<{
         access_token: string;
         user: { user_id: string };
-      };
+      }>(`${API_BASE_URL}/user/login`, loginData);
+      const { access_token, user } = response.data;
+      localStorage.setItem("token", access_token);
+      router.push(`/platform/${user.user_id}`);
+    } catch (err: unknown) {
+      let status: number | undefined;
+      let serverMessage: string | undefined = "An unknown error occurred.";
 
-      type LoginErrorResponse = {
-        message?: string;
-        error?: string;
-        statusCode?: number;
-      };
-
-      const response = await axios.post<
-        LoginSuccessResponse | LoginErrorResponse
-      >(`${API_BASE_URL}/user/login`, loginData, {
-        validateStatus: (status) => status >= 200 && status < 500,
-      });
-
-      if (response.status === 200 && "access_token" in response.data) {
-        const { access_token, user } = response.data as LoginSuccessResponse;
-        localStorage.setItem("token", access_token);
-        router.push(`/platform/${user.user_id}`);
-        return;
+      if (axios.isAxiosError(err)) {
+        status = err.response?.status;
+        serverMessage =
+          err.response?.data?.error ||
+          err.response?.data?.message ||
+          err.message;
+      } else if (err instanceof Error) {
+        serverMessage = err.message;
       }
 
-      const errorData = response.data as LoginErrorResponse;
-      const errorMessage =
-        errorData.message || errorData.error || "Invalid email or password";
-
-      if (response.status === 401) {
-        if (errorMessage.includes("User does not exist")) {
-          await Swal.fire({
-            title: "Account Not Found",
-            text: "This email isn't registered. Would you like to sign up?",
-            icon: "error",
-            showCancelButton: true,
-            confirmButtonText: "Yes, sign up",
-            cancelButtonText: "No, try again",
-          }).then((result) => {
-            if (result.isConfirmed) {
-              toggleForm();
-            }
-          });
-        } else {
-          await Swal.fire({
-            title: "Login Failed",
-            text: "Invalid email or password. Please try again.",
-            icon: "error",
-            confirmButtonText: "OK",
-          });
-        }
+      if (status === 401 && serverMessage === "User does not exist") {
+        Swal.fire({
+          title: "User Not Found",
+          text: "Email not registered. Please sign up first.",
+          icon: "error",
+          confirmButtonText: "OK",
+        });
       } else {
-        await Swal.fire({
-          title: "Error",
-          text: errorMessage,
+        Swal.fire({
+          title: "Login Failed",
+          text: serverMessage || "Invalid email or password.",
           icon: "error",
           confirmButtonText: "OK",
         });
       }
-    } catch (err) {
-      let errorMessage =
-        "An unexpected error occurred. Please try again later.";
-
-      if (axios.isAxiosError(err)) {
-        if (err.code === "ECONNABORTED") {
-          errorMessage = "Request timed out. Please check your connection.";
-        } else if (err.code === "ERR_NETWORK") {
-          errorMessage =
-            "Network error. Please check your internet connection.";
-        }
-      } else if (err instanceof Error) {
-        errorMessage = err.message;
-      }
-
-      await Swal.fire({
-        title: "Error",
-        text: errorMessage,
-        icon: "error",
-        confirmButtonText: "OK",
-      });
-
       console.error("Login Error:", err);
     }
   };
