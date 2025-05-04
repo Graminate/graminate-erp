@@ -16,6 +16,7 @@ type TaskModalProps = {
     status: string;
     priority?: string;
     description?: string;
+    deadline?: string;
   };
   projectName: string;
   availableLabels: string[];
@@ -27,6 +28,7 @@ type TaskModalProps = {
     status: string;
     priority?: string;
     description?: string;
+    deadline?: string;
   }) => Promise<void>;
   deleteTask: (taskId: string) => Promise<void>;
 };
@@ -52,6 +54,7 @@ const TaskModal = ({
     ...taskDetails,
     priority: taskDetails.priority || "Medium",
     description: taskDetails.description ?? "",
+    deadline: taskDetails.deadline ?? "",
   });
 
   const updateTaskField = async (
@@ -73,6 +76,30 @@ const TaskModal = ({
       Swal.fire({
         title: "Update Failed",
         text: `Could not update ${field}`,
+        icon: "error",
+      });
+    }
+  };
+
+  const handleDeadlineChange = async (newDeadline: string) => {
+    const updatedTask = {
+      ...taskData,
+      deadline: newDeadline,
+    };
+
+    setTaskData(updatedTask);
+
+    try {
+      await updateTask(updatedTask);
+    } catch (error) {
+      console.error("Failed to update deadline:", error);
+      setTaskData((prev) => ({
+        ...prev,
+        deadline: taskDetails.deadline ?? "",
+      }));
+      Swal.fire({
+        title: "Update Failed",
+        text: `Could not update deadline`,
         icon: "error",
       });
     }
@@ -154,6 +181,7 @@ const TaskModal = ({
       ...taskDetails,
       priority: taskDetails.priority || "Medium",
       description: currentDescription,
+      deadline: taskDetails.deadline ?? "",
     });
     setIsEditingTitle(false);
     setIsEditingDescription(false);
@@ -344,6 +372,16 @@ const TaskModal = ({
                   onSelect={handlePriorityChange}
                   label="Priority"
                   width="full"
+                />
+
+                <DropdownLarge
+                  key={`deadline-${taskData.id}`}
+                  items={[]}
+                  selectedItem={taskData.deadline || "Set deadline"}
+                  onSelect={handleDeadlineChange}
+                  label="Deadline"
+                  width="full"
+                  isDatePicker={true}
                 />
               </div>
             </div>
