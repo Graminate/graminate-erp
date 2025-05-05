@@ -390,13 +390,13 @@ const CRM = () => {
       console.error("User ID is missing, cannot navigate.");
       return;
     }
-
     if ("task_id" in item) {
       const taskItem = item as Task;
       router.push({
         pathname: `/platform/${userIdString}/tasks/${taskItem.task_id}`,
         query: {
           project: taskItem.project,
+          user_id: userIdString,
         },
       });
       return;
@@ -521,8 +521,8 @@ const CRM = () => {
           onRowClick={(row) => {
             if (view === "tasks") {
               const projectName = row[0];
-              const taskItem = fetchedData.find(
-                (item) => "project" in item && item.project === projectName
+              const taskItem = tasksData.find(
+                (item) => item.project === projectName
               );
               if (taskItem) handleRowClick(taskItem);
             } else {

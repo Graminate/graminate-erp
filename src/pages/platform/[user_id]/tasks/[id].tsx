@@ -124,7 +124,7 @@ const Tasks = () => {
       setIsLoading(true);
       try {
         const response = await axiosInstance.get(`/tasks/${userId}`, {
-          params: { project: projectTitle },
+          params: { project: projectTitle }, // Add project filter
         });
         const fetchedTasks = response.data.tasks || [];
 
@@ -268,9 +268,9 @@ const Tasks = () => {
       text: "This action cannot be undone.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete it!",
+      confirmButtonColor: "#04ad79",
+      cancelButtonColor: "#bbbbbc",
+      confirmButtonText: "Yes",
     });
 
     if (result.isConfirmed) {
