@@ -552,7 +552,7 @@ const Tasks = () => {
   return (
     <>
       <Head>
-        <title>Tasks - {projectTitle || "Project"}</title>
+        <title>Tasks</title>
       </Head>
       <PlatformLayout>
         <div

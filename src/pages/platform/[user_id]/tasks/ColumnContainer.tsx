@@ -9,8 +9,6 @@ import TextArea from "@/components/ui/TextArea";
 import SortableItem from "./SortableItem";
 import TaskCard from "./TaskCard";
 import { Column, Id, Task } from "@/types/types";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEllipsis } from "@fortawesome/free-solid-svg-icons";
 import InfoModal from "@/components/modals/InfoModal";
 
 type ColumnContainerProps = {
@@ -36,7 +34,6 @@ const ColumnContainer = ({
   column,
   tasks = [],
   updateColumnTitle,
-  openTicketModal,
   columnLimits,
   addTask,
   openTaskModal,
@@ -49,7 +46,6 @@ const ColumnContainer = ({
   const [editMode, setEditMode] = useState(false);
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
-  const [columnDropdownOpen, setColumnDropdownOpen] = useState(false);
   const [newTaskPriority, setNewTaskPriority] = useState("Medium");
   const [infoModalState, setInfoModalState] = useState({
     isOpen: false,
@@ -68,11 +64,6 @@ const ColumnContainer = ({
     return null;
   }
 
-  const toggleColumnDropdownInternal = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setColumnDropdownOpen((prev) => !prev);
-  };
-
   const handleAddTask = () => {
     if (!newTaskTitle.trim()) {
       setInfoModalState({
@@ -84,26 +75,11 @@ const ColumnContainer = ({
       return;
     }
 
-    if (validTasks.length >= columnLimit) {
-      setInfoModalState({
-        isOpen: true,
-        title: "Limit Reached",
-        text: `This column has reached its limit of ${columnLimit} tasks.`,
-        variant: "error",
-      });
-      return;
-    }
-
     addTask(column.id, newTaskTitle.trim(), newTaskPriority);
     setNewTaskTitle("");
     setNewTaskPriority("Medium");
     setIsAddingTask(false);
   };
-
-  const columnLimit = columnLimits[column.id]
-    ? parseInt(columnLimits[column.id], 10)
-    : Infinity;
-  const limitExceeded = !isNaN(columnLimit) && validTasks.length > columnLimit;
 
   return (
     <div
@@ -137,42 +113,7 @@ const ColumnContainer = ({
               className="bg-transparent border-b border-gray-400 dark:border-gray-600 focus:outline-none text-sm font-semibold dark:text-light w-full"
             />
           )}
-          <span
-            className={`text-xs ${
-              limitExceeded ? "text-light bg-red-200" : "text-light bg-blue-200"
-            } dark:bg-gray-700 rounded-full px-2 py-0.5 flex-shrink-0`}
-          >
-            {validTasks.length}
-            {columnLimits[column.id] && ` / ${columnLimits[column.id]}`}
-          </span>
         </div>
-        {!isOverlay && (
-          <div className="relative flex-shrink-0">
-            <button
-              aria-label="column-ellipsis"
-              className="dark:text-light hover:bg-gray-300 dark:hover:bg-gray-700 rounded p-1"
-              onClick={toggleColumnDropdownInternal}
-            >
-              <FontAwesomeIcon icon={faEllipsis} className="size-5" />
-            </button>
-            {columnDropdownOpen && (
-              <div
-                className="absolute right-0 mt-1 bg-white dark:bg-gray-800 w-36 shadow-lg rounded text-sm text-gray-800 dark:text-light z-20"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <button
-                  className="block hover:bg-gray-400 dark:hover:bg-gray-700 px-4 py-2 rounded-t w-full text-left"
-                  onClick={() => {
-                    openTicketModal(column.id);
-                    setColumnDropdownOpen(false);
-                  }}
-                >
-                  Set column limit
-                </button>
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
       <div className="flex-grow overflow-y-auto overflow-x-hidden space-y-3 mb-3 pr-1">
@@ -240,7 +181,6 @@ const ColumnContainer = ({
                 add
                 width="large"
                 onClick={() => setIsAddingTask(true)}
-                isDisabled={validTasks.length >= columnLimit}
               />
             </div>
           )}

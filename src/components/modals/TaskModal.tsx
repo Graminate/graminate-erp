@@ -340,7 +340,7 @@ const TaskModal = ({
                   {taskData.description ? (
                     taskData.description
                   ) : (
-                    <span className="text-gray-500 dark:text-gray-400">
+                    <span className="text-gray-300">
                       Add a more detailed description...
                     </span>
                   )}
