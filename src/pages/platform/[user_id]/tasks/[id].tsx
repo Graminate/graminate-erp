@@ -430,18 +430,18 @@ const Tasks = () => {
     else if (isOverATask)
       targetColumnId = tasks.find((t) => t.id === overId)?.columnId ?? null;
 
-    if (targetColumnId && activeTask.columnId !== targetColumnId) {
-      setTasks((prevTasks) => {
-        const activeIndex = prevTasks.findIndex((t) => t.id === active.id);
-        if (activeIndex === -1) return prevTasks;
-        const updatedTasks = [...prevTasks];
-        updatedTasks[activeIndex] = {
-          ...updatedTasks[activeIndex],
-          columnId: targetColumnId,
-        };
-        return updatedTasks;
-      });
-    }
+    // if (targetColumnId && activeTask.columnId !== targetColumnId) {
+    //   setTasks((prevTasks) => {
+    //     const activeIndex = prevTasks.findIndex((t) => t.id === active.id);
+    //     if (activeIndex === -1) return prevTasks;
+    //     const updatedTasks = [...prevTasks];
+    //     updatedTasks[activeIndex] = {
+    //       ...updatedTasks[activeIndex],
+    //       columnId: targetColumnId,
+    //     };
+    //     return updatedTasks;
+    //   });
+    // }
   };
 
   const onDragEnd = async (event: DragEndEvent) => {
@@ -528,19 +528,22 @@ const Tasks = () => {
         ];
       });
 
-      if (columnChanged) {
-        const taskToUpdateForApi: Task = {
+      if (activeTask.columnId !== targetColumnId) {
+        const newStatus = mapColumnIdToStatus(targetColumnId);
+
+        await updateTask({
           ...activeTask,
           columnId: targetColumnId,
-          status: mapColumnIdToStatus(targetColumnId),
-        };
-        try {
-          await updateTask(taskToUpdateForApi);
-        } catch (error) {
-          console.error("Failed to update task status after drag:", error);
-          Swal.fire("Error", "Could not update task status.", "error");
-          setTasks(originalTasks);
-        }
+          status: newStatus,
+        });
+
+        setTasks((prev) =>
+          prev.map((t) =>
+            t.id === active.id
+              ? { ...t, columnId: targetColumnId, status: newStatus }
+              : t
+          )
+        );
       }
     }
   };
