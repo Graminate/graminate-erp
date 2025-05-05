@@ -33,6 +33,7 @@ import ColumnContainer from "./ColumnContainer";
 import TaskCard from "./TaskCard";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import axios from "axios";
+import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
 
 const formatDeadlineForInput = (
   deadlineString: string | null | undefined
@@ -89,6 +90,7 @@ const Tasks = () => {
   const [selectedFilterLabels, setSelectedFilterLabels] = useState<string[]>(
     []
   );
+  const [selectedPriority, setSelectedPriority] = useState<string>("None");
   const dropdownItems = useMemo(() => {
     const labelsFromTasks = tasks.flatMap(
       (t: Task) => t.type?.split(",").map((l: string) => l.trim()) ?? []
@@ -122,7 +124,7 @@ const Tasks = () => {
       setIsLoading(true);
       try {
         const response = await axiosInstance.get(`/tasks/${userId}`, {
-          params: { project: projectTitle },
+          params: { project: projectTitle }, // Add project filter
         });
         const fetchedTasks = response.data.tasks || [];
 
@@ -181,9 +183,14 @@ const Tasks = () => {
         !searchLower ||
         task.title.toLowerCase().includes(searchLower) ||
         task.id.toString().toLowerCase().includes(searchLower);
-      return labelMatch && searchMatch;
+      const priorityMatch =
+        selectedPriority === "None" ||
+        (task.priority &&
+          task.priority.toLowerCase() === selectedPriority.toLowerCase());
+
+      return labelMatch && searchMatch && priorityMatch;
     });
-  }, [tasks, searchQuery, selectedFilterLabels]);
+  }, [tasks, searchQuery, selectedFilterLabels, selectedPriority]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -261,9 +268,9 @@ const Tasks = () => {
       text: "This action cannot be undone.",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonColor: "#d33",
-      cancelButtonColor: "#3085d6",
-      confirmButtonText: "Yes, delete it!",
+      confirmButtonColor: "#04ad79",
+      cancelButtonColor: "#bbbbbc",
+      confirmButtonText: "Yes",
     });
 
     if (result.isConfirmed) {
@@ -430,18 +437,18 @@ const Tasks = () => {
     else if (isOverATask)
       targetColumnId = tasks.find((t) => t.id === overId)?.columnId ?? null;
 
-    if (targetColumnId && activeTask.columnId !== targetColumnId) {
-      setTasks((prevTasks) => {
-        const activeIndex = prevTasks.findIndex((t) => t.id === active.id);
-        if (activeIndex === -1) return prevTasks;
-        const updatedTasks = [...prevTasks];
-        updatedTasks[activeIndex] = {
-          ...updatedTasks[activeIndex],
-          columnId: targetColumnId,
-        };
-        return updatedTasks;
-      });
-    }
+    // if (targetColumnId && activeTask.columnId !== targetColumnId) {
+    //   setTasks((prevTasks) => {
+    //     const activeIndex = prevTasks.findIndex((t) => t.id === active.id);
+    //     if (activeIndex === -1) return prevTasks;
+    //     const updatedTasks = [...prevTasks];
+    //     updatedTasks[activeIndex] = {
+    //       ...updatedTasks[activeIndex],
+    //       columnId: targetColumnId,
+    //     };
+    //     return updatedTasks;
+    //   });
+    // }
   };
 
   const onDragEnd = async (event: DragEndEvent) => {
@@ -528,19 +535,22 @@ const Tasks = () => {
         ];
       });
 
-      if (columnChanged) {
-        const taskToUpdateForApi: Task = {
+      if (activeTask.columnId !== targetColumnId) {
+        const newStatus = mapColumnIdToStatus(targetColumnId);
+
+        await updateTask({
           ...activeTask,
           columnId: targetColumnId,
-          status: mapColumnIdToStatus(targetColumnId),
-        };
-        try {
-          await updateTask(taskToUpdateForApi);
-        } catch (error) {
-          console.error("Failed to update task status after drag:", error);
-          Swal.fire("Error", "Could not update task status.", "error");
-          setTasks(originalTasks);
-        }
+          status: newStatus,
+        });
+
+        setTasks((prev) =>
+          prev.map((t) =>
+            t.id === active.id
+              ? { ...t, columnId: targetColumnId, status: newStatus }
+              : t
+          )
+        );
       }
     }
   };
@@ -552,7 +562,7 @@ const Tasks = () => {
   return (
     <>
       <Head>
-        <title>Tasks - {projectTitle || "Project"}</title>
+        <title>Tasks</title>
       </Head>
       <PlatformLayout>
         <div
@@ -593,6 +603,13 @@ const Tasks = () => {
                     onClick={() => setSelectedFilterLabels([])}
                   />
                 )}
+                <DropdownSmall
+                  items={["None", "Low", "Medium", "High"]}
+                  direction="down"
+                  placeholder="Priority"
+                  selected={selectedPriority}
+                  onSelect={setSelectedPriority}
+                />
                 <TicketView isListView={isListView} toggleView={toggleView} />
               </div>
             </div>

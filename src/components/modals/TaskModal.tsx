@@ -239,7 +239,7 @@ const TaskModal = ({
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg p-6 md:p-8 max-h-[90vh] w-full h-[80%] max-w-5xl shadow-xl relative flex flex-col overflow-hidden ">
-        <div className="flex justify-between items-start mb-4">
+        <div className="flex justify-between items-start mb-4 border-b border-gray-300">
           <p className="text-dark dark:text-light text-sm uppercase tracking-wide">
             {projectName} / TASK-{taskDetails.id}
           </p>
@@ -259,7 +259,7 @@ const TaskModal = ({
                     className="block w-full text-left px-4 py-2 text-sm text-dark dark:text-light hover:bg-gray-500 dark:hover:bg-gray-600"
                     onClick={handleDelete}
                   >
-                    Delete Task
+                    Delete
                   </button>
                 </div>
               )}
@@ -340,7 +340,7 @@ const TaskModal = ({
                   {taskData.description ? (
                     taskData.description
                   ) : (
-                    <span className="text-gray-500 dark:text-gray-400">
+                    <span className="text-gray-300">
                       Add a more detailed description...
                     </span>
                   )}

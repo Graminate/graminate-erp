@@ -1,6 +1,4 @@
 import { Id, Task } from "@/types/types";
-import { faEllipsis } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { useState } from "react";
 
 type TaskCardProps = {
@@ -16,9 +14,6 @@ type TaskCardProps = {
 const TaskCard = ({
   task,
   openTaskModal,
-  toggleDropdown,
-  deleteTask,
-  dropdownOpen,
   isOverlay = false,
 }: TaskCardProps) => {
   const [isHovering, setIsHovering] = useState(false);
@@ -40,10 +35,6 @@ const TaskCard = ({
     }
   };
 
-  const handleDelete = (taskId: Id) => {
-    deleteTask(taskId);
-  };
-
   return (
     <div
       className={`bg-white dark:bg-gray-700 p-3 rounded-md shadow relative ${
@@ -63,38 +54,6 @@ const TaskCard = ({
         <p className="text-sm font-medium dark:text-light mr-2 break-words">
           {task.title}
         </p>
-        {!isOverlay && isHovering && (
-          <div className="relative flex-shrink-0">
-            <button
-              aria-label="ellipsis"
-              className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-light p-1 rounded"
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleDropdown(task.columnId, task.id);
-              }}
-            >
-              <FontAwesomeIcon icon={faEllipsis} className="size-5" />
-            </button>
-            {dropdownOpen &&
-              dropdownOpen.colId === task.columnId &&
-              dropdownOpen.taskId === task.id && (
-                <div
-                  className="absolute right-0 mt-1 w-32 bg-white dark:bg-gray-800 shadow-lg rounded text-sm text-gray-800 dark:text-light z-20"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <button
-                    className="block hover:bg-gray-400 dark:hover:bg-gray-700 px-4 py-2 rounded-b w-full text-left text-red-600"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(task.id);
-                    }}
-                  >
-                    Delete
-                  </button>
-                </div>
-              )}
-          </div>
-        )}
       </div>
       {task.type && (
         <div className="mt-2 flex flex-wrap gap-1">

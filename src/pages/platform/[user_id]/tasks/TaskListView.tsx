@@ -58,6 +58,9 @@ const TaskListView = ({
             <th scope="col" className="py-3 px-6">
               Priority
             </th>
+            <th scope="col" className="py-3 px-6">
+              Deadline
+            </th>
           </tr>
         </thead>
         <tbody>
@@ -89,6 +92,9 @@ const TaskListView = ({
                     {task.priority}
                   </span>
                 )}
+              </td>
+              <td className="py-4 px-6 text-dark dark:text-light">
+                {task.deadline}
               </td>
             </tr>
           ))}

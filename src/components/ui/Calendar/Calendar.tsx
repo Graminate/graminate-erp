@@ -42,7 +42,6 @@ const Calendar = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [newTask, setNewTask] = useState("");
   const [newTaskTime, setNewTaskTime] = useState("12:00 PM");
-  const [isClockVisible, setIsClockVisible] = useState(false);
   const [showTasks, setShowTasks] = useState(false);
   const [showAddTask, setShowAddTask] = useState(false);
   const [isTaskNameValid, setIsTaskNameValid] = useState(true);
@@ -330,12 +329,8 @@ const Calendar = () => {
           setNewTask={setNewTask}
           newTaskTime={newTaskTime}
           setNewTaskTime={setNewTaskTime}
-          isClockVisible={isClockVisible}
-          setIsClockVisible={setIsClockVisible}
           addTask={addTask}
           setShowAddTask={setShowAddTask}
-          selectedReminder={selectedReminder}
-          setSelectedReminder={setSelectedReminder}
           isTaskNameValid={isTaskNameValid}
           priority={priority}
           setPriority={setPriority}
@@ -347,6 +342,11 @@ const Calendar = () => {
           selectSuggestion={selectSuggestion}
           suggestionsRef={suggestionsRef}
           setShowSuggestions={setShowSuggestions}
+          userId={Number(user_id)}
+          projectName={projectInput}
+          refreshTasks={() => {
+            setShowAddTask(false);
+          }}
         />
       ) : showTasks ? (
         <TaskListView
