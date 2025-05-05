@@ -1,6 +1,4 @@
 import { Id, Task } from "@/types/types";
-import { faEllipsis } from "@fortawesome/free-solid-svg-icons";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React, { useState } from "react";
 
 type TaskCardProps = {
@@ -16,9 +14,6 @@ type TaskCardProps = {
 const TaskCard = ({
   task,
   openTaskModal,
-  toggleDropdown,
-  deleteTask,
-  dropdownOpen,
   isOverlay = false,
 }: TaskCardProps) => {
   const [isHovering, setIsHovering] = useState(false);
@@ -38,10 +33,6 @@ const TaskCard = ({
       default:
         return "bg-gray-400 text-dark dark:bg-gray-400 dark:text-dark";
     }
-  };
-
-  const handleDelete = (taskId: Id) => {
-    deleteTask(taskId);
   };
 
   return (

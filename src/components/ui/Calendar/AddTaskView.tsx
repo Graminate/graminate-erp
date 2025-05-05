@@ -1,9 +1,8 @@
-import React from "react";
-import ClockPicker from "./ClockPicker";
+import React, { useState } from "react";
 import TextField from "../TextField";
 import DropdownSmall from "../Dropdown/DropdownSmall";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faClock } from "@fortawesome/free-solid-svg-icons";
+import Swal from "sweetalert2";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 type AddTaskViewProps = {
   selectedDate: Date;
@@ -11,12 +10,8 @@ type AddTaskViewProps = {
   setNewTask: (value: string) => void;
   newTaskTime: string;
   setNewTaskTime: (value: string) => void;
-  isClockVisible: boolean;
-  setIsClockVisible: (value: boolean) => void;
   addTask: () => void;
   setShowAddTask: (value: boolean) => void;
-  selectedReminder: string;
-  setSelectedReminder: (value: string) => void;
   isTaskNameValid: boolean;
   priority: string;
   setPriority: (value: string) => void;
@@ -28,6 +23,9 @@ type AddTaskViewProps = {
   selectSuggestion: (suggestion: string) => void;
   suggestionsRef: React.RefObject<HTMLDivElement>;
   setShowSuggestions: (value: boolean) => void;
+  userId: number;
+  projectName: string;
+  refreshTasks: () => void;
 };
 
 const AddTaskView = ({
@@ -36,13 +34,8 @@ const AddTaskView = ({
   setNewTask,
   newTaskTime,
   setNewTaskTime,
-  isClockVisible,
-  setIsClockVisible,
-  addTask,
   setShowAddTask,
   isTaskNameValid,
-  priority,
-  setPriority,
   projectInput,
   handleProjectInputChange,
   suggestions,
@@ -50,10 +43,40 @@ const AddTaskView = ({
   selectSuggestion,
   suggestionsRef,
   setShowSuggestions,
+  userId,
+  projectName,
+  refreshTasks,
 }: AddTaskViewProps) => {
-  const handleAddTaskClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    addTask();
+  const [priority, setPriority] = useState("Medium");
+  const [deadline, setDeadline] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleAddTask = async () => {
+    if (!newTask.trim()) {
+      Swal.fire("Error", "Task name cannot be empty", "error");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const taskData = {
+        user_id: userId,
+        project: projectName,
+        task: newTask.trim(),
+        status: "To Do",
+        priority,
+        deadline: deadline || null,
+      };
+
+      const response = await axiosInstance.post("/tasks/add", taskData);
+
+      Swal.fire("Success", "Task created successfully", "success");
+      refreshTasks();
+    } catch (error) {
+      console.error("Error creating task:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -73,21 +96,9 @@ const AddTaskView = ({
       </p>
 
       <div className="space-y-5">
-        <TextField
-          label="Task"
-          placeholder="Enter task name..."
-          value={newTask}
-          onChange={setNewTask}
-          errorMessage={
-            !isTaskNameValid && !newTask.trim()
-              ? "Task name cannot be empty"
-              : ""
-          }
-        />
-
         <div className="relative mb-4">
           <TextField
-            label="Task Category"
+            label="Category"
             placeholder="Enter task category"
             value={projectInput}
             onChange={handleProjectInputChange}
@@ -111,6 +122,17 @@ const AddTaskView = ({
             </div>
           )}
         </div>
+        <TextField
+          label="Task"
+          placeholder="Enter task name..."
+          value={newTask}
+          onChange={setNewTask}
+          errorMessage={
+            !isTaskNameValid && !newTask.trim()
+              ? "Task name cannot be empty"
+              : ""
+          }
+        />
 
         <div className="mb-4">
           <DropdownSmall
@@ -122,49 +144,22 @@ const AddTaskView = ({
           />
         </div>
 
-        <div className="relative">
-          <label
-            htmlFor="time-button"
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >
-            Time
-          </label>
-          <button
-            id="time-button"
-            className={`w-full text-left border ${
-              isClockVisible
-                ? "border-green-200 ring-1 ring-blue-200"
-                : "border-gray-300 dark:border-gray-600"
-            } bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-green-200 focus:border-blue-500 flex justify-between items-center`}
-            onClick={() => setIsClockVisible(!isClockVisible)}
-            aria-haspopup="true"
-            aria-expanded={isClockVisible}
-          >
-            <span>{newTaskTime}</span>
-            <FontAwesomeIcon icon={faClock} className="size-5 text-gray-300" />
-          </button>
-          {isClockVisible && (
-            <div className="absolute z-10 mt-1 w-full sm:w-72 right-0">
-              <ClockPicker
-                selectedTime={newTaskTime}
-                onTimeSelected={(time: string) => {
-                  setNewTaskTime(time);
-                  setIsClockVisible(false);
-                }}
-                onCancel={() => setIsClockVisible(false)}
-              />
-            </div>
-          )}
-        </div>
+        <TextField
+          label="Time"
+          placeholder="Select time"
+          value={newTaskTime}
+          onChange={setNewTaskTime}
+          calendar={true}
+        />
 
         <div className="flex justify-end space-x-3 pt-4">
           <button
             type="submit"
             className="px-4 py-2 rounded-md text-sm font-medium text-white bg-green-200 hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed"
-            onClick={handleAddTaskClick}
-            disabled={!newTask.trim() || !newTaskTime.trim()}
+            onClick={handleAddTask}
+            disabled={!newTask.trim() || isLoading}
           >
-            Add Task
+            {isLoading ? "Adding..." : "Add Task"}
           </button>
           <button
             type="button"

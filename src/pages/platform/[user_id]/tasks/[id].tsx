@@ -33,6 +33,7 @@ import ColumnContainer from "./ColumnContainer";
 import TaskCard from "./TaskCard";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import axios from "axios";
+import DropdownSmall from "@/components/ui/Dropdown/DropdownSmall";
 
 const formatDeadlineForInput = (
   deadlineString: string | null | undefined
@@ -89,6 +90,7 @@ const Tasks = () => {
   const [selectedFilterLabels, setSelectedFilterLabels] = useState<string[]>(
     []
   );
+  const [selectedPriority, setSelectedPriority] = useState<string>("None");
   const dropdownItems = useMemo(() => {
     const labelsFromTasks = tasks.flatMap(
       (t: Task) => t.type?.split(",").map((l: string) => l.trim()) ?? []
@@ -181,9 +183,14 @@ const Tasks = () => {
         !searchLower ||
         task.title.toLowerCase().includes(searchLower) ||
         task.id.toString().toLowerCase().includes(searchLower);
-      return labelMatch && searchMatch;
+      const priorityMatch =
+        selectedPriority === "None" ||
+        (task.priority &&
+          task.priority.toLowerCase() === selectedPriority.toLowerCase());
+
+      return labelMatch && searchMatch && priorityMatch;
     });
-  }, [tasks, searchQuery, selectedFilterLabels]);
+  }, [tasks, searchQuery, selectedFilterLabels, selectedPriority]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -596,6 +603,13 @@ const Tasks = () => {
                     onClick={() => setSelectedFilterLabels([])}
                   />
                 )}
+                <DropdownSmall
+                  items={["None", "Low", "Medium", "High"]}
+                  direction="down"
+                  placeholder="Priority"
+                  selected={selectedPriority}
+                  onSelect={setSelectedPriority}
+                />
                 <TicketView isListView={isListView} toggleView={toggleView} />
               </div>
             </div>
