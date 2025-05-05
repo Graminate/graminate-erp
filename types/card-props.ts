@@ -79,6 +79,7 @@ export type NotificationBar = {
   notifications: Notification[];
   isOpen: boolean;
   closeNotificationBar: () => void;
+  onClearAll?: () => void;
   userId: string;
 };
 
