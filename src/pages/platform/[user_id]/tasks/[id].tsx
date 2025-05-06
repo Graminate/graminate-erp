@@ -27,7 +27,7 @@ import {
 import { createPortal } from "react-dom";
 import Head from "next/head";
 import { Column, Id, Task } from "@/types/types";
-import TaskListView from "./TaskListView";
+import TaskListView from "./KanbanListView";
 import SortableItem from "./SortableItem";
 import ColumnContainer from "./ColumnContainer";
 import TaskCard from "./TaskCard";
@@ -131,6 +131,7 @@ const Tasks = () => {
         const mappedTasks: Task[] = fetchedTasks.map(
           (task: any): Task => ({
             id: task.task_id.toString(),
+            task: task.task,
             title: task.task,
             description: task.description || "",
             type: task.type || "",
@@ -221,6 +222,7 @@ const Tasks = () => {
       const createdApiTask = response.data;
       const newTask: Task = {
         // Ensure newTask conforms to Task type
+        task: createdApiTask.task,
         id: createdApiTask.task_id.toString(),
         columnId,
         title: createdApiTask.task,

@@ -1,7 +1,7 @@
 type Props = {
   text?: string;
   arrow?: "" | "up" | "down" | "left" | "right";
-  style?: "primary" | "secondary" | "ghost" | "home";
+  style?: "primary" | "secondary" | "ghost" | "home" | "delete";
   isDisabled?: boolean;
   width?: "small" | "medium" | "large";
   add?: boolean;
@@ -42,6 +42,8 @@ const Button = ({
         return "bg-white dark:bg-transparent text-sm disabled:text-gray-400 disabled:bg-transparent disabled:border-gray-300 hover:bg-green-300 dark:hover:bg-transparent hover:bg-teal-50 text-green-200 hover:text-green-200 border border-green-200 justify-center";
       case "ghost":
         return "bg-transparent hover:bg-gray-500 dark:hover:bg-transparent text-sm font-semibold text-gray-200 dark:text-gray-400 justify-center disabled:text-gray-300 disabled:bg-transparent";
+      case "delete":
+        return "bg-red-200 text-sm hover:bg-red-100 disabled:bg-red-300 disabled:text-light disabled:opacity-50 text-light justify-center";
       default:
         return "";
     }

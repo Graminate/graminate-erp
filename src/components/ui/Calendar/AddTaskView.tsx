@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import TextField from "../TextField";
 import DropdownSmall from "../Dropdown/DropdownSmall";
-import Swal from "sweetalert2";
 import axiosInstance from "@/lib/utils/axiosInstance";
+import Loader from "../Loader";
+import Button from "../Button";
 
 type AddTaskViewProps = {
   selectedDate: Date;
@@ -10,11 +11,9 @@ type AddTaskViewProps = {
   setNewTask: (value: string) => void;
   newTaskTime: string;
   setNewTaskTime: (value: string) => void;
-  addTask: () => void;
   setShowAddTask: (value: boolean) => void;
   isTaskNameValid: boolean;
-  priority: string;
-  setPriority: (value: string) => void;
+  setIsTaskNameValid: (value: boolean) => void;
   projectInput: string;
   handleProjectInputChange: (value: string) => void;
   suggestions: string[];
@@ -26,20 +25,23 @@ type AddTaskViewProps = {
   userId: number;
   projectName: string;
   refreshTasks: () => void;
+  convertTo24Hour: (time: string) => string;
+  isTodayWithPastTimeCheck: (date: Date, time: string) => boolean;
+  setShowInvalidTimeModal: (value: boolean) => void;
 };
 
 const AddTaskView = ({
   selectedDate,
   newTask,
   setNewTask,
-  newTaskTime,
-  setNewTaskTime,
   setShowAddTask,
   isTaskNameValid,
+  setIsTaskNameValid,
   projectInput,
   handleProjectInputChange,
   suggestions,
   showSuggestions,
+  isLoadingSuggestions,
   selectSuggestion,
   suggestionsRef,
   setShowSuggestions,
@@ -47,32 +49,36 @@ const AddTaskView = ({
   projectName,
   refreshTasks,
 }: AddTaskViewProps) => {
-  const [priority, setPriority] = useState("Medium");
-  const [deadline, setDeadline] = useState("");
+  const [priority, setPriority] = useState<"Low" | "Medium" | "High">("Medium");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleAddTask = async () => {
     if (!newTask.trim()) {
-      Swal.fire("Error", "Task name cannot be empty", "error");
+      setIsTaskNameValid(false);
       return;
     }
+    setIsTaskNameValid(true);
 
     try {
       setIsLoading(true);
+      const year = selectedDate.getFullYear();
+      const month = (selectedDate.getMonth() + 1).toString().padStart(2, "0");
+      const day = selectedDate.getDate().toString().padStart(2, "0");
+      const deadlineDateString = `${year}-${month}-${day}`;
+
       const taskData = {
         user_id: userId,
-        project: projectName,
+        project: projectName || projectInput,
         task: newTask.trim(),
         status: "To Do",
         priority,
-        deadline: deadline || null,
+        deadline: deadlineDateString,
       };
 
-      const response = await axiosInstance.post("/tasks/add", taskData);
+      await axiosInstance.post("/tasks/add", taskData);
 
-      Swal.fire("Success", "Task created successfully", "success");
       refreshTasks();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating task:", error);
     } finally {
       setIsLoading(false);
@@ -96,37 +102,47 @@ const AddTaskView = ({
       </p>
 
       <div className="space-y-5">
-        <div className="relative mb-4">
+        <div className="relative">
           <TextField
             label="Category"
-            placeholder="Enter task category"
+            placeholder="Enter or select task category"
             value={projectInput}
             onChange={handleProjectInputChange}
             onFocus={() => setShowSuggestions(true)}
           />
-          {showSuggestions && suggestions.length > 0 && (
-            <div
-              ref={suggestionsRef as React.RefObject<HTMLDivElement>}
-              className="absolute z-50 mt-1 w-full max-h-60 overflow-auto rounded-md bg-white dark:bg-gray-700 py-1 text-base shadow-lg focus:outline-none sm:text-sm"
-            >
-              <p className="text-xs p-2 text-gray-300">Suggestions...</p>
-              {suggestions.map((suggestion: string, index: number) => (
+          {showSuggestions &&
+            (isLoadingSuggestions ? (
+              <div className="absolute z-10 mt-1 w-full rounded-md bg-white dark:bg-gray-700 py-1 text-xs p-2 text-gray-400 dark:text-gray-500 shadow-lg">
+                <Loader />
+              </div>
+            ) : (
+              suggestions.length > 0 && (
                 <div
-                  key={index}
-                  className="px-4 py-2 hover:bg-gray-500 dark:hover:bg-gray-600 cursor-pointer text-sm text-gray-800 dark:text-gray-200"
-                  onClick={() => selectSuggestion(suggestion)}
+                  ref={suggestionsRef as React.RefObject<HTMLDivElement>}
+                  className="absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-md bg-white dark:bg-gray-700 py-1 text-base shadow-lg focus:outline-none sm:text-sm"
                 >
-                  {suggestion}
+                  <p className="text-xs p-2 text-gray-300">Suggestions</p>
+                  {suggestions.map((suggestion: string, index: number) => (
+                    <div
+                      key={index}
+                      className="px-4 py-2 hover:bg-gray-500 dark:hover:bg-gray-600 cursor-pointer text-sm text-gray-800 dark:text-gray-200"
+                      onClick={() => selectSuggestion(suggestion)}
+                    >
+                      {suggestion}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-          )}
+              )
+            ))}
         </div>
         <TextField
           label="Task"
           placeholder="Enter task name..."
           value={newTask}
-          onChange={setNewTask}
+          onChange={(val) => {
+            setNewTask(val);
+            if (val.trim()) setIsTaskNameValid(true);
+          }}
           errorMessage={
             !isTaskNameValid && !newTask.trim()
               ? "Task name cannot be empty"
@@ -140,37 +156,28 @@ const AddTaskView = ({
             placeholder="Select priority"
             items={["Low", "Medium", "High"]}
             selected={priority}
-            onSelect={(item: string) => setPriority(item)}
+            onSelect={(item) => setPriority(item as "Low" | "Medium" | "High")}
           />
         </div>
 
-        <TextField
-          label="Time"
-          placeholder="Select time"
-          value={newTaskTime}
-          onChange={setNewTaskTime}
-          calendar={true}
-        />
-
-        <div className="flex justify-end space-x-3 pt-4">
-          <button
+        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-400 dark:border-gray-600">
+          <Button
+            text="Add Task"
+            style="primary"
             type="submit"
-            className="px-4 py-2 rounded-md text-sm font-medium text-white bg-green-200 hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleAddTask}
-            disabled={!newTask.trim() || isLoading}
-          >
-            {isLoading ? "Adding..." : "Add Task"}
-          </button>
-          <button
-            type="button"
-            className="px-4 py-2 rounded-md text-sm font-medium text-dark bg-gray-500 hover:bg-gray-400 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-offset-gray-800"
+            isDisabled={!newTask.trim() || !projectInput.trim() || isLoading}
+          />
+
+          <Button
+            text="Cancel"
+            style="secondary"
             onClick={() => setShowAddTask(false)}
-          >
-            Cancel
-          </button>
+          />
         </div>
       </div>
     </div>
   );
 };
+
 export default AddTaskView;
