@@ -116,7 +116,7 @@ const LabourPaymentDetails = () => {
     return {
       columns: [
         "Payment Date",
-        "Base Salary",
+        "Salary Paid",
         "Bonus",
         "Overtime Pay",
         "Housing Allowance",

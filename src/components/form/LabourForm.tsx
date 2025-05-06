@@ -27,13 +27,6 @@ const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
     city: "",
     state: "",
     postalCode: "",
-    baseSalary: "",
-    bonus: "",
-    overtimePay: "",
-    housingAllowance: "",
-    travelAllowance: "",
-    mealAllowance: "",
-    paymentFrequency: "Monthly",
   });
 
   const [labourErrors, setLabourErrors] = useState({
@@ -42,7 +35,6 @@ const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
     city: "",
     state: "",
     postalCode: "",
-    baseSalary: "",
   });
 
   const [animate, setAnimate] = useState(false);
@@ -97,25 +89,10 @@ const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
     return { errors, isValid };
   };
 
-  const validateSalaryFields = () => {
-    const errors = {
-      baseSalary: "",
-    };
-    let isValid = true;
-
-    if (labourValues.baseSalary && isNaN(Number(labourValues.baseSalary))) {
-      errors.baseSalary = "Base salary must be a number";
-      isValid = false;
-    }
-
-    return { errors, isValid };
-  };
-
   const handleSubmitLabour = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const addressValidation = validateLabourAddress();
-    const salaryValidation = validateSalaryFields();
     const phoneValid =
       isValidE164(labourValues.contactNumber) || !labourValues.contactNumber;
     const phoneErrorMsg = !phoneValid ? "Phone number is not valid" : "";
@@ -123,18 +100,12 @@ const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
     setLabourErrors({
       ...labourErrors,
       ...addressValidation.errors,
-      ...salaryValidation.errors,
       contactNumber: phoneErrorMsg,
     });
 
-    if (
-      !addressValidation.isValid ||
-      !phoneValid ||
-      !salaryValidation.isValid
-    ) {
+    if (!addressValidation.isValid || !phoneValid) {
       console.log("Labour form validation failed:", {
         ...addressValidation.errors,
-        ...salaryValidation.errors,
         contactNumber: phoneErrorMsg,
       });
       return;
@@ -153,24 +124,6 @@ const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
       city: labourValues.city,
       state: labourValues.state,
       postal_code: labourValues.postalCode,
-      // Salary fields
-      base_salary: labourValues.baseSalary
-        ? parseFloat(labourValues.baseSalary)
-        : 0,
-      bonus: labourValues.bonus ? parseFloat(labourValues.bonus) : 0,
-      overtime_pay: labourValues.overtimePay
-        ? parseFloat(labourValues.overtimePay)
-        : 0,
-      housing_allowance: labourValues.housingAllowance
-        ? parseFloat(labourValues.housingAllowance)
-        : 0,
-      travel_allowance: labourValues.travelAllowance
-        ? parseFloat(labourValues.travelAllowance)
-        : 0,
-      meal_allowance: labourValues.mealAllowance
-        ? parseFloat(labourValues.mealAllowance)
-        : 0,
-      payment_frequency: labourValues.paymentFrequency,
     };
 
     try {
@@ -187,13 +140,6 @@ const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
         city: "",
         state: "",
         postalCode: "",
-        baseSalary: "",
-        bonus: "",
-        overtimePay: "",
-        housingAllowance: "",
-        travelAllowance: "",
-        mealAllowance: "",
-        paymentFrequency: "Monthly",
       });
       setLabourErrors({
         contactNumber: "",
@@ -201,7 +147,6 @@ const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
         city: "",
         state: "",
         postalCode: "",
-        baseSalary: "",
       });
       handleClose();
       window.location.reload();
@@ -306,11 +251,12 @@ const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
                 />
                 <TextField
                   label="Aadhar Card Number"
-                  placeholder="e.g. XXXX XXXX XXXX"
+                  placeholder="e.g. XXXX XXXX XXXX" // Adjusted placeholder
                   value={labourValues.aadharCardNumber}
                   onChange={(val: string) =>
                     setLabourValues({ ...labourValues, aadharCardNumber: val })
                   }
+                  // Add validation if needed for Aadhar format
                 />
               </div>
               <TextField
@@ -362,93 +308,6 @@ const LabourForm = ({ onClose, formTitle }: SidebarProp) => {
                   type={labourErrors.postalCode ? "error" : ""}
                   errorMessage={labourErrors.postalCode}
                 />
-              </div>
-
-              {/* Salary Section */}
-              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <h3 className="text-lg font-semibold mb-4">
-                  Salary Information
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <TextField
-                    label="Base Salary (₹)"
-                    placeholder=""
-                    value={labourValues.baseSalary}
-                    onChange={(val: string) => {
-                      setLabourValues({ ...labourValues, baseSalary: val });
-                      if (val && isNaN(Number(val))) {
-                        setLabourErrors({
-                          ...labourErrors,
-                          baseSalary: "Must be a valid number",
-                        });
-                      } else {
-                        setLabourErrors({ ...labourErrors, baseSalary: "" });
-                      }
-                    }}
-                    type={labourErrors.baseSalary ? "error" : ""}
-                    errorMessage={labourErrors.baseSalary}
-                  />
-                  <DropdownLarge
-                    items={["Monthly", "Weekly", "Bi-weekly", "Daily"]}
-                    selectedItem={labourValues.paymentFrequency}
-                    onSelect={(value: string) =>
-                      setLabourValues({
-                        ...labourValues,
-                        paymentFrequency: value,
-                      })
-                    }
-                    type="form"
-                    label="Payment Frequency"
-                    width="full"
-                  />
-                </div>
-                <div className="grid grid-cols-3 gap-4 mt-4">
-                  <TextField
-                    label="Bonus (₹)"
-                    placeholder="e.g. 1000"
-                    value={labourValues.bonus}
-                    onChange={(val: string) =>
-                      setLabourValues({ ...labourValues, bonus: val })
-                    }
-                  />
-                  <TextField
-                    label="Overtime Pay (₹)"
-                    placeholder="e.g. 500"
-                    value={labourValues.overtimePay}
-                    onChange={(val: string) =>
-                      setLabourValues({ ...labourValues, overtimePay: val })
-                    }
-                  />
-                  <TextField
-                    label="Housing Allowance (₹)"
-                    placeholder="e.g. 2000"
-                    value={labourValues.housingAllowance}
-                    onChange={(val: string) =>
-                      setLabourValues({
-                        ...labourValues,
-                        housingAllowance: val,
-                      })
-                    }
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4 mt-4">
-                  <TextField
-                    label="Travel Allowance (₹)"
-                    placeholder="e.g. 1000"
-                    value={labourValues.travelAllowance}
-                    onChange={(val: string) =>
-                      setLabourValues({ ...labourValues, travelAllowance: val })
-                    }
-                  />
-                  <TextField
-                    label="Meal Allowance (₹)"
-                    placeholder="e.g. 800"
-                    value={labourValues.mealAllowance}
-                    onChange={(val: string) =>
-                      setLabourValues({ ...labourValues, mealAllowance: val })
-                    }
-                  />
-                </div>
               </div>
 
               <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
