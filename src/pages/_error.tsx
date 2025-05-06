@@ -57,16 +57,6 @@ function Error({ statusCode, message, isTypeError }: ErrorProps) {
           <p className="mb-8 text-base text-gray-600 sm:text-lg">
             {userFriendlyMessage}
           </p>
-
-          <Link href="/">
-            <Button
-              text="Go Back Home"
-              style="primary"
-              onClick={() => {
-                router.back();
-              }}
-            />
-          </Link>
         </div>
       </div>
     </>

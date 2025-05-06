@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import CalendarGrid from "./CalendarGrid";
 import CalendarHeader from "./CalendarHeader";
 import TaskListView from "../TaskListView";
@@ -7,13 +7,28 @@ import axiosInstance from "@/lib/utils/axiosInstance";
 import { useRouter } from "next/router";
 import InfoModal from "@/components/modals/InfoModal";
 
-export type Task = {
-  name: string;
-  time: string;
+// Raw task structure from backend
+export type RawBackendTask = {
+  task_id: number;
+  user_id: number;
+  project: string;
+  task: string; // This is the task name/description from backend
+  status: string;
+  description?: string;
+  priority: "Low" | "Medium" | "High";
+  deadline?: string; // Full ISO string e.g., "2023-10-27T14:30:00.000Z"
+  created_on: string;
 };
 
-export type Tasks = {
-  [key: string]: Task[];
+// Task structure for display in frontend components
+export type DisplayTask = RawBackendTask & {
+  name: string; // Mapped from 'task' for compatibility
+  time: string; // Formatted time string for display
+};
+
+// For CalendarGrid, to show if a date has any tasks
+export type TasksPresence = {
+  [key: string]: boolean; // key is YYYY-MM-DD
 };
 
 const isTodayWithPastTime = (date: Date, time: string): boolean => {
@@ -22,15 +37,38 @@ const isTodayWithPastTime = (date: Date, time: string): boolean => {
     date.getFullYear() === now.getFullYear() &&
     date.getMonth() === now.getMonth() &&
     date.getDate() === now.getDate();
+
   if (!isToday) return false;
-  const [timePart, modifier] = time.split(" ");
-  const timeParts = timePart.split(":").map(Number);
+  if (!time || time.toLowerCase() === "no time set") return false;
+
+  const [timePartStr, modifier] = time.split(" ");
+  const timeParts = timePartStr.split(":").map(Number);
+
+  if (timeParts.length !== 2 || isNaN(timeParts[0]) || isNaN(timeParts[1])) {
+    return false;
+  }
+
   let hours = timeParts[0];
   const minutes = timeParts[1];
-  if (modifier === "PM" && hours < 12) hours += 12;
-  if (modifier === "AM" && hours === 12) hours = 0;
-  const taskTime = new Date(date);
-  taskTime.setHours(hours, minutes, 0, 0);
+
+  if (modifier) {
+    const upperModifier = modifier.toUpperCase();
+    if (upperModifier === "PM" && hours < 12) {
+      hours += 12;
+    } else if (upperModifier === "AM" && hours === 12) {
+      hours = 0;
+    }
+  }
+
+  const taskTime = new Date(
+    date.getFullYear(),
+    date.getMonth(),
+    date.getDate(),
+    hours,
+    minutes,
+    0,
+    0
+  );
   return taskTime < now;
 };
 
@@ -38,17 +76,18 @@ const Calendar = () => {
   const router = useRouter();
   const { user_id } = router.query;
 
-  const [tasks, setTasks] = useState<Tasks>({});
+  const [displayedTasks, setDisplayedTasks] = useState<DisplayTask[]>([]);
+  const [tasksForGrid, setTasksForGrid] = useState<TasksPresence>({});
+  const [isLoadingTasks, setIsLoadingTasks] = useState(false);
+
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [newTask, setNewTask] = useState("");
   const [newTaskTime, setNewTaskTime] = useState("12:00 PM");
   const [showTasks, setShowTasks] = useState(false);
   const [showAddTask, setShowAddTask] = useState(false);
   const [isTaskNameValid, setIsTaskNameValid] = useState(true);
-  const [selectedReminder, setSelectedReminder] = useState<string>("");
   const [calendarMonth, setCalendarMonth] = useState(new Date().getMonth());
   const [calendarYear, setCalendarYear] = useState(new Date().getFullYear());
-  const [priority, setPriority] = useState<string>("Medium");
   const [projectInput, setProjectInput] = useState("");
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -58,18 +97,131 @@ const Calendar = () => {
 
   const suggestionsRef = useRef<HTMLDivElement>(null!);
 
+  const getDateKey = (date: Date): string => date.toISOString().split("T")[0];
+
+  const convertTo24Hour = (time: string): string => {
+    if (!time) {
+      return "00:00";
+    }
+    const [timePartStr, modifier] = time.split(" ");
+    const timeParts = timePartStr.split(":").map(Number);
+
+    if (timeParts.length !== 2 || isNaN(timeParts[0]) || isNaN(timeParts[1])) {
+      return "00:00";
+    }
+
+    let hours = timeParts[0];
+    const minutes = timeParts[1];
+
+    if (modifier) {
+      const upperModifier = modifier.toUpperCase();
+      if (upperModifier === "PM" && hours < 12) {
+        hours += 12;
+      } else if (upperModifier === "AM" && hours === 12) {
+        hours = 0;
+      }
+    }
+    return `${hours.toString().padStart(2, "0")}:${minutes
+      .toString()
+      .padStart(2, "0")}`;
+  };
+
+  const formatTaskTime = (deadline?: string): string => {
+    if (!deadline) return "No time set";
+    const d = new Date(deadline);
+    const hours = d.getHours();
+    const minutes = d.getMinutes();
+    const ampm = hours >= 12 ? "PM" : "AM";
+    let displayHours = hours % 12;
+    if (displayHours === 0) displayHours = 12;
+    return `${displayHours}:${minutes.toString().padStart(2, "0")} ${ampm}`;
+  };
+
+  const processRawTasksToDisplayTasks = (
+    rawTasks: RawBackendTask[]
+  ): DisplayTask[] => {
+    return rawTasks.map((task) => ({
+      ...task,
+      name: task.task,
+      time: formatTaskTime(task.deadline),
+    }));
+  };
+
+  const fetchTasksForSelectedDate = async (
+    date: Date,
+    currentUserId: string | string[] | undefined
+  ) => {
+    if (!currentUserId || Array.isArray(currentUserId)) return;
+    setIsLoadingTasks(true);
+    const currentSelectedDateKey = getDateKey(date); // YYYY-MM-DD format of the selected date
+
+    try {
+      const response = await axiosInstance.get(
+        `/tasks/${currentUserId}?deadlineDate=${currentSelectedDateKey}`
+      );
+      const fetchedBackendTasks: RawBackendTask[] = response.data?.tasks || [];
+
+      // **Crucial Frontend Filter/Verification Step**
+      // This ensures that even if the backend sends more data than expected,
+      // the frontend will only display tasks whose deadline date matches the selected date.
+      const correctlyFilteredTasks = fetchedBackendTasks.filter((task) => {
+        if (!task.deadline) {
+          // Decide how to handle tasks without deadlines.
+          // If they shouldn't appear in daily views, filter them out.
+          // If they should appear (e.g., on the day they were created, or all days), adjust logic.
+          // For now, we assume tasks shown in TaskListView must have a deadline matching the selectedDate.
+          return false;
+        }
+        // task.deadline is a full ISO string, e.g., "2023-10-27T14:30:00.000Z"
+        // We need to compare its date part with currentSelectedDateKey.
+        const taskDeadlineDateKey = task.deadline.split("T")[0];
+        return taskDeadlineDateKey === currentSelectedDateKey;
+      });
+
+      setDisplayedTasks(processRawTasksToDisplayTasks(correctlyFilteredTasks));
+    } catch (error) {
+      console.error(
+        `Error fetching tasks for ${currentSelectedDateKey}:`,
+        error
+      );
+      setDisplayedTasks([]); // Clear tasks on error
+    } finally {
+      setIsLoadingTasks(false);
+    }
+  };
+
+  const fetchTasksForGridIndicators = async (
+    currentUserId: string | string[] | undefined
+  ) => {
+    if (!currentUserId || Array.isArray(currentUserId)) return;
+    try {
+      const response = await axiosInstance.get(`/tasks/${currentUserId}`);
+      const allFetchedTasks: RawBackendTask[] = response.data?.tasks || [];
+      const newTasksForGrid: TasksPresence = {};
+      allFetchedTasks.forEach((task) => {
+        if (task.deadline) {
+          const taskDateKey = task.deadline.split("T")[0];
+          newTasksForGrid[taskDateKey] = true;
+        }
+      });
+      setTasksForGrid(newTasksForGrid);
+    } catch (error) {
+      console.error("Error fetching tasks for grid indicators:", error);
+      setTasksForGrid({});
+    }
+  };
+
   useEffect(() => {
     const fetchUserSubTypes = async () => {
       setIsLoadingSubTypes(true);
       try {
         const token = localStorage.getItem("token");
         if (!token) throw new Error("No auth token found");
+        if (!user_id || Array.isArray(user_id)) return;
 
         const response = await axiosInstance.get(`/user/${user_id}`);
-
         const user = response.data?.data?.user ?? response.data?.user;
         if (!user) throw new Error("User payload missing");
-
         setSubTypes(Array.isArray(user.sub_type) ? user.sub_type : []);
       } catch (err) {
         console.error("Error fetching user sub_types:", err);
@@ -78,22 +230,39 @@ const Calendar = () => {
         setIsLoadingSubTypes(false);
       }
     };
-
     if (user_id) {
       fetchUserSubTypes();
+      fetchTasksForGridIndicators(user_id); // Fetch for grid dots
     }
   }, [user_id]);
 
+  useEffect(() => {
+    if (user_id && selectedDate) {
+      fetchTasksForSelectedDate(selectedDate, user_id); // Fetch for task list view
+    }
+  }, [selectedDate, user_id]); // Re-fetch when selectedDate or user_id changes
+
+  useEffect(() => {
+    // This effect is for re-fetching grid indicators if the user navigates months/years
+    // and you want the dots to update based on tasks potentially outside the initially loaded set.
+    // If fetchTasksForGridIndicators always gets ALL tasks for the user, this might be redundant
+    // unless new tasks are added/deleted frequently without a full page reload.
+    if (user_id) {
+      fetchTasksForGridIndicators(user_id);
+    }
+  }, [calendarMonth, calendarYear, user_id]);
+
   const handleProjectInputChange = (value: string) => {
     setProjectInput(value);
+    const effectiveSubTypes = isLoadingSubTypes ? [] : subTypes;
     if (value.length > 0) {
-      const filtered = subTypes.filter((subType) =>
+      const filtered = effectiveSubTypes.filter((subType) =>
         subType.toLowerCase().includes(value.toLowerCase())
       );
       setSuggestions(filtered);
       setShowSuggestions(true);
     } else {
-      setSuggestions(subTypes);
+      setSuggestions(effectiveSubTypes);
       setShowSuggestions(true);
     }
   };
@@ -116,95 +285,30 @@ const Calendar = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    const stored = localStorage.getItem("tasks");
-    if (stored) {
-      try {
-        const parsedTasks = JSON.parse(stored);
-        setTasks(parsedTasks);
-      } catch (error) {
-        console.error("Failed to parse tasks from localStorage", error);
-        setTasks({});
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem("tasks", JSON.stringify(tasks));
-  }, [tasks]);
-
-  const getDateKey = (date: Date): string => date.toISOString().split("T")[0];
-
   const handleDateChange = (date: Date) => {
     setSelectedDate(date);
     setShowTasks(true);
     setShowAddTask(false);
   };
 
-  const addTask = () => {
-    if (!newTask.trim()) {
-      setIsTaskNameValid(false);
-      return;
+  const refreshAllTasks = () => {
+    if (user_id) {
+      fetchTasksForSelectedDate(selectedDate, user_id); // Refresh tasks for current view
+      fetchTasksForGridIndicators(user_id); // Refresh grid indicators
     }
-    setIsTaskNameValid(true);
-
-    if (isTodayWithPastTime(selectedDate, newTaskTime)) {
-      setShowInvalidTimeModal(true);
-      return;
-    }
-
-    const dateKey = getDateKey(selectedDate);
-    const newTaskObject = { name: newTask.trim(), time: newTaskTime };
-
-    setTasks((prevTasks) => {
-      const dateTasks = prevTasks[dateKey] ? [...prevTasks[dateKey]] : [];
-      dateTasks.push(newTaskObject);
-      dateTasks.sort((a, b) => {
-        return (
-          new Date(`1970-01-01T${convertTo24Hour(a.time)}`).getTime() -
-          new Date(`1970-01-01T${convertTo24Hour(b.time)}`).getTime()
-        );
-      });
-      return { ...prevTasks, [dateKey]: dateTasks };
-    });
-
     setNewTask("");
     setNewTaskTime("12:00 PM");
-    setSelectedReminder("");
     setShowAddTask(false);
     setShowTasks(true);
   };
 
-  const removeTask = (indexToRemove: number) => {
-    const dateKey = getDateKey(selectedDate);
-    setTasks((prev) => {
-      const updatedTasks = { ...prev };
-
-      if (updatedTasks[dateKey]) {
-        const updatedDateTasks = updatedTasks[dateKey].filter(
-          (_, index) => index !== indexToRemove
-        );
-
-        if (updatedDateTasks.length === 0) {
-          delete updatedTasks[dateKey];
-        } else {
-          updatedTasks[dateKey] = updatedDateTasks;
-        }
-      }
-      return updatedTasks;
-    });
-  };
-
-  const convertTo24Hour = (time: string): string => {
-    const [timePart, modifier] = time.split(" ");
-    const timeParts = timePart.split(":").map(Number);
-    let hours = timeParts[0];
-    const minutes = timeParts[1];
-    if (modifier === "PM" && hours < 12) hours += 12;
-    if (modifier === "AM" && hours === 12) hours = 0;
-    return `${hours.toString().padStart(2, "0")}:${minutes
-      .toString()
-      .padStart(2, "0")}`;
+  const removeTask = async (taskId: number) => {
+    try {
+      await axiosInstance.delete(`/tasks/delete/${taskId}`);
+      refreshAllTasks(); // This will re-fetch and re-apply filters
+    } catch (error) {
+      console.error("Error deleting task:", error);
+    }
   };
 
   const generateCalendar = (month: number, year: number): (number | null)[] => {
@@ -259,7 +363,7 @@ const Calendar = () => {
     });
   };
 
-  const isSelectedDatePast = (() => {
+  const isSelectedDatePast = useMemo(() => {
     const selectedOnly = new Date(
       selectedDate.getFullYear(),
       selectedDate.getMonth(),
@@ -268,7 +372,7 @@ const Calendar = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     return selectedOnly < today;
-  })();
+  }, [selectedDate]);
 
   const currentDate = new Date();
   const dayAbbreviations = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -310,8 +414,6 @@ const Calendar = () => {
     return classes;
   };
 
-  const canAddTaskCheck = !isTodayWithPastTime(selectedDate, newTaskTime);
-
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-4 sm:p-6 w-full max-w-2xl mx-auto text-gray-800 dark:text-gray-100 relative min-h-[400px]">
       <InfoModal
@@ -329,11 +431,9 @@ const Calendar = () => {
           setNewTask={setNewTask}
           newTaskTime={newTaskTime}
           setNewTaskTime={setNewTaskTime}
-          addTask={addTask}
           setShowAddTask={setShowAddTask}
           isTaskNameValid={isTaskNameValid}
-          priority={priority}
-          setPriority={setPriority}
+          setIsTaskNameValid={setIsTaskNameValid}
           projectInput={projectInput}
           handleProjectInputChange={handleProjectInputChange}
           suggestions={suggestions}
@@ -344,20 +444,21 @@ const Calendar = () => {
           setShowSuggestions={setShowSuggestions}
           userId={Number(user_id)}
           projectName={projectInput}
-          refreshTasks={() => {
-            setShowAddTask(false);
-          }}
+          refreshTasks={refreshAllTasks}
+          convertTo24Hour={convertTo24Hour}
+          isTodayWithPastTimeCheck={isTodayWithPastTime}
+          setShowInvalidTimeModal={setShowInvalidTimeModal}
         />
       ) : showTasks ? (
         <TaskListView
           selectedDate={selectedDate}
-          tasks={tasks[getDateKey(selectedDate)] || []}
+          tasks={displayedTasks}
           removeTask={removeTask}
           setShowTasks={setShowTasks}
           isSelectedDatePast={isSelectedDatePast}
           setShowAddTask={setShowAddTask}
           getDayStatus={getDayStatus}
-          canAddTask={canAddTaskCheck}
+          isLoading={isLoadingTasks}
         />
       ) : (
         <>
@@ -374,7 +475,7 @@ const Calendar = () => {
             calendarMonth={calendarMonth}
             calendarYear={calendarYear}
             handleDateChange={handleDateChange}
-            tasks={tasks}
+            tasksPresence={tasksForGrid}
             getDateKey={getDateKey}
           />
         </>
