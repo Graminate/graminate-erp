@@ -139,7 +139,7 @@ const SalaryModal = ({
               width="large"
             />
             <TextField
-              label="Salary Paid *"
+              label="Salary to Pay / Paid *"
               number
               value={salaryPaid}
               onChange={setSalaryPaid}

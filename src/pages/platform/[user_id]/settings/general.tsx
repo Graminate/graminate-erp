@@ -424,10 +424,218 @@ const GeneralPage = () => {
               {/* Poultry View */}
               {currentView === "poultry" && (
                 <div className="rounded-lg p-4">
-                  <h2 className="text-lg font-semibold mb-4 dark:text-light">
+                  <h2 className="text-lg font-semibold mb-6 dark:text-light">
                     Poultry Settings
                   </h2>
-                  {/* TODO: Add Poultry specific settings form */}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* Flock Management Section */}
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                      <h3 className="font-semibold mb-4 dark:text-light">
+                        Flock Management
+                      </h3>
+
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-1 dark:text-gray-300">
+                            Default Flock Type
+                          </label>
+                          <select className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            <option>Broiler</option>
+                            <option>Hen Layers</option>
+                            <option>Broiler Duck</option>
+                            <option>Duck Layers</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-1 dark:text-gray-300">
+                            Default Flock Size
+                          </label>
+                          <input
+                            type="number"
+                            className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            placeholder="e.g. 850"
+                          />
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id="auto-flock-id"
+                            className="w-4 h-4 text-green-600 focus:ring-green-500 dark:focus:ring-green-600"
+                          />
+                          <label
+                            htmlFor="auto-flock-id"
+                            className="text-sm dark:text-gray-300"
+                          >
+                            Auto-generate Flock IDs
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Health Monitoring Section */}
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                      <h3 className="font-semibold mb-4 dark:text-light">
+                        Health Monitoring
+                      </h3>
+
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-1 dark:text-gray-300">
+                            Mortality Rate Alert Threshold (%)
+                          </label>
+                          <input
+                            type="number"
+                            className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            placeholder="e.g. 5"
+                            step="0.1"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-1 dark:text-gray-300">
+                            Default Vaccination Reminder
+                          </label>
+                          <select className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            <option>7 days before due</option>
+                            <option>3 days before due</option>
+                            <option>1 day before due</option>
+                          </select>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id="auto-health-records"
+                            className="w-4 h-4 text-green-600 focus:ring-green-500 dark:focus:ring-green-600"
+                            checked
+                          />
+                          <label
+                            htmlFor="auto-health-records"
+                            className="text-sm dark:text-gray-300"
+                          >
+                            Automatically record health metrics
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Environmental Controls Section */}
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                      <h3 className="font-semibold mb-4 dark:text-light">
+                        Environmental Controls
+                      </h3>
+
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-1 dark:text-gray-300">
+                            Ideal Temperature Range (°C)
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              type="number"
+                              className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                              placeholder="Min"
+                            />
+                            <input
+                              type="number"
+                              className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                              placeholder="Max"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-1 dark:text-gray-300">
+                            Light Hours Schedule
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              type="number"
+                              className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                              placeholder="Hours"
+                            />
+                            <select className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                              <option>Fixed Schedule</option>
+                              <option>Seasonal Adjustment</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            id="temp-alerts"
+                            className="w-4 h-4 text-green-600 focus:ring-green-500 dark:focus:ring-green-600"
+                            checked
+                          />
+                          <label
+                            htmlFor="temp-alerts"
+                            className="text-sm dark:text-gray-300"
+                          >
+                            Enable temperature alerts
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Feed & Production Section */}
+                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                      <h3 className="font-semibold mb-4 dark:text-light">
+                        Feed & Production
+                      </h3>
+
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-1 dark:text-gray-300">
+                            Daily Feed Consumption (kg)
+                          </label>
+                          <input
+                            type="number"
+                            className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            placeholder="e.g. 150"
+                            step="0.1"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-1 dark:text-gray-300">
+                            Low Feed Inventory Alert
+                          </label>
+                          <select className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
+                            <option>3 days supply remaining</option>
+                            <option>2 days supply remaining</option>
+                            <option>1 day supply remaining</option>
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-1 dark:text-gray-300">
+                            Expected Egg Production
+                          </label>
+                          <input
+                            type="number"
+                            className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            placeholder="e.g. 1000"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Save Button */}
+                  <div className="mt-6 flex justify-end">
+                    <Button
+                      style="primary"
+                      text="Save Poultry Settings"
+                      onClick={() => {
+                        // TODO: Implement save functionality
+                        console.log("Saving poultry settings");
+                      }}
+                    />
+                  </div>
                 </div>
               )}
 
