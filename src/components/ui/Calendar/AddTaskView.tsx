@@ -1,8 +1,9 @@
 import React, { useState } from "react";
 import TextField from "../TextField";
 import DropdownSmall from "../Dropdown/DropdownSmall";
-import Swal from "sweetalert2";
 import axiosInstance from "@/lib/utils/axiosInstance";
+import Loader from "../Loader";
+import Button from "../Button";
 
 type AddTaskViewProps = {
   selectedDate: Date;
@@ -10,37 +11,33 @@ type AddTaskViewProps = {
   setNewTask: (value: string) => void;
   newTaskTime: string;
   setNewTaskTime: (value: string) => void;
-  // addTask prop removed
   setShowAddTask: (value: boolean) => void;
-  isTaskNameValid: boolean; // Keep for displaying error based on parent's check or manage locally
-  setIsTaskNameValid: (value: boolean) => void; // To update parent or manage locally
-  // priority and setPriority props removed
+  isTaskNameValid: boolean;
+  setIsTaskNameValid: (value: boolean) => void;
   projectInput: string;
   handleProjectInputChange: (value: string) => void;
   suggestions: string[];
   showSuggestions: boolean;
-  isLoadingSuggestions: boolean; // Renamed from isLoadingSubTypes for clarity if it's just for suggestions
+  isLoadingSuggestions: boolean;
   selectSuggestion: (suggestion: string) => void;
   suggestionsRef: React.RefObject<HTMLDivElement>;
   setShowSuggestions: (value: boolean) => void;
   userId: number;
-  projectName: string; // This is the selected project/category
-  refreshTasks: () => void; // Callback to refresh tasks in Calendar.tsx
-  convertTo24Hour: (time: string) => string; // Utility from parent
-  isTodayWithPastTimeCheck: (date: Date, time: string) => boolean; // Utility from parent
-  setShowInvalidTimeModal: (value: boolean) => void; // To show modal from parent
+  projectName: string;
+  refreshTasks: () => void;
+  convertTo24Hour: (time: string) => string;
+  isTodayWithPastTimeCheck: (date: Date, time: string) => boolean;
+  setShowInvalidTimeModal: (value: boolean) => void;
 };
 
 const AddTaskView = ({
   selectedDate,
   newTask,
   setNewTask,
-  newTaskTime,
-  setNewTaskTime,
   setShowAddTask,
   isTaskNameValid,
   setIsTaskNameValid,
-  projectInput, // This is the current input value for project/category
+  projectInput,
   handleProjectInputChange,
   suggestions,
   showSuggestions,
@@ -49,59 +46,40 @@ const AddTaskView = ({
   suggestionsRef,
   setShowSuggestions,
   userId,
-  projectName, // This should be the final selected project for the task
+  projectName,
   refreshTasks,
-  convertTo24Hour,
-  isTodayWithPastTimeCheck,
-  setShowInvalidTimeModal,
 }: AddTaskViewProps) => {
-  const [priority, setPriority] = useState("Medium"); // Local state for priority
-  // const [deadline, setDeadline] = useState(""); // Not needed if selectedDate and newTaskTime are used directly
+  const [priority, setPriority] = useState<"Low" | "Medium" | "High">("Medium");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleAddTask = async () => {
     if (!newTask.trim()) {
-      setIsTaskNameValid(false); // Update validation state
-      Swal.fire("Error", "Task name cannot be empty.", "error");
+      setIsTaskNameValid(false);
       return;
     }
     setIsTaskNameValid(true);
 
-    if (isTodayWithPastTimeCheck(selectedDate, newTaskTime)) {
-      setShowInvalidTimeModal(true);
-      return;
-    }
-
     try {
       setIsLoading(true);
-      const datePart = selectedDate.toISOString().split("T")[0];
-      const timePart = convertTo24Hour(newTaskTime); // HH:mm
-
-      // Construct a new Date object to correctly get ISO string in local timezone's midnight, then set hours/minutes
-      const taskDateTime = new Date(`${datePart}T00:00:00`); // Start with midnight in local timezone
-      const [hoursStr, minutesStr] = timePart.split(":");
-      taskDateTime.setHours(parseInt(hoursStr, 10), parseInt(minutesStr, 10));
-
-      const isoDeadline = taskDateTime.toISOString(); // YYYY-MM-DDTHH:mm:ss.sssZ
+      const year = selectedDate.getFullYear();
+      const month = (selectedDate.getMonth() + 1).toString().padStart(2, "0");
+      const day = selectedDate.getDate().toString().padStart(2, "0");
+      const deadlineDateString = `${year}-${month}-${day}`;
 
       const taskData = {
         user_id: userId,
-        project: projectName || projectInput, // Use selected projectName or current input if not formally selected
+        project: projectName || projectInput,
         task: newTask.trim(),
-        status: "To Do", // Default status
+        status: "To Do",
         priority,
-        deadline: isoDeadline,
+        deadline: deadlineDateString,
       };
 
       await axiosInstance.post("/tasks/add", taskData);
-      Swal.fire("Success", "Task created successfully!", "success");
-      refreshTasks(); // Call parent's refresh function
+
+      refreshTasks();
     } catch (error: any) {
       console.error("Error creating task:", error);
-      const errorMessage =
-        error.response?.data?.message ||
-        "Failed to create task. Please try again.";
-      Swal.fire("Error", errorMessage, "error");
     } finally {
       setIsLoading(false);
     }
@@ -124,26 +102,26 @@ const AddTaskView = ({
       </p>
 
       <div className="space-y-5">
-        <div className="relative mb-4">
+        <div className="relative">
           <TextField
             label="Category"
-            placeholder="Enter task category"
+            placeholder="Enter or select task category"
             value={projectInput}
             onChange={handleProjectInputChange}
             onFocus={() => setShowSuggestions(true)}
           />
           {showSuggestions &&
             (isLoadingSuggestions ? (
-              <p className="text-xs p-2 text-gray-400">
-                Loading suggestions...
-              </p>
+              <div className="absolute z-10 mt-1 w-full rounded-md bg-white dark:bg-gray-700 py-1 text-xs p-2 text-gray-400 dark:text-gray-500 shadow-lg">
+                <Loader />
+              </div>
             ) : (
               suggestions.length > 0 && (
                 <div
                   ref={suggestionsRef as React.RefObject<HTMLDivElement>}
-                  className="absolute z-50 mt-1 w-full max-h-60 overflow-auto rounded-md bg-white dark:bg-gray-700 py-1 text-base shadow-lg focus:outline-none sm:text-sm"
+                  className="absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-md bg-white dark:bg-gray-700 py-1 text-base shadow-lg focus:outline-none sm:text-sm"
                 >
-                  <p className="text-xs p-2 text-gray-300">Suggestions...</p>
+                  <p className="text-xs p-2 text-gray-300">Suggestions</p>
                   {suggestions.map((suggestion: string, index: number) => (
                     <div
                       key={index}
@@ -163,7 +141,7 @@ const AddTaskView = ({
           value={newTask}
           onChange={(val) => {
             setNewTask(val);
-            if (val.trim()) setIsTaskNameValid(true); // Auto-validate on change
+            if (val.trim()) setIsTaskNameValid(true);
           }}
           errorMessage={
             !isTaskNameValid && !newTask.trim()
@@ -178,37 +156,28 @@ const AddTaskView = ({
             placeholder="Select priority"
             items={["Low", "Medium", "High"]}
             selected={priority}
-            onSelect={(item: string) => setPriority(item)}
+            onSelect={(item) => setPriority(item as "Low" | "Medium" | "High")}
           />
         </div>
 
-        <TextField
-          label="Time"
-          placeholder="Select time"
-          value={newTaskTime}
-          onChange={setNewTaskTime}
-          calendar={true}
-        />
-
-        <div className="flex justify-end space-x-3 pt-4">
-          <button
+        <div className="flex justify-end space-x-3 pt-4 border-t border-gray-400 dark:border-gray-600">
+          <Button
+            text="Add Task"
+            style="primary"
             type="submit"
-            className="px-4 py-2 rounded-md text-sm font-medium text-white bg-green-200 hover:bg-green-100 disabled:opacity-50 disabled:cursor-not-allowed"
             onClick={handleAddTask}
-            disabled={!newTask.trim() || isLoading}
-          >
-            {isLoading ? "Adding..." : "Add Task"}
-          </button>
-          <button
-            type="button"
-            className="px-4 py-2 rounded-md text-sm font-medium text-dark bg-gray-500 hover:bg-gray-400 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-offset-gray-800"
+            isDisabled={!newTask.trim() || !projectInput.trim() || isLoading}
+          />
+
+          <Button
+            text="Cancel"
+            style="secondary"
             onClick={() => setShowAddTask(false)}
-          >
-            Cancel
-          </button>
+          />
         </div>
       </div>
     </div>
   );
 };
+
 export default AddTaskView;

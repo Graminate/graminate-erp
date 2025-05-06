@@ -1,34 +1,31 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import CalendarGrid from "./CalendarGrid";
 import CalendarHeader from "./CalendarHeader";
-import TaskListView from "../TaskListView";
+import TaskListView from "./TaskListView";
 import AddTaskView from "./AddTaskView";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import { useRouter } from "next/router";
 import InfoModal from "@/components/modals/InfoModal";
 
-// Raw task structure from backend
 export type RawBackendTask = {
   task_id: number;
   user_id: number;
   project: string;
-  task: string; // This is the task name/description from backend
+  task: string;
   status: string;
   description?: string;
   priority: "Low" | "Medium" | "High";
-  deadline?: string; // Full ISO string e.g., "2023-10-27T14:30:00.000Z"
+  deadline?: string;
   created_on: string;
 };
 
-// Task structure for display in frontend components
 export type DisplayTask = RawBackendTask & {
-  name: string; // Mapped from 'task' for compatibility
-  time: string; // Formatted time string for display
+  name: string;
+  time: string;
 };
 
-// For CalendarGrid, to show if a date has any tasks
 export type TasksPresence = {
-  [key: string]: boolean; // key is YYYY-MM-DD
+  [key: string]: boolean;
 };
 
 const isTodayWithPastTime = (date: Date, time: string): boolean => {
@@ -153,38 +150,27 @@ const Calendar = () => {
   ) => {
     if (!currentUserId || Array.isArray(currentUserId)) return;
     setIsLoadingTasks(true);
-    const currentSelectedDateKey = getDateKey(date); // YYYY-MM-DD format of the selected date
+    const currentSelectedDateKey = getDateKey(date);
 
     try {
       const response = await axiosInstance.get(
         `/tasks/${currentUserId}?deadlineDate=${currentSelectedDateKey}`
       );
       const fetchedBackendTasks: RawBackendTask[] = response.data?.tasks || [];
-
-      // **Crucial Frontend Filter/Verification Step**
-      // This ensures that even if the backend sends more data than expected,
-      // the frontend will only display tasks whose deadline date matches the selected date.
       const correctlyFilteredTasks = fetchedBackendTasks.filter((task) => {
         if (!task.deadline) {
-          // Decide how to handle tasks without deadlines.
-          // If they shouldn't appear in daily views, filter them out.
-          // If they should appear (e.g., on the day they were created, or all days), adjust logic.
-          // For now, we assume tasks shown in TaskListView must have a deadline matching the selectedDate.
           return false;
         }
-        // task.deadline is a full ISO string, e.g., "2023-10-27T14:30:00.000Z"
-        // We need to compare its date part with currentSelectedDateKey.
         const taskDeadlineDateKey = task.deadline.split("T")[0];
         return taskDeadlineDateKey === currentSelectedDateKey;
       });
-
       setDisplayedTasks(processRawTasksToDisplayTasks(correctlyFilteredTasks));
     } catch (error) {
       console.error(
         `Error fetching tasks for ${currentSelectedDateKey}:`,
         error
       );
-      setDisplayedTasks([]); // Clear tasks on error
+      setDisplayedTasks([]);
     } finally {
       setIsLoadingTasks(false);
     }
@@ -215,8 +201,6 @@ const Calendar = () => {
     const fetchUserSubTypes = async () => {
       setIsLoadingSubTypes(true);
       try {
-        const token = localStorage.getItem("token");
-        if (!token) throw new Error("No auth token found");
         if (!user_id || Array.isArray(user_id)) return;
 
         const response = await axiosInstance.get(`/user/${user_id}`);
@@ -232,21 +216,17 @@ const Calendar = () => {
     };
     if (user_id) {
       fetchUserSubTypes();
-      fetchTasksForGridIndicators(user_id); // Fetch for grid dots
+      fetchTasksForGridIndicators(user_id);
     }
   }, [user_id]);
 
   useEffect(() => {
     if (user_id && selectedDate) {
-      fetchTasksForSelectedDate(selectedDate, user_id); // Fetch for task list view
+      fetchTasksForSelectedDate(selectedDate, user_id);
     }
-  }, [selectedDate, user_id]); // Re-fetch when selectedDate or user_id changes
+  }, [selectedDate, user_id]);
 
   useEffect(() => {
-    // This effect is for re-fetching grid indicators if the user navigates months/years
-    // and you want the dots to update based on tasks potentially outside the initially loaded set.
-    // If fetchTasksForGridIndicators always gets ALL tasks for the user, this might be redundant
-    // unless new tasks are added/deleted frequently without a full page reload.
     if (user_id) {
       fetchTasksForGridIndicators(user_id);
     }
@@ -291,23 +271,49 @@ const Calendar = () => {
     setShowAddTask(false);
   };
 
-  const refreshAllTasks = () => {
+  const refreshTasksForCurrentView = async () => {
     if (user_id) {
-      fetchTasksForSelectedDate(selectedDate, user_id); // Refresh tasks for current view
-      fetchTasksForGridIndicators(user_id); // Refresh grid indicators
+      await fetchTasksForSelectedDate(selectedDate, user_id);
+      await fetchTasksForGridIndicators(user_id);
     }
+  };
+
+  const refreshAllTasksAndViews = () => {
+    refreshTasksForCurrentView();
     setNewTask("");
     setNewTaskTime("12:00 PM");
     setShowAddTask(false);
     setShowTasks(true);
   };
 
-  const removeTask = async (taskId: number) => {
+  const removeTask = async (taskId: number): Promise<void> => {
     try {
+      setIsLoadingTasks(true);
       await axiosInstance.delete(`/tasks/delete/${taskId}`);
-      refreshAllTasks(); // This will re-fetch and re-apply filters
-    } catch (error) {
+      await refreshTasksForCurrentView();
+    } catch (error: any) {
       console.error("Error deleting task:", error);
+      await refreshTasksForCurrentView();
+    }
+  };
+
+  const updateTaskStatus = async (
+    taskId: number,
+    newStatus: string
+  ): Promise<void> => {
+    try {
+      setIsLoadingTasks(true);
+      await axiosInstance.put(`/tasks/update/${taskId}`, { status: newStatus });
+
+      setDisplayedTasks((prevTasks) =>
+        prevTasks.map((task) =>
+          task.task_id === taskId ? { ...task, status: newStatus } : task
+        )
+      );
+    } catch (error: any) {
+      console.error("Error updating task status:", error);
+    } finally {
+      setIsLoadingTasks(false);
     }
   };
 
@@ -405,7 +411,7 @@ const Calendar = () => {
           "text-dark dark:text-light dark:border-blue-400 hover:bg-green-300 dark:hover:bg-green-100 ";
       } else if (isPast) {
         classes +=
-          "text-dark dark:text-light cursor-default hover:bg-gray-400 dark:hover:bg-gray-600 ";
+          "text-gray-300 dark:text-light cursor-default  hover:bg-gray-500 dark:hover:bg-gray-700 ";
       } else {
         classes +=
           "text-gray-700 dark:text-light hover:bg-gray-400 dark:hover:bg-gray-600 ";
@@ -444,7 +450,7 @@ const Calendar = () => {
           setShowSuggestions={setShowSuggestions}
           userId={Number(user_id)}
           projectName={projectInput}
-          refreshTasks={refreshAllTasks}
+          refreshTasks={refreshAllTasksAndViews}
           convertTo24Hour={convertTo24Hour}
           isTodayWithPastTimeCheck={isTodayWithPastTime}
           setShowInvalidTimeModal={setShowInvalidTimeModal}
@@ -454,6 +460,7 @@ const Calendar = () => {
           selectedDate={selectedDate}
           tasks={displayedTasks}
           removeTask={removeTask}
+          updateTaskStatus={updateTaskStatus}
           setShowTasks={setShowTasks}
           isSelectedDatePast={isSelectedDatePast}
           setShowAddTask={setShowAddTask}
