@@ -16,6 +16,7 @@ import Table from "@/components/tables/Table";
 import { PAGINATION_ITEMS } from "@/constants/options";
 import Button from "@/components/ui/Button";
 import axiosInstance from "@/lib/utils/axiosInstance";
+import VeterinaryForm from "@/components/form/VeterinaryForm";
 
 ChartJS.register(
   CategoryScale,
@@ -35,13 +36,14 @@ type HealthRecord = {
   purpose: string;
   vaccines: string[];
   mortality_rate?: number;
-}
+};
 
 const PoultryHealth = () => {
   const router = useRouter();
   const { user_id } = router.query;
   const parsedUserId = Array.isArray(user_id) ? user_id[0] : user_id;
   const [healthRecords, setHealthRecords] = useState<HealthRecord[]>([]);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const fetchHealthRecords = useCallback(async () => {
     if (!parsedUserId) return;
@@ -94,21 +96,31 @@ const PoultryHealth = () => {
         <title>Graminate | Poultry Dashboard</title>
       </Head>
       <div className="min-h-screen container mx-auto p-4 space-y-6">
-        <div className="flex gap-1 items-center dark:bg-dark relative mb-4">
-          <Button
-            text=""
-            arrow="left"
-            style="ghost"
-            onClick={() => router.push(`/platform/${parsedUserId}/poultry`)}
-            aria-label="Go back"
-          />
-          <div>
-            <h1 className="text-lg font-semibold dark:text-white">
-              Poultry Health Records
-            </h1>
-            <p className="text-xs text-dark dark:text-light">
-              {healthRecords.length} Record(s)
-            </p>
+        <div className="flex justify-between items-center dark:bg-dark relative mb-4">
+          <div className="flex flex-row gap-2">
+            <Button
+              text=""
+              arrow="left"
+              style="ghost"
+              onClick={() => router.push(`/platform/${parsedUserId}/poultry`)}
+              aria-label="Go back"
+            />
+            <div>
+              <h1 className="text-lg font-semibold dark:text-white">
+                Poultry Health Records
+              </h1>
+              <p className="text-xs text-dark dark:text-light">
+                {healthRecords.length} Record(s)
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button
+              text="Add Records"
+              style="primary"
+              add
+              onClick={() => setIsSidebarOpen(true)}
+            />
           </div>
         </div>
         <Table
@@ -137,6 +149,18 @@ const PoultryHealth = () => {
           setSearchQuery={() => {}}
           download={false}
         />
+
+        {isSidebarOpen && (
+          <VeterinaryForm
+            onClose={() => {
+              setIsSidebarOpen(false);
+              fetchHealthRecords();
+            }}
+            formTitle="Add Veterinary Record"
+            view="poultry_health"
+            onSubmit={() => {}}
+          />
+        )}
       </div>
     </PlatformLayout>
   );

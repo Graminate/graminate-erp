@@ -64,7 +64,7 @@ const TaskListView = ({
       <div className="flex justify-between items-center mb-4 border-b border-gray-400 dark:border-gray-600 pb-2">
         <button
           onClick={handleBackClick}
-          className="p-2 rounded-full text-dark hover:text-dark dark:text-light hover:bg-gray-700 dark:hover:text-light transition-colors duration-150 ease-in-out"
+          className="p-2 rounded-full text-dark hover:text-dark dark:text-light hover:bg-gray-400 dark:hover:bg-gray-700 dark:hover:text-light transition-colors duration-150 ease-in-out"
           aria-label="Back to calendar"
         >
           <FontAwesomeIcon icon={faArrowLeft} className="h-5 w-5" />

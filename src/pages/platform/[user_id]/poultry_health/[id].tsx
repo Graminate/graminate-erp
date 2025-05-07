@@ -23,7 +23,7 @@ type PoultryHealthRecord = {
   actions_taken?: string;
   remarks?: string;
   mortality_rate?: number;
-}
+};
 
 const PoultryHealthDetails = () => {
   const router = useRouter();
@@ -143,14 +143,12 @@ const PoultryHealthDetails = () => {
         />
       </div>
 
-      {/* Report Container - This is what will be captured by html2canvas */}
       <div
         ref={reportRef}
         className="bg-white p-8 rounded-lg shadow-md max-w-3xl mx-auto"
       >
-        {/* Report Header */}
         <div className="text-center mb-6 pb-4">
-          <h1 className="text-2xl font-bold text-gray-800 dark:text-white mb-1">
+          <h1 className="text-2xl font-bold text-dark mb-1">
             Poultry Health Report
           </h1>
           <p className="text-sm text-dark">{formatDate(record.created_at)}</p>
@@ -183,26 +181,20 @@ const PoultryHealthDetails = () => {
         </div>
 
         <div className="mb-6">
-          <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-3 border-b pb-1">
+          <h2 className="text-lg font-semibold text-dark mb-3 border-b pb-1">
             Health Metrics
           </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm text-gray-600 dark:text-gray-300">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-2 text-sm text-dark">
             <p>
-              <span className="font-semibold mr-2 text-dark dark:text-light">
-                Birds In:
-              </span>
+              <span className="font-semibold mr-2 text-dark">Birds In:</span>
               {record.birds_in ?? "N/A"}
             </p>
             <p>
-              <span className="font-semibold mr-2 text-dark dark:text-light">
-                Birds Died:
-              </span>
+              <span className="font-semibold mr-2 text-dark">Birds Died:</span>
               {record.birds_died ?? "N/A"}
             </p>
             <p>
-              <span className="font-semibold mr-2 text-dark dark:text-light">
-                Deworming:
-              </span>
+              <span className="font-semibold mr-2 text-dark">Deworming:</span>
               {record.deworming ? "Yes" : "No"}
             </p>
           </div>
@@ -210,33 +202,33 @@ const PoultryHealthDetails = () => {
 
         {/* Treatments & Observations Section */}
         <div className="mb-6">
-          <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-3 border-b pb-1">
+          <h2 className="text-lg font-semibold text-dark mb-3 border-b pb-1">
             Treatments & Observations
           </h2>
-          <div className="space-y-4 text-sm text-gray-600 dark:text-gray-300">
+          <div className="space-y-4 text-sm text-dark">
             <div className="flex flex-wrap gap-x-8 lg:gap-x-16 xl:gap-x-20">
-              <span className="font-semibold text-gray-800 dark:text-gray-100 min-w-[220px]">
+              <span className="font-semibold text-dark min-w-[220px]">
                 Vaccines Administered:
               </span>
               <span>{formatList(record.vaccines)}</span>
             </div>
 
             <div className="flex flex-wrap gap-x-8 lg:gap-x-16 xl:gap-x-20">
-              <span className="font-semibold text-gray-800 dark:text-gray-100 min-w-[220px]">
+              <span className="font-semibold text-dark min-w-[220px]">
                 Observed Symptoms:
               </span>
               <span>{formatList(record.symptoms)}</span>
             </div>
 
             <div className="flex flex-wrap gap-x-8 lg:gap-x-16 xl:gap-x-20">
-              <span className="font-semibold text-gray-800 dark:text-gray-100 min-w-[220px]">
+              <span className="font-semibold text-dark min-w-[220px]">
                 Medications Given:
               </span>
               <span>{record.medications || "—"}</span>
             </div>
 
             <div className="flex flex-wrap gap-x-8 lg:gap-x-16 xl:gap-x-20">
-              <span className="font-semibold text-gray-800 dark:text-gray-100 min-w-[220px]">
+              <span className="font-semibold text-dark min-w-[220px]">
                 Actions Taken:
               </span>
               <span>{record.actions_taken || "—"}</span>
@@ -245,10 +237,10 @@ const PoultryHealthDetails = () => {
         </div>
 
         <div>
-          <h2 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-3 border-b pb-1">
+          <h2 className="text-lg font-semibold text-dark mb-3 border-b pb-1">
             Remarks
           </h2>
-          <p className="text-sm text-gray-600 dark:text-gray-300 whitespace-pre-wrap">
+          <p className="text-sm text-dark whitespace-pre-wrap">
             {record.remarks || "No additional remarks."}
           </p>
         </div>

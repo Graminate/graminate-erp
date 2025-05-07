@@ -56,10 +56,10 @@ export type Coordinates = {
 
 // Layout component Props
 export type SidebarProp = {
-  view: string;
+  view?: string;
   onClose: () => void;
-  onSubmit: (values: Record<string, string>) => void;
-  formTitle: string;
+  onSubmit?: () => void;
+  formTitle?: string;
 };
 
 // Left sidebar
