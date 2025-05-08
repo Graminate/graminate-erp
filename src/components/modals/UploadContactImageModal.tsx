@@ -124,7 +124,7 @@ const UploadContactImageModal = ({
           </div>
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
+        <div className="px-6 py-4 border-t border-gray-400 dark:border-gray-700 flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
           <Button text="Cancel" onClick={onClose} style="secondary" />
           <Button
             text="Confirm"

@@ -11,7 +11,13 @@ import Head from "next/head";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import UploadContactImageModal from "@/components/modals/UploadContactImageModal";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPencil } from "@fortawesome/free-solid-svg-icons";
+import {
+  faPencil,
+  faPhone,
+  faEnvelope,
+  faTrash,
+} from "@fortawesome/free-solid-svg-icons";
+import Swal from "sweetalert2";
 
 type Contact = {
   contact_id: string;
@@ -54,6 +60,27 @@ const initialFormState: Form = {
   postalCode: "",
 };
 
+type ApiUser = {
+  user_id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone_number?: string;
+  business_name?: string;
+  imageUrl?: string | null;
+  language?: string;
+  time_format?: string;
+  type?: string;
+  sub_type?: string[];
+};
+
+type ApiUserResponse = {
+  status: number;
+  data: {
+    user: ApiUser;
+  };
+};
+
 const getInitials = (firstName?: string, lastName?: string): string => {
   const first = firstName?.[0]?.toUpperCase() || "";
   const last = lastName?.[0]?.toUpperCase() || "";
@@ -75,9 +102,13 @@ const ContactDetails = () => {
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [avatarInitials, setAvatarInitials] = useState("?");
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [isAvatarDropdownOpen, setIsAvatarDropdownOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const avatarDropdownRef = useRef<HTMLDivElement>(null);
+  const [loggedInUserEmail, setLoggedInUserEmail] = useState<string | null>(
+    null
+  );
 
   useEffect(() => {
     if (data) {
@@ -114,6 +145,36 @@ const ContactDetails = () => {
   }, [data]);
 
   useEffect(() => {
+    const fetchLoggedInUserEmail = async () => {
+      if (user_id && typeof user_id === "string") {
+        try {
+          const response = await axiosInstance.get<ApiUserResponse>(
+            `/user/${user_id}`
+          );
+          if (
+            response.data &&
+            response.data.data &&
+            response.data.data.user &&
+            response.data.data.user.email
+          ) {
+            setLoggedInUserEmail(response.data.data.user.email);
+          } else {
+            console.error(
+              "Logged-in user email not found in API response:",
+              response.data
+            );
+            triggerToast("Could not retrieve your email address.");
+          }
+        } catch (error) {
+          console.error("Error fetching logged-in user email:", error);
+          triggerToast("Error retrieving your email information.", "error");
+        }
+      }
+    };
+    fetchLoggedInUserEmail();
+  }, [user_id]);
+
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         avatarDropdownRef.current &&
@@ -148,7 +209,6 @@ const ContactDetails = () => {
       city: formData.city,
       state: formData.state,
       postal_code: formData.postalCode,
-      // profile_image_url: profileImageUrl, // Send this if backend supports it
     };
 
     try {
@@ -156,7 +216,7 @@ const ContactDetails = () => {
         "/contacts/update",
         payload
       );
-      triggerToast("Contact updated successfully", "success");
+      triggerToast("Contact updated", "success");
 
       const updatedContact = response.data.contact;
       setContact(updatedContact);
@@ -194,6 +254,47 @@ const ContactDetails = () => {
     }
   };
 
+  const handleDeleteContact = async () => {
+    if (!contact) {
+      triggerToast("No contact selected to delete.");
+      return;
+    }
+
+    const result = await Swal.fire({
+      title: "Delete Contact",
+      text: `Are you sure you want to delete ${
+        initialFullName || "this contact"
+      }? This action cannot be undone.`,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#04ad79",
+      cancelButtonColor: "#bbbbbc",
+      confirmButtonText: "Delete",
+      cancelButtonText: "Cancel",
+      reverseButtons: true,
+    });
+
+    if (!result.isConfirmed) {
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      await axiosInstance.delete(`/contacts/delete/${contact.contact_id}`);
+      triggerToast("Contact deleted successfully", "success");
+      router.push(`/platform/${user_id}/crm?view=contacts`);
+    } catch (error: unknown) {
+      console.error("Error deleting contact:", error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "An error occurred while deleting the contact.";
+      triggerToast(errorMessage, "error");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const handleAvatarClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     setIsAvatarDropdownOpen((prev) => !prev);
@@ -202,7 +303,6 @@ const ContactDetails = () => {
   const handleImageUploadConfirm = async (file: File) => {
     setIsUploadModalOpen(false);
     if (!contact) return;
-    // Upload image API endpoint
     const reader = new FileReader();
     reader.onloadend = () => {
       setProfileImageUrl(reader.result as string);
@@ -214,9 +314,41 @@ const ContactDetails = () => {
   const handleRemoveImage = async () => {
     setIsAvatarDropdownOpen(false);
     if (!contact) return;
-    // Delete image API endpoint
     setProfileImageUrl(null);
     triggerToast("Avatar removed (simulated)", "success");
+  };
+
+  const handleCallContact = () => {
+    const phoneNumber = initialFormData.phoneNumber;
+    if (
+      phoneNumber &&
+      typeof phoneNumber === "string" &&
+      phoneNumber.trim() !== ""
+    ) {
+      window.location.href = `tel:${phoneNumber.trim()}`;
+    } else {
+      triggerToast("No valid phone number provided for this contact.");
+    }
+  };
+
+  const handleEmailContact = () => {
+    const recipientEmail = initialFormData.email;
+    if (
+      !recipientEmail ||
+      typeof recipientEmail !== "string" ||
+      recipientEmail.trim() === ""
+    ) {
+      triggerToast("Contact does not have a valid email address.");
+      return;
+    }
+
+    const mailtoLink = `mailto:${recipientEmail.trim()}`;
+    try {
+      window.location.href = mailtoLink;
+    } catch (error) {
+      console.error("Error opening email client:", error);
+      triggerToast("Could not open email client.", "error");
+    }
   };
 
   if (!contact) return <Loader />;
@@ -244,7 +376,7 @@ const ContactDetails = () => {
           />
         </div>
 
-        <div className="bg-white dark:bg-gray-800 shadow-xl rounded-lg p-6 md:p-8">
+        <div className="bg-white dark:bg-gray-800 shadow-xl rounded-lg p-6 md:p-8 relative">
           <div className="flex flex-col sm:flex-row items-center mb-8">
             <div
               ref={avatarDropdownRef}
@@ -277,9 +409,12 @@ const ContactDetails = () => {
                       setIsUploadModalOpen(true);
                       setIsAvatarDropdownOpen(false);
                     }}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors"
+                    className="block w-full text-left px-4 py-2 text-sm text-dark dark:text-light hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors"
                   >
                     Upload Image
+                  </button>
+                  <button className="block w-full text-left px-4 py-2 text-sm text-dark dark:text-light hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors">
+                    Remove Image
                   </button>
                   {profileImageUrl && (
                     <button
@@ -292,26 +427,77 @@ const ContactDetails = () => {
                 </div>
               )}
             </div>
+
             <div className="text-center sm:text-left">
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-2">
                 {initialFullName || "Contact Details"}
               </h1>
-              {initialFormData.email && (
-                <p className="text-sm text-dark dark:text-light mt-1">
-                  {initialFormData.email}
-                </p>
-              )}
-              {initialFormData.phoneNumber && (
-                <p className="text-sm text-dark dark:text-light mt-1">
-                  {initialFormData.phoneNumber}
-                </p>
+
+              {(initialFormData.phoneNumber ||
+                initialFormData.email ||
+                contact) && (
+                <div className="flex items-center justify-center sm:justify-start mt-4 space-x-3">
+                  {initialFormData.phoneNumber && (
+                    <button
+                      onClick={handleCallContact}
+                      title="Call contact"
+                      className="flex flex-col items-center group focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-sky-500 dark:focus-visible:ring-offset-gray-800 rounded-lg p-1"
+                    >
+                      <div className="w-12 h-12 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mb-1.5 group-hover:bg-slate-200 dark:group-hover:bg-slate-600 transition-colors duration-150 ease-in-out">
+                        <FontAwesomeIcon
+                          icon={faPhone}
+                          className="w-6 h-6 text-slate-600 dark:text-slate-300"
+                        />
+                      </div>
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                        Call
+                      </span>
+                    </button>
+                  )}
+
+                  {initialFormData.email && (
+                    <button
+                      onClick={handleEmailContact}
+                      title="Email contact"
+                      className="flex flex-col items-center group focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-sky-500 dark:focus-visible:ring-offset-gray-800 rounded-lg p-1"
+                    >
+                      <div className="w-12 h-12 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mb-1.5 group-hover:bg-slate-200 dark:group-hover:bg-slate-600 transition-colors duration-150 ease-in-out">
+                        <FontAwesomeIcon
+                          icon={faEnvelope}
+                          className="w-6 h-6 text-slate-600 dark:text-slate-300"
+                        />
+                      </div>
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                        Email
+                      </span>
+                    </button>
+                  )}
+                  {contact && (
+                    <button
+                      onClick={handleDeleteContact}
+                      title="Delete contact"
+                      disabled={deleting}
+                      className="flex flex-col items-center group focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-red-500 dark:focus-visible:ring-offset-gray-800 rounded-lg p-1 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <div className="w-12 h-12 bg-slate-100 dark:bg-slate-700 rounded-full flex items-center justify-center mb-1.5 group-hover:bg-slate-200 dark:group-hover:bg-slate-600 transition-colors duration-150 ease-in-out">
+                        <FontAwesomeIcon
+                          icon={faTrash}
+                          className="w-6 h-6 text-slate-600 dark:text-slate-300"
+                        />
+                      </div>
+                      <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
+                        Delete
+                      </span>
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           </div>
 
           <div className="space-y-8">
             <div>
-              <h2 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-300 dark:border-gray-700 text-dark dark:text-light">
+              <h2 className="text-lg font-semibold mb-4 pb-1 border-b border-gray-400 dark:border-gray-700 text-dark dark:text-light">
                 Personal Information
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
@@ -347,7 +533,7 @@ const ContactDetails = () => {
             </div>
 
             <div>
-              <h2 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-300 dark:border-gray-700 text-dark dark:text-light">
+              <h2 className="text-lg font-semibold mb-4 pb-1 border-b border-gray-400 dark:border-gray-700 text-dark dark:text-light">
                 Address
               </h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
@@ -380,10 +566,11 @@ const ContactDetails = () => {
             </div>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-end mt-10 pt-6 border-t border-gray-200 dark:border-gray-700 space-y-3 sm:space-y-0 sm:space-x-4">
+          <div className="flex flex-col sm:flex-row items-center justify-end mt-10 pt-6 border-t border-gray-400 dark:border-gray-700 space-y-3 sm:space-y-0 sm:space-x-4">
             <Button
               text="Cancel"
               style="secondary"
+              width="large"
               onClick={() =>
                 router.push(`/platform/${user_id}/crm?view=contacts`)
               }
@@ -391,6 +578,7 @@ const ContactDetails = () => {
             <Button
               text={saving ? "Saving..." : "Save Changes"}
               style="primary"
+              width="large"
               onClick={handleSave}
               isDisabled={!hasChanges || saving}
             />
