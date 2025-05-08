@@ -11,147 +11,132 @@ import axiosInstance from "@/lib/utils/axiosInstance";
 
 type Company = {
   company_id: string;
-  name: string;
-}
+  company_name: string;
+  owner_name?: string;
+  email?: string;
+  phone_number?: string;
+  type?: string;
+  address_line_1?: string;
+  address_line_2?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+};
+
+type Form = {
+  companyName: string;
+  ownerName: string;
+  email: string;
+  phoneNumber: string;
+  type: string;
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  state: string;
+  postalCode: string;
+};
+
+const initialFormState: Form = {
+  companyName: "",
+  ownerName: "",
+  email: "",
+  phoneNumber: "",
+  type: "",
+  addressLine1: "",
+  addressLine2: "",
+  city: "",
+  state: "",
+  postalCode: "",
+};
 
 const CompanyDetails = () => {
   const router = useRouter();
   const { user_id, data } = router.query;
+
   const [company, setCompany] = useState<Company | null>(null);
-
-  const [initialCompanyName, setInitialCompanyName] = useState("");
-  const [companyName, setCompanyName] = useState("");
-  const [ownerName, setOwnerName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [type, setType] = useState("");
-  const [addressLine1, setAddressLine1] = useState("");
-  const [addressLine2, setAddressLine2] = useState("");
-  const [city, setCity] = useState("");
-  const [state, setState] = useState("");
-  const [postalCode, setPostalCode] = useState("");
-
-  const [initialFormData, setInitialFormData] = useState({
-    companyName: "",
-    ownerName: "",
-    email: "",
-    phoneNumber: "",
-    type: "",
-    addressLine1: "",
-    addressLine2: "",
-    city: "",
-    state: "",
-    postalCode: "",
-  });
-
+  const [formData, setFormData] = useState<Form>(initialFormState);
+  const [initialFormData, setInitialFormData] =
+    useState<Form>(initialFormState);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (data) {
       try {
-        const parsedCompany = JSON.parse(data as string);
+        const parsedCompany: Company = JSON.parse(data as string);
         setCompany(parsedCompany);
-        const initCompanyName = parsedCompany.company_name || "";
-        const initOwnerName = parsedCompany.owner_name || "";
-        const initEmail = parsedCompany.email || "";
-        const initPhoneNumber = parsedCompany.phone_number || "";
-        const initType = parsedCompany.type || "";
-        const line1 = parsedCompany.address_line_1 || "";
-        const line2 = parsedCompany.address_line_2 || "";
-        const cityVal = parsedCompany.city || "";
-        const stateVal = parsedCompany.state || "";
-        const postalVal = parsedCompany.postal_code || "";
 
-        setInitialCompanyName(initCompanyName);
-        setCompanyName(initCompanyName);
-        setOwnerName(initOwnerName);
-        setEmail(initEmail);
-        setPhoneNumber(initPhoneNumber);
-        setAddressLine1(line1);
-        setAddressLine2(line2);
-        setCity(cityVal);
-        setState(stateVal);
-        setPostalCode(postalVal);
-        setType(initType);
-        setInitialFormData({
-          companyName: initCompanyName,
-          ownerName: initOwnerName,
-          email: initEmail,
-          phoneNumber: initPhoneNumber,
-          addressLine1: line1 || "",
-          addressLine2: line2 || "",
-          city: cityVal || "",
-          state: stateVal || "",
-          postalCode: postalVal || "",
-          type: initType,
-        });
+        const newFormValues: Form = {
+          companyName: parsedCompany.company_name || "",
+          ownerName: parsedCompany.owner_name || "",
+          email: parsedCompany.email || "",
+          phoneNumber: parsedCompany.phone_number || "",
+          type: parsedCompany.type || "",
+          addressLine1: parsedCompany.address_line_1 || "",
+          addressLine2: parsedCompany.address_line_2 || "",
+          city: parsedCompany.city || "",
+          state: parsedCompany.state || "",
+          postalCode: parsedCompany.postal_code || "",
+        };
+        setFormData(newFormValues);
+        setInitialFormData(newFormValues);
       } catch (error) {
         console.error("Error parsing company data:", error);
       }
     }
   }, [data]);
 
+  const handleInputChange = (field: keyof Form, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
   if (!company) return <p>Loading...</p>;
 
-  const hasChanges =
-    companyName !== initialFormData.companyName ||
-    ownerName !== initialFormData.ownerName ||
-    email !== initialFormData.email ||
-    phoneNumber !== initialFormData.phoneNumber ||
-    type !== initialFormData.type ||
-    addressLine1 !== initialFormData.addressLine1 ||
-    addressLine2 !== initialFormData.addressLine2 ||
-    city !== initialFormData.city ||
-    state !== initialFormData.state ||
-    postalCode !== initialFormData.postalCode;
+  const hasChanges = Object.keys(formData).some(
+    (key) => formData[key as keyof Form] !== initialFormData[key as keyof Form]
+  );
 
   const handleSave = async () => {
+    if (!company) return;
     setSaving(true);
 
     const payload = {
       id: company.company_id,
-      company_name: companyName,
-      owner_name: ownerName,
-      email: email,
-      phone_number: phoneNumber,
-      address_line_1: addressLine1,
-      address_line_2: addressLine2,
-      city: city,
-      state: state,
-      postal_code: postalCode,
-      type: type,
+      company_name: formData.companyName,
+      owner_name: formData.ownerName,
+      email: formData.email,
+      phone_number: formData.phoneNumber,
+      address_line_1: formData.addressLine1,
+      address_line_2: formData.addressLine2,
+      city: formData.city,
+      state: formData.state,
+      postal_code: formData.postalCode,
+      type: formData.type,
     };
 
     try {
-      const response = await axiosInstance.put("/companies/update", payload);
+      const response = await axiosInstance.put<{ company: Company }>(
+        "/companies/update",
+        payload
+      );
       triggerToast("Company updated successfully", "success");
-      const updated = response.data.company;
 
-      setCompany(updated);
-      setInitialCompanyName(updated.company_name);
-      setCompanyName(updated.company_name);
-      setOwnerName(updated.owner_name);
-      setEmail(updated.email);
-      setPhoneNumber(updated.phone_number);
-      setAddressLine1(updated.address_line_1 || "");
-      setAddressLine2(updated.address_line_2 || "");
-      setCity(updated.city || "");
-      setState(updated.state || "");
-      setPostalCode(updated.postal_code || "");
-      setType(updated.type);
+      const updatedCompany = response.data.company;
+      setCompany(updatedCompany);
 
-      setInitialFormData({
-        companyName: updated.company_name,
-        ownerName: updated.owner_name,
-        email: updated.email,
-        phoneNumber: updated.phone_number,
-        addressLine1: updated.address_line_1 || "",
-        addressLine2: updated.address_line_2 || "",
-        city: updated.city || "",
-        state: updated.state || "",
-        postalCode: updated.postal_code || "",
-        type: updated.type,
-      });
+      const updatedFormValues: Form = {
+        companyName: updatedCompany.company_name || "",
+        ownerName: updatedCompany.owner_name || "",
+        email: updatedCompany.email || "",
+        phoneNumber: updatedCompany.phone_number || "",
+        type: updatedCompany.type || "",
+        addressLine1: updatedCompany.address_line_1 || "",
+        addressLine2: updatedCompany.address_line_2 || "",
+        city: updatedCompany.city || "",
+        state: updatedCompany.state || "",
+        postalCode: updatedCompany.postal_code || "",
+      };
+      setFormData(updatedFormValues);
+      setInitialFormData(updatedFormValues);
     } catch (error: unknown) {
       console.error("Error updating company:", error);
       const errorMessage =
@@ -171,7 +156,7 @@ const CompanyDetails = () => {
       </Head>
       <PlatformLayout>
         <Head>
-          <title>Company | {initialCompanyName}</title>
+          <title>Company | {initialFormData.companyName || "Details"}</title>
         </Head>
         <div className="px-6">
           <Button
@@ -183,9 +168,10 @@ const CompanyDetails = () => {
             }
           />
           <div className="pt-4">
-            <h1 className="text-2xl font-bold mb-6">{initialCompanyName}</h1>
+            <h1 className="text-2xl font-bold mb-6">
+              {initialFormData.companyName || "Company Details"}
+            </h1>
 
-            {/* Company Information Section */}
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm mb-6">
               <h2 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-400">
                 Company Information
@@ -193,32 +179,32 @@ const CompanyDetails = () => {
               <div className="grid grid-cols-2 gap-4">
                 <TextField
                   label="Company Name"
-                  value={companyName}
-                  onChange={(val) => setCompanyName(val)}
+                  value={formData.companyName}
+                  onChange={(val) => handleInputChange("companyName", val)}
                   width="large"
                 />
                 <TextField
                   label="Owner Name"
-                  value={ownerName}
-                  onChange={(val) => setOwnerName(val)}
+                  value={formData.ownerName}
+                  onChange={(val) => handleInputChange("ownerName", val)}
                   width="large"
                 />
                 <TextField
                   label="Email"
-                  value={email}
-                  onChange={(val) => setEmail(val)}
+                  value={formData.email}
+                  onChange={(val) => handleInputChange("email", val)}
                   width="large"
                 />
                 <TextField
                   label="Phone Number"
-                  value={phoneNumber}
-                  onChange={(val) => setPhoneNumber(val)}
+                  value={formData.phoneNumber}
+                  onChange={(val) => handleInputChange("phoneNumber", val)}
                   width="large"
                 />
                 <DropdownLarge
                   items={COMPANY_TYPES}
-                  selectedItem={type}
-                  onSelect={(value: string) => setType(value)}
+                  selectedItem={formData.type}
+                  onSelect={(value: string) => handleInputChange("type", value)}
                   type="form"
                   label="Type"
                   width="full"
@@ -226,7 +212,6 @@ const CompanyDetails = () => {
               </div>
             </div>
 
-            {/* Address Section */}
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm mb-6">
               <h2 className="text-lg font-semibold mb-4 pb-2 border-b border-gray-400">
                 Address
@@ -234,38 +219,37 @@ const CompanyDetails = () => {
               <div className="grid grid-cols-2 gap-4">
                 <TextField
                   label="Address Line 1"
-                  value={addressLine1}
-                  onChange={(val) => setAddressLine1(val)}
+                  value={formData.addressLine1}
+                  onChange={(val) => handleInputChange("addressLine1", val)}
                   width="large"
                 />
                 <TextField
                   label="Address Line 2"
-                  value={addressLine2}
-                  onChange={(val) => setAddressLine2(val)}
+                  value={formData.addressLine2}
+                  onChange={(val) => handleInputChange("addressLine2", val)}
                   width="large"
                 />
                 <TextField
                   label="City"
-                  value={city}
-                  onChange={(val) => setCity(val)}
+                  value={formData.city}
+                  onChange={(val) => handleInputChange("city", val)}
                   width="large"
                 />
                 <TextField
                   label="State"
-                  value={state}
-                  onChange={(val) => setState(val)}
+                  value={formData.state}
+                  onChange={(val) => handleInputChange("state", val)}
                   width="large"
                 />
                 <TextField
                   label="Postal Code"
-                  value={postalCode}
-                  onChange={(val) => setPostalCode(val)}
+                  value={formData.postalCode}
+                  onChange={(val) => handleInputChange("postalCode", val)}
                   width="large"
                 />
               </div>
             </div>
 
-            {/* Action Buttons */}
             <div className="flex flex-row mt-6 space-x-4">
               <Button
                 text={saving ? "Updating..." : "Update"}

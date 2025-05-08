@@ -223,8 +223,8 @@ const GeneralPage = () => {
                         <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
                           <button
                             onClick={() => {
-                              // Here you would typically call an API endpoint to remove the picture
-                              // For now, just clearing the local state preview
+                              // Call image upload API endpoint
+                              // Local state preview being cleared for now
                               setUser((prev) => ({
                                 ...prev,
                                 profilePicture: "",
