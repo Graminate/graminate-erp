@@ -58,7 +58,7 @@ export type Coordinates = {
 export type SidebarProp = {
   view?: string;
   onClose: () => void;
-  onSubmit?: () => void;
+  onSubmit?: (values: Record<string, string>) => void;
   formTitle?: string;
 };
 

@@ -76,7 +76,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       setSuggestions(filtered);
       setShowSuggestions(true);
     } else {
-      setSuggestions(subTypes); // Show all suggestions when input is empty
+      setSuggestions(subTypes);
       setShowSuggestions(true);
     }
   };
@@ -515,7 +515,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
             <h2 className="text-xl font-semibold text-dark dark:text-light">
               {formTitle
                 ? formTitle
-                : `Create ${view.charAt(0).toUpperCase() + view.slice(1)}`}
+                : `Create ${view ? view.charAt(0).toUpperCase() + view.slice(1) : ""}`}
             </h2>
             <button
               className="text-gray-300 hover:text-gray-200 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"

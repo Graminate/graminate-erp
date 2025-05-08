@@ -332,6 +332,8 @@ const Table = ({
                   title: "Are you sure?",
                   text: `This will reset your ${entityToTruncate} records.`,
                   icon: "warning",
+                  confirmButtonColor: "#04ad79",
+                  cancelButtonColor: "#bbbbbc",
                   showCancelButton: true,
                   confirmButtonText: "Reset",
                   cancelButtonText: "Cancel",
