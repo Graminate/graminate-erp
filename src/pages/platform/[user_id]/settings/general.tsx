@@ -15,12 +15,18 @@ import Loader from "@/components/ui/Loader";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import axios from "axios";
 import Checkbox from "@/components/ui/Checkbox";
+import {
+  useUserPreferences,
+  TimeFormatOption,
+} from "@/contexts/UserPreferencesContext";
 
 const GeneralPage = () => {
   const router = useRouter();
   const { view, user_id } = router.query;
   const currentView = (view as string) || "profile";
   const userId = Array.isArray(user_id) ? user_id[0] : user_id;
+
+  const { setTimeFormat: setContextTimeFormat } = useUserPreferences();
 
   const [userType, setUserType] = useState<string | null>(null);
   const [subTypes, setSubTypes] = useState<string[]>([]);
@@ -32,7 +38,7 @@ const GeneralPage = () => {
     lastName: "",
     phoneNumber: "",
     language: "English",
-    timeFormat: "24-hour",
+    timeFormat: "24-hour" as TimeFormatOption,
   });
 
   useEffect(() => {
@@ -47,14 +53,18 @@ const GeneralPage = () => {
           throw new Error("User data not found in response");
         }
 
+        const fetchedTimeFormat = (userData.time_format ||
+          "24-hour") as TimeFormatOption;
+
         setUser({
           profilePicture: userData.profile_picture || "",
           firstName: userData.first_name || "",
           lastName: userData.last_name || "",
           phoneNumber: userData.phone_number || "",
           language: userData.language || "English",
-          timeFormat: userData.time_format || "24-hour",
+          timeFormat: fetchedTimeFormat,
         });
+        setContextTimeFormat(fetchedTimeFormat);
 
         const type = userData?.type || "Producer";
         const rawSubTypes = userData?.sub_type;
@@ -75,21 +85,23 @@ const GeneralPage = () => {
 
         setUserType("Producer");
         setSubTypes([]);
+        const defaultTimeFormat = "24-hour" as TimeFormatOption;
         setUser({
           profilePicture: "",
           firstName: "",
           lastName: "",
           phoneNumber: "",
           language: "English",
-          timeFormat: "24-hour",
+          timeFormat: defaultTimeFormat,
         });
+        setContextTimeFormat(defaultTimeFormat);
       } finally {
         setIsUserTypeLoading(false);
       }
     };
 
     fetchUserData();
-  }, [userId]);
+  }, [userId, setContextTimeFormat]);
 
   const navButtons = useMemo(() => {
     const buttons = [{ name: "Profile", view: "profile" }];
@@ -141,6 +153,7 @@ const GeneralPage = () => {
         time_format: user.timeFormat,
       });
 
+      setContextTimeFormat(user.timeFormat);
       setSuccessMessage("Profile updated successfully!");
     } catch (error: unknown) {
       let errorMessage = "An unknown error occurred";
@@ -173,13 +186,11 @@ const GeneralPage = () => {
         <div className="flex min-h-screen">
           <SettingsBar />
 
-          {/* Main content */}
           <main className="flex-1 px-12">
             <div className="pb-4 font-bold text-lg text-dark dark:text-light">
               General Settings
             </div>
 
-            {/* Navigation panel */}
             {isUserTypeLoading ? (
               <Loader />
             ) : (
@@ -191,7 +202,6 @@ const GeneralPage = () => {
             )}
 
             <section className="py-6">
-              {/* Profile View */}
               {currentView === "profile" && (
                 <div>
                   <div className="rounded-lg p-4">
@@ -223,13 +233,10 @@ const GeneralPage = () => {
                         <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
                           <button
                             onClick={() => {
-                              // Call image upload API endpoint
-                              // Local state preview being cleared for now
                               setUser((prev) => ({
                                 ...prev,
                                 profilePicture: "",
                               }));
-                              // TODO: Add API call to remove profile picture on server
                             }}
                             className="rounded-full p-2 text-white hover:text-red-400"
                             aria-label="Remove profile picture"
@@ -243,7 +250,6 @@ const GeneralPage = () => {
                       )}
                     </div>
 
-                    {/* File Upload Section */}
                     <div className="flex flex-col">
                       <label className="text-sm font-medium text-dark dark:text-light mb-1">
                         Upload Profile Picture
@@ -255,14 +261,11 @@ const GeneralPage = () => {
                         id="profile-upload"
                         onChange={(e) => {
                           const file = e.target.files?.[0];
-
                           if (file) {
                             if (file.size > 2 * 1024 * 1024) {
-                              // 2MB limit
                               alert("File size must be less than 2MB");
                               return;
                             }
-
                             const imageUrl = URL.createObjectURL(file);
                             setUser((prev) => ({
                               ...prev,
@@ -271,7 +274,6 @@ const GeneralPage = () => {
                           }
                         }}
                       />
-
                       <label
                         htmlFor="profile-upload"
                         className="cursor-pointer bg-green-200 text-white px-3 py-1 rounded text-sm text-center w-fit hover:bg-green-100"
@@ -293,7 +295,7 @@ const GeneralPage = () => {
                         setUser((prev) => ({ ...prev, firstName: val }))
                       }
                       width="large"
-                      isDisabled={true} // Typically non-editable, adjust if needed
+                      isDisabled={true}
                     />
                     <TextField
                       label="Last Name"
@@ -303,7 +305,7 @@ const GeneralPage = () => {
                         setUser((prev) => ({ ...prev, lastName: val }))
                       }
                       width="large"
-                      isDisabled={true} // Typically non-editable, adjust if needed
+                      isDisabled={true}
                     />
 
                     <div className="flex gap-4">
@@ -321,7 +323,10 @@ const GeneralPage = () => {
                         items={TIME_FORMAT}
                         selected={user.timeFormat}
                         onSelect={(val) =>
-                          setUser((prev) => ({ ...prev, timeFormat: val }))
+                          setUser((prev) => ({
+                            ...prev,
+                            timeFormat: val as TimeFormatOption,
+                          }))
                         }
                       />
                     </div>
@@ -342,18 +347,16 @@ const GeneralPage = () => {
                       style="primary"
                       text="Save Changes"
                       onClick={handleSaveChanges}
-                      isDisabled={isSaving} // Disable button while saving
+                      isDisabled={isSaving}
                     />
                   </div>
 
-                  {/* Success Message */}
                   {successMessage && (
                     <p className="text-green-500 mt-2">{successMessage}</p>
                   )}
                 </div>
               )}
 
-              {/* Weather View */}
               {currentView === "weather" && (
                 <div>
                   <div className="rounded-lg p-4">
@@ -365,7 +368,6 @@ const GeneralPage = () => {
                     </p>
                   </div>
 
-                  {/* Weather Settings Form */}
                   <div className="flex flex-col gap-4 max-w-lg">
                     <TextField
                       label="Set Location"
@@ -408,20 +410,13 @@ const GeneralPage = () => {
                         Enable AI Suggestions for weather insights
                       </label>
                     </div>
-                    {/* Add Save button for Weather Settings */}
                     <div className="mt-6">
-                      <Button
-                        style="primary"
-                        text="Save Weather Settings"
-                        // onClick={handleSaveWeatherSettings} // TODO: Create this handler
-                        // isLoading={isSavingWeather} // TODO: Add state for this
-                      />
+                      <Button style="primary" text="Save Weather Settings" />
                     </div>
                   </div>
                 </div>
               )}
 
-              {/* Poultry View */}
               {currentView === "poultry" && (
                 <div className="rounded-lg p-4">
                   <h2 className="text-lg font-semibold mb-6 dark:text-light">
@@ -429,7 +424,6 @@ const GeneralPage = () => {
                   </h2>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {/* Flock Management Section */}
                     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
                       <h3 className="font-semibold mb-4 dark:text-light">
                         Flock Management
@@ -475,7 +469,6 @@ const GeneralPage = () => {
                       </div>
                     </div>
 
-                    {/* Health Monitoring Section */}
                     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
                       <h3 className="font-semibold mb-4 dark:text-light">
                         Health Monitoring
@@ -522,7 +515,6 @@ const GeneralPage = () => {
                       </div>
                     </div>
 
-                    {/* Environmental Controls Section */}
                     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
                       <h3 className="font-semibold mb-4 dark:text-light">
                         Environmental Controls
@@ -581,7 +573,6 @@ const GeneralPage = () => {
                       </div>
                     </div>
 
-                    {/* Feed & Production Section */}
                     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
                       <h3 className="font-semibold mb-4 dark:text-light">
                         Feed & Production
@@ -625,13 +616,11 @@ const GeneralPage = () => {
                     </div>
                   </div>
 
-                  {/* Save Button */}
                   <div className="mt-6 flex justify-end">
                     <Button
                       style="primary"
                       text="Save Poultry Settings"
                       onClick={() => {
-                        // TODO: Implement save functionality
                         console.log("Saving poultry settings");
                       }}
                     />
@@ -639,23 +628,19 @@ const GeneralPage = () => {
                 </div>
               )}
 
-              {/* Fishery View */}
               {currentView === "fishery" && (
                 <div className="rounded-lg p-4">
                   <h2 className="text-lg font-semibold mb-4 dark:text-light">
                     Fishery Settings
                   </h2>
-                  {/* TODO: Add Fishery specific settings form */}
                 </div>
               )}
 
-              {/* Animal Husbandry View */}
               {currentView === "animal_husbandry" && (
                 <div className="rounded-lg p-4">
                   <h2 className="text-lg font-semibold mb-4 dark:text-light">
                     Animal Husbandry Settings
                   </h2>
-                  {/* TODO: Add Animal Husbandry specific settings form */}
                 </div>
               )}
             </section>

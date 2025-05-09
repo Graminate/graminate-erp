@@ -1,15 +1,15 @@
 import "@/styles/globals.css";
 import type { AppProps } from "next/app";
 
-import { TemperatureScaleProvider } from "@/lib/context/TemperatureScaleContext";
 import Toast from "@/components/ui/Toast";
+import { UserPreferencesProvider } from "@/contexts/UserPreferencesContext";
 
 function App({ Component, pageProps }: AppProps) {
   return (
-    <TemperatureScaleProvider>
+    <UserPreferencesProvider>
       <Component {...pageProps} />
       <Toast />
-    </TemperatureScaleProvider>
+    </UserPreferencesProvider>
   );
 }
 export default App;

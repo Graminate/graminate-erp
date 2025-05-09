@@ -6,13 +6,10 @@ import SunCard from "@/components/cards/weather/SunCard";
 import UVCard from "@/components/cards/weather/UVCard";
 import TemperatureCard from "@/components/cards/weather/TemperatureCard";
 import PrecipitationCard from "@/components/cards/weather/PrecipitationCard";
-import { useTemperatureScale } from "@/lib/context/TemperatureScaleContext";
+
 import { getCurrentLocation } from "@/lib/utils/loadLocation";
 
 const Weather = () => {
-  const { temperatureScale } = useTemperatureScale();
-  const fahrenheit = temperatureScale === "Fahrenheit";
-
   const [location, setLocation] = useState<{ lat: number; lon: number } | null>(
     null
   );
@@ -65,32 +62,16 @@ const Weather = () => {
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
                 <div className="w-full">
-                  <TemperatureCard
-                    lat={location.lat}
-                    lon={location.lon}
-                    fahrenheit={fahrenheit}
-                  />
+                  <TemperatureCard lat={location.lat} lon={location.lon} />
                 </div>
                 <div className="w-full">
-                  <UVCard
-                    lat={location.lat}
-                    lon={location.lon}
-                    fahrenheit={false}
-                  />
+                  <UVCard lat={location.lat} lon={location.lon} />
                 </div>
                 <div className="w-full">
-                  <SunCard
-                    lat={location.lat}
-                    lon={location.lon}
-                    fahrenheit={false}
-                  />
+                  <SunCard lat={location.lat} lon={location.lon} />
                 </div>
                 <div className="w-full">
-                  <PrecipitationCard
-                    lat={location.lat}
-                    lon={location.lon}
-                    fahrenheit={false}
-                  />
+                  <PrecipitationCard lat={location.lat} lon={location.lon} />
                 </div>
               </div>
             )}

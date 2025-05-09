@@ -3,10 +3,11 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faDroplet, faEllipsis } from "@fortawesome/free-solid-svg-icons";
 import Chart from "chart.js/auto";
 import type { ChartConfiguration, Chart as ChartJS, Scale } from "chart.js";
-import axios, { AxiosError } from "axios";
+import axios from "axios";
 
 import { Coordinates } from "@/types/card-props";
 import Loader from "@/components/ui/Loader";
+import { useDisplayMode, useWeatherData } from "@/hooks/weather";
 
 type WeatherData = {
   time: Date[];
@@ -22,10 +23,6 @@ type HourlyPrecipData = {
 };
 
 const PrecipitationCard = ({ lat, lon }: Coordinates) => {
-  const [error, setError] = useState<string | null>(null);
-  const [displayMode, setDisplayMode] = useState<"Small" | "Large">("Small");
-  const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
-  const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
   const [past6HoursRain, setPast6HoursRain] = useState<number>(0);
   const [next24HoursRain, setNext24HoursRain] = useState<number>(0);
 
@@ -45,43 +42,37 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
   const [hoveredTime, setHoveredTime] = useState<string>("");
   const [hoveredPrecip, setHoveredPrecip] = useState<number>(0);
 
-  const fetchPrecipitationData = useCallback(
-    async (latitude: number, longitude: number) => {
-      try {
-        const response = await axios.get("/api/weather", {
-          params: {
-            lat: latitude,
-            lon: longitude,
-          },
-        });
-        return {
-          time: response.data.hourly.time.map((t: string) => new Date(t)),
-          precipitation: response.data.hourly.precipitation,
-        } as WeatherData;
-      } catch (err: unknown) {
-        setError("Failed to fetch precipitation data");
-        return null;
-      }
+  const { displayMode, dropdownOpen, toggleDropdown, selectDisplayMode } =
+    useDisplayMode<"Small" | "Large">({ initialMode: "Small" });
+
+  const fetchPrecipitationApiData = useCallback(
+    async (
+      latitude: number,
+      longitude: number
+    ): Promise<WeatherData | null> => {
+      const response = await axios.get("/api/weather", {
+        params: {
+          lat: latitude,
+          lon: longitude,
+        },
+      });
+      return {
+        time: response.data.hourly.time.map((t: string) => new Date(t)),
+        precipitation: response.data.hourly.precipitation,
+      };
     },
     []
   );
 
-  useEffect(() => {
-    if (lat !== undefined && lon !== undefined) {
-      setWeatherData(null);
-      setError(null);
-      fetchPrecipitationData(lat, lon).then((data) => {
-        if (data) {
-          setWeatherData(data);
-        }
-      });
-    } else {
-      setError(
-        "Latitude and Longitude are required to fetch precipitation data."
-      );
-      setWeatherData(null);
-    }
-  }, [lat, lon, fetchPrecipitationData]);
+  const {
+    data: weatherData,
+    isLoading: isWeatherLoading,
+    error: weatherError,
+  } = useWeatherData<WeatherData>({
+    fetchFunction: fetchPrecipitationApiData,
+    lat,
+    lon,
+  });
 
   useEffect(() => {
     if (weatherData && displayMode === "Small") {
@@ -392,10 +383,10 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
         <button
           type="button"
           className="w-6 h-6 cursor-pointer text-dark dark:text-light focus:outline-none"
-          onClick={() => setDropdownOpen(!dropdownOpen)}
+          onClick={toggleDropdown}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
-              setDropdownOpen(!dropdownOpen);
+              toggleDropdown();
               e.preventDefault();
             }
           }}
@@ -410,20 +401,14 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
             <button
               className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 dark:hover:bg-gray-800 rounded-t-lg cursor-pointer"
               type="button"
-              onClick={() => {
-                setDisplayMode("Small");
-                setDropdownOpen(false);
-              }}
+              onClick={() => selectDisplayMode("Small")}
             >
               Small
             </button>
             <button
               className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 dark:hover:bg-gray-800 rounded-b-lg cursor-pointer"
               type="button"
-              onClick={() => {
-                setDisplayMode("Large");
-                setDropdownOpen(false);
-              }}
+              onClick={() => selectDisplayMode("Large")}
             >
               Large
             </button>
@@ -431,13 +416,13 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
         )}
       </div>
 
-      {error ? (
-        <p className="text-red-500 text-center py-10">Error: {error}</p>
-      ) : weatherData === null ? (
+      {weatherError ? (
+        <p className="text-red-200 text-center py-10">Error: {weatherError}</p>
+      ) : isWeatherLoading ? (
         <div className="text-center py-10 text-dark dark:text-light">
           <Loader />
         </div>
-      ) : (
+      ) : weatherData ? (
         <>
           {displayMode === "Small" && (
             <div className="w-full pb-1">
@@ -557,6 +542,10 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
             </div>
           )}
         </>
+      ) : (
+        <div className="text-center py-10 text-dark dark:text-light">
+          <p>No precipitation data available.</p>
+        </div>
       )}
     </div>
   );

@@ -10,6 +10,7 @@ export const useAnimatePanel = (setAnimate: (val: boolean) => void) => {
   }, [setAnimate]);
 };
 
+// for clicking outside CRMForm, 
 export const useClickOutside = (
   ref: React.RefObject<HTMLElement | null>,
   callback: () => void

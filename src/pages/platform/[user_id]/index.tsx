@@ -7,6 +7,10 @@ import Head from "next/head";
 import FirstLoginModal from "@/components/modals/FirstLoginModal";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import InfoModal from "@/components/modals/InfoModal";
+import {
+  useUserPreferences,
+  TimeFormatOption,
+} from "@/contexts/UserPreferencesContext";
 
 type User = {
   user_id: string;
@@ -19,6 +23,7 @@ type User = {
   language?: string;
   time_format?: string;
   type?: string;
+  sub_type?: string[];
 };
 
 const Dashboard = () => {
@@ -27,6 +32,7 @@ const Dashboard = () => {
   const [userData, setUserData] = useState<User | null>(null);
   const [isUserDataLoading, setIsUserDataLoading] = useState<boolean>(true);
   const [isSetupModalOpen, setIsSetupModalOpen] = useState<boolean>(false);
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
   const [successModal, setSuccessModal] = useState({
     isOpen: false,
     title: "",
@@ -43,6 +49,16 @@ const Dashboard = () => {
     text: "",
   });
 
+  const { timeFormat, setTimeFormat: setContextTimeFormat } =
+    useUserPreferences();
+
+  useEffect(() => {
+    const timerId = setInterval(() => {
+      setCurrentDateTime(new Date());
+    }, 1000);
+    return () => clearInterval(timerId);
+  }, []);
+
   useEffect(() => {
     if (!router.isReady || !userId) return;
 
@@ -55,6 +71,9 @@ const Dashboard = () => {
         const fetchedUser = response.data?.data?.user as User | undefined;
         if (fetchedUser) {
           setUserData(fetchedUser);
+          if (fetchedUser.time_format) {
+            setContextTimeFormat(fetchedUser.time_format as TimeFormatOption);
+          }
           if (!fetchedUser.business_name || !fetchedUser.type) {
             setIsSetupModalOpen(true);
           }
@@ -99,7 +118,7 @@ const Dashboard = () => {
     return () => {
       isMounted = false;
     };
-  }, [router.isReady, userId, router]);
+  }, [router.isReady, userId, router, setContextTimeFormat]);
 
   const handleFirstLogin = async (
     businessName: string,
@@ -142,6 +161,29 @@ const Dashboard = () => {
     }
   };
 
+  const formatDate = (date: Date) => {
+    return date.toLocaleDateString(undefined, {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
+  const formatTime = (date: Date) => {
+    const options: Intl.DateTimeFormatOptions = {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    };
+    if (timeFormat === "12-hour") {
+      options.hour12 = true;
+    } else {
+      options.hour12 = false;
+    }
+    return date.toLocaleTimeString(undefined, options);
+  };
+
   return (
     <>
       <Head>
@@ -152,14 +194,22 @@ const Dashboard = () => {
       <PlatformLayout>
         <div className="p-4 sm:p-6">
           <header className="mb-4">
-            <h1 className="text-lg font-semibold text-dark dark:text-light">
-              {isUserDataLoading
-                ? "Loading..."
-                : `Hello ${userData?.first_name || "User"},`}
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              Welcome to your dashboard.
-            </p>
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start">
+              <div>
+                <h1 className="text-lg font-semibold text-dark dark:text-light">
+                  {isUserDataLoading
+                    ? "Loading..."
+                    : `Hello ${userData?.first_name || "User"},`}
+                </h1>
+                <p className="text-dark dark:text-light">
+                  Welcome to your dashboard.
+                </p>
+              </div>
+              <div className="mt-2 text-sm text-dark dark:text-light sm:text-right">
+                <p className="font-semibold">{formatDate(currentDateTime)}</p>
+                <p>{formatTime(currentDateTime)}</p>
+              </div>
+            </div>
           </header>
 
           <hr className="mb-6 border-gray-400 dark:border-gray-700" />

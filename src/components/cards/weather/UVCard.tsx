@@ -1,13 +1,13 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSun } from "@fortawesome/free-solid-svg-icons";
 import Chart from "chart.js/auto";
 import type { ChartConfiguration, Chart as ChartJS } from "chart.js";
 import UVScale from "./UVScale";
-import { fetchCityName } from "@/lib/utils/loadWeather";
 import { Coordinates } from "@/types/card-props";
 import axios from "axios";
 import Loader from "@/components/ui/Loader";
+import { useDisplayMode, useWeatherData } from "@/hooks/weather";
 
 type UVHourly = { time: Date; uv: number };
 type DailyData = {
@@ -15,29 +15,58 @@ type DailyData = {
   uvIndexMax: number[];
   uvIndexMin: number[];
   daylightDuration: number[];
-}
+};
 
 type HourlyData = {
   time: Date[];
   uvIndexHourly: number[];
-}
+};
 
 type WeatherData = {
   daily: DailyData;
   hourly: HourlyData;
-}
+};
 
 const UVCard = ({ lat, lon }: Coordinates) => {
   const [lowestRiskLevel, setLowestRiskLevel] = useState<string>("");
   const [highestRiskLevel, setHighestRiskLevel] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
-  const [displayMode, setDisplayMode] = useState<"Small" | "Large">("Small");
-  const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [uvIndexToday, setUvIndexToday] = useState<number | null>(null);
   const [hourlyUVDataByDay, setHourlyUVDataByDay] = useState<
     { day: Date; uvHours: UVHourly[] }[]
   >([]);
-  const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
+  const { displayMode, dropdownOpen, toggleDropdown, selectDisplayMode } =
+    useDisplayMode<"Small" | "Large">({ initialMode: "Small" });
+
+  const fetchUVApiData = useCallback(
+    async (
+      latitude: number,
+      longitude: number
+    ): Promise<WeatherData | null> => {
+      const response = await axios.get("/api/weather", {
+        params: {
+          lat: latitude,
+          lon: longitude,
+        },
+      });
+      const rawData = response.data;
+      if (!rawData || !rawData.daily || !rawData.hourly) {
+        return null;
+      }
+      return {
+        daily: {
+          ...rawData.daily,
+          time: rawData.daily.time.map((d: string) => new Date(d)),
+        },
+        hourly: {
+          ...rawData.hourly,
+          time: rawData.hourly.time.map((d: string) => new Date(d)),
+        },
+      };
+    },
+    []
+  );
+
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedHourlyData, setSelectedHourlyData] = useState<
     { day: Date; uvHours: UVHourly[] } | undefined
@@ -48,6 +77,16 @@ const UVCard = ({ lat, lon }: Coordinates) => {
 
   const chartCanvas = useRef<HTMLCanvasElement | null>(null);
   const chartRef = useRef<ChartJS | null>(null);
+
+  const {
+    data: weatherData,
+    isLoading: isWeatherLoading,
+    error: weatherError,
+  } = useWeatherData<WeatherData>({
+    fetchFunction: fetchUVApiData,
+    lat,
+    lon,
+  });
 
   function parseTimeToMinutes(time: string): number {
     const [h, m] = time.split(":").map(Number);
@@ -74,22 +113,6 @@ const UVCard = ({ lat, lon }: Coordinates) => {
     };
   }
 
-  async function fetchUVData(latitude: number, longitude: number) {
-    try {
-      const response = await axios.get("/api/weather", {
-        params: {
-          lat: latitude,
-          lon: longitude,
-        },
-      });
-
-      const data = response.data;
-      return { daily: data.daily, hourly: data.hourly };
-    } catch (err: unknown) {
-      throw new Error("Failed to fetch UV data");
-    }
-  }
-
   function getUVRiskLevel(uv: number): { label: string; color: string } {
     const roundedUV = Math.round(uv);
     if (roundedUV <= 2) return { label: "Low", color: "green" };
@@ -110,33 +133,6 @@ const UVCard = ({ lat, lon }: Coordinates) => {
       day: d.toLocaleDateString(undefined, { day: "numeric" }),
     };
   });
-
-  useEffect(() => {
-    if (lat !== undefined && lon !== undefined) {
-      Promise.all([fetchUVData(lat, lon), fetchCityName(lat, lon)])
-        .then(([fetchedData]) => {
-          const processedData: WeatherData = {
-            daily: {
-              ...fetchedData.daily,
-              time: fetchedData.daily.time.map((d: string) => new Date(d)),
-            },
-            hourly: {
-              ...fetchedData.hourly,
-              time: fetchedData.hourly.time.map((d: string) => new Date(d)),
-            },
-          };
-          setWeatherData(processedData);
-          setError(null);
-        })
-        .catch((err: unknown) => {
-          const errorMessage =
-            err instanceof Error ? err.message : "Unknown error occurred";
-          setError(errorMessage);
-        });
-    } else {
-      setError("Latitude and Longitude are required.");
-    }
-  }, [lat, lon]);
 
   useEffect(() => {
     if (weatherData && displayMode === "Small") {
@@ -385,10 +381,10 @@ const UVCard = ({ lat, lon }: Coordinates) => {
           strokeWidth="1.5"
           stroke="currentColor"
           className="w-6 h-6 cursor-pointer text-dark dark:text-light"
-          onClick={() => setDropdownOpen(!dropdownOpen)}
+          onClick={toggleDropdown}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
-              setDropdownOpen(!dropdownOpen);
+              toggleDropdown();
               e.preventDefault();
             }
           }}
@@ -402,38 +398,33 @@ const UVCard = ({ lat, lon }: Coordinates) => {
             d="M6.75 12a.75.75 0 111.5 0 .75.75 0 01-1.5 0zM12.75 12a.75.75 0 111.5 0 .75.75 0 01-1.5 0zM18.75 12a.75.75 0 111.5 0 .75.75 0 01-1.5 0z"
           />
         </svg>
+
         {dropdownOpen && (
           <div className="absolute top-8 right-0 bg-white dark:bg-gray-600 dark:text-light text-black rounded-lg shadow-lg z-20 w-32">
             <button
               className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 dark:hover:bg-gray-800 rounded-t-lg cursor-pointer"
               type="button"
-              onClick={() => {
-                setDisplayMode("Small");
-                setDropdownOpen(false);
-              }}
+              onClick={() => selectDisplayMode("Small")}
             >
               Small
             </button>
             <button
               className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 dark:hover:bg-gray-800 rounded-b-lg cursor-pointer"
               type="button"
-              onClick={() => {
-                setDisplayMode("Large");
-                setDropdownOpen(false);
-              }}
+              onClick={() => selectDisplayMode("Large")}
             >
               Large
             </button>
           </div>
         )}
       </div>
-      {error ? (
-        <p className="text-red-500 text-center py-10">Error: {error}</p>
-      ) : weatherData === null ? (
+      {weatherError ? (
+        <p className="text-red-500 text-center py-10">Error: {weatherError}</p>
+      ) : isWeatherLoading ? (
         <div className="text-center py-10 text-dark dark:text-light">
           <Loader />
         </div>
-      ) : (
+      ) : weatherData ? (
         <>
           {displayMode === "Small" && uvIndexToday !== null && (
             <div className={`w-full ${displayMode === "Small" ? "pb-1" : ""}`}>
@@ -564,6 +555,10 @@ const UVCard = ({ lat, lon }: Coordinates) => {
             </div>
           )}
         </>
+      ) : (
+        <div className="text-center py-10 text-dark dark:text-light">
+          <p>No UV data available.</p>
+        </div>
       )}
     </div>
   );

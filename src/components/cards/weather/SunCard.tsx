@@ -1,79 +1,122 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faSun } from "@fortawesome/free-solid-svg-icons";
-
 import { Coordinates } from "@/types/card-props";
-import { fetchCityName } from "@/lib/utils/loadWeather";
 import axios from "axios";
 import Loader from "@/components/ui/Loader";
+import { useDisplayMode, useWeatherData } from "@/hooks/weather";
+import {
+  useUserPreferences,
+  TimeFormatOption,
+} from "@/contexts/UserPreferencesContext";
 
 type DailySunData = {
   time: string[];
   daylightDuration: number[];
-}
+};
 
 const SunCard = ({ lat, lon }: Coordinates) => {
+  const { timeFormat } = useUserPreferences();
+
   const [sunriseTime, setSunriseTime] = useState<string | null>(null);
   const [sunsetTime, setSunsetTime] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [displayMode, setDisplayMode] = useState<"Small" | "Large">("Small");
   const [sunTimesArray, setSunTimesArray] = useState<
     { date: string; sunrise: string; sunset: string }[]
   >([]);
-  const [dailySunData, setDailySunData] = useState<DailySunData | null>(null);
-  const [dropdownOpen, setDropdownOpen] = useState<boolean>(false);
-
   const [currentXSun, setCurrentXSun] = useState<number>(0);
   const [currentYSun, setCurrentYSun] = useState<number>(0);
-
   const [hoverXSun, setHoverXSun] = useState<number>(0);
   const [hoverYSun, setHoverYSun] = useState<number>(0);
   const [isHovering, setIsHovering] = useState<boolean>(false);
   const [hoveredTime, setHoveredTime] = useState<string | null>(null);
-
   const [displayedSunsetTime, setDisplayedSunsetTime] = useState<string | null>(
     null
   );
   const [sunsetLabel, setSunsetLabel] = useState<string>("");
+  const { displayMode, dropdownOpen, toggleDropdown, selectDisplayMode } =
+    useDisplayMode<"Small" | "Large">({ initialMode: "Small" });
 
-  const svgRef = useRef<SVGSVGElement | null>(null);
-
-  function parseTimeToMinutes(time: string): number {
-    if (!time || !time.includes(":")) return 0;
-    const [h, m] = time.split(":").map(Number);
-    if (isNaN(h) || isNaN(m)) return 0;
-    return h * 60 + m;
-  }
-
-  const formatTimeFromMinutes = useCallback((minutes: number): string => {
-    const hrs = Math.floor(minutes / 60) % 24;
-    const mins = Math.floor(minutes % 60);
-    return `${hrs.toString().padStart(2, "0")}:${mins
-      .toString()
-      .padStart(2, "0")}`;
-  }, []);
-
-  function formatDuration(minutes: number): string {
-    if (minutes < 0) minutes = 0;
-    const hrs = Math.floor(minutes / 60);
-    const mins = Math.round(minutes % 60);
-    return `${hrs}h ${mins}m`;
-  }
-
-  async function fetchSunData(latitude: number, longitude: number) {
-    try {
+  const fetchSunApiData = useCallback(
+    async (
+      latitude: number,
+      longitude: number
+    ): Promise<DailySunData | null> => {
       const response = await axios.get("/api/weather", {
         params: {
           lat: latitude,
           lon: longitude,
         },
       });
+      if (
+        response.data &&
+        response.data.daily &&
+        response.data.daily.time &&
+        response.data.daily.daylightDuration
+      ) {
+        return response.data.daily as DailySunData;
+      }
+      return null;
+    },
+    []
+  );
 
-      return response.data.daily;
-    } catch (err: unknown) {
-      throw new Error("Failed to fetch sun data");
+  const {
+    data: dailySunData,
+    isLoading: isSunDataLoading,
+    error: sunDataError,
+  } = useWeatherData<DailySunData>({
+    fetchFunction: fetchSunApiData,
+    lat,
+    lon,
+  });
+
+  const svgRef = useRef<SVGSVGElement | null>(null);
+
+  const parseTimeToMinutes = useCallback((time: string): number => {
+    if (!time || !time.includes(":")) return 0;
+    const parts = time.split(":");
+    let h = parseInt(parts[0], 10);
+    const mString = parts[1].replace(/[^0-9]/g, "");
+    const m = parseInt(mString, 10);
+
+    if (isNaN(h) || isNaN(m)) return 0;
+
+    const isPM = time.toLowerCase().includes("pm");
+    const isAM = time.toLowerCase().includes("am");
+
+    if (isPM && h < 12) {
+      h += 12;
+    } else if (isAM && h === 12) {
+      h = 0;
     }
-  }
+    return h * 60 + m;
+  }, []);
+
+  const formatTimeFromMinutes = useCallback(
+    (minutes: number): string => {
+      const date = new Date();
+      date.setHours(
+        Math.floor(minutes / 60) % 24,
+        Math.floor(minutes % 60),
+        0,
+        0
+      );
+      return date.toLocaleTimeString(undefined, {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: timeFormat === "12-hour",
+      });
+    },
+    [timeFormat]
+  );
+
+  const formatDuration = (minutes: number): string => {
+    if (minutes < 0) minutes = 0;
+    const hrs = Math.floor(minutes / 60);
+    const mins = Math.round(minutes % 60);
+    return `${hrs}h ${mins}m`;
+  };
 
   const calculateAndFormatSunriseSunset = useCallback(
     (
@@ -87,11 +130,9 @@ const SunCard = ({ lat, lon }: Coordinates) => {
       }
       const daylightHours = daylightSeconds / 3600;
       const halfDaylight = daylightHours / 2;
-
       const solarNoonMinutes = 12 * 60;
       const sunriseMinutes = solarNoonMinutes - halfDaylight * 60;
       const sunsetMinutes = solarNoonMinutes + halfDaylight * 60;
-
       return {
         sunrise: formatTimeFromMinutes(sunriseMinutes),
         sunset: formatTimeFromMinutes(sunsetMinutes),
@@ -105,14 +146,12 @@ const SunCard = ({ lat, lon }: Coordinates) => {
     const pathWidth = 160;
     const pathHeight = 50;
     const midPointX = pathWidth / 2;
-
     const p0x = 0,
       p0y = pathHeight;
     const p1x = midPointX,
       p1y = 0;
     const p2x = pathWidth,
       p2y = pathHeight;
-
     const currentX =
       Math.pow(1 - clampedT, 2) * p0x +
       2 * (1 - clampedT) * clampedT * p1x +
@@ -121,49 +160,21 @@ const SunCard = ({ lat, lon }: Coordinates) => {
       Math.pow(1 - clampedT, 2) * p0y +
       2 * (1 - clampedT) * clampedT * p1y +
       Math.pow(clampedT, 2) * p2y;
-
     return { x: currentX, y: currentY - 1 };
   };
-
-  useEffect(() => {
-    if (lat !== undefined && lon !== undefined) {
-      Promise.all([fetchSunData(lat, lon), fetchCityName(lat, lon)])
-        .then(([dailyData]) => {
-          if (dailyData && dailyData.time && dailyData.daylightDuration) {
-            setDailySunData(dailyData);
-            setError(null);
-          } else {
-            throw new Error("Incomplete sun data received");
-          }
-        })
-        .catch((err: unknown) => {
-          const error =
-            err instanceof Error ? err.message : "Unknown error occurred";
-          setError(error);
-          setDailySunData(null);
-          setSunriseTime(null);
-          setSunsetTime(null);
-        });
-    } else {
-      setError("Latitude and Longitude are required.");
-    }
-  }, [lat, lon]);
 
   useEffect(() => {
     if (dailySunData) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-
       let startIndex = dailySunData.time.findIndex((dateStr: string) => {
         const date = new Date(dateStr);
         date.setHours(0, 0, 0, 0);
         return date >= today;
       });
-
       if (startIndex === -1) {
         startIndex = 0;
       }
-
       if (
         dailySunData.daylightDuration &&
         dailySunData.daylightDuration[startIndex] !== undefined &&
@@ -179,7 +190,6 @@ const SunCard = ({ lat, lon }: Coordinates) => {
         setSunriseTime("--:--");
         setSunsetTime("--:--");
       }
-
       const arr: { date: string; sunrise: string; sunset: string }[] = [];
       const maxDays = dailySunData.time.length;
       for (let i = startIndex; i < Math.min(startIndex + 7, maxDays); i++) {
@@ -213,13 +223,11 @@ const SunCard = ({ lat, lon }: Coordinates) => {
       const currentMinutes = now.getHours() * 60 + now.getMinutes();
       const sunriseMins = parseTimeToMinutes(sunriseTime);
       const sunsetMins = parseTimeToMinutes(sunsetTime);
-
       if (sunsetMins <= sunriseMins) {
         setCurrentXSun(0);
         setCurrentYSun(50);
         return;
       }
-
       const t = (currentMinutes - sunriseMins) / (sunsetMins - sunriseMins);
       const { x, y } = calculateSunPosition(t);
       setCurrentXSun(x);
@@ -228,16 +236,14 @@ const SunCard = ({ lat, lon }: Coordinates) => {
       setCurrentXSun(0);
       setCurrentYSun(50);
     }
-  }, [sunriseTime, sunsetTime]);
+  }, [sunriseTime, sunsetTime, parseTimeToMinutes]);
 
   useEffect(() => {
     if (displayMode === "Large" && sunTimesArray.length > 0) {
       const now = new Date();
       const currentMinutes = now.getHours() * 60 + now.getMinutes();
-
       let displayIndex = 0;
       const todaysSunsetMinutes = parseTimeToMinutes(sunTimesArray[0]?.sunset);
-
       if (
         sunTimesArray[0]?.sunset &&
         currentMinutes >= todaysSunsetMinutes &&
@@ -250,10 +256,9 @@ const SunCard = ({ lat, lon }: Coordinates) => {
       } else {
         setSunsetLabel("Sunset");
       }
-
       setDisplayedSunsetTime(sunTimesArray[displayIndex]?.sunset || "--:--");
     }
-  }, [displayMode, sunTimesArray]);
+  }, [displayMode, sunTimesArray, parseTimeToMinutes]);
 
   const handleMouseMove = (event: React.MouseEvent<SVGSVGElement>) => {
     if (
@@ -264,26 +269,20 @@ const SunCard = ({ lat, lon }: Coordinates) => {
       sunsetTime === "--:--"
     )
       return;
-
     const svg = svgRef.current;
     const pt = svg.createSVGPoint();
     pt.x = event.clientX;
     pt.y = event.clientY;
-
     const svgP = pt.matrixTransform(svg.getScreenCTM()?.inverse());
     const relativeX = svgP.x;
-
     const viewBoxWidth = 160;
     let t = relativeX / viewBoxWidth;
     t = Math.max(0, Math.min(1, t));
-
     const sunriseMins = parseTimeToMinutes(sunriseTime);
     const sunsetMins = parseTimeToMinutes(sunsetTime);
-
     if (sunsetMins > sunriseMins) {
       const hoveredMinutes = sunriseMins + t * (sunsetMins - sunriseMins);
       setHoveredTime(formatTimeFromMinutes(hoveredMinutes));
-
       const { x, y } = calculateSunPosition(t);
       setHoverXSun(x);
       setHoverYSun(y);
@@ -309,10 +308,10 @@ const SunCard = ({ lat, lon }: Coordinates) => {
           strokeWidth="1.5"
           stroke="currentColor"
           className="w-6 h-6 cursor-pointer text-dark dark:text-light"
-          onClick={() => setDropdownOpen(!dropdownOpen)}
+          onClick={toggleDropdown}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
-              setDropdownOpen(!dropdownOpen);
+              toggleDropdown();
               e.preventDefault();
             }
           }}
@@ -331,40 +330,33 @@ const SunCard = ({ lat, lon }: Coordinates) => {
             <button
               className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 dark:hover:bg-gray-800 rounded-t-lg cursor-pointer"
               type="button"
-              onClick={() => {
-                setDisplayMode("Small");
-                setDropdownOpen(false);
-              }}
+              onClick={() => selectDisplayMode("Small")}
             >
               Small
             </button>
             <button
               className="w-full text-left text-sm px-4 py-2 hover:bg-gray-400 dark:hover:bg-gray-800 rounded-b-lg cursor-pointer"
               type="button"
-              onClick={() => {
-                setDisplayMode("Large");
-                setDropdownOpen(false);
-              }}
+              onClick={() => selectDisplayMode("Large")}
             >
               Large
             </button>
           </div>
         )}
       </div>
-      {error ? (
-        <p className="text-red-500 text-center py-10">{error}</p>
-      ) : !dailySunData ? (
+      {sunDataError ? (
+        <p className="text-red-500 text-center py-10">{sunDataError}</p>
+      ) : isSunDataLoading ? (
         <p className="text-center py-10 text-dark dark:text-light">
           <Loader />
         </p>
-      ) : (
+      ) : dailySunData ? (
         <>
-          {/* Small Mode */}
           {displayMode === "Small" &&
             sunriseTime !== null &&
             sunsetTime !== null && (
               <div
-                className={`w-full ${displayMode === "Small" ? "pb-2" : ""}`}
+                className={`w-full ${displayMode === "Small" ? "pb-8" : ""}`}
               >
                 <div className="flex flex-col items-center w-full text-center rounded-md">
                   <div className="w-full flex flex-row items-center justify-center mb-2 gap-2">
@@ -394,17 +386,15 @@ const SunCard = ({ lat, lon }: Coordinates) => {
                       </p>
                     </div>
                   </div>
-
-                  <div className="h-4 mt-1">
+                  <div className="h-4">
                     {isHovering && hoveredTime && (
                       <p className="text-center text-md text-dark dark:text-light font-bold">
                         {hoveredTime}
                       </p>
                     )}
                   </div>
-
                   <div
-                    className="relative w-full max-w-[200px] mx-auto cursor-crosshair"
+                    className="relative w-full max-w-2/3 mx-auto cursor-crosshair"
                     onMouseLeave={handleMouseLeave}
                   >
                     <svg
@@ -432,7 +422,6 @@ const SunCard = ({ lat, lon }: Coordinates) => {
                         className="stroke-gray-500 dark:stroke-gray-600"
                         strokeWidth="1.5"
                       />
-
                       <g
                         transform={`translate(${displayXSun}, ${displayYSun})`}
                       >
@@ -467,11 +456,8 @@ const SunCard = ({ lat, lon }: Coordinates) => {
                 </div>
               </div>
             )}
-
-          {/* Large Mode */}
           {displayMode === "Large" && sunTimesArray.length > 0 && (
             <div className="w-full flex flex-col">
-              {/* Top section for next sunset */}
               {displayedSunsetTime && (
                 <div className="text-center mb-4">
                   <p className="text-sm text-dark dark:text-light">
@@ -482,8 +468,6 @@ const SunCard = ({ lat, lon }: Coordinates) => {
                   </p>
                 </div>
               )}
-
-              {/* Detailed times for today */}
               <div className="w-full space-y-1 border-t border-b border-gray-400 dark:border-gray-600 py-2 mb-3">
                 <div className="flex justify-between items-center">
                   <span className="text-xs text-dark dark:text-light">
@@ -539,7 +523,6 @@ const SunCard = ({ lat, lon }: Coordinates) => {
                   </span>
                 </div>
               </div>
-
               <p className="text-xs text-center text-dark dark:text-light mb-2">
                 Upcoming Days
               </p>
@@ -558,11 +541,9 @@ const SunCard = ({ lat, lon }: Coordinates) => {
                           weekday: "short",
                         })}
                       </p>
-
                       <p className="text-xs text-dark dark:text-light w-12 text-center">
                         {sunData.sunrise}
                       </p>
-
                       <div className="flex-1 h-1.5 bg-gray-700 dark:bg-gray-800 rounded-full overflow-hidden mx-2">
                         <div
                           className="h-full bg-yellow-200"
@@ -580,7 +561,6 @@ const SunCard = ({ lat, lon }: Coordinates) => {
                           }}
                         />
                       </div>
-
                       <p className="text-xs text-dark dark:text-light w-12 text-center">
                         {sunData.sunset}
                       </p>
@@ -591,6 +571,10 @@ const SunCard = ({ lat, lon }: Coordinates) => {
             </div>
           )}
         </>
+      ) : (
+        <div className="text-center py-10 text-dark dark:text-light">
+          <p>No sun data available.</p>
+        </div>
       )}
     </div>
   );
