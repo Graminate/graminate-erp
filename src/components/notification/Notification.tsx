@@ -1,3 +1,4 @@
+import React from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
@@ -16,6 +17,10 @@ export const Notification = ({
     transition,
   };
 
+  const createMarkup = () => {
+    return { __html: notification.description };
+  };
+
   return (
     <div
       ref={setNodeRef}
@@ -24,12 +29,13 @@ export const Notification = ({
       {...listeners}
       className="p-3 shadow-md rounded-md mb-2 bg-gray-50 dark:bg-gray-700 cursor-pointer"
     >
-      <p className="font-semibold text-gray-800 dark:text-light">
+      <p className="font-semibold text-gray-800 dark:text-light mb-2">
         {notification.title}
       </p>
-      <p className="text-gray-600 dark:text-gray-300">
-        {notification.description}
-      </p>
+      <div
+        className="text-gray-600 dark:text-gray-300"
+        dangerouslySetInnerHTML={createMarkup()}
+      />
     </div>
   );
 };

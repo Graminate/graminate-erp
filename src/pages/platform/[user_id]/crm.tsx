@@ -50,6 +50,8 @@ type Contract = {
   stage: string;
   start_date: string;
   end_date: string;
+  category?: string;
+  priority: string;
 };
 
 type Receipt = {
@@ -204,7 +206,7 @@ const CRM = () => {
         if (fetchedData.length === 0) return { columns: [], rows: [] };
         return {
           columns: [
-            "ID",
+            "#",
             "First Name",
             "Last Name",
             "Email",
@@ -239,7 +241,7 @@ const CRM = () => {
         if (fetchedData.length === 0) return { columns: [], rows: [] };
         return {
           columns: [
-            "ID",
+            "#",
             "Company Name",
             "Owner Name",
             "Email",
@@ -272,12 +274,14 @@ const CRM = () => {
         if (fetchedData.length === 0) return { columns: [], rows: [] };
         return {
           columns: [
-            "ID",
-            "Deal Name",
-            "Partner / Client",
-            "Amount",
+            "#",
+            "Contract",
+            "Partner",
+            // "Amount",
             "Status",
-            "Start Date",
+            "Category",
+            "Priority",
+            // "Start Date",
             "End Date",
           ],
           rows: fetchedData
@@ -286,9 +290,11 @@ const CRM = () => {
               item.deal_id,
               item.deal_name,
               item.partner,
-              item.amount,
+              // item.amount,
               item.stage,
-              new Date(item.start_date).toLocaleDateString(),
+              item.category || "-",
+              item.priority,
+              // new Date(item.start_date).toLocaleDateString(),
               new Date(item.end_date).toLocaleDateString(),
             ]),
         };
@@ -297,7 +303,7 @@ const CRM = () => {
         if (fetchedData.length === 0) return { columns: [], rows: [] };
         return {
           columns: [
-            "ID",
+            "#",
             "Title",
             "Bill To",
             "Amount Paid",

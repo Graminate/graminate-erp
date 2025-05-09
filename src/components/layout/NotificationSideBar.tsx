@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { faTrash, faGear, faX } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -28,6 +28,18 @@ const NotificationBar = ({
 }: NotificationBar) => {
   const [items, setItems] = useState(notifications.map((_, i) => i));
   const router = useRouter();
+
+  const clearAllNotifications = () => {
+    setItems([]);
+  };
+
+  useEffect(() => {
+    setItems(notifications.map((_, i) => i));
+  }, [notifications]);
+
+  useEffect(() => {
+    setItems(notifications.map((_, i) => i));
+  }, [notifications]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -80,9 +92,7 @@ const NotificationBar = ({
           <div className="flex items-center space-x-2 mb-2">
             <button
               className="text-red-200 hover:text-red-100 px-3 py-1 text-sm rounded-md"
-              onClick={() => {
-                setItems([]);
-              }}
+              onClick={clearAllNotifications}
             >
               <FontAwesomeIcon icon={faTrash} className="size-4" />
             </button>
@@ -98,7 +108,7 @@ const NotificationBar = ({
         </div>
 
         {notifications.length === 0 ? (
-          <p className="text-gray-500 text-center">
+          <p className="text-gray-300 text-center">
             You don’t have any notifications
           </p>
         ) : (

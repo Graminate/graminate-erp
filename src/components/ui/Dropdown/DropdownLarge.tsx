@@ -71,7 +71,7 @@ const DropdownLarge = ({
   return (
     <div>
       {label && (
-        <label className="block mb-1 text-sm font-medium text-dark dark:text-light">
+        <label className="block mb-1 text-sm font-medium text-gray-200 dark:text-gray-300">
           {label}
         </label>
       )}

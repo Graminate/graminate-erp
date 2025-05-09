@@ -6,6 +6,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useState, useRef, useEffect } from "react";
+import Loader from "./Loader";
 
 type Props = {
   label?: string;
@@ -112,7 +113,6 @@ const TextField = ({
         </label>
       )}
       <div className="relative flex items-center">
-        {/* Input Field */}
         <input
           className={`${getFieldClass()} ${
             icon === "left" ? "pl-10" : icon === "right" ? "pr-10" : ""
@@ -138,7 +138,6 @@ const TextField = ({
           onKeyDown={onKeyDown}
         />
 
-        {/* Password Toggle Button */}
         {password && (
           <button
             type="button"
@@ -154,7 +153,6 @@ const TextField = ({
           </button>
         )}
 
-        {/* Suggestions Toggle Button */}
         {suggestions.length > 0 && !password && (
           <button
             type="button"
@@ -167,12 +165,11 @@ const TextField = ({
         )}
       </div>
 
-      {/* Suggestions Dropdown */}
       {showSuggestions && suggestions.length > 0 && (
         <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-auto">
           {isLoading ? (
             <div className="px-4 py-2 text-gray-500 dark:text-gray-400">
-              Loading...
+              <Loader/>
             </div>
           ) : (
             suggestions.map((suggestion, index) => (
@@ -191,7 +188,6 @@ const TextField = ({
         </div>
       )}
 
-      {/* Error Message */}
       {type === "error" && (
         <div className="flex items-center mt-1">
           <span className="font-medium mr-1">

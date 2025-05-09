@@ -1,9 +1,7 @@
 import { useState, FormEvent } from "react";
 import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
-import DropdownLarge from "../ui/Dropdown/DropdownLarge";
 import NavPanel from "../layout/NavPanel";
-import TextArea from "../ui/TextArea";
 import axiosInstance from "@/lib/utils/axiosInstance";
 
 type PoultryFormData = {
@@ -56,16 +54,8 @@ const AddPoultryDataModal = ({
     remarks: "",
   });
 
-  const handleVetChange = (
-    field: keyof typeof vetForm,
-    value: string | number
-  ) => {
-    setVetForm((prev) => ({ ...prev, [field]: value }));
-  };
-
   const navButtons = [
     { name: "Flock Data", view: "flock" },
-    { name: "Veterinary", view: "vet" },
     { name: "Egg Production", view: "eggs" },
     { name: "Food Supply", view: "feed" },
   ];
@@ -253,107 +243,6 @@ const AddPoultryDataModal = ({
                     } as React.ChangeEvent<HTMLInputElement>;
                     onChange(event);
                   }}
-                />
-              </div>
-            </fieldset>
-          )}
-
-          {/* Veterinary */}
-          {activeView === "vet" && (
-            <fieldset className="p-4">
-              <legend className="text-lg font-medium px-2 text-gray-800 dark:text-gray-300 -ml-2">
-                Health & Veterinary
-              </legend>
-              <div className="grid grid-rows-1 gap-6">
-                <div className="flex flex-row gap-2">
-                  <TextField
-                    label="Veterinary Name"
-                    value={vetForm.veterinaryName}
-                    onChange={(val) => handleVetChange("veterinaryName", val)}
-                  />
-                </div>
-
-                <div className="grid sm:grid-col-1 md:grid-cols-3 gap-5">
-                  <DropdownLarge
-                    items={["Chicken", "Duck"]}
-                    selectedItem={vetForm.birdType}
-                    onSelect={(val) => handleVetChange("birdType", val)}
-                    label="Bird Type"
-                    type="form"
-                    width="full"
-                  />
-                  <DropdownLarge
-                    items={["Broiler", "Layer"]}
-                    selectedItem={vetForm.purpose}
-                    onSelect={(val) => handleVetChange("purpose", val)}
-                    label="Purpose"
-                    type="form"
-                    width="full"
-                  />
-                  <DropdownLarge
-                    items={["Yes", "No"]}
-                    selectedItem={vetForm.deworming}
-                    onSelect={(val) => handleVetChange("deworming", val)}
-                    label="Deworming"
-                    type="form"
-                    width="full"
-                  />
-                </div>
-
-                <div className="flex flex-row gap-2">
-                  <TextField
-                    label="Birds In"
-                    number
-                    value={vetForm.birdsIn.toString()}
-                    onChange={(val) => handleVetChange("birdsIn", Number(val))}
-                  />
-                  <TextField
-                    label="Birds Died"
-                    number
-                    value={vetForm.birdsDied.toString()}
-                    onChange={(val) =>
-                      handleVetChange("birdsDied", Number(val))
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className="grid sm:grid-col-1 md:grid-cols-2 gap-6 mt-4">
-                <TextArea
-                  label="Vaccines"
-                  placeholder="Enter vaccine details"
-                  value={vetForm.vaccines}
-                  onChange={(val) => handleVetChange("vaccines", val)}
-                />
-                <TextArea
-                  label="Symptoms"
-                  placeholder="List of symptoms observed"
-                  value={vetForm.symptoms}
-                  onChange={(val) => handleVetChange("symptoms", val)}
-                />
-                <TextArea
-                  label="Medications"
-                  value={vetForm.medications}
-                  placeholder="List of medications for your poultry"
-                  onChange={(val) => handleVetChange("medications", val)}
-                />
-                <TextArea
-                  label="Actions Taken"
-                  value={vetForm.actionsTaken}
-                  placeholder="Actions taken by veterinary or to be taken on veterinary advice"
-                  onChange={(val) => handleVetChange("actionsTaken", val)}
-                />
-                <TextArea
-                  label="Remarks"
-                  value={vetForm.remarks}
-                  placeholder="Any additional remarks or notes"
-                  onChange={(val) => handleVetChange("remarks", val)}
-                />
-                <TextField
-                  label="Next Appointment Date"
-                  calendar
-                  value={vetForm.date}
-                  onChange={(val) => handleVetChange("date", val)}
                 />
               </div>
             </fieldset>

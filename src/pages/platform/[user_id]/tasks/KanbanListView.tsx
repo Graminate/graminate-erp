@@ -1,17 +1,17 @@
 import { Column, Id, Task } from "@/types/types";
 import React from "react";
 
-type TaskListViewProps = {
+type KanbanListViewProps = {
   tasks: Task[];
   columns: Column[];
   openTaskModal: (task: Task) => void;
 };
 
-const TaskListView = ({
+const KanbanListView = ({
   tasks = [],
   columns = [],
   openTaskModal,
-}: TaskListViewProps) => {
+}: KanbanListViewProps) => {
   const getColumnName = (columnId: Id) => {
     return columns.find((col) => col.id === columnId)?.title || "Unknown";
   };
@@ -104,4 +104,4 @@ const TaskListView = ({
   );
 };
 
-export default TaskListView;
+export default KanbanListView;

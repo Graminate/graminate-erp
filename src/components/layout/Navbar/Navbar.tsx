@@ -14,10 +14,16 @@ import {
   faGear,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { Task } from "@/types/types";
 
 interface NavbarProps extends Navbar {
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
+}
+
+interface Notification {
+  title: string;
+  description: string;
 }
 
 const Navbar = ({
@@ -38,21 +44,60 @@ const Navbar = ({
   const [isNotificationBarOpen, setNotificationBarOpen] =
     useState<boolean>(false);
 
-  const notifications = [
-    { title: "New Message", description: "You have a new message" },
-    {
-      title: "New customer request",
-      description: "A customer sent you a product request",
-    },
-  ];
-
-  const notificationCount = notifications.length;
-
   const userNavigation = [
     { name: "Pricing", href: `/platform/${userId}/pricing`, external: true },
     { name: "News Updates", href: `/news` },
     { name: "Training & Services", href: "/training-services", external: true },
   ];
+
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [hasShownToday, setHasShownToday] = useState(false);
+
+  const fetchTasksDueTomorrow = async () => {
+    try {
+      if (!userId || hasShownToday) return; // Don't fetch if already shown today
+
+      const response = await axiosInstance.get<{ tasks: Task[] }>(
+        `/tasks/upcoming/${userId}?days=1`
+      );
+
+      const tasksDueTomorrow = response.data.tasks || [];
+
+      if (tasksDueTomorrow.length > 0) {
+        const tasksList = tasksDueTomorrow
+          .map((task) => `• ${task.task || "Untitled task"}`)
+          .join("<br>");
+
+        setNotifications([
+          {
+            title: "Tasks due tomorrow",
+            description: tasksList,
+          },
+        ]);
+        setHasShownToday(true); // Mark as shown for today
+      }
+    } catch (error) {
+      console.error("Error fetching tasks:", error);
+    }
+  };
+
+  useEffect(() => {
+    // Check if we've already shown notifications today
+    const lastShownDate = localStorage.getItem("lastNotificationDate");
+    const today = new Date().toDateString();
+
+    if (lastShownDate !== today) {
+      fetchTasksDueTomorrow();
+      localStorage.setItem("lastNotificationDate", today);
+    }
+  }, [userId]);
+
+  const clearAllNotifications = () => {
+    setNotifications([]);
+    setHasShownToday(true);
+  };
+
+  const notificationCount = notifications.length;
 
   useEffect(() => {
     async function fetchUserDetails() {
@@ -271,6 +316,7 @@ const Navbar = ({
         notifications={notifications}
         isOpen={isNotificationBarOpen}
         closeNotificationBar={toggleNotificationBar}
+        onClearAll={clearAllNotifications}
       />
     </>
   );

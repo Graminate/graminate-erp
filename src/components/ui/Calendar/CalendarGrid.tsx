@@ -1,4 +1,4 @@
-import { Tasks } from "./Calendar";
+import { TasksPresence } from "./Calendar";
 
 type CalendarGridProps = {
   calendarDays: (number | null)[];
@@ -7,7 +7,7 @@ type CalendarGridProps = {
   calendarMonth: number;
   calendarYear: number;
   handleDateChange: (date: Date) => void;
-  tasks: Tasks;
+  tasksPresence: TasksPresence;
   getDateKey: (date: Date) => string;
 };
 
@@ -18,7 +18,7 @@ const CalendarGrid = ({
   calendarMonth,
   calendarYear,
   handleDateChange,
-  tasks,
+  tasksPresence,
   getDateKey,
 }: CalendarGridProps) => {
   return (
@@ -35,8 +35,7 @@ const CalendarGrid = ({
         {calendarDays.map((day, index) => {
           const date = day ? new Date(calendarYear, calendarMonth, day) : null;
           const dateKey = date ? getDateKey(date) : null;
-          const hasTasks =
-            day && dateKey && tasks[dateKey] && tasks[dateKey].length > 0;
+          const hasTasks = day && dateKey && tasksPresence[dateKey]; // Updated to use tasksPresence
 
           return (
             <div

@@ -76,7 +76,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       setSuggestions(filtered);
       setShowSuggestions(true);
     } else {
-      setSuggestions(subTypes); // Show all suggestions when input is empty
+      setSuggestions(subTypes);
       setShowSuggestions(true);
     }
   };
@@ -172,7 +172,10 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     status: "",
     contractStartDate: "",
     contractEndDate: "",
+    category: "",
+    priority: "Medium",
   });
+
   const [receiptsValues, setReceiptsValues] = useState({
     title: "",
     billTo: "",
@@ -410,6 +413,8 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       stage: contractsValues.status,
       start_date: contractsValues.contractStartDate,
       end_date: contractsValues.contractEndDate,
+      category: contractsValues.category,
+      priority: contractsValues.priority,
     };
     try {
       await axiosInstance.post("/contracts/add", payload);
@@ -420,6 +425,8 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
         status: "",
         contractStartDate: "",
         contractEndDate: "",
+        category: "",
+        priority: "Medium",
       });
       handleClose();
       window.location.reload();
@@ -504,14 +511,14 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       >
         <div className="p-6 flex flex-col h-full">
           {/* Header */}
-          <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-400 dark:border-gray-200">
             <h2 className="text-xl font-semibold text-dark dark:text-light">
               {formTitle
                 ? formTitle
-                : `Create ${view.charAt(0).toUpperCase() + view.slice(1)}`}
+                : `Create ${view ? view.charAt(0).toUpperCase() + view.slice(1) : ""}`}
             </h2>
             <button
-              className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+              className="text-gray-300 hover:text-gray-200 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
               onClick={handleClose}
               aria-label="Close panel"
             >
@@ -637,7 +644,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                   />
                 </div>
                 {/* Form Actions */}
-                <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-400 dark:border-gray-200">
                   <Button
                     text="Cancel"
                     style="secondary"
@@ -762,7 +769,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                 </div>
 
                 {/* Form Actions */}
-                <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-400 dark:border-gray-200">
                   <Button
                     text="Cancel"
                     style="secondary"
@@ -772,6 +779,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                 </div>
               </form>
             )}
+
             {/* --- Contracts Form --- */}
             {view === "contracts" && (
               <form
@@ -787,38 +795,34 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                   }
                 />
                 <TextField
-                  label="Partner Name"
-                  placeholder="Company, Business owner"
-                  value={contractsValues.dealPartner}
+                  label="Category"
+                  placeholder="Contract category"
+                  value={contractsValues.category}
                   onChange={(val: string) =>
-                    setContractsValues({ ...contractsValues, dealPartner: val })
+                    setContractsValues({ ...contractsValues, category: val })
                   }
                 />
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <TextField
-                    label="Amount Involved (₹)"
-                    placeholder="Budget involved"
-                    value={contractsValues.amountPaid}
-                    onChange={(val: string) =>
-                      setContractsValues({
-                        ...contractsValues,
-                        amountPaid: val,
-                      })
-                    }
-                  />
-                </div>
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <DropdownLarge
-                    label="Status"
-                    items={CONTRACT_STATUS}
-                    selectedItem={contractsValues.status}
-                    onSelect={(val: string) =>
-                      setContractsValues({ ...contractsValues, status: val })
-                    }
-                    type="form"
-                    width="full"
-                  />
-                </div>
+                <DropdownLarge
+                  label="Contract Stage"
+                  items={CONTRACT_STATUS}
+                  selectedItem={contractsValues.status}
+                  onSelect={(val: string) =>
+                    setContractsValues({ ...contractsValues, status: val })
+                  }
+                  type="form"
+                  width="full"
+                />
+                <TextField
+                  label="Amount (₹)"
+                  placeholder="Budget involved"
+                  value={contractsValues.amountPaid}
+                  onChange={(val: string) =>
+                    setContractsValues({
+                      ...contractsValues,
+                      amountPaid: val,
+                    })
+                  }
+                />
                 <div className="flex flex-col sm:flex-row gap-4">
                   <TextField
                     label="Start Date"
@@ -833,7 +837,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                     calendar
                   />
                   <TextField
-                    label="Contract End Date"
+                    label="End Date"
                     placeholder="YYYY-MM-DD"
                     value={contractsValues.contractEndDate}
                     onChange={(val: string) =>
@@ -845,8 +849,28 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                     calendar
                   />
                 </div>
+                <TextField
+                  label="Contract With"
+                  placeholder="Company, Business owner"
+                  value={contractsValues.dealPartner}
+                  onChange={(val: string) =>
+                    setContractsValues({ ...contractsValues, dealPartner: val })
+                  }
+                />
+
+                <DropdownLarge
+                  label="Priority"
+                  items={["Low", "Medium", "High"]}
+                  selectedItem={contractsValues.priority}
+                  onSelect={(val: string) =>
+                    setContractsValues({ ...contractsValues, priority: val })
+                  }
+                  type="form"
+                  width="full"
+                />
+
                 {/* Form Actions */}
-                <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-400 dark:border-gray-200">
                   <Button
                     text="Cancel"
                     style="secondary"
@@ -922,7 +946,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                   />
                 </div>
                 {/* Form Actions */}
-                <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-400 dark:border-gray-200">
                   <Button
                     text="Cancel"
                     style="secondary"
@@ -951,7 +975,9 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                       ref={suggestionsRef}
                       className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 rounded-md shadow-lg"
                     >
-                     <p className="text-xs p-2 text-gray-300">Suggestions...</p>
+                      <p className="text-xs p-2 text-gray-300">
+                        Suggestions...
+                      </p>
                       {suggestions.map((suggestion, index) => (
                         <div
                           key={index}
@@ -996,7 +1022,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                 />
 
                 {/* Form Actions */}
-                <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-400 dark:border-gray-200">
                   <Button
                     text="Cancel"
                     style="secondary"
