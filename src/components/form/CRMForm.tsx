@@ -146,17 +146,19 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
 
   const [companyValues, setCompanyValues] = useState({
     companyName: "",
-    companyOwner: "",
+    contactPerson: "", // Changed from companyOwner
     email: "",
     phoneNumber: "",
     type: "",
-
     address_line_1: "",
     address_line_2: "",
     city: "",
     state: "",
     postal_code: "",
+    website: "", // New
+    industry: "", // New
   });
+
   const [companyErrors, setCompanyErrors] = useState({
     phoneNumber: "",
     address_line_1: "",
@@ -335,70 +337,104 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
   const handleSubmitCompanies = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const addressValidation = validateCompanyAddress();
-    const phoneValid =
-      isValidE164(companyValues.phoneNumber) || !companyValues.phoneNumber;
-    const phoneErrorMsg = !phoneValid ? "Add a valid phone number" : "";
+    // Validate required fields
+    const requiredFields = [
+      "companyName",
+      "contactPerson",
+      "address_line_1",
+      "city",
+      "state",
+      "postal_code",
+    ];
 
-    setCompanyErrors({
-      ...companyErrors,
-      ...addressValidation.errors,
-      phoneNumber: phoneErrorMsg,
-    });
+    const missingFields = requiredFields.filter(
+      (field) => !companyValues[field as keyof typeof companyValues]?.trim()
+    );
 
-    if (!addressValidation.isValid || !phoneValid) {
-      console.log("Company form validation failed:", {
-        ...addressValidation.errors,
-        phoneNumber: phoneErrorMsg,
+    if (missingFields.length > 0) {
+      alert(`Please fill in all required fields: ${missingFields.join(", ")}`);
+      return;
+    }
+
+    // Validate phone number if provided
+    if (companyValues.phoneNumber && !isValidE164(companyValues.phoneNumber)) {
+      setCompanyErrors({
+        ...companyErrors,
+        phoneNumber: "Please enter a valid phone number (e.g. +1234567890)",
       });
       return;
     }
+
+    // Validate email if provided
+    if (
+      companyValues.email &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(companyValues.email)
+    ) {
+      alert("Please enter a valid email address");
+      return;
+    }
+
     const payload = {
       user_id: user_id,
       company_name: companyValues.companyName,
-      owner_name: companyValues.companyOwner,
-      email: companyValues.email,
-      phone_number: companyValues.phoneNumber,
-      type: companyValues.type,
+      contact_person: companyValues.contactPerson,
+      email: companyValues.email || null, // Send null if empty
+      phone_number: companyValues.phoneNumber || null, // Send null if empty
+      type: companyValues.type || null,
       address_line_1: companyValues.address_line_1,
-      address_line_2: companyValues.address_line_2,
+      address_line_2: companyValues.address_line_2 || null,
       city: companyValues.city,
       state: companyValues.state,
       postal_code: companyValues.postal_code,
+      website: companyValues.website || null,
+      industry: companyValues.industry || null,
     };
+
     try {
-      await axiosInstance.post("/companies/add", payload);
-      setCompanyValues({
-        companyName: "",
-        companyOwner: "",
-        email: "",
-        phoneNumber: "",
-        type: "",
-        address_line_1: "",
-        address_line_2: "",
-        city: "",
-        state: "",
-        postal_code: "",
+      const response = await axiosInstance.post("/companies/add", payload, {
+        headers: {
+          "Content-Type": "application/json",
+        },
       });
-      setCompanyErrors({
-        phoneNumber: "",
-        address_line_1: "",
-        city: "",
-        state: "",
-        postal_code: "",
-      });
-      handleClose();
-      window.location.reload();
+
+      if (response.status === 201) {
+        // Reset form on success
+        setCompanyValues({
+          companyName: "",
+          contactPerson: "",
+          email: "",
+          phoneNumber: "",
+          type: "",
+          address_line_1: "",
+          address_line_2: "",
+          city: "",
+          state: "",
+          postal_code: "",
+          website: "",
+          industry: "",
+        });
+        handleClose();
+        window.location.reload();
+      }
     } catch (error: any) {
+      console.error("Error adding company:", error);
+
       if (error.response) {
-        console.error("Error details:", error.response.data);
-        alert(error.response.data?.error || "Failed to add company");
-      } else if (error.request) {
-        console.error("No response received:", error.request);
-        alert("No response from server");
+        // Display specific error message from backend
+        const errorMsg =
+          error.response.data?.error ||
+          error.response.data?.message ||
+          "Failed to add company";
+        alert(errorMsg);
+
+        // Log detailed error for debugging
+        console.error("Error details:", {
+          status: error.response.status,
+          data: error.response.data,
+          config: error.response.config,
+        });
       } else {
-        console.error("Request setup error:", error.message);
-        alert("Request failed: " + error.message);
+        alert("An error occurred. Please try again.");
       }
     }
   };
@@ -515,7 +551,9 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
             <h2 className="text-xl font-semibold text-dark dark:text-light">
               {formTitle
                 ? formTitle
-                : `Create ${view ? view.charAt(0).toUpperCase() + view.slice(1) : ""}`}
+                : `Create ${
+                    view ? view.charAt(0).toUpperCase() + view.slice(1) : ""
+                  }`}
             </h2>
             <button
               className="text-gray-300 hover:text-gray-200 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
@@ -670,41 +708,41 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                   }
                 />
                 <TextField
-                  label="Owner Name"
+                  label="Contact Person"
                   placeholder="e.g. John Doe"
-                  value={companyValues.companyOwner}
+                  value={companyValues.contactPerson}
                   onChange={(val: string) =>
-                    setCompanyValues({ ...companyValues, companyOwner: val })
+                    setCompanyValues({ ...companyValues, contactPerson: val })
                   }
                 />
-                <div className="flex flex-col sm:flex-row gap-4">
-                  <TextField
-                    label="Company Email"
-                    placeholder="e.g. contact@company.com"
-                    value={companyValues.email}
-                    onChange={(val: string) =>
-                      setCompanyValues({ ...companyValues, email: val })
+
+                <TextField
+                  label="Company Email"
+                  placeholder="e.g. contact@company.com"
+                  value={companyValues.email}
+                  onChange={(val: string) =>
+                    setCompanyValues({ ...companyValues, email: val })
+                  }
+                />
+                <TextField
+                  label="Company Phone"
+                  placeholder="e.g. +91 XXXXX XXXXX"
+                  value={companyValues.phoneNumber}
+                  onChange={(val: string) => {
+                    setCompanyValues({ ...companyValues, phoneNumber: val });
+                    if (val && !isValidE164(val)) {
+                      setCompanyErrors({
+                        ...companyErrors,
+                        phoneNumber: "Company phone invalid",
+                      });
+                    } else {
+                      setCompanyErrors({ ...companyErrors, phoneNumber: "" });
                     }
-                  />
-                  <TextField
-                    label="Company Phone"
-                    placeholder="e.g. +91 XXXXX XXXXX"
-                    value={companyValues.phoneNumber}
-                    onChange={(val: string) => {
-                      setCompanyValues({ ...companyValues, phoneNumber: val });
-                      if (val && !isValidE164(val)) {
-                        setCompanyErrors({
-                          ...companyErrors,
-                          phoneNumber: "Company phone invalid",
-                        });
-                      } else {
-                        setCompanyErrors({ ...companyErrors, phoneNumber: "" });
-                      }
-                    }}
-                    type={companyErrors.phoneNumber ? "error" : ""}
-                    errorMessage={companyErrors.phoneNumber}
-                  />
-                </div>
+                  }}
+                  type={companyErrors.phoneNumber ? "error" : ""}
+                  errorMessage={companyErrors.phoneNumber}
+                />
+
                 <DropdownLarge
                   items={companyType}
                   selectedItem={companyValues.type}
@@ -712,7 +750,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                     setCompanyValues({ ...companyValues, type: value })
                   }
                   type="form"
-                  label="Company Type"
+                  label="Type"
                   width="full"
                 />
 

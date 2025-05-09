@@ -31,7 +31,7 @@ type Contact = {
 type Company = {
   company_id: number;
   company_name: string;
-  owner_name: string;
+  contact_person: string;
   email: string;
   phone_number: string;
   address_line_1?: string;
@@ -254,7 +254,7 @@ const CRM = () => {
             .map((item) => [
               item.company_id,
               item.company_name,
-              item.owner_name,
+              item.contact_person,
               item.email,
               item.phone_number,
               [

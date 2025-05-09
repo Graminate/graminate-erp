@@ -6,7 +6,7 @@ import Head from "next/head";
 import { useRouter } from "next/router";
 import { useEffect, useState, useRef } from "react";
 import { triggerToast } from "@/stores/toast";
-import { COMPANY_TYPES } from "@/constants/options";
+import { COMPANY_TYPES, INDUSTRY_OPTIONS } from "@/constants/options";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import Loader from "@/components/ui/Loader";
 import UploadContactImageModal from "@/components/modals/UploadContactImageModal";
@@ -22,7 +22,7 @@ import Swal from "sweetalert2";
 type Company = {
   company_id: string;
   company_name: string;
-  owner_name?: string;
+  contact_person?: string;
   email?: string;
   phone_number?: string;
   type?: string;
@@ -31,12 +31,14 @@ type Company = {
   city?: string;
   state?: string;
   postal_code?: string;
+  website?: string;
+  industry?: string;
   profile_image_url?: string;
 };
 
 type Form = {
   companyName: string;
-  ownerName: string;
+  contactPerson: string;
   email: string;
   phoneNumber: string;
   type: string;
@@ -45,11 +47,13 @@ type Form = {
   city: string;
   state: string;
   postalCode: string;
+  website: string;
+  industry: string;
 };
 
 const initialFormState: Form = {
   companyName: "",
-  ownerName: "",
+  contactPerson: "",
   email: "",
   phoneNumber: "",
   type: "",
@@ -58,6 +62,8 @@ const initialFormState: Form = {
   city: "",
   state: "",
   postalCode: "",
+  website: "",
+  industry: "",
 };
 
 const getInitials = (companyName?: string): string => {
@@ -100,7 +106,7 @@ const CompanyDetails = () => {
 
         const newFormValues: Form = {
           companyName: parsedCompany.company_name || "",
-          ownerName: parsedCompany.owner_name || "",
+          contactPerson: parsedCompany.contact_person || "", // Changed
           email: parsedCompany.email || "",
           phoneNumber: parsedCompany.phone_number || "",
           type: parsedCompany.type || "",
@@ -109,6 +115,8 @@ const CompanyDetails = () => {
           city: parsedCompany.city || "",
           state: parsedCompany.state || "",
           postalCode: parsedCompany.postal_code || "",
+          website: parsedCompany.website || "", // New
+          industry: parsedCompany.industry || "", // New
         };
         setFormData(newFormValues);
         setInitialFormData(newFormValues);
@@ -147,7 +155,7 @@ const CompanyDetails = () => {
     const payload = {
       id: company.company_id,
       company_name: formData.companyName,
-      owner_name: formData.ownerName,
+      contact_person: formData.contactPerson, // Changed
       email: formData.email,
       phone_number: formData.phoneNumber,
       address_line_1: formData.addressLine1,
@@ -156,6 +164,8 @@ const CompanyDetails = () => {
       state: formData.state,
       postal_code: formData.postalCode,
       type: formData.type,
+      website: formData.website, // New
+      industry: formData.industry, // New
     };
 
     try {
@@ -170,7 +180,7 @@ const CompanyDetails = () => {
 
       const updatedFormValues: Form = {
         companyName: updatedCompany.company_name || "",
-        ownerName: updatedCompany.owner_name || "",
+        contactPerson: updatedCompany.contact_person || "", // Changed
         email: updatedCompany.email || "",
         phoneNumber: updatedCompany.phone_number || "",
         type: updatedCompany.type || "",
@@ -179,6 +189,8 @@ const CompanyDetails = () => {
         city: updatedCompany.city || "",
         state: updatedCompany.state || "",
         postalCode: updatedCompany.postal_code || "",
+        website: updatedCompany.website || "", // New
+        industry: updatedCompany.industry || "", // New
       };
       setFormData(updatedFormValues);
       setInitialFormData(updatedFormValues);
@@ -452,9 +464,9 @@ const CompanyDetails = () => {
                   onChange={(val) => handleInputChange("companyName", val)}
                 />
                 <TextField
-                  label="Owner Name"
-                  value={formData.ownerName}
-                  onChange={(val) => handleInputChange("ownerName", val)}
+                  label="Contact Person"
+                  value={formData.contactPerson}
+                  onChange={(val) => handleInputChange("contactPerson", val)}
                 />
                 <TextField
                   label="Email"
@@ -465,6 +477,22 @@ const CompanyDetails = () => {
                   label="Phone Number"
                   value={formData.phoneNumber}
                   onChange={(val) => handleInputChange("phoneNumber", val)}
+                />
+                <TextField
+                  label="Website"
+                  placeholder="e.g. https://company.com"
+                  value={formData.website}
+                  onChange={(val) => handleInputChange("website", val)}
+                />
+                <DropdownLarge
+                  items={INDUSTRY_OPTIONS}
+                  selectedItem={formData.industry}
+                  onSelect={(value: string) =>
+                    handleInputChange("industry", value)
+                  }
+                  type="form"
+                  label="Industry"
+                  width="full"
                 />
                 <DropdownLarge
                   items={COMPANY_TYPES}

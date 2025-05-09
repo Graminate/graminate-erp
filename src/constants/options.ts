@@ -1,6 +1,18 @@
 export const GENDER = ["Male", "Female", "Other"];
 export const YESNO = ["Yes", "No"];
 export const LANGUAGES = ["English", "Hindi", "Assamese"];
+export const INDUSTRY_OPTIONS = [
+  "Crop Farming",
+  "Livestock & Poultry Farming",
+  "Aquaculture & Fisheries",
+  "Agricultural Inputs (Seeds, Fertilizers, Pesticides)",
+  "Farm Machinery & Equipment",
+  "Food Processing (Meat, Dairy, Grains, Beverages)",
+  "Commodity Trading & Food Distribution",
+  "AgTech & Precision Farming",
+  "Organic & Sustainable Agriculture",
+  "Agricultural Finance & Insurance",
+];
 import { TimeFormatOption } from "@/contexts/UserPreferencesContext";
 export const TIME_FORMAT: TimeFormatOption[] = ["12-hour", "24-hour"];
 
