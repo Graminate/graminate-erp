@@ -5,10 +5,11 @@ import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import Button from "@/components/ui/Button";
 import TextArea from "@/components/ui/TextArea";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faX } from "@fortawesome/free-solid-svg-icons";
+import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import { SidebarProp } from "@/types/card-props";
 import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
 import axiosInstance from "@/lib/utils/axiosInstance";
+import Swal from "sweetalert2";
 
 const VeterinaryForm = ({ onClose, formTitle }: SidebarProp) => {
   const router = useRouter();
@@ -107,14 +108,11 @@ const VeterinaryForm = ({ onClose, formTitle }: SidebarProp) => {
       handleClose();
       window.location.reload();
     } catch (error) {
-      console.error("Error submitting veterinary data:", error);
-      await import("sweetalert2").then(({ default: Swal }) =>
-        Swal.fire({
-          icon: "error",
-          title: "Error",
-          text: "Failed to submit veterinary data. Please try again.",
-        })
-      );
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: "Failed to submit veterinary data. Please try again.",
+      });
     }
   };
 
@@ -137,7 +135,7 @@ const VeterinaryForm = ({ onClose, formTitle }: SidebarProp) => {
               className="text-gray-300 hover:text-gray-100"
               onClick={handleClose}
             >
-              <FontAwesomeIcon icon={faX} className="w-5 h-5" />
+              <FontAwesomeIcon icon={faXmark} className="w-5 h-5" />
             </button>
           </div>
 

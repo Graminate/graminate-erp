@@ -72,7 +72,6 @@ const Inventory = () => {
       try {
         const response = await axiosInstance.get(`/inventory/${parsedUserId}`);
 
-        console.log("Fetched Inventory Data:", response.data);
         setItemRecords(response.data.items || []);
       } catch (error) {
         if (error instanceof Error) {
@@ -290,7 +289,6 @@ const Inventory = () => {
             view="inventory"
             onClose={() => setIsSidebarOpen(false)}
             onSubmit={(values: Record<string, string>) => {
-              console.log("Form submitted:", values);
               setIsSidebarOpen(false);
             }}
             formTitle="Add Item"

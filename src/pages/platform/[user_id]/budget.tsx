@@ -154,11 +154,9 @@ const initialBudgetData: BudgetData = [
 ];
 
 const fetchBudgetData = (): Promise<BudgetData> => {
-  console.log("Simulating budget data fetch...");
   return new Promise((resolve) => {
     setTimeout(() => {
       resolve(JSON.parse(JSON.stringify(initialBudgetData)));
-      console.log("Budget data fetched.");
     }, 500);
   });
 };
@@ -175,9 +173,6 @@ const updateBudgetItemSpent = (
         items: step.items.map((item) => {
           if (item.id === itemId) {
             const validatedSpent = Math.max(0, newSpent);
-            console.log(
-              `Updating ${itemId} in ${stepId} from ${item.spent} to ${validatedSpent}`
-            );
             return { ...item, spent: validatedSpent };
           }
           return item;

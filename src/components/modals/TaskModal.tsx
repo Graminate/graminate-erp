@@ -1,7 +1,7 @@
 import React, { useState, useEffect, KeyboardEvent } from "react";
 import CustomTextArea from "@/components/ui/CustomTextArea";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faEllipsis, faX } from "@fortawesome/free-solid-svg-icons";
+import { faEllipsis, faXmark } from "@fortawesome/free-solid-svg-icons";
 import TextField from "../ui/TextField";
 import DropdownLarge from "../ui/Dropdown/DropdownLarge";
 import Swal from "sweetalert2";
@@ -270,7 +270,7 @@ const TaskModal = ({
               aria-label="Close"
               onClick={closeModal}
             >
-              <FontAwesomeIcon icon={faX} className="h-5 w-5" />
+              <FontAwesomeIcon icon={faXmark} className="h-5 w-5" />
             </button>
           </div>
         </div>

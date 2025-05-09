@@ -71,9 +71,6 @@ const SunCard = ({ lat, lon }: Coordinates) => {
 
       return response.data.daily;
     } catch (err: unknown) {
-      const error =
-        err instanceof Error ? err.message : "Unknown error occurred";
-      console.error(error);
       throw new Error("Failed to fetch sun data");
     }
   }

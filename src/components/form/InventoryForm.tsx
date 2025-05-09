@@ -5,7 +5,7 @@ import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import Button from "@/components/ui/Button";
 import { UNITS } from "@/constants/options";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faX } from "@fortawesome/free-solid-svg-icons";
+import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import { SidebarProp } from "@/types/card-props";
 import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
 import axiosInstance from "@/lib/utils/axiosInstance";
@@ -84,7 +84,7 @@ const InventoryForm = ({ onClose, formTitle }: SidebarProp) => {
               className="text-gray-300 hover:text-gray-100"
               onClick={handleClose}
             >
-              <FontAwesomeIcon icon={faX} className="w-5 h-5" />
+              <FontAwesomeIcon icon={faXmark} className="w-5 h-5" />
             </button>
           </div>
           <form

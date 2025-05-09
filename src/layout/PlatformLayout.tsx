@@ -74,10 +74,6 @@ const PlatformLayout = ({ children }: Props) => {
     }
   }, [user_id]);
 
-  const handleSectionChange = (section: string) => {
-    console.log("Sidebar Section changed:", section);
-  };
-
   const verifySession = useCallback(
     async (currentUserId: string) => {
       setIsLoadingAuth(true);
@@ -175,11 +171,7 @@ const PlatformLayout = ({ children }: Props) => {
             )}
 
             {/* Sidebar */}
-            <Sidebar
-              isOpen={isSidebarOpen}
-              userId={userId}
-              onSectionChange={handleSectionChange}
-            />
+            <Sidebar isOpen={isSidebarOpen} userId={userId} />
 
             {/* Main content */}
             <div

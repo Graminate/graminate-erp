@@ -1,4 +1,4 @@
-import { faCloudArrowUp, faX } from "@fortawesome/free-solid-svg-icons";
+import { faCloudArrowUp, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { useState } from "react";
 
@@ -81,7 +81,7 @@ const Upload = ({ label, onFileSelect }: Props) => {
             aria-label="remove file"
             onClick={removeFile}
           >
-            <FontAwesomeIcon icon={faX} className="size-6 text-red-200" />
+            <FontAwesomeIcon icon={faXmark} className="size-6 text-red-200" />
           </button>
         </div>
       )}

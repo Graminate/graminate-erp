@@ -253,8 +253,6 @@ const LabourDetails = () => {
       payment_frequency: paymentFrequency,
     };
 
-    console.log("Sending update request with payload:", payload);
-
     try {
       const response = await axiosInstance.put("/labour/update", payload);
       triggerToast("Labour updated successfully", "success");

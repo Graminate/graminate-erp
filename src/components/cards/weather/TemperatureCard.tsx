@@ -140,9 +140,6 @@ const TemperatureCard = ({ lat, lon, fahrenheit }: Coordinates) => {
           dailyForecast: filteredDailyData,
         };
       } catch (err: unknown) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Unknown error occurred";
-        console.error(errorMessage);
         throw new Error("Failed to fetch weather data");
       }
     },

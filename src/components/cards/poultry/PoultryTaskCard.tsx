@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faChevronDown,
   faChevronUp,
-  faX,
+  faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import { PRIORITY_OPTIONS } from "@/constants/options";
 import axiosInstance from "@/lib/utils/axiosInstance";
@@ -284,7 +284,7 @@ const PoultryTaskCard = ({ userId }: PoultryTaskCardProps) => {
                   onClick={() => setEditingPriority(null)}
                   className="text-xs font-medium px-2 py-1 rounded bg-gray-400 text-dark hover:bg-gray-300"
                 >
-                  <FontAwesomeIcon icon={faX} className="size-2" />
+                  <FontAwesomeIcon icon={faXmark} className="size-2" />
                 </button>
               </div>
             ) : (

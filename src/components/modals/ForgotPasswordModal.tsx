@@ -2,10 +2,10 @@ import React, { useState } from "react";
 import TextField from "@/components/ui/TextField";
 import Button from "@/components/ui/Button";
 import axios from "axios";
-import { API_BASE_URL } from "@/constants/constants";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faKey } from "@fortawesome/free-solid-svg-icons";
 import InfoModal from "./InfoModal";
+import axiosInstance from "@/lib/utils/axiosInstance";
 
 type Props = {
   isOpen: boolean;
@@ -37,7 +37,7 @@ const ForgotPasswordModal = ({ isOpen, closeModal }: Props) => {
     }
 
     try {
-      await axios.post(`${API_BASE_URL}/password/forgot`, { email });
+      await axiosInstance.post(`/password/forgot`, { email });
       setInfoModalState({
         isOpen: true,
         title: "Email Sent",

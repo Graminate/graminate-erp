@@ -39,7 +39,6 @@ const PartnerFinder = () => {
 
   const handleNavigation = useCallback((newView: View) => {
     setActiveView(newView);
-    console.log("Navigating to view:", newView);
   }, []);
 
   const handleMapStateChange = useCallback(
@@ -72,7 +71,6 @@ const PartnerFinder = () => {
 
   useEffect(() => {
     const fetchMarkers = async () => {
-      console.log(`Fetching data for: ${activeView}`);
 
       await new Promise((resolve) => setTimeout(resolve, 500));
       let fetchedMarkers: MarkerData[] = [];

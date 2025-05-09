@@ -9,7 +9,7 @@ import {
   PAYMENT_STATUS,
 } from "@/constants/options";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faX } from "@fortawesome/free-solid-svg-icons";
+import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import { SidebarProp } from "@/types/card-props";
 import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
 import axiosInstance from "@/lib/utils/axiosInstance";
@@ -522,7 +522,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
               onClick={handleClose}
               aria-label="Close panel"
             >
-              <FontAwesomeIcon icon={faX} className="w-5 h-5" />
+              <FontAwesomeIcon icon={faXmark} className="w-5 h-5" />
             </button>
           </div>
 

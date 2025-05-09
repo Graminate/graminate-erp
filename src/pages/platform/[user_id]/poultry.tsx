@@ -407,7 +407,6 @@ const Poultry = () => {
 
   const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Form Data Submitted:", formData);
 
     // Ensure numbers are handled correctly, especially if input is empty string
     const newTotalChicks = Number(formData.totalChicks) || 0;
@@ -571,8 +570,6 @@ const Poultry = () => {
           onSubmit={handleFormSubmit}
           userId={parsedUserId || ""}
           refreshHealthRecords={async () => {
-            // Keep async stub if needed elsewhere
-            console.log("Refreshing health records (stub)...");
             return Promise.resolve();
           }}
         />

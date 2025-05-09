@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { faTrash, faGear, faX } from "@fortawesome/free-solid-svg-icons";
+import { faTrash, faGear, faXmark } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   DndContext,
@@ -81,7 +81,7 @@ const NotificationBar = ({
           className="text-gray-300 hover:bg-gray-400 p-1 rounded-full focus:outline-none"
           onClick={closeNotificationBar}
         >
-          <FontAwesomeIcon icon={faX} className="h-6 w-6" />
+          <FontAwesomeIcon icon={faXmark} className="h-6 w-6" />
         </button>
       </div>
 

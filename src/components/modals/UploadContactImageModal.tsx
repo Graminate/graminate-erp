@@ -1,7 +1,7 @@
 import React, { useState, useRef, ChangeEvent, useEffect } from "react";
 import Button from "@/components/ui/Button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faX } from "@fortawesome/free-solid-svg-icons";
+import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import Image from "next/image";
 
 interface UploadContactImageModalProps {
@@ -67,7 +67,7 @@ const UploadContactImageModal = ({
             onClick={onClose}
             className="text-white hover:text-gray-200 transition-colors"
           >
-            <FontAwesomeIcon className="w-5 h-5" icon={faX} />
+            <FontAwesomeIcon className="w-5 h-5" icon={faXmark} />
           </button>
         </div>
 

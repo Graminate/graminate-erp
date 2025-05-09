@@ -59,12 +59,6 @@ const PrecipitationCard = ({ lat, lon }: Coordinates) => {
           precipitation: response.data.hourly.precipitation,
         } as WeatherData;
       } catch (err: unknown) {
-        const error = err as AxiosError;
-        console.error(
-          (error.response?.data as { message?: string })?.message ||
-            error.message ||
-            "Unknown error occurred"
-        );
         setError("Failed to fetch precipitation data");
         return null;
       }

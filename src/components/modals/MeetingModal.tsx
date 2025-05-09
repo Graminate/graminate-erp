@@ -1,7 +1,7 @@
 import React from "react";
 import ScheduleCard from "@/components/cards/ScheduleCard";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faX } from "@fortawesome/free-solid-svg-icons";
+import { faXmark } from "@fortawesome/free-solid-svg-icons";
 
 type Props = {
   onClose: () => void;
@@ -21,7 +21,7 @@ const MeetingModal = ({ onClose }: Props) => {
             onClick={onClose}
             aria-label="Close Modal"
           >
-            <FontAwesomeIcon icon={faX} className="w-6 h-6" />
+            <FontAwesomeIcon icon={faXmark} className="w-6 h-6" />
           </button>
         </div>
 
