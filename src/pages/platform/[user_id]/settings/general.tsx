@@ -20,6 +20,11 @@ import {
   TimeFormatOption,
   TemperatureScaleOption,
 } from "@/contexts/UserPreferencesContext";
+import {
+  getTranslator,
+  SupportedLanguage,
+  translations,
+} from "@/translations/translations";
 
 const GeneralPage = () => {
   const router = useRouter();
@@ -31,7 +36,11 @@ const GeneralPage = () => {
     setTimeFormat: setContextTimeFormat,
     setTemperatureScale: setContextTemperatureScale,
     temperatureScale: contextTemperatureScale,
+    language: currentLanguage,
+    setLanguage: setContextLanguage,
   } = useUserPreferences();
+
+  const t = useMemo(() => getTranslator(currentLanguage), [currentLanguage]);
 
   const [userType, setUserType] = useState<string | null>(null);
   const [subTypes, setSubTypes] = useState<string[]>([]);
@@ -42,7 +51,7 @@ const GeneralPage = () => {
     firstName: "",
     lastName: "",
     phoneNumber: "",
-    language: "English",
+    language: currentLanguage,
     timeFormat: "24-hour" as TimeFormatOption,
   });
 
@@ -52,7 +61,7 @@ const GeneralPage = () => {
     aiSuggestions: boolean;
   }>({
     location: "",
-    scale: contextTemperatureScale || "Celsius", // Initialize with context or default
+    scale: contextTemperatureScale || "Celsius",
     aiSuggestions: false,
   });
 
@@ -72,35 +81,33 @@ const GeneralPage = () => {
           "24-hour") as TimeFormatOption;
         const fetchedTempScale = (userData.temperature_scale ||
           "Celsius") as TemperatureScaleOption;
+        const fetchedLanguage = (userData.language ||
+          "English") as SupportedLanguage;
 
         setUser({
           profilePicture: userData.profile_picture || "",
           firstName: userData.first_name || "",
           lastName: userData.last_name || "",
           phoneNumber: userData.phone_number || "",
-          language: userData.language || "English",
+          language: fetchedLanguage,
           timeFormat: fetchedTimeFormat,
         });
         setContextTimeFormat(fetchedTimeFormat);
+        setContextTemperatureScale(fetchedTempScale);
+        setContextLanguage(fetchedLanguage);
 
         setWeatherSettings((prev) => ({
           ...prev,
           scale: fetchedTempScale,
-          // Potentially load location and AI suggestions if saved
-          // location: userData.weather_location || "",
-          // aiSuggestions: userData.weather_ai_suggestions || false,
         }));
-        setContextTemperatureScale(fetchedTempScale);
 
         const type = userData?.type || "Producer";
         const rawSubTypes = userData?.sub_type;
-
         const parsedSubTypes = Array.isArray(rawSubTypes)
           ? rawSubTypes
           : typeof rawSubTypes === "string"
           ? rawSubTypes.replace(/[{}"]/g, "").split(",").filter(Boolean)
           : [];
-
         setUserType(type);
         setSubTypes(parsedSubTypes);
       } catch (error) {
@@ -113,45 +120,59 @@ const GeneralPage = () => {
         setSubTypes([]);
         const defaultTimeFormat = "24-hour" as TimeFormatOption;
         const defaultTempScale = "Celsius" as TemperatureScaleOption;
+        const defaultLanguage = "English" as SupportedLanguage;
+
         setUser({
           profilePicture: "",
           firstName: "",
           lastName: "",
           phoneNumber: "",
-          language: "English",
+          language: defaultLanguage,
           timeFormat: defaultTimeFormat,
         });
         setContextTimeFormat(defaultTimeFormat);
+        setContextTemperatureScale(defaultTempScale);
+        setContextLanguage(defaultLanguage);
 
         setWeatherSettings((prev) => ({
           ...prev,
           scale: defaultTempScale,
         }));
-        setContextTemperatureScale(defaultTempScale);
       } finally {
         setIsUserTypeLoading(false);
       }
     };
-
     fetchUserData();
-  }, [userId, setContextTimeFormat, setContextTemperatureScale]);
+  }, [
+    userId,
+    setContextTimeFormat,
+    setContextTemperatureScale,
+    setContextLanguage,
+  ]);
+
+  useEffect(() => {
+    setUser((prevUser) => ({ ...prevUser, language: currentLanguage }));
+  }, [currentLanguage]);
 
   const navButtons = useMemo(() => {
-    const buttons = [{ name: "Profile", view: "profile" }];
+    const buttons = [{ nameKey: "profile", view: "profile" }];
     if (userType === "Producer") {
-      buttons.push({ name: "Weather", view: "weather" });
+      buttons.push({ nameKey: "weather", view: "weather" });
       if (subTypes.includes("Poultry")) {
-        buttons.push({ name: "Poultry", view: "poultry" });
+        buttons.push({ nameKey: "poultry", view: "poultry" });
       }
       if (subTypes.includes("Fishery")) {
-        buttons.push({ name: "Fishery", view: "fishery" });
+        buttons.push({ nameKey: "fishery", view: "fishery" });
       }
       if (subTypes.includes("Animal Husbandry")) {
-        buttons.push({ name: "Animal Husbandry", view: "animal_husbandry" });
+        buttons.push({ nameKey: "animalHusbandry", view: "animal_husbandry" });
       }
     }
-    return buttons;
-  }, [userType, subTypes]);
+    return buttons.map((btn) => ({
+      ...btn,
+      name: t(btn.nameKey as keyof typeof translations.English) || btn.nameKey,
+    }));
+  }, [userType, subTypes, t]);
 
   const changeView = (newView: string) => {
     router.push({
@@ -181,13 +202,13 @@ const GeneralPage = () => {
         phone_number: user.phoneNumber,
         language: user.language,
         time_format: user.timeFormat,
-        // profile_picture: user.profilePicture, // If saving URL to backend
       });
 
       setContextTimeFormat(user.timeFormat);
-      setProfileSuccessMessage("Profile updated successfully!");
+      setContextLanguage(user.language as SupportedLanguage);
+      setProfileSuccessMessage(t("profileUpdateSuccess"));
     } catch (error: unknown) {
-      let errorMessage = "An unknown error occurred";
+      let errorMessage = t("anUnknownErrorOccurred");
       if (axios.isAxiosError(error)) {
         const serverError =
           error.response?.data?.error || error.response?.data?.message;
@@ -195,7 +216,7 @@ const GeneralPage = () => {
       } else if (error instanceof Error) {
         errorMessage = error.message;
       }
-      setProfileErrorMessage(errorMessage);
+      setProfileErrorMessage(`${t("profileUpdateError")} ${errorMessage}`);
       console.error("Error updating profile:", errorMessage, error);
     } finally {
       setIsSavingProfile(false);
@@ -211,14 +232,11 @@ const GeneralPage = () => {
     try {
       await axiosInstance.put(`/user/${userId}`, {
         temperature_scale: weatherSettings.scale,
-        // Potentially save other weather settings too
-        // weather_location: weatherSettings.location,
-        // weather_ai_suggestions: weatherSettings.aiSuggestions,
       });
       setContextTemperatureScale(weatherSettings.scale);
-      setWeatherSuccessMessage("Weather settings updated successfully!");
+      setWeatherSuccessMessage(t("weatherUpdateSuccess"));
     } catch (error: unknown) {
-      let errorMessage = "An unknown error occurred";
+      let errorMessage = t("anUnknownErrorOccurred");
       if (axios.isAxiosError(error)) {
         const serverError =
           error.response?.data?.error || error.response?.data?.message;
@@ -226,24 +244,60 @@ const GeneralPage = () => {
       } else if (error instanceof Error) {
         errorMessage = error.message;
       }
-      setWeatherErrorMessage(errorMessage);
+      setWeatherErrorMessage(`${t("weatherUpdateError")} ${errorMessage}`);
       console.error("Error updating weather settings:", errorMessage, error);
     } finally {
       setIsSavingWeather(false);
     }
   };
 
+  const languageOptions = useMemo(() => {
+    return LANGUAGES.map((lang) => ({
+      value:
+        typeof lang === "object" && "value" in (lang as { value: string })
+          ? (lang as { value: string }).value
+          : lang,
+      label:
+        typeof lang === "object" && "label" in (lang as { label: string })
+          ? (lang as { label: string }).label
+          : lang,
+    }));
+  }, []);
+
+  const languageDropdownDisplayItems = useMemo(() => {
+    return languageOptions.map((option) => option.label);
+  }, [languageOptions]);
+
+  const selectedLanguageLabel = useMemo(() => {
+    const found = languageOptions.find(
+      (option) => option.value === user.language
+    );
+    return found ? found.label : user.language;
+  }, [user.language, languageOptions]);
+
+  const handleLanguageSelect = (selectedLabel: string) => {
+    const found = languageOptions.find(
+      (option) => option.label === selectedLabel
+    );
+    if (found) {
+      setUser((prev) => ({
+        ...prev,
+        language: found.value as SupportedLanguage,
+      }));
+    }
+  };
+
   return (
     <>
       <Head>
-        <title>Settings</title>
+        <title>{t("settings")}</title>
       </Head>
       <PlatformLayout>
         <div className="flex min-h-screen">
           <SettingsBar />
           <main className="flex-1 px-12">
             <div className="pb-4 font-bold text-lg text-dark dark:text-light">
-              General Settings
+              {t("generalSettings")}
             </div>
 
             {isUserTypeLoading ? (
@@ -261,10 +315,10 @@ const GeneralPage = () => {
                 <div>
                   <div className="rounded-lg p-4">
                     <h2 className="text-lg font-semibold mb-4 dark:text-light">
-                      Profile Settings
+                      {t("profileSettings")}
                     </h2>
                     <p className="text-gray-300 mb-6">
-                      This applies across your account.
+                      {t("profileSettingsDescription")}
                     </p>
                   </div>
                   <div className="flex items-center gap-4 mb-8 relative">
@@ -292,7 +346,7 @@ const GeneralPage = () => {
                               }));
                             }}
                             className="rounded-full p-2 text-white hover:text-red-400"
-                            aria-label="Remove profile picture"
+                            aria-label={t("removeProfilePicture")}
                           >
                             <FontAwesomeIcon
                               icon={faTimes}
@@ -304,7 +358,7 @@ const GeneralPage = () => {
                     </div>
                     <div className="flex flex-col">
                       <label className="text-sm font-medium text-dark dark:text-light mb-1">
-                        Upload Profile Picture
+                        {t("uploadProfilePicture")}
                       </label>
                       <input
                         type="file"
@@ -330,17 +384,17 @@ const GeneralPage = () => {
                         htmlFor="profile-upload"
                         className="cursor-pointer bg-green-200 text-white px-3 py-1 rounded text-sm text-center w-fit hover:bg-green-100"
                       >
-                        Choose File
+                        {t("chooseFile")}
                       </label>
                       <p className="text-xs text-dark dark:text-light mt-1">
-                        Max 2MB
+                        {t("max2MB")}
                       </p>
                     </div>
                   </div>
                   <div className="flex flex-col gap-4 max-w-lg">
                     <TextField
-                      label="First Name"
-                      placeholder="Enter your first name"
+                      label={t("firstName")}
+                      placeholder={t("enterFirstName")}
                       value={user.firstName}
                       onChange={(val) =>
                         setUser((prev) => ({ ...prev, firstName: val }))
@@ -349,8 +403,8 @@ const GeneralPage = () => {
                       isDisabled={true}
                     />
                     <TextField
-                      label="Last Name"
-                      placeholder="Enter your last name"
+                      label={t("lastName")}
+                      placeholder={t("enterLastName")}
                       value={user.lastName}
                       onChange={(val) =>
                         setUser((prev) => ({ ...prev, lastName: val }))
@@ -360,16 +414,14 @@ const GeneralPage = () => {
                     />
                     <div className="flex gap-4">
                       <DropdownSmall
-                        label="Language"
-                        items={LANGUAGES}
-                        selected={user.language}
-                        onSelect={(val) =>
-                          setUser((prev) => ({ ...prev, language: val }))
-                        }
+                        label={t("language")}
+                        items={languageDropdownDisplayItems}
+                        selected={selectedLanguageLabel}
+                        onSelect={handleLanguageSelect}
                       />
                       <DropdownSmall
-                        label="Time Format"
-                        items={TIME_FORMAT}
+                        label={t("timeFormat")}
+                        items={TIME_FORMAT.map((tf) => String(tf))}
                         selected={user.timeFormat}
                         onSelect={(val) =>
                           setUser((prev) => ({
@@ -380,8 +432,8 @@ const GeneralPage = () => {
                       />
                     </div>
                     <TextField
-                      label="Phone Number"
-                      placeholder="Enter your phone number"
+                      label={t("phoneNumber")}
+                      placeholder={t("enterPhoneNumber")}
                       value={user.phoneNumber}
                       onChange={(val) =>
                         setUser((prev) => ({ ...prev, phoneNumber: val }))
@@ -392,7 +444,7 @@ const GeneralPage = () => {
                   <div className="mt-6">
                     <Button
                       style="primary"
-                      text="Save Changes"
+                      text={t("saveChanges")}
                       onClick={handleSaveProfileChanges}
                       isDisabled={isSavingProfile}
                     />
@@ -412,16 +464,16 @@ const GeneralPage = () => {
                 <div>
                   <div className="rounded-lg p-4">
                     <h2 className="text-lg font-semibold mb-4 dark:text-light">
-                      Weather Settings
+                      {t("weatherSettings")}
                     </h2>
                     <p className="text-gray-300 mb-6">
-                      Configure your weather preferences.
+                      {t("weatherSettingsDescription")}
                     </p>
                   </div>
                   <div className="flex flex-col gap-4 max-w-lg">
                     <TextField
-                      label="Set Location"
-                      placeholder="Enter your location"
+                      label={t("setLocation")}
+                      placeholder={t("enterLocation")}
                       value={weatherSettings.location}
                       onChange={(val) =>
                         setWeatherSettings((prev) => ({
@@ -432,7 +484,7 @@ const GeneralPage = () => {
                       width="large"
                     />
                     <DropdownSmall
-                      label="Scale"
+                      label={t("scale")}
                       items={["Celsius", "Fahrenheit"]}
                       selected={weatherSettings.scale}
                       onSelect={(val) =>
@@ -458,13 +510,13 @@ const GeneralPage = () => {
                         htmlFor="ai-suggestions"
                         className="text-sm dark:text-light"
                       >
-                        Enable AI Suggestions for weather insights
+                        {t("enableAISuggestions")}
                       </label>
                     </div>
                     <div className="mt-6">
                       <Button
                         style="primary"
-                        text="Save Weather Settings"
+                        text={t("saveWeatherSettings")}
                         onClick={handleSaveWeatherSettings}
                         isDisabled={isSavingWeather}
                       />
@@ -484,7 +536,7 @@ const GeneralPage = () => {
               {currentView === "poultry" && (
                 <div className="rounded-lg p-4">
                   <h2 className="text-lg font-semibold mb-6 dark:text-light">
-                    Poultry Settings
+                    {t("poultrySettings")}
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
@@ -637,7 +689,7 @@ const GeneralPage = () => {
               {currentView === "fishery" && (
                 <div className="rounded-lg p-4">
                   <h2 className="text-lg font-semibold mb-4 dark:text-light">
-                    Fishery Settings
+                    {t("fisherySettings")}
                   </h2>
                 </div>
               )}
@@ -645,7 +697,7 @@ const GeneralPage = () => {
               {currentView === "animal_husbandry" && (
                 <div className="rounded-lg p-4">
                   <h2 className="text-lg font-semibold mb-4 dark:text-light">
-                    Animal Husbandry Settings
+                    {t("animalHusbandrySettings")}
                   </h2>
                 </div>
               )}

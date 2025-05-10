@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Head from "next/head";
 import PlatformLayout from "@/layout/PlatformLayout";
 import SettingsBar from "@/components/layout/SettingsBar";
@@ -7,27 +7,34 @@ import { useRouter } from "next/router";
 import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
 import axiosInstance from "@/lib/utils/axiosInstance";
+import { useUserPreferences } from "@/contexts/UserPreferencesContext";
+import { getTranslator, translations } from "@/translations/translations";
 
 type ModalType = "confirmDelete" | "password" | "info" | null;
 type InfoModalContent = {
-  title: string;
-  message: string;
+  titleKey: keyof typeof translations.English;
+  messageKey: keyof typeof translations.English;
   type: "success" | "error";
 };
 
 const AccountPage = () => {
   const router = useRouter();
+  const { language: currentLanguage } = useUserPreferences();
+  const t = useMemo(() => getTranslator(currentLanguage), [currentLanguage]);
+
   const [userId, setUserId] = useState<string | null>(null);
 
   const [activeModal, setActiveModal] = useState<ModalType>(null);
   const [infoModalContent, setInfoModalContent] = useState<InfoModalContent>({
-    title: "",
-    message: "",
+    titleKey: "errorTitle",
+    messageKey: "anUnknownErrorOccurred",
     type: "success",
   });
 
   const [password, setPassword] = useState("");
-  const [passwordError, setPasswordError] = useState("");
+  const [passwordErrorKey, setPasswordErrorKey] = useState<
+    keyof typeof translations.English | null
+  >(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -39,7 +46,7 @@ const AccountPage = () => {
 
   const openModal = (type: ModalType, infoContent?: InfoModalContent) => {
     setPassword("");
-    setPasswordError("");
+    setPasswordErrorKey(null);
     if (type === "info" && infoContent) {
       setInfoModalContent(infoContent);
     }
@@ -47,9 +54,15 @@ const AccountPage = () => {
   };
 
   const closeModal = () => {
-    const wasSuccess = infoModalContent.type === "success";
+    const wasSuccess =
+      infoModalContent.type === "success" &&
+      infoModalContent.titleKey === "deletedTitle";
     setActiveModal(null);
-    setInfoModalContent({ title: "", message: "", type: "success" });
+    setInfoModalContent({
+      titleKey: "errorTitle",
+      messageKey: "anUnknownErrorOccurred",
+      type: "success",
+    });
 
     if (wasSuccess) {
       sessionStorage.setItem("accountJustDeleted", "true");
@@ -69,11 +82,11 @@ const AccountPage = () => {
 
   const handlePasswordVerification = async () => {
     if (!userId || !password) {
-      setPasswordError("Password is required");
+      setPasswordErrorKey("passwordRequiredError");
       return;
     }
     setIsVerifying(true);
-    setPasswordError("");
+    setPasswordErrorKey(null);
     try {
       const response = await axiosInstance.post(
         `/user/verify-password/${userId}`,
@@ -85,11 +98,11 @@ const AccountPage = () => {
         setActiveModal(null);
         await performAccountDeletion();
       } else {
-        setPasswordError("Incorrect password");
+        setPasswordErrorKey("incorrectPasswordError");
       }
     } catch (error) {
       console.error("Password verification failed", error);
-      setPasswordError("Verification failed. Please try again.");
+      setPasswordErrorKey("verificationFailedError");
     } finally {
       setIsVerifying(false);
     }
@@ -104,8 +117,8 @@ const AccountPage = () => {
       );
       if (deleteResponse.status === 200) {
         openModal("info", {
-          title: "Deleted!",
-          message: "Your account has been deleted.",
+          titleKey: "deletedTitle",
+          messageKey: "accountDeletedMessage",
           type: "success",
         });
       } else {
@@ -116,8 +129,8 @@ const AccountPage = () => {
     } catch (err) {
       console.error("Failed to delete account", err);
       openModal("info", {
-        title: "Error",
-        message: "Something went wrong. Could not delete account.",
+        titleKey: "errorTitle",
+        messageKey: "accountDeletionError",
         type: "error",
       });
     } finally {
@@ -128,7 +141,7 @@ const AccountPage = () => {
   const handleModalHeaderClose = () => {
     setActiveModal(null);
     setPassword("");
-    setPasswordError("");
+    setPasswordErrorKey(null);
   };
 
   const renderModalContent = () => {
@@ -139,16 +152,16 @@ const AccountPage = () => {
             isOpen={true}
             onClose={handleModalHeaderClose}
             onHeaderClose={handleModalHeaderClose}
-            title="Are you sure?"
+            title={t("areYouSureTitle")}
             footerContent={
               <>
                 <Button
-                  text="Cancel"
+                  text={t("cancelButton")}
                   style="secondary"
                   onClick={handleModalHeaderClose}
                 />
                 <Button
-                  text="Delete"
+                  text={t("deleteButton")}
                   style="primary"
                   onClick={handleConfirmDeletion}
                 />
@@ -156,8 +169,7 @@ const AccountPage = () => {
             }
           >
             <p className="text-sm text-gray-600 dark:text-gray-300">
-              You won&apos;t be able to revert this! Deleting your account will
-              permanently remove all your data.
+              {t("confirmDeleteMessage")}
             </p>
           </DeleteAccountModal>
         );
@@ -168,17 +180,17 @@ const AccountPage = () => {
             isOpen={true}
             onClose={() => !isVerifying && handleModalHeaderClose()}
             onHeaderClose={handleModalHeaderClose}
-            title="Enter your password"
+            title={t("enterPasswordTitle")}
             footerContent={
               <>
                 <Button
-                  text="Cancel"
+                  text={t("cancelButton")}
                   style="secondary"
                   onClick={handleModalHeaderClose}
                   isDisabled={isVerifying}
                 />
                 <Button
-                  text="Confirm"
+                  text={t("confirmButton")}
                   style="primary"
                   onClick={handlePasswordVerification}
                   isDisabled={isVerifying || !password}
@@ -187,16 +199,16 @@ const AccountPage = () => {
             }
           >
             <TextField
-              label="Password"
-              placeholder="Enter your password to confirm"
+              label={t("passwordLabel")}
+              placeholder={t("enterPasswordPlaceholder")}
               value={password}
               onChange={(val) => {
                 setPassword(val);
-                setPasswordError("");
+                setPasswordErrorKey(null);
               }}
               password={true}
-              type={passwordError ? "error" : ""}
-              errorMessage={passwordError}
+              type={passwordErrorKey ? "error" : ""}
+              errorMessage={passwordErrorKey ? t(passwordErrorKey) : ""}
               isDisabled={isVerifying}
               width="large"
             />
@@ -209,13 +221,17 @@ const AccountPage = () => {
             isOpen={true}
             onClose={closeModal}
             onHeaderClose={closeModal}
-            title={infoModalContent.title}
+            title={t(infoModalContent.titleKey)}
             footerContent={
-              <Button text="OK" style="primary" onClick={closeModal} />
+              <Button
+                text={t("okButton")}
+                style="primary"
+                onClick={closeModal}
+              />
             }
           >
             <p className="text-sm text-gray-600 dark:text-gray-300">
-              {infoModalContent.message}
+              {t(infoModalContent.messageKey)}
             </p>
           </DeleteAccountModal>
         );
@@ -228,9 +244,8 @@ const AccountPage = () => {
   return (
     <>
       <Head>
-        <title>Settings - Account</title>
+        <title>{t("settingsAccountTitle")}</title>
       </Head>
-      {/* Assuming PlatformLayout handles its own auth check */}
       <PlatformLayout>
         <div className="flex min-h-screen">
           <SettingsBar />
@@ -238,17 +253,16 @@ const AccountPage = () => {
           <main className="flex-1 px-6 md:px-12 py-6">
             <section>
               <h1 className="pb-4 font-bold text-xl md:text-2xl text-dark dark:text-light">
-                Account Settings
+                {t("accountSettings")}
               </h1>
               <div className="bg-white dark:bg-gray-800 shadow rounded-lg p-6">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                   <div className="flex-grow">
                     <p className="font-semibold text-dark dark:text-light">
-                      Delete Account
+                      {t("deleteAccountSectionTitle")}
                     </p>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                      Once you delete your account, you will lose all access and
-                      data. This action cannot be undone. Please be certain.
+                      {t("deleteAccountDescription")}
                     </p>
                   </div>
 
@@ -257,7 +271,9 @@ const AccountPage = () => {
                     disabled={!userId || isDeleting}
                     className="px-4 py-2 text-sm font-medium shadow-sm text-white bg-red-600 border border-transparent rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition whitespace-nowrap"
                   >
-                    {isDeleting ? "Deleting..." : "Delete Account"}
+                    {isDeleting
+                      ? t("deletingButton")
+                      : t("deleteAccountButton")}
                   </button>
                 </div>
               </div>
@@ -265,7 +281,6 @@ const AccountPage = () => {
           </main>
         </div>
       </PlatformLayout>
-      {/* Pass children to PlatformLayout */}
       {renderModalContent()}
     </>
   );

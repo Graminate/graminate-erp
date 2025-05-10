@@ -5,6 +5,7 @@ import React, {
   ReactNode,
   useEffect,
 } from "react";
+import { SupportedLanguage } from "@/translations/translations";
 
 export type TimeFormatOption = "12-hour" | "24-hour";
 export type TemperatureScaleOption = "Celsius" | "Fahrenheit";
@@ -14,6 +15,8 @@ interface UserPreferencesContextType {
   setTimeFormat: (format: TimeFormatOption) => void;
   temperatureScale: TemperatureScaleOption;
   setTemperatureScale: (scale: TemperatureScaleOption) => void;
+  language: SupportedLanguage;
+  setLanguage: (language: SupportedLanguage) => void;
 }
 
 const UserPreferencesContext = createContext<
@@ -47,8 +50,25 @@ export const UserPreferencesProvider = ({
           return storedScale;
         }
       }
-      return "Celsius"; // Default temperature scale
+      return "Celsius";
     });
+
+  const [language, setLanguageState] = useState<SupportedLanguage>(() => {
+    if (typeof window !== "undefined") {
+      const storedLanguage = localStorage.getItem(
+        "language"
+      ) as SupportedLanguage;
+      if (
+        storedLanguage &&
+        (storedLanguage === "English" ||
+          storedLanguage === "Hindi" ||
+          storedLanguage === "Assamese")
+      ) {
+        return storedLanguage;
+      }
+    }
+    return "English"; // Default language
+  });
 
   const setTimeFormatContext = (format: TimeFormatOption) => {
     setTimeFormatState(format);
@@ -64,6 +84,13 @@ export const UserPreferencesProvider = ({
     }
   };
 
+  const setLanguageContext = (lang: SupportedLanguage) => {
+    setLanguageState(lang);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("language", lang);
+    }
+  };
+
   useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === "timeFormat" && event.newValue) {
@@ -76,12 +103,20 @@ export const UserPreferencesProvider = ({
           setTemperatureScaleState(event.newValue as TemperatureScaleOption);
         }
       }
+      if (event.key === "language" && event.newValue) {
+        if (
+          event.newValue === "English" ||
+          event.newValue === "Hindi" ||
+          event.newValue === "Assamese"
+        ) {
+          setLanguageState(event.newValue as SupportedLanguage);
+        }
+      }
     };
 
     if (typeof window !== "undefined") {
       window.addEventListener("storage", handleStorageChange);
 
-      // Initial sync for timeFormat
       const initialStoredTimeFormat = localStorage.getItem(
         "timeFormat"
       ) as TimeFormatOption;
@@ -94,7 +129,6 @@ export const UserPreferencesProvider = ({
         setTimeFormatState(initialStoredTimeFormat);
       }
 
-      // Initial sync for temperatureScale
       const initialStoredTempScale = localStorage.getItem(
         "temperatureScale"
       ) as TemperatureScaleOption;
@@ -107,11 +141,24 @@ export const UserPreferencesProvider = ({
         setTemperatureScaleState(initialStoredTempScale);
       }
 
+      const initialStoredLanguage = localStorage.getItem(
+        "language"
+      ) as SupportedLanguage;
+      if (
+        initialStoredLanguage &&
+        (initialStoredLanguage === "English" ||
+          initialStoredLanguage === "Hindi" ||
+          initialStoredLanguage === "Assamese") &&
+        initialStoredLanguage !== language
+      ) {
+        setLanguageState(initialStoredLanguage);
+      }
+
       return () => {
         window.removeEventListener("storage", handleStorageChange);
       };
     }
-  }, [timeFormat, temperatureScale]); // Add temperatureScale to dependency array for completeness
+  }, [timeFormat, temperatureScale, language]);
 
   return (
     <UserPreferencesContext.Provider
@@ -120,6 +167,8 @@ export const UserPreferencesProvider = ({
         setTimeFormat: setTimeFormatContext,
         temperatureScale,
         setTemperatureScale: setTemperatureScaleContext,
+        language,
+        setLanguage: setLanguageContext,
       }}
     >
       {children}
