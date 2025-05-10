@@ -18,6 +18,7 @@ import Checkbox from "@/components/ui/Checkbox";
 import {
   useUserPreferences,
   TimeFormatOption,
+  TemperatureScaleOption,
 } from "@/contexts/UserPreferencesContext";
 
 const GeneralPage = () => {
@@ -26,7 +27,11 @@ const GeneralPage = () => {
   const currentView = (view as string) || "profile";
   const userId = Array.isArray(user_id) ? user_id[0] : user_id;
 
-  const { setTimeFormat: setContextTimeFormat } = useUserPreferences();
+  const {
+    setTimeFormat: setContextTimeFormat,
+    setTemperatureScale: setContextTemperatureScale,
+    temperatureScale: contextTemperatureScale,
+  } = useUserPreferences();
 
   const [userType, setUserType] = useState<string | null>(null);
   const [subTypes, setSubTypes] = useState<string[]>([]);
@@ -39,6 +44,16 @@ const GeneralPage = () => {
     phoneNumber: "",
     language: "English",
     timeFormat: "24-hour" as TimeFormatOption,
+  });
+
+  const [weatherSettings, setWeatherSettings] = useState<{
+    location: string;
+    scale: TemperatureScaleOption;
+    aiSuggestions: boolean;
+  }>({
+    location: "",
+    scale: contextTemperatureScale || "Celsius", // Initialize with context or default
+    aiSuggestions: false,
   });
 
   useEffect(() => {
@@ -55,6 +70,8 @@ const GeneralPage = () => {
 
         const fetchedTimeFormat = (userData.time_format ||
           "24-hour") as TimeFormatOption;
+        const fetchedTempScale = (userData.temperature_scale ||
+          "Celsius") as TemperatureScaleOption;
 
         setUser({
           profilePicture: userData.profile_picture || "",
@@ -65,6 +82,15 @@ const GeneralPage = () => {
           timeFormat: fetchedTimeFormat,
         });
         setContextTimeFormat(fetchedTimeFormat);
+
+        setWeatherSettings((prev) => ({
+          ...prev,
+          scale: fetchedTempScale,
+          // Potentially load location and AI suggestions if saved
+          // location: userData.weather_location || "",
+          // aiSuggestions: userData.weather_ai_suggestions || false,
+        }));
+        setContextTemperatureScale(fetchedTempScale);
 
         const type = userData?.type || "Producer";
         const rawSubTypes = userData?.sub_type;
@@ -86,6 +112,7 @@ const GeneralPage = () => {
         setUserType("Producer");
         setSubTypes([]);
         const defaultTimeFormat = "24-hour" as TimeFormatOption;
+        const defaultTempScale = "Celsius" as TemperatureScaleOption;
         setUser({
           profilePicture: "",
           firstName: "",
@@ -95,20 +122,24 @@ const GeneralPage = () => {
           timeFormat: defaultTimeFormat,
         });
         setContextTimeFormat(defaultTimeFormat);
+
+        setWeatherSettings((prev) => ({
+          ...prev,
+          scale: defaultTempScale,
+        }));
+        setContextTemperatureScale(defaultTempScale);
       } finally {
         setIsUserTypeLoading(false);
       }
     };
 
     fetchUserData();
-  }, [userId, setContextTimeFormat]);
+  }, [userId, setContextTimeFormat, setContextTemperatureScale]);
 
   const navButtons = useMemo(() => {
     const buttons = [{ name: "Profile", view: "profile" }];
-
     if (userType === "Producer") {
       buttons.push({ name: "Weather", view: "weather" });
-
       if (subTypes.includes("Poultry")) {
         buttons.push({ name: "Poultry", view: "poultry" });
       }
@@ -119,7 +150,6 @@ const GeneralPage = () => {
         buttons.push({ name: "Animal Husbandry", view: "animal_husbandry" });
       }
     }
-
     return buttons;
   }, [userType, subTypes]);
 
@@ -130,19 +160,19 @@ const GeneralPage = () => {
     });
   };
 
-  const [isSaving, setIsSaving] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [profileSuccessMessage, setProfileSuccessMessage] = useState("");
+  const [profileErrorMessage, setProfileErrorMessage] = useState("");
 
-  const [weatherSettings, setWeatherSettings] = useState({
-    location: "",
-    scale: "Celsius",
-    aiSuggestions: false,
-  });
+  const [isSavingWeather, setIsSavingWeather] = useState(false);
+  const [weatherSuccessMessage, setWeatherSuccessMessage] = useState("");
+  const [weatherErrorMessage, setWeatherErrorMessage] = useState("");
 
-  const handleSaveChanges = async () => {
+  const handleSaveProfileChanges = async () => {
     if (!userId) return;
-    setIsSaving(true);
-    setSuccessMessage("");
+    setIsSavingProfile(true);
+    setProfileSuccessMessage("");
+    setProfileErrorMessage("");
 
     try {
       await axiosInstance.put(`/user/${userId}`, {
@@ -151,29 +181,55 @@ const GeneralPage = () => {
         phone_number: user.phoneNumber,
         language: user.language,
         time_format: user.timeFormat,
+        // profile_picture: user.profilePicture, // If saving URL to backend
       });
 
       setContextTimeFormat(user.timeFormat);
-      setSuccessMessage("Profile updated successfully!");
+      setProfileSuccessMessage("Profile updated successfully!");
     } catch (error: unknown) {
       let errorMessage = "An unknown error occurred";
       if (axios.isAxiosError(error)) {
         const serverError =
           error.response?.data?.error || error.response?.data?.message;
         errorMessage = serverError || error.message;
-        console.error(
-          "Error updating profile:",
-          errorMessage,
-          error.response?.data
-        );
       } else if (error instanceof Error) {
         errorMessage = error.message;
-        console.error("Error updating profile:", errorMessage);
-      } else {
-        console.error("Error updating profile:", error);
       }
+      setProfileErrorMessage(errorMessage);
+      console.error("Error updating profile:", errorMessage, error);
     } finally {
-      setIsSaving(false);
+      setIsSavingProfile(false);
+    }
+  };
+
+  const handleSaveWeatherSettings = async () => {
+    if (!userId) return;
+    setIsSavingWeather(true);
+    setWeatherSuccessMessage("");
+    setWeatherErrorMessage("");
+
+    try {
+      await axiosInstance.put(`/user/${userId}`, {
+        temperature_scale: weatherSettings.scale,
+        // Potentially save other weather settings too
+        // weather_location: weatherSettings.location,
+        // weather_ai_suggestions: weatherSettings.aiSuggestions,
+      });
+      setContextTemperatureScale(weatherSettings.scale);
+      setWeatherSuccessMessage("Weather settings updated successfully!");
+    } catch (error: unknown) {
+      let errorMessage = "An unknown error occurred";
+      if (axios.isAxiosError(error)) {
+        const serverError =
+          error.response?.data?.error || error.response?.data?.message;
+        errorMessage = serverError || error.message;
+      } else if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      setWeatherErrorMessage(errorMessage);
+      console.error("Error updating weather settings:", errorMessage, error);
+    } finally {
+      setIsSavingWeather(false);
     }
   };
 
@@ -185,7 +241,6 @@ const GeneralPage = () => {
       <PlatformLayout>
         <div className="flex min-h-screen">
           <SettingsBar />
-
           <main className="flex-1 px-12">
             <div className="pb-4 font-bold text-lg text-dark dark:text-light">
               General Settings
@@ -212,7 +267,6 @@ const GeneralPage = () => {
                       This applies across your account.
                     </p>
                   </div>
-
                   <div className="flex items-center gap-4 mb-8 relative">
                     <div className="relative group w-24 h-24">
                       <Image
@@ -228,7 +282,6 @@ const GeneralPage = () => {
                         className="rounded-full object-cover border border-gray-300 dark:border-gray-600"
                         unoptimized={!user.profilePicture}
                       />
-
                       {user.profilePicture && (
                         <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
                           <button
@@ -249,7 +302,6 @@ const GeneralPage = () => {
                         </div>
                       )}
                     </div>
-
                     <div className="flex flex-col">
                       <label className="text-sm font-medium text-dark dark:text-light mb-1">
                         Upload Profile Picture
@@ -285,7 +337,6 @@ const GeneralPage = () => {
                       </p>
                     </div>
                   </div>
-
                   <div className="flex flex-col gap-4 max-w-lg">
                     <TextField
                       label="First Name"
@@ -307,7 +358,6 @@ const GeneralPage = () => {
                       width="large"
                       isDisabled={true}
                     />
-
                     <div className="flex gap-4">
                       <DropdownSmall
                         label="Language"
@@ -317,7 +367,6 @@ const GeneralPage = () => {
                           setUser((prev) => ({ ...prev, language: val }))
                         }
                       />
-
                       <DropdownSmall
                         label="Time Format"
                         items={TIME_FORMAT}
@@ -330,7 +379,6 @@ const GeneralPage = () => {
                         }
                       />
                     </div>
-
                     <TextField
                       label="Phone Number"
                       placeholder="Enter your phone number"
@@ -341,18 +389,21 @@ const GeneralPage = () => {
                       width="large"
                     />
                   </div>
-
                   <div className="mt-6">
                     <Button
                       style="primary"
                       text="Save Changes"
-                      onClick={handleSaveChanges}
-                      isDisabled={isSaving}
+                      onClick={handleSaveProfileChanges}
+                      isDisabled={isSavingProfile}
                     />
                   </div>
-
-                  {successMessage && (
-                    <p className="text-green-500 mt-2">{successMessage}</p>
+                  {profileSuccessMessage && (
+                    <p className="text-green-500 mt-2">
+                      {profileSuccessMessage}
+                    </p>
+                  )}
+                  {profileErrorMessage && (
+                    <p className="text-red-500 mt-2">{profileErrorMessage}</p>
                   )}
                 </div>
               )}
@@ -367,7 +418,6 @@ const GeneralPage = () => {
                       Configure your weather preferences.
                     </p>
                   </div>
-
                   <div className="flex flex-col gap-4 max-w-lg">
                     <TextField
                       label="Set Location"
@@ -381,16 +431,17 @@ const GeneralPage = () => {
                       }
                       width="large"
                     />
-
                     <DropdownSmall
                       label="Scale"
                       items={["Celsius", "Fahrenheit"]}
                       selected={weatherSettings.scale}
                       onSelect={(val) =>
-                        setWeatherSettings((prev) => ({ ...prev, scale: val }))
+                        setWeatherSettings((prev) => ({
+                          ...prev,
+                          scale: val as TemperatureScaleOption,
+                        }))
                       }
                     />
-
                     <div className="flex items-center gap-2">
                       <Checkbox
                         id="ai-suggestions"
@@ -411,8 +462,21 @@ const GeneralPage = () => {
                       </label>
                     </div>
                     <div className="mt-6">
-                      <Button style="primary" text="Save Weather Settings" />
+                      <Button
+                        style="primary"
+                        text="Save Weather Settings"
+                        onClick={handleSaveWeatherSettings}
+                        isDisabled={isSavingWeather}
+                      />
                     </div>
+                    {weatherSuccessMessage && (
+                      <p className="text-green-500 mt-2">
+                        {weatherSuccessMessage}
+                      </p>
+                    )}
+                    {weatherErrorMessage && (
+                      <p className="text-red-500 mt-2">{weatherErrorMessage}</p>
+                    )}
                   </div>
                 </div>
               )}
@@ -422,58 +486,11 @@ const GeneralPage = () => {
                   <h2 className="text-lg font-semibold mb-6 dark:text-light">
                     Poultry Settings
                   </h2>
-
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-                      <h3 className="font-semibold mb-4 dark:text-light">
-                        Flock Management
-                      </h3>
-
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium mb-1 dark:text-gray-300">
-                            Default Flock Type
-                          </label>
-                          <select className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                            <option>Broiler</option>
-                            <option>Hen Layers</option>
-                            <option>Broiler Duck</option>
-                            <option>Duck Layers</option>
-                          </select>
-                        </div>
-
-                        <div>
-                          <label className="block text-sm font-medium mb-1 dark:text-gray-300">
-                            Default Flock Size
-                          </label>
-                          <input
-                            type="number"
-                            className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                            placeholder="e.g. 850"
-                          />
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            id="auto-flock-id"
-                            className="w-4 h-4 text-green-600 focus:ring-green-500 dark:focus:ring-green-600"
-                          />
-                          <label
-                            htmlFor="auto-flock-id"
-                            className="text-sm dark:text-gray-300"
-                          >
-                            Auto-generate Flock IDs
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-
                     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
                       <h3 className="font-semibold mb-4 dark:text-light">
                         Health Monitoring
                       </h3>
-
                       <div className="space-y-4">
                         <div>
                           <label className="block text-sm font-medium mb-1 dark:text-gray-300">
@@ -486,7 +503,6 @@ const GeneralPage = () => {
                             step="0.1"
                           />
                         </div>
-
                         <div>
                           <label className="block text-sm font-medium mb-1 dark:text-gray-300">
                             Default Vaccination Reminder
@@ -497,7 +513,6 @@ const GeneralPage = () => {
                             <option>1 day before due</option>
                           </select>
                         </div>
-
                         <div className="flex items-center gap-2">
                           <input
                             type="checkbox"
@@ -514,12 +529,10 @@ const GeneralPage = () => {
                         </div>
                       </div>
                     </div>
-
                     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
                       <h3 className="font-semibold mb-4 dark:text-light">
                         Environmental Controls
                       </h3>
-
                       <div className="space-y-4">
                         <div>
                           <label className="block text-sm font-medium mb-1 dark:text-gray-300">
@@ -538,7 +551,6 @@ const GeneralPage = () => {
                             />
                           </div>
                         </div>
-
                         <div>
                           <label className="block text-sm font-medium mb-1 dark:text-gray-300">
                             Light Hours Schedule
@@ -555,7 +567,6 @@ const GeneralPage = () => {
                             </select>
                           </div>
                         </div>
-
                         <div className="flex items-center gap-2">
                           <input
                             type="checkbox"
@@ -572,12 +583,10 @@ const GeneralPage = () => {
                         </div>
                       </div>
                     </div>
-
                     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
                       <h3 className="font-semibold mb-4 dark:text-light">
                         Feed & Production
                       </h3>
-
                       <div className="space-y-4">
                         <div>
                           <label className="block text-sm font-medium mb-1 dark:text-gray-300">
@@ -590,7 +599,6 @@ const GeneralPage = () => {
                             step="0.1"
                           />
                         </div>
-
                         <div>
                           <label className="block text-sm font-medium mb-1 dark:text-gray-300">
                             Low Feed Inventory Alert
@@ -601,7 +609,6 @@ const GeneralPage = () => {
                             <option>1 day supply remaining</option>
                           </select>
                         </div>
-
                         <div>
                           <label className="block text-sm font-medium mb-1 dark:text-gray-300">
                             Expected Egg Production
@@ -615,7 +622,6 @@ const GeneralPage = () => {
                       </div>
                     </div>
                   </div>
-
                   <div className="mt-6 flex justify-end">
                     <Button
                       style="primary"

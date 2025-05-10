@@ -7,10 +7,13 @@ import React, {
 } from "react";
 
 export type TimeFormatOption = "12-hour" | "24-hour";
+export type TemperatureScaleOption = "Celsius" | "Fahrenheit";
 
 interface UserPreferencesContextType {
   timeFormat: TimeFormatOption;
   setTimeFormat: (format: TimeFormatOption) => void;
+  temperatureScale: TemperatureScaleOption;
+  setTemperatureScale: (scale: TemperatureScaleOption) => void;
 }
 
 const UserPreferencesContext = createContext<
@@ -34,10 +37,30 @@ export const UserPreferencesProvider = ({
     return "24-hour";
   });
 
+  const [temperatureScale, setTemperatureScaleState] =
+    useState<TemperatureScaleOption>(() => {
+      if (typeof window !== "undefined") {
+        const storedScale = localStorage.getItem(
+          "temperatureScale"
+        ) as TemperatureScaleOption;
+        if (storedScale === "Celsius" || storedScale === "Fahrenheit") {
+          return storedScale;
+        }
+      }
+      return "Celsius"; // Default temperature scale
+    });
+
   const setTimeFormatContext = (format: TimeFormatOption) => {
     setTimeFormatState(format);
     if (typeof window !== "undefined") {
       localStorage.setItem("timeFormat", format);
+    }
+  };
+
+  const setTemperatureScaleContext = (scale: TemperatureScaleOption) => {
+    setTemperatureScaleState(scale);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("temperatureScale", scale);
     }
   };
 
@@ -48,30 +71,56 @@ export const UserPreferencesProvider = ({
           setTimeFormatState(event.newValue as TimeFormatOption);
         }
       }
+      if (event.key === "temperatureScale" && event.newValue) {
+        if (event.newValue === "Celsius" || event.newValue === "Fahrenheit") {
+          setTemperatureScaleState(event.newValue as TemperatureScaleOption);
+        }
+      }
     };
 
     if (typeof window !== "undefined") {
       window.addEventListener("storage", handleStorageChange);
-      const initialStoredFormat = localStorage.getItem(
+
+      // Initial sync for timeFormat
+      const initialStoredTimeFormat = localStorage.getItem(
         "timeFormat"
       ) as TimeFormatOption;
       if (
-        initialStoredFormat &&
-        (initialStoredFormat === "12-hour" ||
-          initialStoredFormat === "24-hour") &&
-        initialStoredFormat !== timeFormat
+        initialStoredTimeFormat &&
+        (initialStoredTimeFormat === "12-hour" ||
+          initialStoredTimeFormat === "24-hour") &&
+        initialStoredTimeFormat !== timeFormat
       ) {
-        setTimeFormatState(initialStoredFormat);
+        setTimeFormatState(initialStoredTimeFormat);
       }
+
+      // Initial sync for temperatureScale
+      const initialStoredTempScale = localStorage.getItem(
+        "temperatureScale"
+      ) as TemperatureScaleOption;
+      if (
+        initialStoredTempScale &&
+        (initialStoredTempScale === "Celsius" ||
+          initialStoredTempScale === "Fahrenheit") &&
+        initialStoredTempScale !== temperatureScale
+      ) {
+        setTemperatureScaleState(initialStoredTempScale);
+      }
+
       return () => {
         window.removeEventListener("storage", handleStorageChange);
       };
     }
-  }, []);
+  }, [timeFormat, temperatureScale]); // Add temperatureScale to dependency array for completeness
 
   return (
     <UserPreferencesContext.Provider
-      value={{ timeFormat, setTimeFormat: setTimeFormatContext }}
+      value={{
+        timeFormat,
+        setTimeFormat: setTimeFormatContext,
+        temperatureScale,
+        setTemperatureScale: setTemperatureScaleContext,
+      }}
     >
       {children}
     </UserPreferencesContext.Provider>

@@ -7,6 +7,7 @@ import {
   useLocationName,
   useWeatherData,
 } from "@/hooks/weather";
+import { useUserPreferences } from "@/contexts/UserPreferencesContext"; 
 
 type HourlyForecast = {
   time: string;
@@ -17,20 +18,20 @@ type HourlyForecast = {
 
 type DailyForecast = {
   day: string;
-  maxTemp: number;
+  maxTemp: number; 
   minTemp: number;
   icon: string;
 };
 
 type TemperatureWeatherData = {
-  temperature: number;
+  temperature: number; 
   apparentTemperature: number;
   isDay: number;
   rain: number | null;
   snowfall: number | null;
   cloudCover: number;
-  maxTemp: number;
-  minTemp: number;
+  maxTemp: number; // API will return in Celsius
+  minTemp: number; // API will return in Celsius
   hourlyForecast: HourlyForecast[];
   dailyForecast: DailyForecast[];
 };
@@ -44,6 +45,8 @@ const TemperatureCard = ({ lat, lon }: Coordinates) => {
     isLoading: isLocationLoading,
     error: locationError,
   } = useLocationName({ lat, lon });
+
+  const { temperatureScale } = useUserPreferences(); // Get temperature scale from context
 
   const getHourlyWeatherIconUtil = (
     rainVal?: number,
@@ -89,8 +92,8 @@ const TemperatureCard = ({ lat, lon }: Coordinates) => {
 
           return {
             day,
-            maxTemp: Math.round(data.daily.temperature2mMax[index]),
-            minTemp: Math.round(data.daily.temperature2mMin[index]),
+            maxTemp: data.daily.temperature2mMax[index], // Raw Celsius
+            minTemp: data.daily.temperature2mMin[index], // Raw Celsius
             icon,
           };
         })
@@ -102,7 +105,7 @@ const TemperatureCard = ({ lat, lon }: Coordinates) => {
         (timeStr: string, index: number) => ({
           time: timeStr.split("T")[1].split(":")[0],
           date: timeStr.split("T")[0],
-          temperature: Math.round(hourlyTemperature[index] as number),
+          temperature: hourlyTemperature[index] as number,
           icon: getHourlyWeatherIconUtil(
             data.hourly.rain?.[index],
             data.hourly.snowfall?.[index],
@@ -130,14 +133,14 @@ const TemperatureCard = ({ lat, lon }: Coordinates) => {
         .slice(0, 7);
 
       return {
-        temperature: Math.round(data.current.temperature2m),
-        apparentTemperature: Math.round(data.current.apparentTemperature),
+        temperature: data.current.temperature2m, // Raw Celsius
+        apparentTemperature: data.current.apparentTemperature, // Raw Celsius
         isDay: data.current.isDay,
         rain: data.current.rain,
         snowfall: data.current.snowfall,
         cloudCover: data.current.cloudCover,
-        maxTemp: Math.round(data.daily.temperature2mMax[0]),
-        minTemp: Math.round(data.daily.temperature2mMin[0]),
+        maxTemp: data.daily.temperature2mMax[0], // Raw Celsius
+        minTemp: data.daily.temperature2mMin[0], // Raw Celsius
         hourlyForecast: filteredHourlyData,
         dailyForecast: filteredDailyData,
       };
@@ -156,12 +159,21 @@ const TemperatureCard = ({ lat, lon }: Coordinates) => {
   });
 
   const formatTemperature = useCallback(
-    (value: number | null, showUnit: boolean = true): string => {
-      if (value === null) return "N/A";
-      const temp = value;
-      return showUnit ? `${temp}°C` : `${temp}°`;
+    (celsiusValue: number | null, showUnit: boolean = true): string => {
+      if (celsiusValue === null) return "N/A";
+
+      let displayTemp = celsiusValue;
+      let unit = "°C";
+
+      if (temperatureScale === "Fahrenheit") {
+        displayTemp = celsiusValue * (9 / 5) + 32;
+        unit = "°F";
+      }
+
+      const roundedTemp = Math.round(displayTemp);
+      return showUnit ? `${roundedTemp}${unit}` : `${roundedTemp}°`;
     },
-    []
+    [temperatureScale] // Dependency on temperatureScale
   );
 
   return (
@@ -297,12 +309,10 @@ const TemperatureCard = ({ lat, lon }: Coordinates) => {
                       {day.day}
                     </p>
                     <p className="text-2xl w-1/4 text-center">{day.icon}</p>
-
                     <div className="w-1/2 flex justify-end space-x-3">
                       <p className="text-md font-medium">
                         {formatTemperature(day.minTemp, false)}
                       </p>
-
                       <p className="text-md font-medium opacity-70">
                         {formatTemperature(day.maxTemp, false)}
                       </p>
