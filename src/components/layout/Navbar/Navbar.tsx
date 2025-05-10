@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react"; // Added useMemo
 import { useRouter } from "next/navigation";
 import NotificationBar from "../NotificationSideBar";
 import Image from "next/image";
 import type { User } from "@/types/card-props";
-import type { Navbar } from "@/types/card-props";
+import type { Navbar as NavbarType } from "@/types/card-props"; // Renamed to avoid conflict
 import axiosInstance from "@/lib/utils/axiosInstance";
 import {
   faArrowUpRightFromSquare,
@@ -15,15 +15,17 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Task } from "@/types/types";
+import { useUserPreferences } from "@/contexts/UserPreferencesContext"; // Import context
+import { getTranslator, TranslationKey } from "@/translations"; // Import translations
 
-interface NavbarProps extends Navbar {
+interface NavbarProps extends NavbarType {
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
 }
 
 interface Notification {
-  title: string;
-  description: string;
+  titleKey: TranslationKey; // Use TranslationKey for title
+  description: string; // Description might remain dynamic
 }
 
 const Navbar = ({
@@ -33,6 +35,8 @@ const Navbar = ({
   toggleSidebar,
 }: NavbarProps) => {
   const router = useRouter();
+  const { language: currentLanguage } = useUserPreferences(); // Get language from context
+  const t = useMemo(() => getTranslator(currentLanguage), [currentLanguage]); // Initialize translator
 
   const [user, setUser] = useState<User>({
     name: "",
@@ -44,18 +48,30 @@ const Navbar = ({
   const [isNotificationBarOpen, setNotificationBarOpen] =
     useState<boolean>(false);
 
-  const userNavigation = [
-    { name: "Pricing", href: `/platform/${userId}/pricing`, external: true },
-    { name: "News Updates", href: `/news` },
-    { name: "Training & Services", href: "/training-services", external: true },
-  ];
+  const userNavigation = useMemo(
+    () => [
+      // Memoize to prevent re-creation on every render
+      {
+        nameKey: "pricing" as TranslationKey,
+        href: `/platform/${userId}/pricing`,
+        external: true,
+      },
+      { nameKey: "newsUpdates" as TranslationKey, href: `/news` },
+      {
+        nameKey: "trainingAndServices" as TranslationKey,
+        href: "/training-services",
+        external: true,
+      },
+    ],
+    [userId]
+  );
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [hasShownToday, setHasShownToday] = useState(false);
 
   const fetchTasksDueTomorrow = async () => {
     try {
-      if (!userId || hasShownToday) return; // Don't fetch if already shown today
+      if (!userId || hasShownToday) return;
 
       const response = await axiosInstance.get<{ tasks: Task[] }>(
         `/tasks/upcoming/${userId}?days=1`
@@ -65,16 +81,16 @@ const Navbar = ({
 
       if (tasksDueTomorrow.length > 0) {
         const tasksList = tasksDueTomorrow
-          .map((task) => `• ${task.task || "Untitled task"}`)
+          .map((task) => `• ${task.task || t("untitledTask")}`) // Translate untitled task
           .join("<br>");
 
         setNotifications([
           {
-            title: "Tasks due tomorrow",
+            titleKey: "tasksDueTomorrow", // Use key for title
             description: tasksList,
           },
         ]);
-        setHasShownToday(true); // Mark as shown for today
+        setHasShownToday(true);
       }
     } catch (error) {
       console.error("Error fetching tasks:", error);
@@ -82,15 +98,16 @@ const Navbar = ({
   };
 
   useEffect(() => {
-    // Check if we've already shown notifications today
     const lastShownDate = localStorage.getItem("lastNotificationDate");
     const today = new Date().toDateString();
 
     if (lastShownDate !== today) {
       fetchTasksDueTomorrow();
       localStorage.setItem("lastNotificationDate", today);
+    } else {
+      setHasShownToday(true); // Ensure hasShownToday is true if notifications were already shown
     }
-  }, [userId]);
+  }, [userId]); // t added to dependency if used inside fetchTasksDueTomorrow directly
 
   const clearAllNotifications = () => {
     setNotifications([]);
@@ -113,8 +130,10 @@ const Navbar = ({
           email: data.email,
           business: data.business_name,
           imageUrl:
-            data.imageUrl ||
-            `https://eu.ui-avatars.com/api/?name=${data.first_name}+${data.last_name}&size=250`,
+            data.profile_picture || // Assuming profile_picture from user data
+            `https://eu.ui-avatars.com/api/?name=${encodeURIComponent(
+              data.first_name
+            )}+${encodeURIComponent(data.last_name)}&size=250`,
         });
       } catch (error: unknown) {
         console.error(
@@ -131,6 +150,9 @@ const Navbar = ({
     try {
       localStorage.removeItem("chatMessages");
       localStorage.removeItem("token");
+      localStorage.removeItem("language"); // Also clear language preference
+      localStorage.removeItem("timeFormat");
+      localStorage.removeItem("temperatureScale");
       router.push("/");
     } catch (error: unknown) {
       console.error(
@@ -153,21 +175,17 @@ const Navbar = ({
       <header className="px-6 lg:px-12 bg-gray-800 py-2 w-full top-0 z-50">
         <div className="mx-auto w-full px-2 sm:px-4 lg:divide-y lg:divide-gray-700 lg:px-8">
           <div className="relative flex h-12 py-1 justify-between">
-            {/* Logo Section with Hamburger Menu */}
             <div className="relative z-10 flex px-2 lg:px-0">
               <div className="flex flex-shrink-0 items-center">
                 <div className="flex flex-row items-center gap-4">
-                  {/* Mobile Hamburger Menu */}
                   <button
                     className="lg:hidden text-gray-400 hover:text-white focus:outline-none mr-2"
                     onClick={toggleSidebar}
-                    aria-label="Toggle sidebar"
+                    aria-label={t("toggleSidebar")}
                     aria-expanded={isSidebarOpen}
                   >
                     <FontAwesomeIcon icon={faBars} className="size-6" />
                   </button>
-
-                  {/* Logo */}
                   <Image
                     src={imageSrc}
                     alt="Graminate Logo"
@@ -177,28 +195,24 @@ const Navbar = ({
                     priority
                   />
                   <span className="hidden sm:inline text-bold text-3xl text-light">
-                    Graminate
+                    {t("graminate")}
                   </span>
                 </div>
               </div>
             </div>
-
-            {/* Right Section - Icons and Profile */}
             <div className="relative z-10 ml-4 flex items-center">
               <div className="flex items-center space-x-3 pr-4 border-r border-gray-700">
-                {/* Settings Gear */}
                 <button
-                  aria-label="Settings"
+                  aria-label={t("settings")}
                   className="text-gray-400 hover:bg-blue-100 p-2 rounded-md focus:outline-none"
                   onClick={toUserPreferences}
                 >
                   <FontAwesomeIcon icon={faGear} className="size-6" />
                 </button>
-
-                {/* Notifications Bell */}
                 <button
                   className="relative text-gray-400 hover:bg-blue-100 p-2 rounded-md focus:outline-none"
                   onClick={toggleNotificationBar}
+                  aria-label={t("notifications")}
                 >
                   <FontAwesomeIcon icon={faBell} className="size-6" />
                   {notificationCount > 0 && (
@@ -208,21 +222,21 @@ const Navbar = ({
                   )}
                 </button>
               </div>
-
-              {/* Profile Dropdown */}
               <div className="relative ml-4 gap-2 flex-shrink-0 flex items-center">
                 <button
                   className="relative rounded-full bg-gray-800 text-sm text-white hidden lg:flex"
                   onClick={toggleDropdown}
                   aria-expanded={isDropdownOpen}
                 >
-                  <Image
-                    className="h-7 w-7 rounded-full"
-                    src={user.imageUrl}
-                    alt={user.name}
-                    width={28}
-                    height={28}
-                  />
+                  {user.imageUrl && (
+                    <Image
+                      className="h-7 w-7 rounded-full"
+                      src={user.imageUrl}
+                      alt={user.name || "User"}
+                      width={28}
+                      height={28}
+                    />
+                  )}
                 </button>
                 <span className="ml-2 text-white text-sm font-medium hidden lg:inline">
                   {user.name}
@@ -236,19 +250,19 @@ const Navbar = ({
                     className="size-5 transition-transform duration-200 ease-in-out"
                   />
                 </button>
-
-                {/* Dropdown Menu */}
                 {isDropdownOpen && (
                   <div className="origin-top-right absolute right-0 top-12 w-96 rounded-md shadow-lg py-4 bg-white dark:bg-gray-700">
                     <div className="px-4 pb-3 border-b border-gray-500 dark:border-gray-300">
                       <div className="flex items-center">
-                        <Image
-                          className="h-12 w-12 rounded-full"
-                          src={user.imageUrl}
-                          alt={user.name}
-                          width={48}
-                          height={48}
-                        />
+                        {user.imageUrl && (
+                          <Image
+                            className="h-12 w-12 rounded-full"
+                            src={user.imageUrl}
+                            alt={user.name || "User"}
+                            width={48}
+                            height={48}
+                          />
+                        )}
                         <div className="ml-3 flex-1 flex-col gap-1">
                           <p className="text-lg font-semibold text-dark dark:text-light">
                             {user.name}
@@ -264,23 +278,21 @@ const Navbar = ({
                               href={`/platform/${userId}/settings/general`}
                               className="text-sm font-medium text-green-600 hover:underline"
                             >
-                              Profile Preferences
+                              {t("profilePreferences")}
                             </a>
                           </div>
                         </div>
                       </div>
                     </div>
-
-                    {/* Navigation Links */}
                     <div className="px-4 py-3">
                       {userNavigation.map((item) => (
                         <a
-                          key={item.name}
+                          key={item.nameKey}
                           href={item.href}
                           className="flex items-center mb-2 text-sm font-medium text-gray-200 dark:text-gray-500 hover:underline"
                           target={item.external ? "_blank" : "_self"}
                         >
-                          {item.name}
+                          {t(item.nameKey)}
                           {item.external && (
                             <FontAwesomeIcon
                               icon={faArrowUpRightFromSquare}
@@ -290,17 +302,15 @@ const Navbar = ({
                         </a>
                       ))}
                     </div>
-
-                    {/* Footer Section */}
                     <div className="flex items-center justify-between px-4 py-3 text-sm text-dark dark:text-light border-t border-gray-500 dark:border-gray-300">
                       <button
                         className="text-sm font-medium text-dark dark:text-light hover:underline"
                         onClick={handleLogout}
                       >
-                        Sign Out
+                        {t("signOut")}
                       </button>
                       <a href="/privacy-policy" className="hover:underline">
-                        Privacy Policy
+                        {t("privacyPolicy")}
                       </a>
                     </div>
                   </div>
@@ -313,7 +323,10 @@ const Navbar = ({
 
       <NotificationBar
         userId={userId}
-        notifications={notifications}
+        notifications={notifications.map((n) => ({
+          ...n,
+          title: t(n.titleKey),
+        }))} // Translate title here
         isOpen={isNotificationBarOpen}
         closeNotificationBar={toggleNotificationBar}
         onClearAll={clearAllNotifications}

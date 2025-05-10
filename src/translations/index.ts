@@ -7,23 +7,35 @@ import assameseAccountSettings from "./assamese/account";
 import englishSidebar from "./english/sidebar";
 import hindiSidebar from "./hindi/sidebar";
 import assameseSidebar from "./assamese/sidebar";
+import englishNavbar from "./english/navbar";
+import hindiNavbar from "./hindi/navbar";
+import assameseNavbar from "./assamese/navbar";
+import englishSettingsBar from "./english/settingsbar";
+import hindiSettingsBar from "./hindi/settingsbar";
+import asssameseSettingsBar from "./assamese/settingsbar";
 
 const englishTranslations = {
   ...englishGeneralSettings,
   ...englishAccountSettings,
   ...englishSidebar,
+  ...englishNavbar,
+  ...englishSettingsBar,
 };
 
 const hindiTranslations = {
   ...hindiGeneralSettings,
   ...hindiAccountSettings,
   ...hindiSidebar,
+  ...hindiNavbar,
+  ...hindiSettingsBar,
 };
 
 const assameseTranslations = {
   ...assameseGeneralSettings,
   ...assameseAccountSettings,
   ...assameseSidebar,
+  ...assameseNavbar,
+  ...asssameseSettingsBar,
 };
 
 export const translations = {
