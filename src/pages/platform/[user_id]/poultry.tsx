@@ -17,7 +17,6 @@ import axios from "axios";
 
 import VeterinaryCard from "@/components/cards/poultry/VeterinaryCard";
 import EnvironmentCard from "@/components/cards/poultry/EnvironmentCard";
-import PoultryTaskCard from "@/components/cards/poultry/PoultryTaskCard";
 import PoultryFeedCard from "@/components/cards/poultry/PoultryFeedCard";
 import PoultryOverviewCard from "@/components/cards/poultry/PoultryOverviewCard";
 import PoultryEggCard from "@/components/cards/poultry/PoultryEggCard";
@@ -25,6 +24,8 @@ import Button from "@/components/ui/Button";
 import AddPoultryDataModal from "@/components/modals/AddPoultryDataModal";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import ActiveProducts from "@/components/cards/ActiveProducts";
+import { useUserPreferences } from "@/contexts/UserPreferencesContext";
+import TaskAdder from "@/components/cards/TaskAdder";
 
 ChartJS.register(
   CategoryScale,
@@ -159,7 +160,6 @@ const Poultry = () => {
   const [mortalityRate, setMortalityRate] = useState<number | null>(null);
   const [vaccineStatus, setVaccineStatus] = useState<VaccineStatus>("N/A");
   const [nextVisit, setNextVisit] = useState("2025-05-12");
-  // Removed unused state: latestHealthDate, reportStatus
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [sensorUrl, setSensorUrl] = useState<string | null>(null);
   const [formData, setFormData] = useState<PoultryFormData>({
@@ -182,18 +182,27 @@ const Poultry = () => {
     "Duck Layers",
   ]);
 
-  const fahrenheit = false;
+  const { temperatureScale } = useUserPreferences();
   const convertToFahrenheit = useCallback((celsius: number): number => {
-    return Math.round((celsius * 9) / 5 + 32);
+    return Math.round(celsius * (9 / 5) + 32);
   }, []);
 
   const formatTemperature = useCallback(
-    (value: number | null, showUnit: boolean = true): string => {
-      if (value === null) return "N/A";
-      const temp = fahrenheit ? convertToFahrenheit(value) : value;
-      return showUnit ? `${temp}°${fahrenheit ? "F" : "C"}` : `${temp}°`;
+    (celsiusValue: number | null, showUnit: boolean = true): string => {
+      if (celsiusValue === null) return "N/A";
+
+      let displayTemp = celsiusValue;
+      let unit = "°C";
+
+      if (temperatureScale === "Fahrenheit") {
+        displayTemp = convertToFahrenheit(celsiusValue);
+        unit = "°F";
+      }
+
+      const roundedTemp = Math.round(displayTemp);
+      return showUnit ? `${roundedTemp}${unit}` : `${roundedTemp}°`;
     },
-    [fahrenheit, convertToFahrenheit]
+    [temperatureScale, convertToFahrenheit]
   );
 
   // Fetch health records and calculate next visit and mortality rate
@@ -259,8 +268,6 @@ const Poultry = () => {
 
     fetchHealthRecordsAndSetNextVisit();
   }, [parsedUserId]);
-
-  // Removed useEffect that set latestHealthDate and reportStatus as they were unused
 
   useEffect(() => {
     const fetchWeather = async (lat: number, lon: number) => {
@@ -370,7 +377,7 @@ const Poultry = () => {
       }
     }
     setActiveAlerts(dynamicAlerts);
-  }, [temperature, feedInventoryDays, nextVisit, formatTemperature]); // Added formatTemperature to dependencies
+  }, [temperature, feedInventoryDays, nextVisit, formatTemperature]); // formatTemperature is already a dependency
 
   const dismissAlert = (id: number) => {
     setActiveAlerts((current) => current.filter((alert) => alert.id !== id));
@@ -394,7 +401,6 @@ const Poultry = () => {
   ) => {
     const { name, value, type } = e.target;
 
-    // Ensure vaccineStatus is correctly typed
     if (name === "vaccineStatus") {
       const statusValue = value as VaccineStatus;
       setFormData((prev) => ({ ...prev, [name]: statusValue }));
@@ -408,7 +414,6 @@ const Poultry = () => {
   const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Ensure numbers are handled correctly, especially if input is empty string
     const newTotalChicks = Number(formData.totalChicks) || 0;
     const newFlockAgeDays = Number(formData.flockAgeDays) || 0;
     const newMortalityRate =
@@ -423,7 +428,7 @@ const Poultry = () => {
     setFlockAgeDays(newFlockAgeDays);
     setExpectedMarketDate(formData.expectedMarketDate);
     setMortalityRate(newMortalityRate);
-    setVaccineStatus(formData.vaccineStatus); // Directly use the state value which is typed
+    setVaccineStatus(formData.vaccineStatus);
     setNextVisit(formData.nextVisit);
     setTotalEggsStock(newTotalEggsStock);
     setDailyFeedConsumption(newDailyFeedConsumption);
@@ -481,7 +486,6 @@ const Poultry = () => {
             style="primary"
             onClick={() => {
               setFormData({
-                // Pre-populate modal with current state
                 totalChicks,
                 flockId,
                 breedType,
@@ -524,7 +528,7 @@ const Poultry = () => {
             totalEggsStock={totalEggsStock}
             totalChicks={totalChicks}
             eggGradingPieData={eggGradingPieData}
-            eggGradingPieOptions={salesChartOptions} // Use the appropriate pie options if defined
+            eggGradingPieOptions={salesChartOptions}
           />
           <PoultryFeedCard
             dailyFeedConsumption={dailyFeedConsumption}
@@ -560,7 +564,7 @@ const Poultry = () => {
             </div>
           </div>
         </div>
-        <PoultryTaskCard userId={Number(parsedUserId)} />
+        <TaskAdder userId={Number(parsedUserId)} projectType="Poultry" />
       </div>
       {isModalOpen && (
         <AddPoultryDataModal

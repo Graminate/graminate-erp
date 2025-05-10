@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
-
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
 
@@ -15,6 +14,7 @@ import {
   ArcElement,
 } from "chart.js";
 import axiosInstance from "@/lib/utils/axiosInstance";
+import TaskAdder from "@/components/cards/TaskAdder";
 import ActiveProducts from "@/components/cards/ActiveProducts";
 
 ChartJS.register(
@@ -27,53 +27,72 @@ ChartJS.register(
   ArcElement
 );
 
+type AnimalHusbandryItem = {
+  id: string | number;
+  name: string;
+};
+
 const AnimalHusbandry = () => {
   const router = useRouter();
   const { user_id } = router.query;
-  const parsedUserId = Array.isArray(user_id) ? user_id[0] : user_id;
+  const parsedUserIdString = Array.isArray(user_id) ? user_id[0] : user_id;
+  const numericUserId = parsedUserIdString
+    ? parseInt(parsedUserIdString, 10)
+    : undefined;
 
-  const [items, setItems] = useState([
-    "Milk Production",
-    "Beef Production",
-    "Pork Production",
-  ]);
+  const [itemRecords, setItemRecords] = useState<AnimalHusbandryItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!router.isReady || !parsedUserId) return;
+    if (!router.isReady || !numericUserId) return;
 
-    const fetchAnimalHusbandry = async () => {
+    const fetcAnimalHusbandry = async () => {
+      setIsLoading(true);
+      setErrorMsg(null);
       try {
-        await axiosInstance.get(`/animal_husbandry/${parsedUserId}`);
+        const response = await axiosInstance.get<{
+          items: AnimalHusbandryItem[];
+        }>(`/animal_husbandry/${numericUserId}`);
+        setItemRecords(response.data.items || []);
       } catch (error: unknown) {
-        if (error instanceof Error) {
-          console.error("Error fetching animal_husbandry data:", error.message);
-        } else {
-          console.error("Unknown error fetching animal_husbandry data");
-        }
+        let message = "An unknown error occurred while fetching animal husbandry data.";
+        setErrorMsg(message);
+        setItemRecords([]);
+      } finally {
+        setIsLoading(false);
       }
     };
 
-    fetchAnimalHusbandry();
-  }, [router.isReady, parsedUserId]);
+    fetcAnimalHusbandry();
+  }, [router.isReady, numericUserId]);
 
   return (
     <PlatformLayout>
       <Head>
-        <title>Graminate | Animal Husbandry</title>
+        <title>Graminate | Animal Management</title>
       </Head>
       <div className="min-h-screen container mx-auto p-4">
-        {/* Header */}
         <div className="flex justify-between items-center dark:bg-dark relative mb-4">
-          <h1 className="text-lg font-semibold dark:text-white">
-            Animal Husbandry
-          </h1>
+          <div>
+            <h1 className="text-lg font-semibold dark:text-white">
+              Animal Management
+            </h1>
+          </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <ActiveProducts
-            headerTitle="Husbandry Products"
-            items={items}
-            onReorder={setItems}
-          />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        </div>
+        <div>
+          {numericUserId && !isNaN(numericUserId) ? (
+            <TaskAdder userId={numericUserId} projectType="Husbandry" />
+          ) : (
+            !isLoading && (
+              <p className="dark:text-gray-400">
+                User ID not available or invalid for tasks.
+              </p>
+            )
+          )}
         </div>
       </div>
     </PlatformLayout>

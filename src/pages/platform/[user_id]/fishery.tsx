@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
-import axios from "axios";
 
 import {
   Chart as ChartJS,
@@ -15,6 +14,7 @@ import {
   ArcElement,
 } from "chart.js";
 import axiosInstance from "@/lib/utils/axiosInstance";
+import TaskAdder from "@/components/cards/TaskAdder";
 
 ChartJS.register(
   CategoryScale,
@@ -33,37 +33,29 @@ type FisheryItem = {
 
 const Fishery = () => {
   const router = useRouter();
-
   const { user_id } = router.query;
-  const parsedUserId = Array.isArray(user_id) ? user_id[0] : user_id;
+  const parsedUserIdString = Array.isArray(user_id) ? user_id[0] : user_id;
+  const numericUserId = parsedUserIdString
+    ? parseInt(parsedUserIdString, 10)
+    : undefined;
 
   const [itemRecords, setItemRecords] = useState<FisheryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!router.isReady || !parsedUserId) return;
+    if (!router.isReady || !numericUserId) return;
 
     const fetchFishery = async () => {
       setIsLoading(true);
       setErrorMsg(null);
       try {
         const response = await axiosInstance.get<{ items: FisheryItem[] }>(
-          `/fishery/${parsedUserId}`
+          `/fishery/${numericUserId}`
         );
         setItemRecords(response.data.items || []);
       } catch (error: unknown) {
         let message = "An unknown error occurred while fetching fishery data.";
-
-        if (axios.isAxiosError(error)) {
-          message =
-            error.response?.data?.error ||
-            error.message ||
-            "Failed to fetch fishery data.";
-        } else if (error instanceof Error) {
-          message = error.message;
-        }
-        console.error("Error fetching fishery data:", message, error);
         setErrorMsg(message);
         setItemRecords([]);
       } finally {
@@ -72,7 +64,7 @@ const Fishery = () => {
     };
 
     fetchFishery();
-  }, [router.isReady, parsedUserId]);
+  }, [router.isReady, numericUserId]);
 
   return (
     <PlatformLayout>
@@ -83,32 +75,21 @@ const Fishery = () => {
         <div className="flex justify-between items-center dark:bg-dark relative mb-4">
           <div>
             <h1 className="text-lg font-semibold dark:text-white">
-              Fishery Management{" "}
-              {/* {parsedUserId ? `for User ${parsedUserId}` : ""} */}
+              Fishery Management
             </h1>
           </div>
         </div>
 
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
         <div>
-          {isLoading && <p>Loading fishery data...</p>}
-          {/* {errorMsg && <p className="text-red-500">Error: {errorMsg}</p>} */}
-          {!isLoading && !errorMsg && (
-            <>
-              <h2 className="text-md font-medium mb-2 dark:text-white">
-                Items
-              </h2>
-              {itemRecords.length > 0 ? (
-                <ul className="list-disc pl-5 dark:text-gray-300">
-                  {itemRecords.map((item) => (
-                    <li key={item.id}>{item.name} </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="dark:text-gray-400">
-                  No fishery items found for this user.
-                </p>
-              )}
-            </>
+          {numericUserId && !isNaN(numericUserId) ? (
+            <TaskAdder userId={numericUserId} projectType="Fishery" />
+          ) : (
+            !isLoading && (
+              <p className="dark:text-gray-400">
+                User ID not available or invalid for tasks.
+              </p>
+            )
           )}
         </div>
       </div>

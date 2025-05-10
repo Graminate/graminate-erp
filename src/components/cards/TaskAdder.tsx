@@ -25,11 +25,12 @@ type Task = {
   created_on: string;
 };
 
-type PoultryTaskCardProps = {
+type Props = {
   userId: number;
+  projectType: string;
 };
 
-const PoultryTaskCard = ({ userId }: PoultryTaskCardProps) => {
+const TaskAdder = ({ userId, projectType }: Props) => {
   const [taskList, setTaskList] = useState<Task[]>([]);
   const [newTaskText, setNewTaskText] = useState("");
   const [newTaskPriority, setNewTaskPriority] = useState<Priority>("Medium");
@@ -65,18 +66,17 @@ const PoultryTaskCard = ({ userId }: PoultryTaskCardProps) => {
 
   useEffect(() => {
     const fetchTasks = async () => {
-      if (!userId) return;
+      if (!userId || !projectType) return;
 
       try {
         setIsLoading(true);
         setError(null);
         const response = await axiosInstance.get(`/tasks/${userId}`, {
           params: {
-            project: "Poultry",
+            project: projectType,
           },
         });
 
-        // Handle both array and object responses
         const tasks = Array.isArray(response.data)
           ? response.data
           : response.data.tasks || [];
@@ -91,7 +91,7 @@ const PoultryTaskCard = ({ userId }: PoultryTaskCardProps) => {
     };
 
     fetchTasks();
-  }, [userId]);
+  }, [userId, projectType]);
 
   const sortTasks = (list: Task[], asc = prioritySortAsc) => {
     const sorted = [...list].sort((a, b) => {
@@ -129,12 +129,12 @@ const PoultryTaskCard = ({ userId }: PoultryTaskCardProps) => {
   };
 
   const addNewTask = async () => {
-    if (!newTaskText.trim() || !userId) return;
+    if (!newTaskText.trim() || !userId || !projectType) return;
 
     try {
       const response = await axiosInstance.post("/tasks/add", {
         user_id: userId,
-        project: "Poultry",
+        project: projectType,
         task: newTaskText.trim(),
         status: "To Do",
         priority: newTaskPriority,
@@ -150,14 +150,12 @@ const PoultryTaskCard = ({ userId }: PoultryTaskCardProps) => {
     }
   };
 
-  // Delete task
   const deleteTask = async (taskId: number) => {
     try {
       await axiosInstance.delete(`/tasks/delete/${taskId}`);
       setTaskList((prev) => prev.filter((task) => task.task_id !== taskId));
       setError(null);
     } catch (err) {
-      console.error("Failed to delete task:", err);
       setError("Failed to delete task. Please try again.");
     }
   };
@@ -178,11 +176,14 @@ const PoultryTaskCard = ({ userId }: PoultryTaskCardProps) => {
     );
   }
 
+  const capitalizedProjectType =
+    projectType.charAt(0).toUpperCase() + projectType.slice(1);
+
   return (
     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-3">
         <h2 className="text-lg font-semibold text-dark dark:text-light">
-          Poultry Activities List
+          {capitalizedProjectType} Activities List
         </h2>
         <div className="flex items-center gap-2">
           <span className="text-dark text-xs font-semibold px-2.5 py-0.5 rounded dark:text-light">
@@ -206,10 +207,9 @@ const PoultryTaskCard = ({ userId }: PoultryTaskCardProps) => {
         </div>
       </div>
 
-      {/* New Task Creation */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-2 space-y-2 sm:space-y-0 mb-4">
         <TextField
-          placeholder="Add new task"
+          placeholder={`Add new ${projectType.toLowerCase()} task`}
           value={newTaskText}
           onChange={(val: string) => setNewTaskText(val)}
           onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -233,7 +233,6 @@ const PoultryTaskCard = ({ userId }: PoultryTaskCardProps) => {
         />
       </div>
 
-      {/* Tasks List */}
       <ul className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
         {taskList.map((task) => (
           <li
@@ -305,7 +304,7 @@ const PoultryTaskCard = ({ userId }: PoultryTaskCardProps) => {
         ))}
         {taskList.length === 0 && (
           <li className="text-center text-gray-300 dark:text-gray-400 py-4">
-            No tasks found. Add your first poultry task
+            No tasks found. Add your first {projectType.toLowerCase()} task
           </li>
         )}
       </ul>
@@ -313,4 +312,4 @@ const PoultryTaskCard = ({ userId }: PoultryTaskCardProps) => {
   );
 };
 
-export default PoultryTaskCard;
+export default TaskAdder;

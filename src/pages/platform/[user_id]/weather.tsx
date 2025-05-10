@@ -23,11 +23,26 @@ const Weather = () => {
       .then((coords) => setLocation(coords))
       .catch((err) => {
         console.error("Geolocation Error:", err);
-        setError(
-          err instanceof GeolocationPositionError
-            ? `Error getting location: ${err.message}. Please ensure location services are enabled and permission is granted.`
-            : "Could not retrieve location. Please try again or enable location services."
-        );
+        let errorMessage =
+          "Could not retrieve location. Please try again or enable location services.";
+
+        if (err.code) {
+          switch (err.code) {
+            case err.PERMISSION_DENIED || 1:
+              errorMessage =
+                "Location access was denied. Please enable location permissions in your browser settings.";
+              break;
+            case err.POSITION_UNAVAILABLE || 2:
+              errorMessage =
+                "Location information is unavailable. Please check your network connection.";
+              break;
+            case err.TIMEOUT || 3:
+              errorMessage = "Location request timed out. Please try again.";
+              break;
+          }
+        }
+
+        setError(errorMessage);
       });
   }, []);
 

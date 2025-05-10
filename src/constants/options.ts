@@ -1,6 +1,6 @@
 export const GENDER = ["Male", "Female", "Other"];
 export const YESNO = ["Yes", "No"];
-export const LANGUAGES = ["English", "Hindi", "Assamese"];
+export const LANGUAGES = ["English", "हिन्दी", "অসমীয়া"];
 export const INDUSTRY_OPTIONS = [
   "Crop Farming",
   "Livestock & Poultry Farming",

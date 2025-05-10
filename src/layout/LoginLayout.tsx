@@ -1,6 +1,4 @@
 import React from "react";
-
-import Footer from "@/components/layout/Footer";
 import HomeNavbar from "@/components/layout/Navbar/HomeNavbar";
 
 type PlatformLayoutProps = {
@@ -14,7 +12,7 @@ const LoginLayout = ({ children }: PlatformLayoutProps) => {
       <div className="flex ">
         <div className="flex-1">{children}</div>
       </div>
-      <Footer />
+
     </div>
   );
 };
