@@ -5,7 +5,7 @@ import React, {
   ReactNode,
   useEffect,
 } from "react";
-import { SupportedLanguage } from "@/translations/translations";
+import { SupportedLanguage } from "@/translations";
 
 export type TimeFormatOption = "12-hour" | "24-hour";
 export type TemperatureScaleOption = "Celsius" | "Fahrenheit";

@@ -20,11 +20,7 @@ import {
   TimeFormatOption,
   TemperatureScaleOption,
 } from "@/contexts/UserPreferencesContext";
-import {
-  getTranslator,
-  SupportedLanguage,
-  translations,
-} from "@/translations/translations";
+import { getTranslator, SupportedLanguage, translations } from "@/translations";
 
 const GeneralPage = () => {
   const router = useRouter();

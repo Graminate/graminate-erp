@@ -21,11 +21,24 @@ import {
 import type { Sidebar as SidebarProps } from "@/types/card-props";
 import Loader from "../ui/Loader";
 import axiosInstance from "@/lib/utils/axiosInstance";
+import { useUserPreferences } from "@/contexts/UserPreferencesContext";
+import { getTranslator, TranslationKey } from "@/translations";
+
+interface SidebarSection {
+  icon: IconDefinition;
+  labelKey: TranslationKey;
+  section: string; 
+  route?: string;
+  basePath?: string;
+  subItems: { labelKey: TranslationKey; route: string }[];
+}
 
 const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { language: currentLanguage } = useUserPreferences();
+  const t = useMemo(() => getTranslator(currentLanguage), [currentLanguage]);
 
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
@@ -34,7 +47,6 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
   const [subTypes, setSubTypes] = useState<string[]>([]);
   const [isUserTypeLoading, setIsUserTypeLoading] = useState(true);
 
-  // Fetch the user's type & sub_types via JWT-authenticated API call
   useEffect(() => {
     const fetchUserType = async () => {
       setIsUserTypeLoading(true);
@@ -44,7 +56,6 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
 
         const response = await axiosInstance.get(`/user/${userId}`);
 
-        // adjust this path if your API wraps differently
         const user = response.data?.data?.user ?? response.data?.user;
         if (!user) throw new Error("User payload missing");
 
@@ -52,7 +63,6 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
         setSubTypes(Array.isArray(user.sub_type) ? user.sub_type : []);
       } catch (err) {
         console.error("Error fetching user type:", err);
-        // fallback to default
         setUserType("Producer");
         setSubTypes([]);
       } finally {
@@ -65,40 +75,38 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
     }
   }, [userId]);
 
-  // Build the menu sections, re-running when userType or subTypes change
-  const sections = useMemo(() => {
-    const base: {
-      icon: IconDefinition;
-      label: string;
-      section: string;
-      route?: string;
-      basePath?: string;
-      subItems: { label: string; route: string }[];
-    }[] = [
+  const sections: SidebarSection[] = useMemo(() => {
+    const base: SidebarSection[] = [
       {
         icon: faHome,
-        label: "Dashboard",
+        labelKey: "dashboard",
         section: "Dashboard",
         route: `/platform/${userId}`,
         subItems: [],
       },
       {
         icon: faAddressBook,
-        label: "CRM",
+        labelKey: "crm",
         section: "CRM",
         basePath: `/platform/${userId}/crm`,
         subItems: [
-          { label: "Contacts", route: `/platform/${userId}/crm?view=contacts` },
           {
-            label: "Companies",
+            labelKey: "contacts",
+            route: `/platform/${userId}/crm?view=contacts`,
+          },
+          {
+            labelKey: "companies",
             route: `/platform/${userId}/crm?view=companies`,
           },
           {
-            label: "Contracts",
+            labelKey: "contracts",
             route: `/platform/${userId}/crm?view=contracts`,
           },
-          { label: "Receipts", route: `/platform/${userId}/crm?view=receipts` },
-          { label: "Tasks", route: `/platform/${userId}/crm?view=tasks` },
+          {
+            labelKey: "receipts",
+            route: `/platform/${userId}/crm?view=receipts`,
+          },
+          { labelKey: "tasks", route: `/platform/${userId}/crm?view=tasks` },
         ],
       },
     ];
@@ -107,7 +115,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
       if (subTypes.includes("Fishery")) {
         base.push({
           icon: faFish,
-          label: "Fishery",
+          labelKey: "fisheryFarm",
           section: "Fishery Farm",
           route: `/platform/${userId}/fishery`,
           subItems: [],
@@ -116,13 +124,16 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
       if (subTypes.includes("Poultry")) {
         base.push({
           icon: faKiwiBird,
-          label: "Poultry Farm",
+          labelKey: "poultryFarm",
           section: "Poultry Farm",
           route: `/platform/${userId}/poultry`,
           subItems: [
-            { label: "Dashboard", route: `/platform/${userId}/poultry` },
             {
-              label: "Health Reports",
+              labelKey: "poultryDashboard",
+              route: `/platform/${userId}/poultry`,
+            },
+            {
+              labelKey: "healthReports",
               route: `/platform/${userId}/poultry_health`,
             },
           ],
@@ -131,7 +142,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
       if (subTypes.includes("Animal Husbandry")) {
         base.push({
           icon: faCow,
-          label: "Animal Husbandry",
+          labelKey: "animalHusbandry",
           section: "Animal Husbandry",
           route: `/platform/${userId}/animal_husbandry`,
           subItems: [],
@@ -140,54 +151,55 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
       if (subTypes.includes("Apiculture")) {
         base.push({
           icon: faBug,
-          label: "Apiculture Farm",
+          labelKey: "apicultureFarm",
           section: "Apiculture Farm",
           route: `/platform/${userId}/apiculture`,
           subItems: [],
         });
       }
-      // Weather Monitor for all producers
       base.push({
         icon: faCloud,
-        label: "Weather Monitor",
+        labelKey: "weatherMonitor",
         section: "Weather Monitor",
         route: `/platform/${userId}/weather`,
         subItems: [],
       });
     }
 
-    // Common sections
     base.push(
       {
         icon: faUsers,
-        label: "Employees",
+        labelKey: "employees",
         section: "Labour",
         basePath: `/platform/${userId}/labour`,
         subItems: [
-          { label: "Database", route: `/platform/${userId}/labour_database` },
           {
-            label: "Salary Manager",
+            labelKey: "database",
+            route: `/platform/${userId}/labour_database`,
+          },
+          {
+            labelKey: "salaryManager",
             route: `/platform/${userId}/labour_payment`,
           },
         ],
       },
       {
         icon: faDollar,
-        label: "Finance Tracker",
+        labelKey: "financeTracker",
         section: "Finance Tracker",
         route: `/platform/${userId}/budget`,
         subItems: [],
       },
       {
         icon: faWarehouse,
-        label: "Inventory",
+        labelKey: "inventory",
         section: "Inventory",
         route: `/platform/${userId}/inventory`,
         subItems: [],
       },
       {
         icon: faChartPie,
-        label: "Find Partners",
+        labelKey: "findPartners",
         section: "Find Partners",
         route: `/platform/${userId}/partner_finder`,
         subItems: [],
@@ -223,7 +235,6 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
 
   const closeSubMenu = () => setExpandedSection(null);
 
-  // clicking outside closes submenu
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       const side = document.querySelector(".sidebar-container");
@@ -233,12 +244,10 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // collapse when parent closes
   useEffect(() => {
     if (!isOpen) closeSubMenu();
   }, [isOpen]);
 
-  // render
   return (
     <div
       className={`sidebar-container fixed inset-y-0 left-0 bg-gradient-to-b from-gray-800 to-gray-900 text-gray-300 shadow-xl transform transition-transform duration-300 ease-in-out z-50 flex flex-col ${
@@ -250,11 +259,13 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
         {isUserTypeLoading ? (
           <div className="text-center text-gray-400 text-sm px-4">
             <Loader />
+            {!isCollapsed && <p className="mt-2">{t("loadingSidebar")}</p>}
           </div>
         ) : (
           sections.map(
-            ({ icon, label, section, route, basePath, subItems }) => {
+            ({ icon, labelKey, section, route, basePath, subItems }) => {
               const hasSubItems = subItems.length > 0;
+              const translatedLabel = t(labelKey);
               const isActive =
                 (!hasSubItems && pathname === route) ||
                 (hasSubItems && basePath && pathname.startsWith(basePath)) ||
@@ -270,7 +281,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
                     } ${isCollapsed ? "justify-center" : ""}`}
                     role="button"
                     tabIndex={0}
-                    title={isCollapsed ? label : ""}
+                    title={isCollapsed ? translatedLabel : ""}
                     onClick={() =>
                       handleSectionToggle(section, hasSubItems, route)
                     }
@@ -288,7 +299,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
                     {!isCollapsed && (
                       <>
                         <span className="flex-grow font-medium text-sm truncate">
-                          {label}
+                          {translatedLabel}
                         </span>
                         {hasSubItems && (
                           <FontAwesomeIcon
@@ -311,11 +322,16 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
                     hasSubItems && (
                       <div className="mt-1 ml-5 pl-3 border-l border-gray-600 space-y-1">
                         {subItems.map((sub) => {
+                          const translatedSubLabel = t(sub.labelKey);
                           const isSubActive =
-                            pathname + searchParams.toString() === sub.route;
+                            pathname +
+                              (searchParams.toString()
+                                ? `?${searchParams.toString()}`
+                                : "") ===
+                            sub.route;
                           return (
                             <div
-                              key={sub.label}
+                              key={translatedSubLabel}
                               className={`text-sm py-2 px-4 rounded-md cursor-pointer transition-colors duration-150 ${
                                 isSubActive
                                   ? "text-indigo-300 font-semibold"
@@ -331,7 +347,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
                                 }
                               }}
                             >
-                              {sub.label}
+                              {translatedSubLabel}
                             </div>
                           );
                         })}
@@ -350,7 +366,7 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
             isCollapsed ? "justify-center" : "justify-end"
           }`}
           onClick={toggleCollapse}
-          title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+          title={isCollapsed ? t("expandSidebar") : t("collapseSidebar")}
         >
           <FontAwesomeIcon
             icon={isCollapsed ? faChevronRight : faChevronLeft}

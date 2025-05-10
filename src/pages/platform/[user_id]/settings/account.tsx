@@ -8,7 +8,7 @@ import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import { useUserPreferences } from "@/contexts/UserPreferencesContext";
-import { getTranslator, translations } from "@/translations/translations";
+import { getTranslator, translations } from "@/translations";
 
 type ModalType = "confirmDelete" | "password" | "info" | null;
 type InfoModalContent = {
