@@ -1,4 +1,8 @@
 const hindiGeneralSettings = {
+  crm: "CRM",
+  crmSettings: "CRM सेटिंग्स",
+  crmSettingsDescription: "अपनी CRM प्राथमिकताएँ यहाँ कॉन्फ़िगर करें।",
+  savePoultrySettings: "मुर्गीपालन सेटिंग्स सहेजें",
   settings: "सेटिंग्स",
   generalSettings: "सामान्य सेटिंग्स",
   profileSettings: "प्रोफ़ाइल सेटिंग्स",

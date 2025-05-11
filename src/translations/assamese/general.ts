@@ -1,4 +1,8 @@
 const assameseGeneralSettings = {
+  crm: "CRM", 
+  crmSettings: "CRM ছেটিংছ", 
+  crmSettingsDescription: "ইয়াত আপোনাৰ CRM পছন্দসমূহ কনফিগাৰ কৰক।",
+  savePoultrySettings: "কুকুৰা ছেটিংছ সাঁচক",
   settings: "ছেটিংছ",
   generalSettings: "সাধাৰণ ছেটিংছ",
   profileSettings: "প্ৰফাইল ছেটিংছ",
