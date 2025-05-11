@@ -1,18 +1,20 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/router";
 import TextField from "@/components/ui/TextField";
+import TextArea from "@/components/ui/TextArea"; // Added import for TextArea
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import Button from "@/components/ui/Button";
 import {
   CONTACT_TYPES,
   CONTRACT_STATUS,
-  PAYMENT_STATUS,
+  // PAYMENT_STATUS, // Removed as it's not used in the new receipt form
 } from "@/constants/options";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import { SidebarProp } from "@/types/card-props";
 import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
 import axiosInstance from "@/lib/utils/axiosInstance";
+import { triggerToast } from "@/stores/toast"; // For displaying success/error messages
 
 const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
   const router = useRouter();
@@ -44,8 +46,9 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     const fetchUserSubTypes = async () => {
       setIsLoadingSubTypes(true);
       try {
-        const token = localStorage.getItem("token");
-        if (!token) throw new Error("No auth token found");
+        // Token handling can be improved, e.g., using axios interceptors
+        // const token = localStorage.getItem("token");
+        // if (!token) throw new Error("No auth token found");
 
         const response = await axiosInstance.get(`/user/${user_id}`);
 
@@ -76,7 +79,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       setSuggestions(filtered);
       setShowSuggestions(true);
     } else {
-      setSuggestions(subTypes);
+      setSuggestions(subTypes); // Show all subTypes if input is empty but focused
       setShowSuggestions(true);
     }
   };
@@ -88,37 +91,10 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
 
   const handleProjectInputFocus = () => {
     if (subTypes.length > 0) {
-      setSuggestions(subTypes);
+      setSuggestions(subTypes); // Populate with all subTypes initially
       setShowSuggestions(true);
     }
   };
-
-  useEffect(() => {
-    const fetchUserSubTypes = async () => {
-      setIsLoadingSubTypes(true);
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) throw new Error("No auth token found");
-
-        const response = await axiosInstance.get(`/user/${user_id}`);
-
-        // Adjust this path based on your API response structure
-        const user = response.data?.data?.user ?? response.data?.user;
-        if (!user) throw new Error("User payload missing");
-
-        setSubTypes(Array.isArray(user.sub_type) ? user.sub_type : []);
-      } catch (err) {
-        console.error("Error fetching user sub_types:", err);
-        setSubTypes([]);
-      } finally {
-        setIsLoadingSubTypes(false);
-      }
-    };
-
-    if (user_id) {
-      fetchUserSubTypes();
-    }
-  }, [user_id]);
 
   const isValidE164 = (phone: string) => {
     return /^\+?[0-9]{10,15}$/.test(phone);
@@ -146,7 +122,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
 
   const [companyValues, setCompanyValues] = useState({
     companyName: "",
-    contactPerson: "", // Changed from companyOwner
+    contactPerson: "",
     email: "",
     phoneNumber: "",
     type: "",
@@ -155,8 +131,8 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     city: "",
     state: "",
     postal_code: "",
-    website: "", // New
-    industry: "", // New
+    website: "",
+    industry: "",
   });
 
   const [companyErrors, setCompanyErrors] = useState({
@@ -178,14 +154,32 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     priority: "Medium",
   });
 
+  // Updated state for Receipts form
   const [receiptsValues, setReceiptsValues] = useState({
     title: "",
-    billTo: "",
-    amount_paid: "",
-    amount_due: "",
-    due_date: "",
-    status: "",
+    receiptNumber: "",
+    billTo: "", 
+    dueDate: "",
+    paymentTerms: "", 
+    notes: "",
+    tax: "0", 
+    discount: "0", 
+    shipping: "0", 
+    billToAddressLine1: "",
+    billToAddressLine2: "",
+    billToCity: "",
+    billToState: "",
+    billToPostalCode: "",
+    billToCountry: "",
   });
+
+  const [receiptErrors, setReceiptErrors] = useState({
+    title: "",
+    receiptNumber: "",
+    billTo: "",
+    dueDate: "",
+  });
+
   const [taskValues, setTaskValues] = useState({
     project: "",
     task: "",
@@ -202,7 +196,6 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     setTimeout(() => onClose(), 300);
   };
 
-  // hooks
   useAnimatePanel(setAnimate);
   useClickOutside(panelRef, handleCloseAnimation);
 
@@ -210,7 +203,6 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     handleCloseAnimation();
   };
 
-  // --- Validation Helper Functions ---
   const validateContactAddress = () => {
     const errors = {
       address_line_1: "",
@@ -240,34 +232,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     return { errors, isValid };
   };
 
-  const validateCompanyAddress = () => {
-    const errors = {
-      address_line_1: "",
-      city: "",
-      state: "",
-      postal_code: "",
-    };
-    let isValid = true;
-
-    if (!companyValues.address_line_1.trim()) {
-      errors.address_line_1 = "Address Line 1 is required.";
-      isValid = false;
-    }
-    if (!companyValues.city.trim()) {
-      errors.city = "City is required.";
-      isValid = false;
-    }
-    if (!companyValues.state.trim()) {
-      errors.state = "State is required.";
-      isValid = false;
-    }
-    if (!companyValues.postal_code.trim()) {
-      errors.postal_code = "Postal Code is required.";
-      isValid = false;
-    }
-
-    return { errors, isValid };
-  };
+  // Removed validateCompanyAddress as it's not used, can be added if needed
 
   const handleSubmitContacts = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -283,10 +248,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     });
 
     if (!addressValidation.isValid || !phoneValid) {
-      console.log("Contact form validation failed:", {
-        ...addressValidation.errors,
-        phoneNumber: phoneErrorMsg,
-      });
+      triggerToast("Please correct the errors in the form.", "error");
       return;
     }
 
@@ -324,20 +286,23 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
         state: "",
         postal_code: "",
       });
+      triggerToast("Contact added successfully!", "success");
       handleClose();
-      window.location.reload();
-    } catch (error: unknown) {
+      window.location.reload(); // Consider a more SPA-friendly update
+    } catch (error: any) {
       const message =
-        error instanceof Error ? error.message : "An unexpected error occurred";
-      console.error("Error adding contact:", message);
-      alert(message);
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        error.message ||
+        "An unexpected error occurred";
+      console.error("Error adding contact:", error);
+      triggerToast(`Error: ${message}`, "error");
     }
   };
 
   const handleSubmitCompanies = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate required fields
     const requiredFields = [
       "companyName",
       "contactPerson",
@@ -346,31 +311,34 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       "state",
       "postal_code",
     ];
-
     const missingFields = requiredFields.filter(
       (field) => !companyValues[field as keyof typeof companyValues]?.trim()
     );
 
     if (missingFields.length > 0) {
-      alert(`Please fill in all required fields: ${missingFields.join(", ")}`);
+      triggerToast(
+        `Please fill in required fields: ${missingFields.join(", ")}`,
+        "error"
+      );
       return;
     }
 
-    // Validate phone number if provided
     if (companyValues.phoneNumber && !isValidE164(companyValues.phoneNumber)) {
       setCompanyErrors({
         ...companyErrors,
         phoneNumber: "Please enter a valid phone number (e.g. +1234567890)",
       });
+      triggerToast("Invalid company phone number.", "error");
       return;
+    } else {
+      setCompanyErrors({ ...companyErrors, phoneNumber: "" });
     }
 
-    // Validate email if provided
     if (
       companyValues.email &&
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(companyValues.email)
     ) {
-      alert("Please enter a valid email address");
+      triggerToast("Please enter a valid email address.", "error");
       return;
     }
 
@@ -378,8 +346,8 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       user_id: user_id,
       company_name: companyValues.companyName,
       contact_person: companyValues.contactPerson,
-      email: companyValues.email || null, // Send null if empty
-      phone_number: companyValues.phoneNumber || null, // Send null if empty
+      email: companyValues.email || null,
+      phone_number: companyValues.phoneNumber || null,
       type: companyValues.type || null,
       address_line_1: companyValues.address_line_1,
       address_line_2: companyValues.address_line_2 || null,
@@ -391,14 +359,8 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     };
 
     try {
-      const response = await axiosInstance.post("/companies/add", payload, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-
+      const response = await axiosInstance.post("/companies/add", payload);
       if (response.status === 201) {
-        // Reset form on success
         setCompanyValues({
           companyName: "",
           contactPerson: "",
@@ -413,42 +375,40 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
           website: "",
           industry: "",
         });
+        triggerToast("Company added successfully!", "success");
         handleClose();
         window.location.reload();
       }
     } catch (error: any) {
+      const message =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to add company";
       console.error("Error adding company:", error);
-
-      if (error.response) {
-        // Display specific error message from backend
-        const errorMsg =
-          error.response.data?.error ||
-          error.response.data?.message ||
-          "Failed to add company";
-        alert(errorMsg);
-
-        // Log detailed error for debugging
-        console.error("Error details:", {
-          status: error.response.status,
-          data: error.response.data,
-          config: error.response.config,
-        });
-      } else {
-        alert("An error occurred. Please try again.");
-      }
+      triggerToast(`Error: ${message}`, "error");
     }
   };
 
   const handleSubmitContracts = async (e: React.FormEvent) => {
     e.preventDefault();
+    // Basic validation
+    if (
+      !contractsValues.dealName ||
+      !contractsValues.status ||
+      !contractsValues.amountPaid
+    ) {
+      triggerToast("Please fill in Contract Name, Stage, and Amount.", "error");
+      return;
+    }
     const payload = {
       user_id: user_id,
       deal_name: contractsValues.dealName,
       partner: contractsValues.dealPartner,
       amount: contractsValues.amountPaid,
       stage: contractsValues.status,
-      start_date: contractsValues.contractStartDate,
-      end_date: contractsValues.contractEndDate,
+      start_date: contractsValues.contractStartDate || null,
+      end_date: contractsValues.contractEndDate || null,
       category: contractsValues.category,
       priority: contractsValues.priority,
     };
@@ -464,56 +424,133 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
         category: "",
         priority: "Medium",
       });
+      triggerToast("Contract added successfully!", "success");
       handleClose();
       window.location.reload();
-    } catch (error: unknown) {
+    } catch (error: any) {
       const message =
-        error instanceof Error ? error.message : "An unexpected error occurred";
-      console.error("Error adding new contract:", message);
-      alert(message);
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        error.message ||
+        "An unexpected error occurred";
+      console.error("Error adding new contract:", error);
+      triggerToast(`Error: ${message}`, "error");
     }
+  };
+
+  const validateReceiptForm = () => {
+    const errors = { title: "", receiptNumber: "", billTo: "", dueDate: "" };
+    let isValid = true;
+    if (!receiptsValues.title.trim()) {
+      errors.title = "Title is required.";
+      isValid = false;
+    }
+    if (!receiptsValues.receiptNumber.trim()) {
+      errors.receiptNumber = "Receipt Number is required.";
+      isValid = false;
+    }
+    if (!receiptsValues.billTo.trim()) {
+      errors.billTo = "Bill To (Customer) is required.";
+      isValid = false;
+    }
+    if (!receiptsValues.dueDate.trim()) {
+      errors.dueDate = "Due Date is required.";
+      isValid = false;
+    }
+    setReceiptErrors(errors);
+    return isValid;
   };
 
   const handleSubmitReceipts = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!validateReceiptForm()) {
+      triggerToast("Please fill all required receipt fields.", "error");
+      return;
+    }
+
     const payload = {
       user_id,
       title: receiptsValues.title,
       bill_to: receiptsValues.billTo,
-      amount_paid: receiptsValues.amount_paid,
-      amount_due: receiptsValues.amount_due,
-      due_date: receiptsValues.due_date,
-      status: receiptsValues.status,
+      due_date: receiptsValues.dueDate,
+      receipt_number: receiptsValues.receiptNumber,
+      payment_terms: receiptsValues.paymentTerms || null,
+      notes: receiptsValues.notes || null,
+      tax: parseFloat(receiptsValues.tax) || 0,
+      discount: parseFloat(receiptsValues.discount) || 0,
+      shipping: parseFloat(receiptsValues.shipping) || 0,
+      bill_to_address_line1: receiptsValues.billToAddressLine1 || null,
+      bill_to_address_line2: receiptsValues.billToAddressLine2 || null,
+      bill_to_city: receiptsValues.billToCity || null,
+      bill_to_state: receiptsValues.billToState || null,
+      bill_to_postal_code: receiptsValues.billToPostalCode || null,
+      bill_to_country: receiptsValues.billToCountry || null,
     };
+
     try {
       await axiosInstance.post("/receipts/add", payload);
       setReceiptsValues({
         title: "",
+        receiptNumber: "",
         billTo: "",
-        amount_paid: "",
-        amount_due: "",
-        due_date: "",
-        status: "",
+        dueDate: "",
+        paymentTerms: "",
+        notes: "",
+        tax: "0",
+        discount: "0",
+        shipping: "0",
+        billToAddressLine1: "",
+        billToAddressLine2: "",
+        billToCity: "",
+        billToState: "",
+        billToPostalCode: "",
+        billToCountry: "",
       });
+      setReceiptErrors({
+        title: "",
+        receiptNumber: "",
+        billTo: "",
+        dueDate: "",
+      });
+      triggerToast("Receipt added successfully!", "success");
       handleClose();
       window.location.reload();
-    } catch (error: unknown) {
+    } catch (error: any) {
       const message =
-        error instanceof Error ? error.message : "An unexpected error occurred";
-      console.error("Error adding new receipt:", message);
-      alert(message);
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        error.message ||
+        "An unexpected error occurred";
+      console.error("Error adding new receipt:", error);
+      if (error.response?.status === 409) {
+        // Specifically handle unique constraint violation
+        triggerToast("Error: Receipt number already exists.", "error");
+        setReceiptErrors((prev) => ({
+          ...prev,
+          receiptNumber: "This receipt number is already in use.",
+        }));
+      } else {
+        triggerToast(`Error: ${message}`, "error");
+      }
     }
   };
 
   const handleSubmitTasks = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!taskValues.project || !taskValues.task) {
+      triggerToast(
+        "Please fill in Task Category and Task description.",
+        "error"
+      );
+      return;
+    }
     const payload = {
       user_id,
       project: taskValues.project,
       task: taskValues.task,
-      status: "To Do", // Changed from "Pending" to "To Do"
+      status: "To Do",
       priority: taskValues.priority || "Medium",
-      deadline: taskValues.deadline,
+      deadline: taskValues.deadline || null,
     };
 
     try {
@@ -522,16 +559,22 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
         setTaskValues({
           project: "",
           task: "",
-          status: "To Do", // Also update the reset value here
+          status: "To Do",
           priority: "Medium",
           deadline: "",
         });
+        triggerToast("Task added successfully!", "success");
         handleClose();
         window.location.reload();
       }
-    } catch (error) {
+    } catch (error: any) {
+      const message =
+        error.response?.data?.error ||
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to create task. Please try again.";
       console.error("Error adding new task:", error);
-      alert("Failed to create task. Please try again.");
+      triggerToast(`Error: ${message}`, "error");
     }
   };
 
@@ -539,7 +582,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm">
       <div
         ref={panelRef}
-        className="fixed top-0 right-0 h-full w-full md:w-[450px] bg-light dark:bg-gray-800 shadow-lg dark:border-l border-gray-700 overflow-y-auto" // Adjusted width, added overflow
+        className="fixed top-0 right-0 h-full w-full md:w-[550px] bg-light dark:bg-gray-800 shadow-lg dark:border-l border-gray-700 overflow-y-auto" // Adjusted width for more fields
         style={{
           transform: animate ? "translateX(0)" : "translateX(100%)",
           transition: "transform 300ms ease-out",
@@ -571,6 +614,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                 onSubmit={handleSubmitContacts}
                 noValidate
               >
+                {/* ... Contacts form fields ... */}
                 <div className="flex flex-col sm:flex-row gap-4">
                   <TextField
                     label="First Name"
@@ -630,7 +674,6 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                   width="full"
                 />
 
-                {/* --- Address Fields with Validation --- */}
                 <TextField
                   label="Address Line 1"
                   placeholder="e.g. Flat No. 203, Building C"
@@ -681,7 +724,6 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                     errorMessage={contactErrors.postal_code}
                   />
                 </div>
-                {/* Form Actions */}
                 <div className="flex justify-end gap-3 mt-4 pt-4 border-t border-gray-400 dark:border-gray-200">
                   <Button
                     text="Cancel"
@@ -692,13 +734,13 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                 </div>
               </form>
             )}
-            {/* --- Companies Form --- */}
             {view === "companies" && (
               <form
                 className="flex flex-col gap-4 w-full"
                 onSubmit={handleSubmitCompanies}
                 noValidate
               >
+                {/* ... Companies form fields ... */}
                 <TextField
                   label="Company Name"
                   placeholder="Enter company name"
@@ -753,8 +795,6 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                   label="Type"
                   width="full"
                 />
-
-                {/* --- Address Fields with Validation --- */}
                 <TextField
                   label="Address Line 1"
                   placeholder="e.g. Head Office, Tower B"
@@ -805,8 +845,6 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                     errorMessage={companyErrors.postal_code}
                   />
                 </div>
-
-                {/* Form Actions */}
                 <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-400 dark:border-gray-200">
                   <Button
                     text="Cancel"
@@ -817,13 +855,12 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                 </div>
               </form>
             )}
-
-            {/* --- Contracts Form --- */}
             {view === "contracts" && (
               <form
                 className="flex flex-col gap-4 w-full"
                 onSubmit={handleSubmitContracts}
               >
+                {/* ... Contracts form fields ... */}
                 <TextField
                   label="Contract Name"
                   placeholder="Name of your Contract"
@@ -906,8 +943,6 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                   type="form"
                   width="full"
                 />
-
-                {/* Form Actions */}
                 <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-400 dark:border-gray-200">
                   <Button
                     text="Cancel"
@@ -922,67 +957,178 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                 </div>
               </form>
             )}
-            {/* --- Receipts Form --- */}
+            {/* --- Receipts Form Updated --- */}
             {view === "receipts" && (
               <form
                 className="flex flex-col gap-4 w-full"
                 onSubmit={handleSubmitReceipts}
               >
                 <TextField
-                  label="Receipt Title"
-                  placeholder="Name of your receipt / invoice"
+                  label="Invoice/Receipt Title*"
+                  placeholder="e.g. Services Rendered, Product Sale"
                   value={receiptsValues.title}
                   onChange={(val: string) =>
                     setReceiptsValues({ ...receiptsValues, title: val })
                   }
+                  type={receiptErrors.title ? "error" : ""}
+                  errorMessage={receiptErrors.title}
                 />
                 <TextField
-                  label="Bill To"
-                  placeholder="Customer Details"
+                  label="Receipt Number*"
+                  placeholder="Enter unique receipt number (e.g., INV-2024-001)"
+                  value={receiptsValues.receiptNumber}
+                  onChange={(val: string) =>
+                    setReceiptsValues({ ...receiptsValues, receiptNumber: val })
+                  }
+                  type={receiptErrors.receiptNumber ? "error" : ""}
+                  errorMessage={receiptErrors.receiptNumber}
+                />
+                <TextField
+                  label="Bill To (Customer Name)*"
+                  placeholder="e.g. John Doe Corp"
                   value={receiptsValues.billTo}
                   onChange={(val: string) =>
                     setReceiptsValues({ ...receiptsValues, billTo: val })
                   }
+                  type={receiptErrors.billTo ? "error" : ""}
+                  errorMessage={receiptErrors.billTo}
+                />
+                <TextField
+                  label="Due Date*"
+                  placeholder="YYYY-MM-DD"
+                  value={receiptsValues.dueDate}
+                  onChange={(val: string) =>
+                    setReceiptsValues({ ...receiptsValues, dueDate: val })
+                  }
+                  calendar
+                  type={receiptErrors.dueDate ? "error" : ""}
+                  errorMessage={receiptErrors.dueDate}
+                />
+                <TextField
+                  label="Payment Terms"
+                  placeholder="e.g. Net 30, Due on Receipt"
+                  value={receiptsValues.paymentTerms}
+                  onChange={(val: string) =>
+                    setReceiptsValues({ ...receiptsValues, paymentTerms: val })
+                  }
+                />
+
+                <h3 className="text-md font-semibold mt-2 text-gray-700 dark:text-gray-300">
+                  Billing Address
+                </h3>
+                <TextField
+                  label="Address Line 1"
+                  placeholder="Customer's street address"
+                  value={receiptsValues.billToAddressLine1}
+                  onChange={(val: string) =>
+                    setReceiptsValues({
+                      ...receiptsValues,
+                      billToAddressLine1: val,
+                    })
+                  }
+                />
+                <TextField
+                  label="Address Line 2 (Optional)"
+                  placeholder="Apartment, suite, etc."
+                  value={receiptsValues.billToAddressLine2}
+                  onChange={(val: string) =>
+                    setReceiptsValues({
+                      ...receiptsValues,
+                      billToAddressLine2: val,
+                    })
+                  }
                 />
                 <div className="flex flex-col sm:flex-row gap-4">
                   <TextField
-                    label="Paid (₹)"
-                    placeholder="Amount Paid"
-                    value={receiptsValues.amount_paid}
+                    label="City"
+                    placeholder="Customer's city"
+                    value={receiptsValues.billToCity}
                     onChange={(val: string) =>
-                      setReceiptsValues({ ...receiptsValues, amount_paid: val })
+                      setReceiptsValues({ ...receiptsValues, billToCity: val })
                     }
                   />
                   <TextField
-                    label="Amount Due (₹)"
-                    placeholder="Amount yet to be paid"
-                    value={receiptsValues.amount_due}
+                    label="State / Province"
+                    placeholder="Customer's state"
+                    value={receiptsValues.billToState}
                     onChange={(val: string) =>
-                      setReceiptsValues({ ...receiptsValues, amount_due: val })
+                      setReceiptsValues({ ...receiptsValues, billToState: val })
                     }
                   />
                 </div>
                 <div className="flex flex-col sm:flex-row gap-4">
                   <TextField
-                    label="Due Date"
-                    placeholder="YYYY-MM-DD"
-                    value={receiptsValues.due_date}
+                    label="Postal Code"
+                    placeholder="Customer's postal code"
+                    value={receiptsValues.billToPostalCode}
                     onChange={(val: string) =>
-                      setReceiptsValues({ ...receiptsValues, due_date: val })
+                      setReceiptsValues({
+                        ...receiptsValues,
+                        billToPostalCode: val,
+                      })
                     }
-                    calendar
                   />
-                  <DropdownLarge
-                    items={PAYMENT_STATUS}
-                    selectedItem={receiptsValues.status}
-                    onSelect={(value: string) =>
-                      setReceiptsValues({ ...receiptsValues, status: value })
+                  <TextField
+                    label="Country"
+                    placeholder="Customer's country"
+                    value={receiptsValues.billToCountry}
+                    onChange={(val: string) =>
+                      setReceiptsValues({
+                        ...receiptsValues,
+                        billToCountry: val,
+                      })
                     }
-                    type="form"
-                    label="Status"
-                    width="full"
                   />
                 </div>
+
+                <TextArea
+                  label="Notes / Additional Information"
+                  value={receiptsValues.notes}
+                  onChange={(val: string) =>
+                    setReceiptsValues({ ...receiptsValues, notes: val })
+                  }
+                  placeholder="Any additional notes for the customer..."
+                />
+
+                <h3 className="text-md font-semibold mt-2 text-gray-700 dark:text-gray-300">
+                  Financials
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <TextField
+                    label="Tax (%)"
+                    placeholder="e.g. 18"
+                    value={receiptsValues.tax}
+                    onChange={(val: string) => {
+                      const numericVal = val.replace(/[^0-9.]/g, ""); // Allow only numbers and dot
+                      setReceiptsValues({ ...receiptsValues, tax: numericVal });
+                    }}
+                  />
+                  <TextField
+                    label="Discount (Flat Amount)"
+                    placeholder="e.g. 100"
+                    value={receiptsValues.discount}
+                    onChange={(val: string) => {
+                      const numericVal = val.replace(/[^0-9.]/g, "");
+                      setReceiptsValues({
+                        ...receiptsValues,
+                        discount: numericVal,
+                      });
+                    }}
+                  />
+                  <TextField
+                    label="Shipping Charges"
+                    placeholder="e.g. 50"
+                    value={receiptsValues.shipping}
+                    onChange={(val: string) => {
+                      const numericVal = val.replace(/[^0-9.]/g, "");
+                      setReceiptsValues({
+                        ...receiptsValues,
+                        shipping: numericVal,
+                      });
+                    }}
+                  />
+                </div>
+
                 {/* Form Actions */}
                 <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-400 dark:border-gray-200">
                   <Button
@@ -999,6 +1145,7 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                 className="flex flex-col gap-4 w-full"
                 onSubmit={handleSubmitTasks}
               >
+                {/* ... Tasks form fields ... */}
                 <div className="relative">
                   <TextField
                     label="Task Category"
@@ -1058,8 +1205,6 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                   }
                   calendar
                 />
-
-                {/* Form Actions */}
                 <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-400 dark:border-gray-200">
                   <Button
                     text="Cancel"

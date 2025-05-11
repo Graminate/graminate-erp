@@ -67,15 +67,7 @@ const CustomTable = ({ items, onItemsChange }: CustomTableProps) => {
                   onChange={(val) => updateItem(index, "description", val)}
                   placeholder="Description of item/service..."
                 />
-                <input
-                  type="text"
-                  value={item.description}
-                  onChange={(e) =>
-                    updateItem(index, "description", e.target.value)
-                  }
-                  placeholder="Description of item/service..."
-                  className="w-full focus:outline-none bg-transparent dark:text-light"
-                />
+
               </td>
               <td className="border border-gray-300 dark:border-gray-200 p-2 text-center w-6">
                 <input

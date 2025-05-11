@@ -302,25 +302,14 @@ const CRM = () => {
       case "receipts":
         if (fetchedData.length === 0) return { columns: [], rows: [] };
         return {
-          columns: [
-            "#",
-            "Title",
-            "Bill To",
-            "Amount Paid",
-            "Amount Due",
-            "Due Date",
-            "Status",
-          ],
+          columns: ["#", "Title", "Bill To", "Due Date"],
           rows: fetchedData
             .filter((item): item is Receipt => "invoice_id" in item)
             .map((item) => [
               item.invoice_id,
               item.title,
               item.bill_to,
-              item.amount_paid,
-              item.amount_due,
               new Date(item.due_date).toLocaleDateString(),
-              item.status,
             ]),
         };
 
