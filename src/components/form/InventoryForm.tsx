@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/router";
 import TextField from "@/components/ui/TextField";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
@@ -9,6 +9,7 @@ import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import { SidebarProp } from "@/types/card-props";
 import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
 import axiosInstance from "@/lib/utils/axiosInstance";
+import Loader from "../ui/Loader";
 
 const InventoryForm = ({ onClose, formTitle }: SidebarProp) => {
   const router = useRouter();
@@ -25,6 +26,11 @@ const InventoryForm = ({ onClose, formTitle }: SidebarProp) => {
 
   const panelRef = useRef<HTMLDivElement>(null);
 
+  const [subTypes, setSubTypes] = useState<string[]>([]); // Will hold the fetched categories
+  const [isLoadingSubTypes, setIsLoadingSubTypes] = useState(true);
+  const [suggestions, setSuggestions] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
   useAnimatePanel(setAnimate);
 
   useClickOutside(panelRef, () => {
@@ -32,8 +38,97 @@ const InventoryForm = ({ onClose, formTitle }: SidebarProp) => {
     setTimeout(() => handleClose(), 300);
   });
 
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target as Node)
+      ) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+
+  useEffect(() => {
+    const fetchUserSubTypes = async () => {
+      if (!user_id) {
+        setIsLoadingSubTypes(false);
+        setSubTypes([]);
+        return;
+      }
+      setIsLoadingSubTypes(true);
+      try {
+        const token = localStorage.getItem("token"); 
+          console.warn(
+            "No auth token found, proceeding without it for sub_type fetch."
+          );
+
+        const response = await axiosInstance.get(`/user/${user_id}`);
+
+        const user = response.data?.data?.user ?? response.data?.user;
+        if (!user) {
+          console.error("User payload missing in API response for sub_types");
+          setSubTypes([]);
+        } else {
+          setSubTypes(Array.isArray(user.sub_type) ? user.sub_type : []);
+        }
+      } catch (err) {
+        console.error(
+          "Error fetching user sub_types for item categories:",
+          err
+        );
+        setSubTypes([]); 
+      } finally {
+        setIsLoadingSubTypes(false);
+      }
+    };
+
+    fetchUserSubTypes();
+  }, [user_id]);
+
   const handleClose = () => {
     onClose();
+  };
+
+  const handleItemCategoryInputChange = (val: string) => {
+    setInventoryItem({ ...inventoryItem, itemGroup: val });
+
+    if (val.length > 0) {
+      const filtered = subTypes.filter((subType) =>
+        subType.toLowerCase().includes(val.toLowerCase())
+      );
+      setSuggestions(filtered);
+      setShowSuggestions(true);
+    } else {
+      setSuggestions(subTypes); 
+      setShowSuggestions(true);
+    }
+  };
+
+  const selectCategorySuggestion = (suggestion: string) => {
+    setInventoryItem({ ...inventoryItem, itemGroup: suggestion });
+    setShowSuggestions(false);
+  };
+
+  const handleItemCategoryInputFocus = () => {
+    if (subTypes.length > 0) {
+      
+      if (!inventoryItem.itemGroup) {
+        setSuggestions(subTypes);
+      } else {
+        const filtered = subTypes.filter((subType) =>
+          subType.toLowerCase().includes(inventoryItem.itemGroup.toLowerCase())
+        );
+        setSuggestions(filtered);
+      }
+      setShowSuggestions(true);
+    }
   };
 
   const handleSubmitInventoryItem = async (e: React.FormEvent) => {
@@ -66,23 +161,24 @@ const InventoryForm = ({ onClose, formTitle }: SidebarProp) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/30">
+    <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm">
       <div
         ref={panelRef}
-        className="fixed top-0 right-0 h-full w-full md:w-1/3 bg-light dark:bg-gray-800 shadow-lg dark:border-l border-gray-200"
+        className="fixed top-0 right-0 h-full w-full md:w-1/3 bg-light dark:bg-gray-800 shadow-lg dark:border-l border-gray-700 overflow-y-auto"
         style={{
-          transform: animate ? "translateX(0)" : "translateX(500px)",
-          transition: "transform 300ms",
+          transform: animate ? "translateX(0)" : "translateX(100%)",
+          transition: "transform 300ms ease-out",
         }}
       >
         <div className="p-6 flex flex-col h-full">
-          <div className="flex justify-between items-center mb-4">
+          <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-400 dark:border-gray-200">
             <h2 className="text-xl font-semibold text-dark dark:text-light">
               {formTitle ? formTitle : "Create Inventory Item"}
             </h2>
             <button
-              className="text-gray-300 hover:text-gray-100"
+              className="text-gray-400 hover:text-gray-300 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
               onClick={handleClose}
+              aria-label="Close panel"
             >
               <FontAwesomeIcon icon={faXmark} className="w-5 h-5" />
             </button>
@@ -99,14 +195,42 @@ const InventoryForm = ({ onClose, formTitle }: SidebarProp) => {
                 setInventoryItem({ ...inventoryItem, itemName: val })
               }
             />
-            <TextField
-              label="Item Group"
-              placeholder="e.g. Farming"
-              value={inventoryItem.itemGroup}
-              onChange={(val: string) =>
-                setInventoryItem({ ...inventoryItem, itemGroup: val })
-              }
-            />
+
+            <div className="relative">
+              <TextField
+                label="Item Category"
+                placeholder="e.g. Farming Supplies, Raw Materials"
+                value={inventoryItem.itemGroup}
+                onChange={handleItemCategoryInputChange}
+                onFocus={handleItemCategoryInputFocus}
+                isLoading={isLoadingSubTypes}
+              />
+              {showSuggestions && (
+                <div
+                  ref={suggestionsRef}
+                  className="absolute z-10 mt-1 w-full bg-light dark:bg-gray-800 rounded-md shadow-lg max-h-60 overflow-y-auto"
+                >
+                  {isLoadingSubTypes ? (
+                    <p className="text-xs p-2 text-gray-500 dark:text-gray-400">
+                      <Loader />
+                    </p>
+                  ) : suggestions.length > 0 ? (
+                    suggestions.map((suggestion, index) => (
+                      <div
+                        key={index}
+                        className="px-4 py-2 hover:bg-gray-500 dark:hover:bg-gray-700 text-sm cursor-pointer text-dark dark:text-light"
+                        onClick={() => selectCategorySuggestion(suggestion)}
+                      >
+                        {suggestion}
+                      </div>
+                    ))
+                  ) : (
+                    ""
+                  )}
+                </div>
+              )}
+            </div>
+
             <DropdownLarge
               items={UNITS}
               selectedItem={inventoryItem.units}
@@ -133,7 +257,7 @@ const InventoryForm = ({ onClose, formTitle }: SidebarProp) => {
                 setInventoryItem({ ...inventoryItem, pricePerUnit: val })
               }
             />
-            <div className="flex justify-end gap-4 mt-2">
+            <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-400 dark:border-gray-200">
               <Button text="Create" style="primary" type="submit" />
               <Button text="Cancel" style="secondary" onClick={handleClose} />
             </div>
