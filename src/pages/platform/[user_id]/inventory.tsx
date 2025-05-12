@@ -289,6 +289,7 @@ const Inventory = () => {
             view="inventory"
             onClose={() => setIsSidebarOpen(false)}
             onSubmit={(values: Record<string, string>) => {
+              console.log(values);
               setIsSidebarOpen(false);
             }}
             formTitle="Add Item"

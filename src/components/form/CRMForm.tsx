@@ -1,10 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/router";
 import TextField from "@/components/ui/TextField";
-import TextArea from "@/components/ui/TextArea";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import Button from "@/components/ui/Button";
-import CustomTable from "@/components/tables/CustomTable";
 import { CONTACT_TYPES, CONTRACT_STATUS } from "@/constants/options";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark } from "@fortawesome/free-solid-svg-icons";
@@ -273,12 +271,13 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       triggerToast("Contact added successfully!", "success");
       handleClose();
       window.location.reload();
-    } catch (error: any) {
+    } catch (error: unknown) {
       const message =
-        error.response?.data?.error ||
-        error.response?.data?.message ||
-        error.message ||
-        "An unexpected error occurred";
+        error instanceof Error
+          ? error.message
+          : typeof error === "string"
+          ? error
+          : "An unexpected error occurred";
       triggerToast(`Error: ${message}`, "error");
     }
   };
@@ -356,12 +355,13 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
         handleClose();
         window.location.reload();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       const message =
-        error.response?.data?.error ||
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to add company";
+        error instanceof Error
+          ? error.message
+          : typeof error === "string"
+          ? error
+          : "An unexpected error occurred";
       triggerToast(`Error: ${message}`, "error");
     }
   };
@@ -402,12 +402,13 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       triggerToast("Contract added successfully!", "success");
       handleClose();
       window.location.reload();
-    } catch (error: any) {
+    } catch (error: unknown) {
       const message =
-        error.response?.data?.error ||
-        error.response?.data?.message ||
-        error.message ||
-        "An unexpected error occurred";
+        error instanceof Error
+          ? error.message
+          : typeof error === "string"
+          ? error
+          : "An unexpected error occurred";
       triggerToast(`Error: ${message}`, "error");
     }
   };
@@ -435,10 +436,6 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
     return isValid;
   };
 
-  const handleReceiptItemsChange = (newItems: Item[]) => {
-    setReceiptsValues((prev) => ({ ...prev, items: newItems }));
-  };
-
   const handleSubmitReceipts = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateReceiptForm()) {
@@ -463,10 +460,10 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       bill_to_postal_code: receiptsValues.billToPostalCode || null,
       bill_to_country: receiptsValues.billToCountry || null,
       items: receiptsValues.items
-        .map(({ amount, ...rest }) => ({
-          description: rest.description,
-          quantity: Number(rest.quantity) || 0,
-          rate: Number(rest.rate) || 0,
+        .map(({ description, quantity, rate }) => ({
+          description,
+          quantity: Number(quantity) || 0,
+          rate: Number(rate) || 0,
         }))
         .filter((item) => item.description && item.description.trim() !== ""),
     };
@@ -499,21 +496,14 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
       triggerToast("Invoice added successfully!", "success");
       handleClose();
       window.location.reload();
-    } catch (error: any) {
+    } catch (error: unknown) {
       const message =
-        error.response?.data?.error ||
-        error.response?.data?.message ||
-        error.message ||
-        "An unexpected error occurred";
-      if (error.response?.status === 409) {
-        triggerToast("Error: Invoice number already exists.", "error");
-        setReceiptErrors((prev) => ({
-          ...prev,
-          receiptNumber: "This invoice number is already in use.",
-        }));
-      } else {
-        triggerToast(`Error: ${message}`, "error");
-      }
+        error instanceof Error
+          ? error.message
+          : typeof error === "string"
+          ? error
+          : "An unexpected error occurred";
+      triggerToast(`Error: ${message}`, "error");
     }
   };
 
@@ -548,12 +538,13 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
         handleClose();
         window.location.reload();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       const message =
-        error.response?.data?.error ||
-        error.response?.data?.message ||
-        error.message ||
-        "Failed to create task. Please try again.";
+        error instanceof Error
+          ? error.message
+          : typeof error === "string"
+          ? error
+          : "An unexpected error occurred";
       triggerToast(`Error: ${message}`, "error");
     }
   };
@@ -1075,8 +1066,6 @@ const CRMForm = ({ view, onClose, formTitle }: SidebarProp) => {
                     </div>
                   </div>
                 </div>
-
-
 
                 <div className="flex justify-end gap-3 mt-auto pt-6 border-t border-gray-400 dark:border-gray-200">
                   <Button

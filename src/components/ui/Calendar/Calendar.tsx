@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  useCallback,
+} from "react";
 import CalendarGrid from "./CalendarGrid";
 import CalendarHeader from "./CalendarHeader";
 import TaskListView from "./TaskListView";
@@ -96,7 +102,7 @@ const Calendar = () => {
 
   const getDateKey = (date: Date): string => date.toISOString().split("T")[0];
 
-  const convertTo24Hour = (time: string): string => {
+  const convertTo24Hour = useCallback((time: string): string => {
     if (!time) {
       return "00:00";
     }
@@ -121,9 +127,9 @@ const Calendar = () => {
     return `${hours.toString().padStart(2, "0")}:${minutes
       .toString()
       .padStart(2, "0")}`;
-  };
+  }, []);
 
-  const formatTaskTime = (deadline?: string): string => {
+  const formatTaskTime = useCallback((deadline?: string): string => {
     if (!deadline) return "No time set";
     const d = new Date(deadline);
     const hours = d.getHours();
@@ -132,70 +138,81 @@ const Calendar = () => {
     let displayHours = hours % 12;
     if (displayHours === 0) displayHours = 12;
     return `${displayHours}:${minutes.toString().padStart(2, "0")} ${ampm}`;
-  };
+  }, []);
 
-  const processRawTasksToDisplayTasks = (
-    rawTasks: RawBackendTask[]
-  ): DisplayTask[] => {
-    return rawTasks.map((task) => ({
-      ...task,
-      name: task.task,
-      time: formatTaskTime(task.deadline),
-    }));
-  };
+  const processRawTasksToDisplayTasks = useCallback(
+    (rawTasks: RawBackendTask[]): DisplayTask[] => {
+      return rawTasks.map((task) => ({
+        ...task,
+        name: task.task,
+        time: formatTaskTime(task.deadline),
+      }));
+    },
+    [formatTaskTime]
+  );
 
-  const fetchTasksForSelectedDate = async (
-    date: Date,
-    currentUserId: string | string[] | undefined
-  ) => {
-    if (!currentUserId || Array.isArray(currentUserId)) return;
-    setIsLoadingTasks(true);
-    const currentSelectedDateKey = getDateKey(date);
+  const fetchTasksForSelectedDate = useCallback(
+    async (date: Date, currentUserId: string | string[] | undefined) => {
+      if (!currentUserId || Array.isArray(currentUserId)) return;
+      setIsLoadingTasks(true);
+      const currentSelectedDateKey = getDateKey(date);
 
-    try {
-      const response = await axiosInstance.get(
-        `/tasks/${currentUserId}?deadlineDate=${currentSelectedDateKey}`
-      );
-      const fetchedBackendTasks: RawBackendTask[] = response.data?.tasks || [];
-      const correctlyFilteredTasks = fetchedBackendTasks.filter((task) => {
-        if (!task.deadline) {
-          return false;
-        }
-        const taskDeadlineDateKey = task.deadline.split("T")[0];
-        return taskDeadlineDateKey === currentSelectedDateKey;
-      });
-      setDisplayedTasks(processRawTasksToDisplayTasks(correctlyFilteredTasks));
-    } catch (error) {
-      console.error(
-        `Error fetching tasks for ${currentSelectedDateKey}:`,
-        error
-      );
-      setDisplayedTasks([]);
-    } finally {
-      setIsLoadingTasks(false);
+      try {
+        const response = await axiosInstance.get(
+          `/tasks/${currentUserId}?deadlineDate=${currentSelectedDateKey}`
+        );
+        const fetchedBackendTasks: RawBackendTask[] =
+          response.data?.tasks || [];
+        const correctlyFilteredTasks = fetchedBackendTasks.filter((task) => {
+          if (!task.deadline) {
+            return false;
+          }
+          const taskDeadlineDateKey = task.deadline.split("T")[0];
+          return taskDeadlineDateKey === currentSelectedDateKey;
+        });
+        setDisplayedTasks(
+          processRawTasksToDisplayTasks(correctlyFilteredTasks)
+        );
+      } catch (error) {
+        console.error(
+          `Error fetching tasks for ${currentSelectedDateKey}:`,
+          error
+        );
+        setDisplayedTasks([]);
+      } finally {
+        setIsLoadingTasks(false);
+      }
+    },
+    [processRawTasksToDisplayTasks]
+  ); // Added processRawTasksToDisplayTasks here
+
+  useEffect(() => {
+    if (user_id && selectedDate) {
+      fetchTasksForSelectedDate(selectedDate, user_id);
     }
-  };
+  }, [selectedDate, user_id, fetchTasksForSelectedDate]); // Added fetchTasksForSelectedDate here
 
-  const fetchTasksForGridIndicators = async (
-    currentUserId: string | string[] | undefined
-  ) => {
-    if (!currentUserId || Array.isArray(currentUserId)) return;
-    try {
-      const response = await axiosInstance.get(`/tasks/${currentUserId}`);
-      const allFetchedTasks: RawBackendTask[] = response.data?.tasks || [];
-      const newTasksForGrid: TasksPresence = {};
-      allFetchedTasks.forEach((task) => {
-        if (task.deadline) {
-          const taskDateKey = task.deadline.split("T")[0];
-          newTasksForGrid[taskDateKey] = true;
-        }
-      });
-      setTasksForGrid(newTasksForGrid);
-    } catch (error) {
-      console.error("Error fetching tasks for grid indicators:", error);
-      setTasksForGrid({});
-    }
-  };
+  const fetchTasksForGridIndicators = useCallback(
+    async (currentUserId: string | string[] | undefined) => {
+      if (!currentUserId || Array.isArray(currentUserId)) return;
+      try {
+        const response = await axiosInstance.get(`/tasks/${currentUserId}`);
+        const allFetchedTasks: RawBackendTask[] = response.data?.tasks || [];
+        const newTasksForGrid: TasksPresence = {};
+        allFetchedTasks.forEach((task) => {
+          if (task.deadline) {
+            const taskDateKey = task.deadline.split("T")[0];
+            newTasksForGrid[taskDateKey] = true;
+          }
+        });
+        setTasksForGrid(newTasksForGrid);
+      } catch (error) {
+        console.error("Error fetching tasks for grid indicators:", error);
+        setTasksForGrid({});
+      }
+    },
+    []
+  );
 
   useEffect(() => {
     const fetchUserSubTypes = async () => {
@@ -218,19 +235,20 @@ const Calendar = () => {
       fetchUserSubTypes();
       fetchTasksForGridIndicators(user_id);
     }
-  }, [user_id]);
+  }, [user_id, fetchTasksForGridIndicators]); // Added fetchTasksForGridIndicators here
 
-  useEffect(() => {
-    if (user_id && selectedDate) {
-      fetchTasksForSelectedDate(selectedDate, user_id);
-    }
-  }, [selectedDate, user_id]);
+  // Redundant useEffect removed - the one above covers selectedDate and user_id
+  // useEffect(() => {
+  //   if (user_id && selectedDate) {
+  //     fetchTasksForSelectedDate(selectedDate, user_id);
+  //   }
+  // }, [selectedDate, user_id]);
 
   useEffect(() => {
     if (user_id) {
       fetchTasksForGridIndicators(user_id);
     }
-  }, [calendarMonth, calendarYear, user_id]);
+  }, [calendarMonth, calendarYear, user_id, fetchTasksForGridIndicators]); // Added fetchTasksForGridIndicators here
 
   const handleProjectInputChange = (value: string) => {
     setProjectInput(value);
@@ -271,28 +289,36 @@ const Calendar = () => {
     setShowAddTask(false);
   };
 
-  const refreshTasksForCurrentView = async () => {
+  const refreshTasksForCurrentView = useCallback(async () => {
     if (user_id) {
       await fetchTasksForSelectedDate(selectedDate, user_id);
       await fetchTasksForGridIndicators(user_id);
     }
-  };
+  }, [
+    user_id,
+    selectedDate,
+    fetchTasksForSelectedDate,
+    fetchTasksForGridIndicators,
+  ]);
 
-  const refreshAllTasksAndViews = () => {
+  const refreshAllTasksAndViews = useCallback(() => {
     refreshTasksForCurrentView();
     setNewTask("");
     setNewTaskTime("12:00 PM");
     setShowAddTask(false);
     setShowTasks(true);
-  };
+  }, [refreshTasksForCurrentView]);
 
   const removeTask = async (taskId: number): Promise<void> => {
     try {
       setIsLoadingTasks(true);
       await axiosInstance.delete(`/tasks/delete/${taskId}`);
       await refreshTasksForCurrentView();
-    } catch (error: any) {
-      console.error("Error deleting task:", error);
+    } catch (error: unknown) {
+      console.error(
+        "Error deleting task:",
+        error instanceof Error ? error.message : "Unknown error"
+      );
       await refreshTasksForCurrentView();
     }
   };
@@ -310,7 +336,7 @@ const Calendar = () => {
           task.task_id === taskId ? { ...task, status: newStatus } : task
         )
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error updating task status:", error);
     } finally {
       setIsLoadingTasks(false);

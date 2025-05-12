@@ -1,9 +1,9 @@
-import React, { useEffect, useState, useMemo } from "react"; // Added useMemo
+import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import NotificationBar from "../NotificationSideBar";
 import Image from "next/image";
 import type { User } from "@/types/card-props";
-import type { Navbar as NavbarType } from "@/types/card-props"; // Renamed to avoid conflict
+import type { Navbar as NavbarType } from "@/types/card-props";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import {
   faArrowUpRightFromSquare,
@@ -15,8 +15,8 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Task } from "@/types/types";
-import { useUserPreferences } from "@/contexts/UserPreferencesContext"; // Import context
-import { getTranslator, TranslationKey } from "@/translations"; // Import translations
+import { useUserPreferences } from "@/contexts/UserPreferencesContext";
+import { getTranslator, TranslationKey } from "@/translations";
 
 interface NavbarProps extends NavbarType {
   isSidebarOpen: boolean;
@@ -24,8 +24,8 @@ interface NavbarProps extends NavbarType {
 }
 
 interface Notification {
-  titleKey: TranslationKey; // Use TranslationKey for title
-  description: string; // Description might remain dynamic
+  titleKey: TranslationKey;
+  description: string;
 }
 
 const Navbar = ({
@@ -35,8 +35,8 @@ const Navbar = ({
   toggleSidebar,
 }: NavbarProps) => {
   const router = useRouter();
-  const { language: currentLanguage } = useUserPreferences(); // Get language from context
-  const t = useMemo(() => getTranslator(currentLanguage), [currentLanguage]); // Initialize translator
+  const { language: currentLanguage } = useUserPreferences();
+  const t = useMemo(() => getTranslator(currentLanguage), [currentLanguage]);
 
   const [user, setUser] = useState<User>({
     name: "",
@@ -50,7 +50,6 @@ const Navbar = ({
 
   const userNavigation = useMemo(
     () => [
-      // Memoize to prevent re-creation on every render
       {
         nameKey: "pricing" as TranslationKey,
         href: `/platform/${userId}/pricing`,
@@ -69,7 +68,7 @@ const Navbar = ({
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [hasShownToday, setHasShownToday] = useState(false);
 
-  const fetchTasksDueTomorrow = async () => {
+  const fetchTasksDueTomorrow = useCallback(async () => {
     try {
       if (!userId || hasShownToday) return;
 
@@ -81,12 +80,12 @@ const Navbar = ({
 
       if (tasksDueTomorrow.length > 0) {
         const tasksList = tasksDueTomorrow
-          .map((task) => `• ${task.task || t("untitledTask")}`) // Translate untitled task
+          .map((task) => `• ${task.task || t("untitledTask")}`)
           .join("<br>");
 
         setNotifications([
           {
-            titleKey: "tasksDueTomorrow", // Use key for title
+            titleKey: "tasksDueTomorrow",
             description: tasksList,
           },
         ]);
@@ -95,7 +94,7 @@ const Navbar = ({
     } catch (error) {
       console.error("Error fetching tasks:", error);
     }
-  };
+  }, [userId, hasShownToday, t]);
 
   useEffect(() => {
     const lastShownDate = localStorage.getItem("lastNotificationDate");
@@ -105,9 +104,33 @@ const Navbar = ({
       fetchTasksDueTomorrow();
       localStorage.setItem("lastNotificationDate", today);
     } else {
-      setHasShownToday(true); // Ensure hasShownToday is true if notifications were already shown
+      setHasShownToday(true);
     }
-  }, [userId]); // t added to dependency if used inside fetchTasksDueTomorrow directly
+  }, [fetchTasksDueTomorrow]);
+
+  useEffect(() => {
+    const lastShownDate = localStorage.getItem("lastNotificationDate");
+    const today = new Date().toDateString();
+
+    if (lastShownDate !== today) {
+      fetchTasksDueTomorrow();
+      localStorage.setItem("lastNotificationDate", today);
+    } else {
+      setHasShownToday(true);
+    }
+  }, [userId, t, hasShownToday, fetchTasksDueTomorrow]);
+
+  useEffect(() => {
+    const lastShownDate = localStorage.getItem("lastNotificationDate");
+    const today = new Date().toDateString();
+
+    if (lastShownDate !== today) {
+      fetchTasksDueTomorrow();
+      localStorage.setItem("lastNotificationDate", today);
+    } else {
+      setHasShownToday(true);
+    }
+  }, [userId, fetchTasksDueTomorrow]);
 
   const clearAllNotifications = () => {
     setNotifications([]);
@@ -130,7 +153,7 @@ const Navbar = ({
           email: data.email,
           business: data.business_name,
           imageUrl:
-            data.profile_picture || // Assuming profile_picture from user data
+            data.profile_picture ||
             `https://eu.ui-avatars.com/api/?name=${encodeURIComponent(
               data.first_name
             )}+${encodeURIComponent(data.last_name)}&size=250`,
@@ -150,7 +173,7 @@ const Navbar = ({
     try {
       localStorage.removeItem("chatMessages");
       localStorage.removeItem("token");
-      localStorage.removeItem("language"); // Also clear language preference
+      localStorage.removeItem("language");
       localStorage.removeItem("timeFormat");
       localStorage.removeItem("temperatureScale");
       router.push("/");
@@ -326,7 +349,7 @@ const Navbar = ({
         notifications={notifications.map((n) => ({
           ...n,
           title: t(n.titleKey),
-        }))} // Translate title here
+        }))}
         isOpen={isNotificationBarOpen}
         closeNotificationBar={toggleNotificationBar}
         onClearAll={clearAllNotifications}

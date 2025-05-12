@@ -1,5 +1,4 @@
 import React, { useMemo } from "react";
-import { useRouter } from "next/router";
 import Head from "next/head";
 import PlatformLayout from "@/layout/PlatformLayout";
 import SettingsBar from "@/components/layout/SettingsBar";
@@ -9,10 +8,8 @@ import { getTranslator, translations } from "@/translations";
 type TranslationKey = keyof typeof translations.English;
 
 const FisherySettingsPage = () => {
-  const router = useRouter();
   const { language: currentLanguage } = useUserPreferences();
   const t = useMemo(() => getTranslator(currentLanguage), [currentLanguage]);
-
 
   return (
     <>

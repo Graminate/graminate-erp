@@ -3,7 +3,6 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faHome,
-  faChartPie,
   faUsers,
   faAddressBook,
   faCloud,
@@ -197,13 +196,13 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
         route: `/platform/${userId}/inventory`,
         subItems: [],
       },
-      {
-        icon: faChartPie,
-        labelKey: "findPartners",
-        section: "Find Partners",
-        route: `/platform/${userId}/partner_finder`,
-        subItems: [],
-      }
+      // {
+      //   icon: faChartPie,
+      //   labelKey: "findPartners",
+      //   section: "Find Partners",
+      //   route: `/platform/${userId}/partner_finder`,
+      //   subItems: [],
+      // }
     );
 
     return base;

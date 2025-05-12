@@ -30,9 +30,9 @@ type Receipt = {
   invoice_id: string;
   title: string;
   receipt_number: string;
-  total: number; // This might be calculated client-side or be from API
+  total: number;
   items: Array<ApiItem>;
-  paymentMethod?: "cash" | "card" | "other"; // Optional if not always present
+  paymentMethod?: "cash" | "card" | "other";
   receipt_date: string;
   bill_to: string;
   payment_terms: string | null;
@@ -55,11 +55,9 @@ const ReceiptDetails = () => {
   const { user_id, data } = router.query;
   const [receipt, setReceipt] = useState<Receipt | null>(null);
 
-  // State for editable fields
-  const [invoiceIdForDisplay, setInvoiceIdForDisplay] = useState(""); // This seems to be receipt_number, consider renaming
   const [receiptNumber, setReceiptNumber] = useState("");
-  const [mainTitle, setMainTitle] = useState(""); // This is the overall invoice title
-  const [editableReceiptTitle, setEditableReceiptTitle] = useState(""); // This is the same as mainTitle for editing
+  const [mainTitle, setMainTitle] = useState("");
+  const [editableReceiptTitle, setEditableReceiptTitle] = useState("");
 
   const [customerName, setCustomerName] = useState("");
   const [paymentTerms, setPaymentTerms] = useState("");
@@ -79,7 +77,7 @@ const ReceiptDetails = () => {
   const [billToPostalCode, setBillToPostalCode] = useState("");
   const [billToCountry, setBillToCountry] = useState("");
 
-  const [dbReceiptDate, setDbReceiptDate] = useState(""); // This is the creation/issue date
+  const [dbReceiptDate, setDbReceiptDate] = useState("");
 
   const [initialFormData, setInitialFormData] = useState({
     receiptNumber: "",
@@ -119,7 +117,6 @@ const ReceiptDetails = () => {
       try {
         const parsedReceipt = JSON.parse(data as string) as Receipt;
         setReceipt(parsedReceipt);
-        setInvoiceIdForDisplay(parsedReceipt.invoice_id?.toString() || ""); // this is the internal DB ID
         setMainTitle(parsedReceipt.title || "");
         setEditableReceiptTitle(parsedReceipt.title || "");
         setReceiptNumber(parsedReceipt.receipt_number || "");
@@ -138,7 +135,7 @@ const ReceiptDetails = () => {
         setTax(Number(parsedReceipt.tax) || 0);
         setDiscount(Number(parsedReceipt.discount) || 0);
         setShipping(Number(parsedReceipt.shipping) || 0);
-        setDbReceiptDate(parsedReceipt.receipt_date || ""); // This should be issued_date or receipt_date from DB
+        setDbReceiptDate(parsedReceipt.receipt_date || "");
 
         setBillToAddressLine1(parsedReceipt.bill_to_address_line1 || "");
         setBillToAddressLine2(parsedReceipt.bill_to_address_line2 || "");
@@ -197,21 +194,21 @@ const ReceiptDetails = () => {
     billToCountry !== initialFormData.billToCountry ||
     JSON.stringify(
       items
-        .map(({ amount, ...rest }) => ({
-          ...rest,
-          quantity: Number(rest.quantity),
-          rate: Number(rest.rate),
+        .map((item) => ({
+          description: item.description,
+          quantity: Number(item.quantity),
+          rate: Number(item.rate),
         }))
-        .filter((item) => item.description.trim() !== "") // Filter empty items before comparison
+        .filter((item) => item.description.trim() !== "")
     ) !==
       JSON.stringify(
         initialFormData.items
-          .map(({ amount, ...rest }) => ({
-            ...rest,
-            quantity: Number(rest.quantity),
-            rate: Number(rest.rate),
+          .map((item) => ({
+            description: item.description,
+            quantity: Number(item.quantity),
+            rate: Number(item.rate),
           }))
-          .filter((item) => item.description.trim() !== "") // Filter empty items from initial data too
+          .filter((item) => item.description.trim() !== "")
       );
 
   const calculateAmounts = () => {
@@ -245,12 +242,12 @@ const ReceiptDetails = () => {
       discount: Number(discount) || 0,
       shipping: Number(shipping) || 0,
       items: items
-        .map(({ amount, ...rest }) => ({
-          description: rest.description,
-          quantity: Number(rest.quantity) || 0,
-          rate: Number(rest.rate) || 0,
+        .map((item) => ({
+          description: item.description,
+          quantity: Number(item.quantity) || 0,
+          rate: Number(item.rate) || 0,
         }))
-        .filter((item) => item.description && item.description.trim() !== ""), // Ensure empty items are not sent
+        .filter((item) => item.description && item.description.trim() !== ""),
       bill_to_address_line1: billToAddressLine1,
       bill_to_address_line2: billToAddressLine2,
       bill_to_city: billToCity,
@@ -264,16 +261,14 @@ const ReceiptDetails = () => {
       triggerToast("Invoice updated successfully", "success");
 
       const updatedApiReceipt = response.data.invoice as Receipt;
-      setReceipt(updatedApiReceipt); // Update the main receipt object
-      setMainTitle(updatedApiReceipt.title || ""); // Update display title
+      setReceipt(updatedApiReceipt);
+      setMainTitle(updatedApiReceipt.title || "");
 
-      // Re-transform items from API response to ensure consistency
       const updatedLocalItems = transformApiItemsToLocalItems(
         updatedApiReceipt.items || []
       );
       setItems(updatedLocalItems);
 
-      // Update initialFormData to reflect saved state
       setInitialFormData({
         receiptNumber,
         editableReceiptTitle,
@@ -281,7 +276,7 @@ const ReceiptDetails = () => {
         paymentTerms,
         dueDate,
         notes,
-        items: updatedLocalItems, // Use the newly transformed items
+        items: updatedLocalItems,
         tax: Number(tax) || 0,
         discount: Number(discount) || 0,
         shipping: Number(shipping) || 0,
@@ -305,26 +300,23 @@ const ReceiptDetails = () => {
   };
 
   const handleItemsChange = (newItemsFromTable: Item[]) => {
-    // CustomTable now sends full Item[]
     setItems(newItemsFromTable);
   };
 
   const handleDownload = async () => {
-    const element = document.getElementById("receipt-container-content"); // Target inner content
+    const element = document.getElementById("receipt-container-content");
     if (!element) {
       triggerToast("Receipt content not found for PDF generation.", "error");
       return;
     }
 
-    // Temporarily hide buttons or other elements meant to be excluded
     const buttonsToHide = document.querySelectorAll(".exclude-from-pdf-view");
     buttonsToHide.forEach(
       (btn) => ((btn as HTMLElement).style.visibility = "hidden")
     );
 
     try {
-      // Ensure the scale is good for PDF. Adjust if needed.
-      const scale = 2; // Increase scale for better quality
+      const scale = 2;
       const imgData = await domtoimage.toPng(element, {
         quality: 0.98,
         bgcolor: "#ffffff",
@@ -333,40 +325,36 @@ const ReceiptDetails = () => {
         style: {
           transform: `scale(${scale})`,
           transformOrigin: "top left",
-          width: `${element.scrollWidth}px`, // Original width
-          height: `${element.scrollHeight}px`, // Original height
+          width: `${element.scrollWidth}px`,
+          height: `${element.scrollHeight}px`,
         },
       });
 
       const pdf = new jsPDF({
-        orientation: "p", // portrait
-        unit: "pt", // points
-        format: "a4", // A4 page size
+        orientation: "p",
+        unit: "pt",
+        format: "a4",
       });
 
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = pdf.internal.pageSize.getHeight();
-      const margin = 20; // Page margin
+      const margin = 20;
 
       const imgProps = pdf.getImageProperties(imgData);
-      const imgWidth = imgProps.width / scale; // Adjust for scale
-      const imgHeight = imgProps.height / scale; // Adjust for scale
+      const imgWidth = imgProps.width / scale;
+      const imgHeight = imgProps.height / scale;
 
       const aspectRatio = imgWidth / imgHeight;
 
       let finalImgWidth = pdfWidth - 2 * margin;
       let finalImgHeight = finalImgWidth / aspectRatio;
 
-      // If calculated height is too large for one page, we might need to adjust
-      // or implement multi-page, but dom-to-image often captures a single image.
-      // For simplicity, we'll fit to width and let it overflow height if necessary,
-      // or cap height.
       if (finalImgHeight > pdfHeight - 2 * margin) {
         finalImgHeight = pdfHeight - 2 * margin;
         finalImgWidth = finalImgHeight * aspectRatio;
       }
 
-      let currentY = margin;
+      const currentY = margin;
       pdf.addImage(
         imgData,
         "PNG",
@@ -376,13 +364,6 @@ const ReceiptDetails = () => {
         finalImgHeight
       );
 
-      // This simple multi-page logic for dom-to-image is often tricky
-      // because dom-to-image captures one single image of the element.
-      // If the content is truly longer than one PDF page at good resolution,
-      // you'd typically need to split the HTML content itself or use a different PDF library
-      // that can render HTML across pages. The current approach will scale down a large image
-      // to fit, or crop if not handled.
-
       pdf.save(`${receiptNumber || "invoice"}.pdf`);
     } catch (error) {
       console.error("Error generating PDF:", error);
@@ -391,14 +372,13 @@ const ReceiptDetails = () => {
         "error"
       );
     } finally {
-      // Restore visibility of hidden elements
       buttonsToHide.forEach(
         (btn) => ((btn as HTMLElement).style.visibility = "visible")
       );
     }
   };
 
-  const currentCalculatedAmounts = calculateAmounts(); // Calculate once per render
+  const currentCalculatedAmounts = calculateAmounts();
 
   return (
     <PlatformLayout>
@@ -420,7 +400,6 @@ const ReceiptDetails = () => {
           id="receipt-container-content"
           className="pt-4 bg-white dark:bg-gray-800 shadow-md rounded-lg p-4 sm:p-8 my-6"
         >
-          {/* Header Section */}
           <div className="flex flex-col sm:flex-row justify-between items-start pb-6 border-b dark:border-gray-700 mb-6">
             <div className="mb-4 sm:mb-0">
               <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">
@@ -448,9 +427,7 @@ const ReceiptDetails = () => {
             </div>
           </div>
 
-          {/* Main Content Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mb-8">
-            {/* Left Column - Invoice Details */}
             <div className="space-y-6">
               <div className="grid grid-cols-1 gap-6">
                 <TextField
@@ -476,7 +453,6 @@ const ReceiptDetails = () => {
               />
             </div>
 
-            {/* Right Column - Bill To */}
             <div className="space-y-3">
               <h3 className="text-sm font-semibold uppercase text-dark dark:text-light">
                 Bill To:
@@ -533,12 +509,10 @@ const ReceiptDetails = () => {
             </div>
           </div>
 
-          {/* Items Table */}
           <div className="mb-8">
             <CustomTable items={items} onItemsChange={handleItemsChange} />
           </div>
 
-          {/* Full-width Calculation Section */}
           <div className="w-full mb-8">
             <div className="flex justify-end">
               <div className="w-full md:w-1/3 space-y-2 text-gray-700 dark:text-gray-300">
@@ -591,7 +565,6 @@ const ReceiptDetails = () => {
           </div>
         </div>
 
-        {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row mt-10 space-y-3 sm:space-y-0 sm:space-x-4 exclude-from-pdf-view">
           <Button
             text={saving ? "Updating..." : "Update Invoice"}

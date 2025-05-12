@@ -18,6 +18,7 @@ import {
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import Swal from "sweetalert2";
+import Image from "next/image";
 
 type Contact = {
   contact_id: string;
@@ -106,9 +107,6 @@ const ContactDetails = () => {
   const [isAvatarDropdownOpen, setIsAvatarDropdownOpen] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const avatarDropdownRef = useRef<HTMLDivElement>(null);
-  const [loggedInUserEmail, setLoggedInUserEmail] = useState<string | null>(
-    null
-  );
 
   useEffect(() => {
     if (data) {
@@ -157,7 +155,6 @@ const ContactDetails = () => {
             response.data.data.user &&
             response.data.data.user.email
           ) {
-            setLoggedInUserEmail(response.data.data.user.email);
           } else {
             console.error(
               "Logged-in user email not found in API response:",
@@ -387,9 +384,11 @@ const ContactDetails = () => {
                 onClick={handleAvatarClick}
               >
                 {profileImageUrl ? (
-                  <img
+                  <Image
                     src={profileImageUrl}
                     alt={initialFullName || "Contact"}
+                    width={112}
+                    height={112}
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -412,9 +411,6 @@ const ContactDetails = () => {
                     className="block w-full text-left px-4 py-2 text-sm text-dark dark:text-light hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors"
                   >
                     Upload Image
-                  </button>
-                  <button className="block w-full text-left px-4 py-2 text-sm text-dark dark:text-light hover:bg-gray-400 dark:hover:bg-gray-600 transition-colors">
-                    Remove Image
                   </button>
                   {profileImageUrl && (
                     <button

@@ -74,49 +74,46 @@ const PlatformLayout = ({ children }: Props) => {
     }
   }, [user_id]);
 
-  const verifySession = useCallback(
-    async (currentUserId: string) => {
-      setIsLoadingAuth(true);
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setIsAuthorized(false);
-        setModalState({
-          isOpen: true,
-          title: "Unauthorized",
-          text: "Please log in first.",
-          variant: "error",
-        });
-        return;
-      }
+  const verifySession = useCallback(async (currentUserId: string) => {
+    setIsLoadingAuth(true);
+    const token = localStorage.getItem("token");
+    if (!token) {
+      setIsAuthorized(false);
+      setModalState({
+        isOpen: true,
+        title: "Unauthorized",
+        text: "Please log in first.",
+        variant: "error",
+      });
+      return;
+    }
 
-      try {
-        await axiosInstance.get(`/user/${currentUserId}`, {
-          timeout: 10000,
-        });
-        setIsAuthorized(true);
-      } catch (error: unknown) {
-        setIsAuthorized(false);
-        let errorText = "Session expired or unauthorized access.";
-        if (axios.isAxiosError(error)) {
-          const axiosError = error as AxiosError;
-          if (axiosError.response?.status === 401) {
-            errorText = "Session expired. Please log in again.";
-          } else if (axiosError.response?.status === 404) {
-            errorText = `User not found`;
-          }
+    try {
+      await axiosInstance.get(`/user/${currentUserId}`, {
+        timeout: 10000,
+      });
+      setIsAuthorized(true);
+    } catch (error: unknown) {
+      setIsAuthorized(false);
+      let errorText = "Session expired or unauthorized access.";
+      if (axios.isAxiosError(error)) {
+        const axiosError = error as AxiosError;
+        if (axiosError.response?.status === 401) {
+          errorText = "Session expired. Please log in again.";
+        } else if (axiosError.response?.status === 404) {
+          errorText = `User not found`;
         }
-        setModalState({
-          isOpen: true,
-          title: "Access Denied",
-          text: errorText,
-          variant: "error",
-        });
-      } finally {
-        setIsLoadingAuth(false);
       }
-    },
-    [router]
-  );
+      setModalState({
+        isOpen: true,
+        title: "Access Denied",
+        text: errorText,
+        variant: "error",
+      });
+    } finally {
+      setIsLoadingAuth(false);
+    }
+  }, []);
 
   useEffect(() => {
     const accountJustDeleted = sessionStorage.getItem("accountJustDeleted");

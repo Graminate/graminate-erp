@@ -18,6 +18,7 @@ import {
   faTrash,
 } from "@fortawesome/free-solid-svg-icons";
 import Swal from "sweetalert2";
+import Image from "next/image"; // Ensure Image is imported
 
 type Company = {
   company_id: string;
@@ -106,7 +107,7 @@ const CompanyDetails = () => {
 
         const newFormValues: Form = {
           companyName: parsedCompany.company_name || "",
-          contactPerson: parsedCompany.contact_person || "", // Changed
+          contactPerson: parsedCompany.contact_person || "",
           email: parsedCompany.email || "",
           phoneNumber: parsedCompany.phone_number || "",
           type: parsedCompany.type || "",
@@ -115,8 +116,8 @@ const CompanyDetails = () => {
           city: parsedCompany.city || "",
           state: parsedCompany.state || "",
           postalCode: parsedCompany.postal_code || "",
-          website: parsedCompany.website || "", // New
-          industry: parsedCompany.industry || "", // New
+          website: parsedCompany.website || "",
+          industry: parsedCompany.industry || "",
         };
         setFormData(newFormValues);
         setInitialFormData(newFormValues);
@@ -155,7 +156,7 @@ const CompanyDetails = () => {
     const payload = {
       id: company.company_id,
       company_name: formData.companyName,
-      contact_person: formData.contactPerson, // Changed
+      contact_person: formData.contactPerson,
       email: formData.email,
       phone_number: formData.phoneNumber,
       address_line_1: formData.addressLine1,
@@ -164,8 +165,8 @@ const CompanyDetails = () => {
       state: formData.state,
       postal_code: formData.postalCode,
       type: formData.type,
-      website: formData.website, // New
-      industry: formData.industry, // New
+      website: formData.website,
+      industry: formData.industry,
     };
 
     try {
@@ -180,7 +181,7 @@ const CompanyDetails = () => {
 
       const updatedFormValues: Form = {
         companyName: updatedCompany.company_name || "",
-        contactPerson: updatedCompany.contact_person || "", // Changed
+        contactPerson: updatedCompany.contact_person || "",
         email: updatedCompany.email || "",
         phoneNumber: updatedCompany.phone_number || "",
         type: updatedCompany.type || "",
@@ -189,8 +190,8 @@ const CompanyDetails = () => {
         city: updatedCompany.city || "",
         state: updatedCompany.state || "",
         postalCode: updatedCompany.postal_code || "",
-        website: updatedCompany.website || "", // New
-        industry: updatedCompany.industry || "", // New
+        website: updatedCompany.website || "",
+        industry: updatedCompany.industry || "",
       };
       setFormData(updatedFormValues);
       setInitialFormData(updatedFormValues);
@@ -259,18 +260,9 @@ const CompanyDetails = () => {
     const reader = new FileReader();
     reader.onloadend = () => {
       setProfileImageUrl(reader.result as string);
-      // This is a UI-only update. Actual image upload to server would require a separate API call.
       triggerToast("Company logo updated (simulated)", "success");
     };
     reader.readAsDataURL(file);
-  };
-
-  const handleRemoveImage = async () => {
-    setIsAvatarDropdownOpen(false);
-    if (!company) return;
-    setProfileImageUrl(null);
-    // This is a UI-only update.
-    triggerToast("Company logo removed (simulated)", "success");
   };
 
   const handleCallCompany = () => {
@@ -341,10 +333,12 @@ const CompanyDetails = () => {
                 onClick={handleAvatarClick}
               >
                 {profileImageUrl ? (
-                  <img
+                  <Image // Replaced <img> with <Image>
                     src={profileImageUrl}
                     alt={initialCompanyName || "Company Logo"}
                     className="w-full h-full object-cover"
+                    width={112} // Added width
+                    height={112} // Added height
                   />
                 ) : (
                   avatarInitials

@@ -55,6 +55,16 @@ const formatDeadlineForInput = (
   }
 };
 
+interface ApiTask {
+  task_id: number;
+  task: string;
+  description?: string | null;
+  type?: string | null;
+  status: string;
+  priority?: string | null;
+  deadline?: string | null;
+}
+
 const Tasks = () => {
   const router = useRouter();
   const projectTitle = router.query.project as string;
@@ -124,12 +134,12 @@ const Tasks = () => {
       setIsLoading(true);
       try {
         const response = await axiosInstance.get(`/tasks/${userId}`, {
-          params: { project: projectTitle }, // Add project filter
+          params: { project: projectTitle },
         });
         const fetchedTasks = response.data.tasks || [];
 
         const mappedTasks: Task[] = fetchedTasks.map(
-          (task: any): Task => ({
+          (task: ApiTask): Task => ({
             id: task.task_id.toString(),
             task: task.task,
             title: task.task,
@@ -221,7 +231,6 @@ const Tasks = () => {
 
       const createdApiTask = response.data;
       const newTask: Task = {
-        // Ensure newTask conforms to Task type
         task: createdApiTask.task,
         id: createdApiTask.task_id.toString(),
         columnId,
@@ -296,7 +305,7 @@ const Tasks = () => {
   };
 
   const updateTask = async (updatedTaskData: Task) => {
-    const { id, title, columnId, status, priority, description, deadline } =
+    const { id, title, status, priority, description, deadline } =
       updatedTaskData;
     const taskIdNum = typeof id === "string" ? parseInt(id, 10) : id;
     if (isNaN(taskIdNum)) {
@@ -427,6 +436,10 @@ const Tasks = () => {
     if (!over || !active || active.id === over.id) return;
     if (active.data.current?.type !== "Task") return;
 
+    /*
+    The following logic for optimistic updates during drag is currently disabled.
+    To re-enable, uncomment this block.
+
     const activeTask = tasks.find((t) => t.id === active.id);
     if (!activeTask) return;
 
@@ -439,18 +452,19 @@ const Tasks = () => {
     else if (isOverATask)
       targetColumnId = tasks.find((t) => t.id === overId)?.columnId ?? null;
 
-    // if (targetColumnId && activeTask.columnId !== targetColumnId) {
-    //   setTasks((prevTasks) => {
-    //     const activeIndex = prevTasks.findIndex((t) => t.id === active.id);
-    //     if (activeIndex === -1) return prevTasks;
-    //     const updatedTasks = [...prevTasks];
-    //     updatedTasks[activeIndex] = {
-    //       ...updatedTasks[activeIndex],
-    //       columnId: targetColumnId,
-    //     };
-    //     return updatedTasks;
-    //   });
-    // }
+    if (targetColumnId && activeTask.columnId !== targetColumnId) {
+      setTasks((prevTasks) => {
+        const activeIndex = prevTasks.findIndex((t) => t.id === active.id);
+        if (activeIndex === -1) return prevTasks;
+        const updatedTasks = [...prevTasks];
+        updatedTasks[activeIndex] = {
+          ...updatedTasks[activeIndex],
+          columnId: targetColumnId,
+        };
+        return updatedTasks;
+      });
+    }
+    */
   };
 
   const onDragEnd = async (event: DragEndEvent) => {
@@ -471,7 +485,6 @@ const Tasks = () => {
         );
         const overIndex = currentColumns.findIndex((col) => col.id === overId);
         if (activeIndex === -1 || overIndex === -1) return currentColumns;
-        // TODO: API call to update column order
         return arrayMove(currentColumns, activeIndex, overIndex);
       });
       return;
@@ -484,28 +497,16 @@ const Tasks = () => {
       const isOverAColumn = over.data.current?.type === "Column";
       const isOverATask = over.data.current?.type === "Task";
       let targetColumnId: Id = activeTask.columnId;
-      let overIndex = -1;
 
       if (isOverAColumn) {
         targetColumnId = overId;
-        const firstTaskIndexInTargetCol = tasks.findIndex(
-          (t) => t.columnId === targetColumnId
-        );
-        overIndex =
-          firstTaskIndexInTargetCol >= 0
-            ? firstTaskIndexInTargetCol
-            : tasks.length;
       } else if (isOverATask) {
         const overTask = tasks.find((t) => t.id === overId);
         if (!overTask) return;
         targetColumnId = overTask.columnId;
-        overIndex = tasks.findIndex((t) => t.id === overId);
       } else {
         return;
       }
-
-      const columnChanged = activeTask.columnId !== targetColumnId;
-      const originalTasks = [...tasks];
 
       setTasks((currentTasks) => {
         const activeIndex = currentTasks.findIndex((t) => t.id === activeId);
@@ -653,12 +654,10 @@ const Tasks = () => {
                           projectTitle={projectTitle}
                           updateColumnTitle={updateColumnTitle}
                           openTicketModal={openTicketModal}
-                          columnLimits={columnLimits}
                           addTask={addTask}
                           dropdownItems={dropdownItems}
                           openTaskModal={openTaskModal}
                           deleteTask={deleteTask}
-                          // Pass renamed state/handler for task actions
                           toggleDropdown={toggleTaskActionDropdown}
                           dropdownOpen={
                             taskActionDropdownOpen
@@ -690,7 +689,6 @@ const Tasks = () => {
                         projectTitle={projectTitle}
                         updateColumnTitle={() => {}}
                         openTicketModal={() => {}}
-                        columnLimits={columnLimits}
                         addTask={() => {}}
                         dropdownItems={dropdownItems}
                         openTaskModal={() => {}}
@@ -747,7 +745,9 @@ const Tasks = () => {
                 description: selectedTask.description,
                 deadline: selectedTask.deadline,
               }}
-              updateTask={updateTask as any}
+              updateTask={(updatedTask) =>
+                updateTask({ ...updatedTask, task: updatedTask.title })
+              }
               deleteTask={deleteTask}
               projectName={projectTitle || "Project"}
               availableLabels={dropdownItems}

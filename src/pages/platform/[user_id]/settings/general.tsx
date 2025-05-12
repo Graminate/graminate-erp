@@ -146,7 +146,7 @@ const GeneralPage = () => {
       setContextLanguage(user.language as SupportedLanguage);
       setProfileSuccessMessage(t("profileUpdateSuccess"));
     } catch (error: unknown) {
-      let errorMessage = t("anUnknownErrorOccurred");
+      const errorMessage = t("anUnknownErrorOccurred");
       setProfileErrorMessage(`${t("profileUpdateError")} ${errorMessage}`);
       console.error("Error updating profile:", errorMessage, error);
     } finally {

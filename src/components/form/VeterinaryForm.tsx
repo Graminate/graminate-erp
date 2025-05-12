@@ -108,10 +108,14 @@ const VeterinaryForm = ({ onClose, formTitle }: SidebarProp) => {
       handleClose();
       window.location.reload();
     } catch (error) {
-      Swal.fire({
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to submit veterinary data";
+      await Swal.fire({
         icon: "error",
         title: "Error",
-        text: "Failed to submit veterinary data. Please try again.",
+        text: errorMessage,
       });
     }
   };

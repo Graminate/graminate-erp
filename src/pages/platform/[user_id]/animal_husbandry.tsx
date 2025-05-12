@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
-
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -15,7 +14,6 @@ import {
 } from "chart.js";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import TaskAdder from "@/components/cards/TaskAdder";
-import ActiveProducts from "@/components/cards/ActiveProducts";
 
 ChartJS.register(
   CategoryScale,
@@ -27,11 +25,6 @@ ChartJS.register(
   ArcElement
 );
 
-type AnimalHusbandryItem = {
-  id: string | number;
-  name: string;
-};
-
 const AnimalHusbandry = () => {
   const router = useRouter();
   const { user_id } = router.query;
@@ -40,25 +33,21 @@ const AnimalHusbandry = () => {
     ? parseInt(parsedUserIdString, 10)
     : undefined;
 
-  const [itemRecords, setItemRecords] = useState<AnimalHusbandryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (!router.isReady || !numericUserId) return;
 
     const fetcAnimalHusbandry = async () => {
       setIsLoading(true);
-      setErrorMsg(null);
       try {
-        const response = await axiosInstance.get<{
-          items: AnimalHusbandryItem[];
-        }>(`/animal_husbandry/${numericUserId}`);
-        setItemRecords(response.data.items || []);
+        await axiosInstance.get(`/animal_husbandry/${numericUserId}`);
       } catch (error: unknown) {
-        let message = "An unknown error occurred while fetching animal husbandry data.";
-        setErrorMsg(message);
-        setItemRecords([]);
+        const message =
+          error instanceof Error
+            ? error.message
+            : "An unknown error occurred while fetching animal husbandry data.";
+        console.error(message);
       } finally {
         setIsLoading(false);
       }
@@ -81,8 +70,7 @@ const AnimalHusbandry = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
         <div>
           {numericUserId && !isNaN(numericUserId) ? (
             <TaskAdder userId={numericUserId} projectType="Husbandry" />

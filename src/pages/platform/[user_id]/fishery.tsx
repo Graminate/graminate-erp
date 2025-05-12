@@ -39,9 +39,9 @@ const Fishery = () => {
     ? parseInt(parsedUserIdString, 10)
     : undefined;
 
-  const [itemRecords, setItemRecords] = useState<FisheryItem[]>([]);
+  const [, setItemRecords] = useState<FisheryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     if (!router.isReady || !numericUserId) return;
@@ -54,8 +54,9 @@ const Fishery = () => {
           `/fishery/${numericUserId}`
         );
         setItemRecords(response.data.items || []);
-      } catch (error: unknown) {
-        let message = "An unknown error occurred while fetching fishery data.";
+      } catch {
+        const message =
+          "An unknown error occurred while fetching fishery data.";
         setErrorMsg(message);
         setItemRecords([]);
       } finally {

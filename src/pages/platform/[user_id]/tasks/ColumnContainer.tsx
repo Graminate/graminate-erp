@@ -19,7 +19,6 @@ type ColumnContainerProps = {
   deleteColumn?: (id: Id) => void;
   updateColumnTitle?: (id: Id, title: string) => void;
   openTicketModal: (colId: Id) => void;
-  columnLimits: Record<Id, string>;
   addTask: (columnId: Id, title: string, type: string) => void;
   dropdownItems: string[];
   openTaskModal: (task: Task) => void;
@@ -34,7 +33,6 @@ const ColumnContainer = ({
   column,
   tasks = [],
   updateColumnTitle,
-  columnLimits,
   addTask,
   openTaskModal,
   toggleDropdown,

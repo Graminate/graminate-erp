@@ -78,7 +78,7 @@ const AddTaskView = ({
       await axiosInstance.post("/tasks/add", taskData);
 
       refreshTasks();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error creating task:", error);
     } finally {
       setIsLoading(false);

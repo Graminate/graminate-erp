@@ -54,7 +54,6 @@ const InventoryForm = ({ onClose, formTitle }: SidebarProp) => {
     };
   }, []);
 
-
   useEffect(() => {
     const fetchUserSubTypes = async () => {
       if (!user_id) {
@@ -64,13 +63,7 @@ const InventoryForm = ({ onClose, formTitle }: SidebarProp) => {
       }
       setIsLoadingSubTypes(true);
       try {
-        const token = localStorage.getItem("token"); 
-          console.warn(
-            "No auth token found, proceeding without it for sub_type fetch."
-          );
-
         const response = await axiosInstance.get(`/user/${user_id}`);
-
         const user = response.data?.data?.user ?? response.data?.user;
         if (!user) {
           console.error("User payload missing in API response for sub_types");
@@ -83,7 +76,7 @@ const InventoryForm = ({ onClose, formTitle }: SidebarProp) => {
           "Error fetching user sub_types for item categories:",
           err
         );
-        setSubTypes([]); 
+        setSubTypes([]);
       } finally {
         setIsLoadingSubTypes(false);
       }
@@ -106,7 +99,7 @@ const InventoryForm = ({ onClose, formTitle }: SidebarProp) => {
       setSuggestions(filtered);
       setShowSuggestions(true);
     } else {
-      setSuggestions(subTypes); 
+      setSuggestions(subTypes);
       setShowSuggestions(true);
     }
   };
@@ -118,7 +111,6 @@ const InventoryForm = ({ onClose, formTitle }: SidebarProp) => {
 
   const handleItemCategoryInputFocus = () => {
     if (subTypes.length > 0) {
-      
       if (!inventoryItem.itemGroup) {
         setSuggestions(subTypes);
       } else {

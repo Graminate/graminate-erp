@@ -86,13 +86,11 @@ const LabourPayment = () => {
               if (Array.isArray(payments)) {
                 allPayments.push(...payments);
               }
-            } catch (error: any) {
-              if (error?.response?.status !== 404) {
-                console.error(
-                  `Error fetching payments for labour ${labour.labour_id}:`,
-                  error instanceof Error ? error.message : String(error)
-                );
-              }
+            } catch (error: unknown) {
+              console.error(
+                `Error fetching payments for labour ${labour.labour_id}:`,
+                error instanceof Error ? error.message : String(error)
+              );
             }
           })
         );
@@ -261,7 +259,7 @@ const LabourPayment = () => {
             <p className="text-xl font-bold text-green-600 dark:text-green-400">
               ₹ {totalPaid.toFixed(2)}
             </p>
-            <p className="text-xs text-gray-300">(Based on 'Paid' records)</p>
+            <p className="text-xs text-gray-300">(Based on Paid records)</p>
           </div>
 
           <div className="bg-white dark:bg-gray-800 p-4 rounded shadow">

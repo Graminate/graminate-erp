@@ -5,10 +5,7 @@ import { Coordinates } from "@/types/card-props";
 import axios from "axios";
 import Loader from "@/components/ui/Loader";
 import { useDisplayMode, useWeatherData } from "@/hooks/weather";
-import {
-  useUserPreferences,
-  TimeFormatOption,
-} from "@/contexts/UserPreferencesContext";
+import { useUserPreferences } from "@/contexts/UserPreferencesContext";
 
 type DailySunData = {
   time: string[];
@@ -20,7 +17,7 @@ const SunCard = ({ lat, lon }: Coordinates) => {
 
   const [sunriseTime, setSunriseTime] = useState<string | null>(null);
   const [sunsetTime, setSunsetTime] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+
   const [sunTimesArray, setSunTimesArray] = useState<
     { date: string; sunrise: string; sunset: string }[]
   >([]);
@@ -185,7 +182,6 @@ const SunCard = ({ lat, lon }: Coordinates) => {
         );
         setSunriseTime(sunrise);
         setSunsetTime(sunset);
-        setError(null);
       } else {
         setSunriseTime("--:--");
         setSunsetTime("--:--");

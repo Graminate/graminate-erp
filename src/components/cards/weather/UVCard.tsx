@@ -30,7 +30,6 @@ type WeatherData = {
 const UVCard = ({ lat, lon }: Coordinates) => {
   const [lowestRiskLevel, setLowestRiskLevel] = useState<string>("");
   const [highestRiskLevel, setHighestRiskLevel] = useState<string>("");
-  const [error, setError] = useState<string | null>(null);
   const [uvIndexToday, setUvIndexToday] = useState<number | null>(null);
   const [hourlyUVDataByDay, setHourlyUVDataByDay] = useState<
     { day: Date; uvHours: UVHourly[] }[]
@@ -181,7 +180,6 @@ const UVCard = ({ lat, lon }: Coordinates) => {
       }
 
       setUvIndexToday(closestUV < 0 ? 0 : closestUV);
-      setError(null);
       setLowestRiskLevel(getUVRiskLevel(minUV).label);
       setHighestRiskLevel(getUVRiskLevel(maxUV).label);
     }

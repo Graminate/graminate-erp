@@ -2,7 +2,6 @@ import { useState, FormEvent } from "react";
 import Button from "@/components/ui/Button";
 import TextField from "@/components/ui/TextField";
 import NavPanel from "../layout/NavPanel";
-import axiosInstance from "@/lib/utils/axiosInstance";
 
 type PoultryFormData = {
   totalChicks: number;
@@ -34,25 +33,9 @@ const AddPoultryDataModal = ({
   onClose,
   onChange,
   onSubmit,
-  userId,
   refreshHealthRecords,
 }: AddPoultryDataModalProps) => {
   const [activeView, setActiveView] = useState("flock");
-
-  const [vetForm, setVetForm] = useState({
-    date: "",
-    veterinaryName: "",
-    birdType: "Chicken",
-    purpose: "Broiler",
-    birdsIn: 0,
-    birdsDied: 0,
-    vaccines: "",
-    deworming: "Yes",
-    symptoms: "",
-    medications: "",
-    actionsTaken: "",
-    remarks: "",
-  });
 
   const navButtons = [
     { name: "Flock Data", view: "flock" },
@@ -62,74 +45,6 @@ const AddPoultryDataModal = ({
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    if (activeView === "vet") {
-      // Calculate the mortality rate
-      const mortality =
-        vetForm.birdsIn > 0
-          ? Math.round((vetForm.birdsDied / vetForm.birdsIn) * 10000) / 100
-          : null;
-
-      onChange({
-        target: {
-          name: "mortalityRate24h",
-          value: mortality,
-        },
-      } as unknown as React.ChangeEvent<HTMLInputElement>);
-
-      // Validation: Required fields only
-      const missingFields: string[] = [];
-      if (!vetForm.date) missingFields.push("Visit Date");
-      if (!vetForm.veterinaryName) missingFields.push("Veterinary Name");
-      if (!vetForm.birdType) missingFields.push("Bird Type");
-      if (!vetForm.purpose) missingFields.push("Purpose");
-      if (!vetForm.birdsIn) missingFields.push("Birds In");
-      if (!vetForm.birdsDied) missingFields.push("Birds Died");
-
-      if (missingFields.length > 0) {
-        const formatted = missingFields.join(", ");
-        await import("sweetalert2").then(({ default: Swal }) =>
-          Swal.fire({
-            icon: "warning",
-            title: "Missing Fields",
-            text: `Please fill in the following: ${formatted}`,
-          })
-        );
-        return;
-      }
-
-      try {
-        await axiosInstance.post(`/poultry_health`, {
-          user_id: userId,
-          date: vetForm.date,
-          veterinary_name: vetForm.veterinaryName,
-          bird_type: vetForm.birdType,
-          purpose: vetForm.purpose,
-          birds_in: vetForm.birdsIn,
-          birds_died: vetForm.birdsDied,
-          mortality_rate: mortality,
-          vaccines: vetForm.vaccines
-            ? vetForm.vaccines
-                .split(",")
-                .map((v) => v.trim())
-                .filter(Boolean)
-            : [],
-          deworming: vetForm.deworming,
-          symptoms: vetForm.symptoms
-            ? vetForm.symptoms
-                .split(",")
-                .map((s) => s.trim())
-                .filter(Boolean)
-            : [],
-          medications: vetForm.medications || "",
-          actions_taken: vetForm.actionsTaken || "",
-          remarks: vetForm.remarks || "",
-        });
-      } catch (error) {
-        console.error("Error submitting veterinary data:", error);
-      }
-    }
-
     onSubmit(e);
     await refreshHealthRecords();
     onClose();

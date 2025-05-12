@@ -428,6 +428,7 @@ const CRM = () => {
   };
 
   const handleFormSubmit = (values: Record<string, string>) => {
+    console.log(values);
     setIsSidebarOpen(false);
   };
 

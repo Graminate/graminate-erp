@@ -7,23 +7,8 @@ import Button from "@/components/ui/Button";
 import Loader from "@/components/ui/Loader";
 import { useUserPreferences } from "@/contexts/UserPreferencesContext";
 import { getTranslator, translations } from "@/translations";
-import axiosInstance from "@/lib/utils/axiosInstance";
 
 type TranslationKey = keyof typeof translations.English;
-
-interface PoultrySettingsState {
-  mortalityRateThreshold: string;
-  defaultVaccinationReminder: string;
-  autoHealthRecords: boolean;
-  idealTempMin: string;
-  idealTempMax: string;
-  lightHours: string;
-  lightScheduleType: string;
-  enableTempAlerts: boolean;
-  dailyFeedConsumption: string;
-  lowFeedInventoryAlert: string;
-  expectedEggProduction: string;
-}
 
 const PoultrySettingsPage = () => {
   const router = useRouter();
@@ -34,76 +19,18 @@ const PoultrySettingsPage = () => {
   const t = useMemo(() => getTranslator(currentLanguage), [currentLanguage]);
 
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [successMessage, setSuccessMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
 
-  const [poultrySettings, setPoultrySettings] = useState<PoultrySettingsState>({
-    mortalityRateThreshold: "",
-    defaultVaccinationReminder: "7 days before due",
-    autoHealthRecords: true,
-    idealTempMin: "",
-    idealTempMax: "",
-    lightHours: "",
-    lightScheduleType: "Fixed Schedule",
-    enableTempAlerts: true,
-    dailyFeedConsumption: "",
-    lowFeedInventoryAlert: "3 days supply remaining",
-    expectedEggProduction: "",
-  });
+  const [successMessage] = useState("");
+  const [errorMessage] = useState("");
 
   useEffect(() => {
     if (!userId) {
       setIsLoading(false);
       return;
     }
-    const fetchPoultryData = async () => {
-      setIsLoading(true);
-      try {
-        const response = await axiosInstance.get(
-          `/user/${userId}/poultry-settings`
-        );
-        if (response.data) {
-          setPoultrySettings(response.data);
-        }
-      } catch (error) {
-        console.error("Error fetching poultry settings:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+
     setIsLoading(false);
   }, [userId]);
-
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value, type } = e.target;
-    const checked = (e.target as HTMLInputElement).checked;
-    setPoultrySettings((prev) => ({
-      ...prev,
-      [name]: type === "checkbox" ? checked : value,
-    }));
-  };
-
-  const handleSavePoultrySettings = async () => {
-    if (!userId) return;
-    setIsSaving(true);
-    setSuccessMessage("");
-    setErrorMessage("");
-    try {
-      await axiosInstance.put(
-        `/user/${userId}/poultry-settings`,
-        poultrySettings
-      );
-      setSuccessMessage(t("settingsUpdateSuccess" as TranslationKey));
-    } catch (error) {
-      console.error("Error saving poultry settings:", error);
-      setErrorMessage(t("settingsUpdateError" as TranslationKey));
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   return (
     <>
@@ -142,7 +69,7 @@ const PoultrySettingsPage = () => {
                           <div className="flex items-center gap-2"></div>
                         </div>
                       </div>
-                      {/* Environmental Controls */}
+
                       <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
                         <h3 className="font-semibold mb-4 dark:text-light">
                           Environment Controls
@@ -157,7 +84,7 @@ const PoultrySettingsPage = () => {
                           <div className="flex items-center gap-2"></div>
                         </div>
                       </div>
-                      {/* Feed & Production */}
+
                       <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
                         <h3 className="font-semibold mb-4 dark:text-light">
                           Feed & Production

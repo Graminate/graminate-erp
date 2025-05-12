@@ -81,6 +81,7 @@ const FirstLoginModal = ({ isOpen, onSubmit }: FirstLoginModalProps) => {
     try {
       await onSubmit(businessName.trim(), businessType, selectedSubTypes);
     } catch (error: unknown) {
+      console.error("Failed to save details:", error);
       triggerToast("Failed to save details. Please try again later.", "error");
     }
   }, [businessName, businessType, onSubmit, selectedSubTypes]);
@@ -134,14 +135,14 @@ const FirstLoginModal = ({ isOpen, onSubmit }: FirstLoginModalProps) => {
         >
           <h2
             className={`text-2xl sm:text-3xl font-semibold mb-2 text-center text-foreground
-                        transition-all transform duration-500 ease-out
-                        ${
-                          isStepMounted
-                            ? "opacity-100 translate-y-0"
-                            : "opacity-0 -translate-y-4"
-                        }`}
+                transition-all transform duration-500 ease-out
+                ${
+                  isStepMounted
+                    ? "opacity-100 translate-y-0"
+                    : "opacity-0 -translate-y-4"
+                }`}
           >
-            Welcome! Let's set up your business.
+            Welcome! Let&apos;s set up your business.
           </h2>
           <p
             className={`text-sm text-center text-gray-300  mb-8

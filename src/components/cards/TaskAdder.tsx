@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import TextField from "@/components/ui/TextField";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import Button from "@/components/ui/Button";
@@ -39,30 +39,32 @@ const TaskAdder = ({ userId, projectType }: Props) => {
   const [error, setError] = useState<string | null>(null);
   const [editingPriority, setEditingPriority] = useState<number | null>(null);
 
-  const handlePriorityChange = async (
-    taskId: number,
-    newPriority: Priority
-  ) => {
-    try {
-      const response = await axiosInstance.put(`/tasks/update/${taskId}`, {
-        priority: newPriority,
+  // priorityRank moved inside sortTasks useCallback as priorityRankLocal
+
+  const sortTasks = useCallback(
+    (list: Task[], asc: boolean) => {
+      // priorityRank is now defined locally within sortTasks
+      const priorityRankLocal: Record<Priority, number> = {
+        High: 1,
+        Medium: 2,
+        Low: 3,
+      };
+
+      const sorted = [...list].sort((a, b) => {
+        const aRank = priorityRankLocal[a.priority];
+        const bRank = priorityRankLocal[b.priority];
+        return asc ? aRank - bRank : bRank - aRank;
       });
 
-      setTaskList((prev) =>
-        sortTasks(prev.map((t) => (t.task_id === taskId ? response.data : t)))
-      );
-      setEditingPriority(null);
-    } catch (err) {
-      console.error("Failed to update priority:", err);
-      setError("Failed to update task priority. Please try again.");
-    }
-  };
-
-  const priorityRank: Record<Priority, number> = {
-    High: 1,
-    Medium: 2,
-    Low: 3,
-  };
+      return [
+        ...sorted.filter((t) => t.status === "To Do"),
+        ...sorted.filter((t) => t.status === "In Progress"),
+        ...sorted.filter((t) => t.status === "Checks"),
+        ...sorted.filter((t) => t.status === "Completed"),
+      ];
+    },
+    [] // No dependencies needed as priorityRankLocal is self-contained and 'asc' is a parameter
+  );
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -81,7 +83,7 @@ const TaskAdder = ({ userId, projectType }: Props) => {
           ? response.data
           : response.data.tasks || [];
 
-        setTaskList(sortTasks(tasks));
+        setTaskList(sortTasks(tasks, prioritySortAsc)); // Pass prioritySortAsc
       } catch (err) {
         console.error("Failed to fetch tasks:", err);
         setError("Failed to load tasks. Please try again later.");
@@ -91,21 +93,28 @@ const TaskAdder = ({ userId, projectType }: Props) => {
     };
 
     fetchTasks();
-  }, [userId, projectType]);
+  }, [userId, projectType, prioritySortAsc, sortTasks]); // sortTasks is stable, prioritySortAsc is a dependency
 
-  const sortTasks = (list: Task[], asc = prioritySortAsc) => {
-    const sorted = [...list].sort((a, b) => {
-      const aRank = priorityRank[a.priority];
-      const bRank = priorityRank[b.priority];
-      return asc ? aRank - bRank : bRank - aRank;
-    });
+  const handlePriorityChange = async (
+    taskId: number,
+    newPriority: Priority
+  ) => {
+    try {
+      const response = await axiosInstance.put(`/tasks/update/${taskId}`, {
+        priority: newPriority,
+      });
 
-    return [
-      ...sorted.filter((t) => t.status === "To Do"),
-      ...sorted.filter((t) => t.status === "In Progress"),
-      ...sorted.filter((t) => t.status === "Checks"),
-      ...sorted.filter((t) => t.status === "Completed"),
-    ];
+      setTaskList((prev) =>
+        sortTasks(
+          prev.map((t) => (t.task_id === taskId ? response.data : t)),
+          prioritySortAsc // Pass prioritySortAsc
+        )
+      );
+      setEditingPriority(null);
+    } catch (err) {
+      console.error("Failed to update priority:", err);
+      setError("Failed to update task priority. Please try again.");
+    }
   };
 
   const toggleTaskCompletion = async (taskId: number) => {
@@ -120,7 +129,10 @@ const TaskAdder = ({ userId, projectType }: Props) => {
       });
 
       setTaskList((prev) =>
-        sortTasks(prev.map((t) => (t.task_id === taskId ? response.data : t)))
+        sortTasks(
+          prev.map((t) => (t.task_id === taskId ? response.data : t)),
+          prioritySortAsc // Pass prioritySortAsc
+        )
       );
     } catch (err) {
       console.error("Failed to update task:", err);
@@ -140,7 +152,9 @@ const TaskAdder = ({ userId, projectType }: Props) => {
         priority: newTaskPriority,
       });
 
-      setTaskList((prev) => sortTasks([...prev, response.data]));
+      setTaskList((prev) =>
+        sortTasks([...prev, response.data], prioritySortAsc)
+      ); // Pass prioritySortAsc
       setNewTaskText("");
       setNewTaskPriority("Medium");
       setError(null);
@@ -153,9 +167,13 @@ const TaskAdder = ({ userId, projectType }: Props) => {
   const deleteTask = async (taskId: number) => {
     try {
       await axiosInstance.delete(`/tasks/delete/${taskId}`);
+      // Deleting doesn't require re-sorting the whole list, just filtering.
+      // However, to maintain consistency if sortTasks did more, we could call it.
+      // For now, simple filter is fine and doesn't need sortTasks.
       setTaskList((prev) => prev.filter((task) => task.task_id !== taskId));
       setError(null);
     } catch (err) {
+      console.error("Failed to delete task:", err);
       setError("Failed to delete task. Please try again.");
     }
   };
@@ -192,8 +210,10 @@ const TaskAdder = ({ userId, projectType }: Props) => {
           </span>
           <button
             onClick={() => {
-              setPrioritySortAsc((prev) => !prev);
-              setTaskList((prev) => sortTasks([...prev]));
+              const newAsc = !prioritySortAsc; // Determine the new sort order
+              setPrioritySortAsc(newAsc); // Update the state for sort order
+              // Re-sort the existing task list using the new sort order
+              setTaskList((prevList) => sortTasks(prevList, newAsc));
             }}
             className="text-sm bg-gray-500 dark:bg-gray-700 text-dark dark:text-light px-2 py-1 rounded hover:bg-gray-400 dark:hover:bg-gray-600 flex items-center cursor-pointer"
           >

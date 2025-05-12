@@ -97,21 +97,6 @@ const eggGradingPieData = {
   ],
 };
 
-type Priority = "High" | "Medium" | "Low";
-
-const tasks: {
-  id: number;
-  text: string;
-  completed: boolean;
-  priority: Priority;
-}[] = [
-  { id: 1, text: "Check water lines", completed: false, priority: "High" },
-  { id: 2, text: "Record feed levels", completed: true, priority: "Medium" },
-  { id: 3, text: "Schedule vet visit", completed: false, priority: "Medium" },
-  { id: 4, text: "Clean House B", completed: false, priority: "Low" },
-  { id: 5, text: "Order new feed batch", completed: false, priority: "High" },
-];
-
 type VaccineStatus = "Vaccinated" | "Unvaccinated" | "N/A";
 
 type PoultryFormData = {

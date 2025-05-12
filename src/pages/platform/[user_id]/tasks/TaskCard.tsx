@@ -1,5 +1,5 @@
 import { Id, Task } from "@/types/types";
-import React, { useState } from "react";
+import React from "react";
 
 type TaskCardProps = {
   task: Task;
@@ -16,8 +16,6 @@ const TaskCard = ({
   openTaskModal,
   isOverlay = false,
 }: TaskCardProps) => {
-  const [isHovering, setIsHovering] = useState(false);
-
   if (!task) {
     return null;
   }
@@ -40,8 +38,6 @@ const TaskCard = ({
       className={`bg-white dark:bg-gray-700 p-3 rounded-md shadow relative ${
         isOverlay ? "cursor-grabbing" : "cursor-pointer"
       } touch-manipulation`}
-      onMouseEnter={() => !isOverlay && setIsHovering(true)}
-      onMouseLeave={() => !isOverlay && setIsHovering(false)}
       onClick={(e) => {
         if (isOverlay) return;
         const target = e.target as HTMLElement;
