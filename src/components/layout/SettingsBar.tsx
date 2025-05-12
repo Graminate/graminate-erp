@@ -10,7 +10,6 @@ import Loader from "@/components/ui/Loader";
 type SettingsSubItem = {
   label: string;
   href: string;
-  // viewSlug is no longer needed for these items as they are separate pages
 };
 
 type SettingsMainItem = {

@@ -23,9 +23,7 @@ const UserPreferencesContext = createContext<
   UserPreferencesContextType | undefined
 >(undefined);
 
-export const UserPreferencesProvider = ({
-  children,
-}: {
+export const UserPreferencesProvider = ({children}: {
   children: ReactNode;
 }) => {
   const [timeFormat, setTimeFormatState] = useState<TimeFormatOption>(() => {
@@ -67,7 +65,7 @@ export const UserPreferencesProvider = ({
         return storedLanguage;
       }
     }
-    return "English"; // Default language
+    return "English";
   });
 
   const setTimeFormatContext = (format: TimeFormatOption) => {
@@ -77,6 +75,7 @@ export const UserPreferencesProvider = ({
     }
   };
 
+  // Temperature scale (Celsius or Fahrenheit) - weather settings
   const setTemperatureScaleContext = (scale: TemperatureScaleOption) => {
     setTemperatureScaleState(scale);
     if (typeof window !== "undefined") {
@@ -84,6 +83,7 @@ export const UserPreferencesProvider = ({
     }
   };
 
+  // Language preference (English, Hindi, Assamese) - General settings
   const setLanguageContext = (lang: SupportedLanguage) => {
     setLanguageState(lang);
     if (typeof window !== "undefined") {

@@ -30,8 +30,8 @@ type TemperatureWeatherData = {
   rain: number | null;
   snowfall: number | null;
   cloudCover: number;
-  maxTemp: number; // API will return in Celsius
-  minTemp: number; // API will return in Celsius
+  maxTemp: number;
+  minTemp: number;
   hourlyForecast: HourlyForecast[];
   dailyForecast: DailyForecast[];
 };
