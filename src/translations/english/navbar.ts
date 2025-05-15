@@ -5,7 +5,7 @@ const englishNavbar = {
   notifications: "Notifications",
   profilePreferences: "Profile Preferences",
   pricing: "Pricing",
-  newsUpdates: "News Updates",
+
   trainingAndServices: "Training & Services",
   signOut: "Sign Out",
   privacyPolicy: "Privacy Policy",

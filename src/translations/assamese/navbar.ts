@@ -5,7 +5,7 @@ const assameseNavbar = {
   notifications: "জাননীসমূহ",
   profilePreferences: "প্ৰফাইল পছন্দসমূহ",
   pricing: "মূল্য নিৰ্ধাৰণ",
-  newsUpdates: "বাতৰি আপডেট",
+
   trainingAndServices: "প্ৰশিক্ষণ আৰু সেৱাসমূহ",
   signOut: "চাইন আউট কৰক",
   privacyPolicy: "গোপনীয়তা নীতি",

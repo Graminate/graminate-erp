@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
+import QualityCard from "@/components/cards/fishery/QualityCard";
 
 import {
   Chart as ChartJS,
@@ -44,7 +45,16 @@ const Fishery = () => {
   const [, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!router.isReady || !numericUserId) return;
+    if (!router.isReady) {
+      setIsLoading(true);
+      return;
+    }
+    if (!numericUserId) {
+      setIsLoading(false);
+      setErrorMsg("User ID not available or invalid for fishery data.");
+      setItemRecords([]);
+      return;
+    }
 
     const fetchFishery = async () => {
       setIsLoading(true);
@@ -81,7 +91,12 @@ const Fishery = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div className="md:col-span-2">
+            <QualityCard />
+          </div>
+        </div>
+
         <div>
           {numericUserId && !isNaN(numericUserId) ? (
             <TaskAdder userId={numericUserId} projectType="Fishery" />

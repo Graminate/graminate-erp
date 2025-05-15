@@ -5,7 +5,6 @@ const hindiNavbar = {
   notifications: "सूचनाएं",
   profilePreferences: "प्रोफ़ाइल प्राथमिकताएँ",
   pricing: "मूल्य निर्धारण",
-  newsUpdates: "समाचार अपडेट",
   trainingAndServices: "प्रशिक्षण और सेवाएँ",
   signOut: "साइन आउट करें",
   privacyPolicy: "गोपनीयता नीति",
