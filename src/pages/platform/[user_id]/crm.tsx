@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/router";
 import Button from "@/components/ui/Button";
 import SearchDropdown from "@/components/ui/SearchDropdown";
@@ -6,10 +6,20 @@ import Table from "@/components/tables/Table";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
 import { PAGINATION_ITEMS } from "@/constants/options";
-import CRMForm from "@/components/form/CRMForm";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
+import {
+  faChevronDown,
+  faChevronUp,
+  faXmark,
+} from "@fortawesome/free-solid-svg-icons";
+// Hooks are not directly used now, their logic is inlined conditionally
+// import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
+import ContactForm from "@/components/form/crm/ContactForm";
+import CompanyForm from "@/components/form/crm/CompanyForm";
+import ContractForm from "@/components/form/crm/ContractForm";
+import ReceiptForm from "@/components/form/crm/ReceiptForm";
+import TaskForm from "@/components/form/crm/TaskForm";
 
 type View = "contacts" | "companies" | "contracts" | "receipts" | "tasks";
 
@@ -98,6 +108,41 @@ const CRM = () => {
   const [fetchedData, setFetchedData] = useState<FetchedDataItem[]>([]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const [animate, setAnimate] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  const handleClosePanelAnimation = () => {
+    setAnimate(false);
+    setTimeout(() => setIsSidebarOpen(false), 300);
+  };
+
+  useEffect(() => {
+    if (isSidebarOpen) {
+      setAnimate(true);
+      document.body.classList.add("overflow-hidden");
+      return () => {
+        document.body.classList.remove("overflow-hidden");
+      };
+    }
+  }, [isSidebarOpen]);
+
+  useEffect(() => {
+    if (isSidebarOpen) {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (
+          panelRef.current &&
+          !panelRef.current.contains(event.target as Node)
+        ) {
+          handleClosePanelAnimation();
+        }
+      };
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+  }, [isSidebarOpen, panelRef, handleClosePanelAnimation]);
 
   const dropdownItems = [
     { label: "Contacts", view: "contacts" },
@@ -277,11 +322,9 @@ const CRM = () => {
             "#",
             "Contract",
             "Partner",
-            // "Amount",
             "Status",
             "Category",
             "Priority",
-            // "Start Date",
             "End Date",
           ],
           rows: fetchedData
@@ -290,11 +333,9 @@ const CRM = () => {
               item.deal_id,
               item.deal_name,
               item.partner,
-              // item.amount,
               item.stage,
               item.category || "-",
               item.priority,
-              // new Date(item.start_date).toLocaleDateString(),
               new Date(item.end_date).toLocaleDateString(),
             ]),
         };
@@ -320,7 +361,7 @@ const CRM = () => {
             acc[task.project] = [];
           }
           if ("project" in task) {
-            acc[task.project].push(task);
+            acc[task.project].push(task as Task);
           }
           return acc;
         }, {} as Record<string, Task[]>);
@@ -427,12 +468,7 @@ const CRM = () => {
     });
   };
 
-  const handleFormSubmit = (values: Record<string, string>) => {
-    console.log(values);
-    setIsSidebarOpen(false);
-  };
-
-  const formTitle = useMemo(() => {
+  const sidebarTitle = useMemo(() => {
     switch (view) {
       case "contacts":
         return "Create Contact";
@@ -441,7 +477,7 @@ const CRM = () => {
       case "contracts":
         return "Create Contract";
       case "receipts":
-        return "Create Receipt";
+        return "Create Invoice";
       case "tasks":
         return "Create Task";
       default:
@@ -458,7 +494,7 @@ const CRM = () => {
       case "contracts":
         return "Create Contract";
       case "receipts":
-        return "Create Receipt";
+        return "Create Invoice";
       case "tasks":
         return "Create Task";
       default:
@@ -539,12 +575,64 @@ const CRM = () => {
           loading={loading}
         />
         {isSidebarOpen && (
-          <CRMForm
-            view={view}
-            onClose={() => setIsSidebarOpen(false)}
-            onSubmit={handleFormSubmit}
-            formTitle={formTitle}
-          />
+          <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm">
+            <div
+              ref={panelRef}
+              className="fixed top-0 right-0 h-full w-full md:w-[650px] bg-light dark:bg-gray-800 shadow-lg dark:border-l border-gray-700 overflow-y-auto"
+              style={{
+                transform: animate ? "translateX(0)" : "translateX(100%)",
+                transition: "transform 300ms ease-out",
+              }}
+            >
+              <div className="p-6 flex flex-col h-full">
+                <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-400 dark:border-gray-200">
+                  <h2 className="text-xl font-semibold text-dark dark:text-light">
+                    {sidebarTitle}
+                  </h2>
+                  <button
+                    className="text-gray-300 hover:text-gray-200 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
+                    onClick={handleClosePanelAnimation}
+                    aria-label="Close panel"
+                  >
+                    <FontAwesomeIcon icon={faXmark} className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="flex-grow overflow-y-auto pr-2 -mr-2 space-y-6">
+                  {view === "contacts" && (
+                    <ContactForm
+                      userId={user_id}
+                      onClose={handleClosePanelAnimation}
+                    />
+                  )}
+                  {view === "companies" && (
+                    <CompanyForm
+                      userId={user_id}
+                      onClose={handleClosePanelAnimation}
+                    />
+                  )}
+                  {view === "contracts" && (
+                    <ContractForm
+                      userId={user_id}
+                      onClose={handleClosePanelAnimation}
+                    />
+                  )}
+                  {view === "receipts" && (
+                    <ReceiptForm
+                      userId={user_id}
+                      onClose={handleClosePanelAnimation}
+                    />
+                  )}
+                  {view === "tasks" && (
+                    <TaskForm
+                      userId={user_id}
+                      onClose={handleClosePanelAnimation}
+                    />
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </div>
     </PlatformLayout>
