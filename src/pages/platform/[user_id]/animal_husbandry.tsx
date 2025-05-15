@@ -13,7 +13,7 @@ import {
   ArcElement,
 } from "chart.js";
 import axiosInstance from "@/lib/utils/axiosInstance";
-import TaskAdder from "@/components/cards/TaskAdder";
+import TaskManager from "@/components/cards/TaskManager";
 
 ChartJS.register(
   CategoryScale,
@@ -73,7 +73,7 @@ const AnimalHusbandry = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
         <div>
           {numericUserId && !isNaN(numericUserId) ? (
-            <TaskAdder userId={numericUserId} projectType="Husbandry" />
+            <TaskManager userId={numericUserId} projectType="Husbandry" />
           ) : (
             !isLoading && (
               <p className="dark:text-gray-400">

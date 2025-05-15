@@ -255,10 +255,10 @@ const CRM = () => {
             "First Name",
             "Last Name",
             "Email",
-            "Phone Number",
+            "Phone",
             "Type",
             "Address",
-            "Created / Updated On",
+            "Created On",
           ],
           rows: fetchedData
             .filter((item): item is Contact => "contact_id" in item)

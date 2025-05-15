@@ -25,7 +25,7 @@ import AddPoultryDataModal from "@/components/modals/AddPoultryDataModal";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import ActiveProducts from "@/components/cards/ActiveProducts";
 import { useUserPreferences } from "@/contexts/UserPreferencesContext";
-import TaskAdder from "@/components/cards/TaskAdder";
+import TaskManager from "@/components/cards/TaskManager";
 
 ChartJS.register(
   CategoryScale,
@@ -549,7 +549,7 @@ const Poultry = () => {
             </div>
           </div>
         </div>
-        <TaskAdder userId={Number(parsedUserId)} projectType="Poultry" />
+        <TaskManager userId={Number(parsedUserId)} projectType="Poultry" />
       </div>
       {isModalOpen && (
         <AddPoultryDataModal

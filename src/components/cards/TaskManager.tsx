@@ -30,7 +30,7 @@ type Props = {
   projectType: string;
 };
 
-const TaskAdder = ({ userId, projectType }: Props) => {
+const TaskManager = ({ userId, projectType }: Props) => {
   const [taskList, setTaskList] = useState<Task[]>([]);
   const [newTaskText, setNewTaskText] = useState("");
   const [newTaskPriority, setNewTaskPriority] = useState<Priority>("Medium");
@@ -332,4 +332,4 @@ const TaskAdder = ({ userId, projectType }: Props) => {
   );
 };
 
-export default TaskAdder;
+export default TaskManager;

@@ -55,9 +55,9 @@ const ALL_QUALITY_PARAMETERS = [
   "Alkalinity",
   "Hardness",
   "Salinity",
-  "Dissolved Oxygen",
-  "Ammonia Content",
-  "PH Levels",
+  "Dissolved O2",
+  "Ammonia",
+  "pH Levels",
 ] as const;
 
 type QualityParameter = (typeof ALL_QUALITY_PARAMETERS)[number];
@@ -87,28 +87,28 @@ const generateDailyData = (
         case "Salinity":
           dayData[param] = 15 + (Math.random() - 0.5) * 2;
           break;
-        case "Dissolved Oxygen":
+        case "Dissolved O2":
           dayData[param] = 7 + (Math.random() - 0.5) * 1;
           break;
-        case "Ammonia Content":
+        case "Ammonia":
           dayData[param] = 0.1 + (Math.random() - 0.5) * 0.1;
           break;
-        case "PH Levels":
+        case "pH Levels":
           dayData[param] = 7 + (Math.random() - 0.5) * 2;
           break;
         default:
           dayData[param] = 0;
       }
       if (dayData[param] !== null) {
-        if (param === "Ammonia Content")
+        if (param === "Ammonia")
           dayData[param] = Math.max(
             0.01,
             parseFloat((dayData[param] as number).toFixed(2))
           );
         else if (
           param === "Salinity" ||
-          param === "Dissolved Oxygen" ||
-          param === "PH Levels"
+          param === "Dissolved O2" ||
+          param === "pH Levels"
         )
           dayData[param] = Math.max(
             0,
@@ -152,17 +152,17 @@ const parameterUnits: Record<
     defaultUnit: "ppm",
     yAxisLabelBase: "Salinity",
   },
-  "Dissolved Oxygen": {
+  "Dissolved O2": {
     units: ["ppm", "mg/L", "% saturation"],
     defaultUnit: "ppm",
     yAxisLabelBase: "Dissolved Oxygen",
   },
-  "Ammonia Content": {
+  Ammonia: {
     units: ["ppm", "mg/L as NH₃-N", "mg/L as NH₃"],
     defaultUnit: "ppm",
     yAxisLabelBase: "Ammonia",
   },
-  "PH Levels": { units: ["pH"], defaultUnit: "pH", yAxisLabelBase: "PH Value" },
+  "pH Levels": { units: ["pH"], defaultUnit: "pH", yAxisLabelBase: "PH Value" },
 };
 
 const QualityCard = () => {
@@ -304,7 +304,7 @@ const QualityCard = () => {
           );
         });
 
-        if (selectedQuality === "PH Levels") {
+        if (selectedQuality === "pH Levels") {
           chartType = "bar";
           barColors = dataValues.map((ph) => {
             if (ph === null) return "rgba(200, 200, 200, 0.1)";
@@ -389,9 +389,9 @@ const QualityCard = () => {
               },
             },
             y: {
-              beginAtZero: selectedQuality !== "PH Levels",
-              min: selectedQuality === "PH Levels" ? 0 : undefined,
-              max: selectedQuality === "PH Levels" ? 14 : undefined,
+              beginAtZero: selectedQuality !== "pH Levels",
+              min: selectedQuality === "pH Levels" ? 0 : undefined,
+              max: selectedQuality === "pH Levels" ? 14 : undefined,
               title: {
                 display: true,
                 text: yAxisLabelText,
@@ -474,7 +474,7 @@ const QualityCard = () => {
   const handleNext = () => setDateOffset((prev) => prev + 1);
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-lg">
+    <div className="bg-white dark:bg-gray-800 p-4 sm:p-6 rounded-lg shadow-sm">
       <div className="mb-4">
         <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-1 text-center sm:text-left">
           Water Quality Analysis
@@ -490,7 +490,7 @@ const QualityCard = () => {
               className={`px-3 py-1.5 text-xs sm:text-sm font-medium rounded-full shadow-sm transition-all duration-150 ease-in-out ${
                 selectedQuality === param
                   ? "bg-blue-200 text-white hover:bg-blue-100"
-                  : "bg-gray-500 dark:bg-gray-600 text-dark dark:text-light hover:bg-gray-600 dark:hover:bg-gray-700"
+                  : "bg-gray-500 dark:bg-gray-600 text-dark dark:text-light hover:bg-gray-400 dark:hover:bg-gray-700"
               }`}
             >
               {param}
@@ -498,7 +498,7 @@ const QualityCard = () => {
           ))}
         </div>
         <div className="flex flex-col sm:flex-row sm:justify-end sm:items-center gap-3 sm:gap-4 mb-4">
-          {selectedQuality !== "PH Levels" && (
+          {selectedQuality !== "pH Levels" && (
             <div className="w-full sm:w-auto sm:min-w-[180px]">
               <DropdownSmall
                 items={currentUnitOptions.slice()}
