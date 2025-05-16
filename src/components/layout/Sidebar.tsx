@@ -191,11 +191,20 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
       },
       {
         icon: faWarehouse,
-        labelKey: "inventory",
-        section: "Inventory",
+        labelKey: "storage",
+        section: "storage",
         route: `/platform/${userId}/inventory`,
-        subItems: [],
-      },
+        subItems: [
+          {
+            labelKey: "warehouse",
+            route: `/platform/${userId}/warehouse`,
+          },
+          {
+            labelKey: "inventory",
+            route: `/platform/${userId}/inventory`,
+          },
+        ],
+      }
       // {
       //   icon: faChartPie,
       //   labelKey: "findPartners",

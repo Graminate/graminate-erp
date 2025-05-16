@@ -11,9 +11,20 @@ import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
 import axiosInstance from "@/lib/utils/axiosInstance";
 import Loader from "../ui/Loader";
 
-const InventoryForm = ({ onClose, formTitle }: SidebarProp) => {
+interface InventoryFormProps extends SidebarProp {
+  warehouseId?: number;
+}
+
+const InventoryForm = ({
+  onClose,
+  formTitle,
+  warehouseId,
+}: InventoryFormProps) => {
   const router = useRouter();
-  const { user_id } = router.query;
+  const { user_id: queryUserId } = router.query;
+  const parsedUserId = Array.isArray(queryUserId)
+    ? queryUserId[0]
+    : queryUserId;
 
   const [animate, setAnimate] = useState(false);
   const [inventoryItem, setInventoryItem] = useState({
@@ -26,7 +37,7 @@ const InventoryForm = ({ onClose, formTitle }: SidebarProp) => {
 
   const panelRef = useRef<HTMLDivElement>(null);
 
-  const [subTypes, setSubTypes] = useState<string[]>([]); // Will hold the fetched categories
+  const [subTypes, setSubTypes] = useState<string[]>([]);
   const [isLoadingSubTypes, setIsLoadingSubTypes] = useState(true);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -56,26 +67,21 @@ const InventoryForm = ({ onClose, formTitle }: SidebarProp) => {
 
   useEffect(() => {
     const fetchUserSubTypes = async () => {
-      if (!user_id) {
+      if (!parsedUserId) {
         setIsLoadingSubTypes(false);
         setSubTypes([]);
         return;
       }
       setIsLoadingSubTypes(true);
       try {
-        const response = await axiosInstance.get(`/user/${user_id}`);
+        const response = await axiosInstance.get(`/user/${parsedUserId}`);
         const user = response.data?.data?.user ?? response.data?.user;
         if (!user) {
-          console.error("User payload missing in API response for sub_types");
           setSubTypes([]);
         } else {
           setSubTypes(Array.isArray(user.sub_type) ? user.sub_type : []);
         }
       } catch (err) {
-        console.error(
-          "Error fetching user sub_types for item categories:",
-          err
-        );
         setSubTypes([]);
       } finally {
         setIsLoadingSubTypes(false);
@@ -83,7 +89,7 @@ const InventoryForm = ({ onClose, formTitle }: SidebarProp) => {
     };
 
     fetchUserSubTypes();
-  }, [user_id]);
+  }, [parsedUserId]);
 
   const handleClose = () => {
     onClose();
@@ -125,13 +131,18 @@ const InventoryForm = ({ onClose, formTitle }: SidebarProp) => {
 
   const handleSubmitInventoryItem = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!parsedUserId) {
+      alert("User ID is missing. Cannot create inventory item.");
+      return;
+    }
     const payload = {
-      user_id: user_id,
+      user_id: Number(parsedUserId),
       item_name: inventoryItem.itemName,
       item_group: inventoryItem.itemGroup,
       units: inventoryItem.units,
-      quantity: inventoryItem.quantity,
-      price_per_unit: inventoryItem.pricePerUnit,
+      quantity: Number(inventoryItem.quantity),
+      price_per_unit: Number(inventoryItem.pricePerUnit),
+      warehouse_id: warehouseId,
     };
     try {
       await axiosInstance.post(`/inventory/add`, payload);
@@ -147,7 +158,6 @@ const InventoryForm = ({ onClose, formTitle }: SidebarProp) => {
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "An unexpected error occurred";
-      console.error("Error adding inventory item:", message);
       alert(message);
     }
   };

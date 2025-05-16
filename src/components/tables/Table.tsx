@@ -198,6 +198,7 @@ const Table = ({
       contacts: "contact",
       labours: "labour",
       inventory: "inventory",
+      warehouse: "warehouse",
       contracts: "contract",
       receipts: "receipt",
       tasks: "tasks",
@@ -226,6 +227,7 @@ const Table = ({
           labour: "labour",
           poultry_health: "poultry_health",
           inventory: "inventory",
+          warehouse: "warehouse",
         };
 
         const endpoint = endpointMap[view] || "inventory";
@@ -323,6 +325,7 @@ const Table = ({
                   tasks: "tasks",
                   labour: "labour",
                   inventory: "inventory",
+                  warehouse: "warehouse",
                   poultry_health: "poultry_health",
                 };
 

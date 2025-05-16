@@ -59,6 +59,7 @@ export type SidebarProp = {
   onClose: () => void;
   onSubmit?: (values: Record<string, string>) => void;
   formTitle?: string;
+  warehouseId?: number;
 };
 
 // Left sidebar

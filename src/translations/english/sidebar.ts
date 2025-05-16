@@ -17,6 +17,8 @@ const englishSidebar = {
   database: "Database",
   salaryManager: "Salary Manager",
   financeTracker: "Finance Tracker",
+  storage: "Storage",
+  warehouse: "Warehouse",
   inventory: "Inventory",
   findPartners: "Find Partners",
   loadingSidebar: "Loading...",
