@@ -18,33 +18,78 @@ const WAREHOUSE_TYPES = [
   "Hazardous Storage",
 ];
 
-const WarehouseForm = ({ onClose, formTitle }: SidebarProp) => {
+type WarehouseData = {
+  name: string;
+  type: string;
+  address_line_1: string;
+  address_line_2: string;
+  city: string;
+  state: string;
+  postal_code: string;
+  country: string;
+  contact_person: string;
+  phone: string;
+  storage_capacity: string;
+};
+
+interface WarehouseFormProps extends SidebarProp {
+  initialData?: Partial<WarehouseData>;
+  warehouseId?: number;
+}
+
+const WarehouseForm = ({
+  onClose,
+  formTitle,
+  initialData,
+  warehouseId,
+}: WarehouseFormProps) => {
   const router = useRouter();
-  const { user_id } = router.query;
+  const { user_id: queryUserId } = router.query;
+  const parsedUserId = Array.isArray(queryUserId)
+    ? queryUserId[0]
+    : queryUserId;
 
   const [animate, setAnimate] = useState(false);
-  const [warehouseData, setWarehouseData] = useState({
-    name: "",
-    type: "",
-    address_line_1: "",
-    address_line_2: "",
-    city: "",
-    state: "",
-    postal_code: "",
-    country: "",
-    contact_person: "",
-    phone: "",
-    storage_capacity: "",
+  const [warehouseData, setWarehouseData] = useState<WarehouseData>({
+    name: initialData?.name || "",
+    type: initialData?.type || "",
+    address_line_1: initialData?.address_line_1 || "",
+    address_line_2: initialData?.address_line_2 || "",
+    city: initialData?.city || "",
+    state: initialData?.state || "",
+    postal_code: initialData?.postal_code || "",
+    country: initialData?.country || "",
+    contact_person: initialData?.contact_person || "",
+    phone: initialData?.phone || "",
+    storage_capacity: initialData?.storage_capacity?.toString() || "",
   });
 
   const panelRef = useRef<HTMLDivElement>(null);
+  const isEditMode = !!warehouseId;
 
   useAnimatePanel(setAnimate);
-
   useClickOutside(panelRef, () => {
     setAnimate(false);
     setTimeout(() => handleClose(), 300);
   });
+
+  useEffect(() => {
+    if (initialData) {
+      setWarehouseData({
+        name: initialData.name || "",
+        type: initialData.type || "",
+        address_line_1: initialData.address_line_1 || "",
+        address_line_2: initialData.address_line_2 || "",
+        city: initialData.city || "",
+        state: initialData.state || "",
+        postal_code: initialData.postal_code || "",
+        country: initialData.country || "",
+        contact_person: initialData.contact_person || "",
+        phone: initialData.phone || "",
+        storage_capacity: initialData.storage_capacity?.toString() || "",
+      });
+    }
+  }, [initialData]);
 
   const handleClose = () => {
     onClose();
@@ -52,13 +97,9 @@ const WarehouseForm = ({ onClose, formTitle }: SidebarProp) => {
 
   const handleSubmitWarehouse = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user_id) {
-      alert("User ID is missing. Cannot create warehouse.");
-      return;
-    }
 
     const payload = {
-      user_id: Number(user_id),
+      user_id: parsedUserId ? Number(parsedUserId) : undefined,
       name: warehouseData.name,
       type: warehouseData.type,
       address_line_1: warehouseData.address_line_1 || undefined,
@@ -75,27 +116,23 @@ const WarehouseForm = ({ onClose, formTitle }: SidebarProp) => {
     };
 
     try {
-      await axiosInstance.post(`/warehouse/add`, payload);
-      setWarehouseData({
-        name: "",
-        type: "",
-        address_line_1: "",
-        address_line_2: "",
-        city: "",
-        state: "",
-        postal_code: "",
-        country: "",
-        contact_person: "",
-        phone: "",
-        storage_capacity: "",
-      });
+      if (isEditMode && warehouseId) {
+        await axiosInstance.put(`/warehouse/update/${warehouseId}`, payload);
+      } else {
+        if (!parsedUserId) {
+          alert("User ID is missing. Cannot create warehouse.");
+          return;
+        }
+        await axiosInstance.post(`/warehouse/add`, payload);
+      }
       handleClose();
       window.location.reload();
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : "An unexpected error occurred";
-      console.error("Error adding warehouse:", message);
-      alert(`Error adding warehouse: ${message}`);
+      alert(
+        `Error ${isEditMode ? "updating" : "adding"} warehouse: ${message}`
+      );
     }
   };
 
@@ -112,7 +149,8 @@ const WarehouseForm = ({ onClose, formTitle }: SidebarProp) => {
         <div className="p-6 flex flex-col h-full">
           <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-400 dark:border-gray-200">
             <h2 className="text-xl font-semibold text-dark dark:text-light">
-              {formTitle ? formTitle : "Create Warehouse"}
+              {formTitle ||
+                (isEditMode ? "Edit Warehouse" : "Create Warehouse")}
             </h2>
             <button
               className="text-gray-400 hover:text-gray-300 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
@@ -229,7 +267,11 @@ const WarehouseForm = ({ onClose, formTitle }: SidebarProp) => {
             />
 
             <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-400 dark:border-gray-200">
-              <Button text="Create" style="primary" type="submit" />
+              <Button
+                text={isEditMode ? "Update" : "Create"}
+                style="primary"
+                type="submit"
+              />
               <Button text="Cancel" style="secondary" onClick={handleClose} />
             </div>
           </form>

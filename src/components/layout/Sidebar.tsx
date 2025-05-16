@@ -26,7 +26,7 @@ import { getTranslator, TranslationKey } from "@/translations";
 interface SidebarSection {
   icon: IconDefinition;
   labelKey: TranslationKey;
-  section: string; 
+  section: string;
   route?: string;
   basePath?: string;
   subItems: { labelKey: TranslationKey; route: string }[];
@@ -193,17 +193,8 @@ const Sidebar = ({ isOpen, userId, onSectionChange }: SidebarProps) => {
         icon: faWarehouse,
         labelKey: "storage",
         section: "storage",
-        route: `/platform/${userId}/inventory`,
-        subItems: [
-          {
-            labelKey: "warehouse",
-            route: `/platform/${userId}/warehouse`,
-          },
-          {
-            labelKey: "inventory",
-            route: `/platform/${userId}/inventory`,
-          },
-        ],
+        route: `/platform/${userId}/storage`,
+        subItems: [],
       }
       // {
       //   icon: faChartPie,

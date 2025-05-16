@@ -6,7 +6,7 @@ import PlatformLayout from "@/layout/PlatformLayout";
 import { PAGINATION_ITEMS } from "@/constants/options";
 import Head from "next/head";
 import axiosInstance from "@/lib/utils/axiosInstance";
-import WarehouseForm from "@/components/form/crm/WarehouseForm";
+import WarehouseForm from "@/components/form/WarehouseForm";
 
 type View = "warehouse";
 
@@ -132,13 +132,13 @@ const WarehousePage = () => {
   return (
     <PlatformLayout>
       <Head>
-        <title>Graminate | Warehouse Registry</title>
+        <title>Graminate | Storage</title>
       </Head>
-      <div className="min-h-screen container mx-auto py-4">
+      <div className="min-h-screen container mx-auto p-4">
         <div className="flex justify-between items-center dark:bg-dark relative mb-4">
           <div>
             <h1 className="text-lg font-semibold dark:text-white">
-              Warehouse Registry
+              You Warehouses
             </h1>
             <p className="text-xs text-dark dark:text-light">
               {loading
@@ -149,11 +149,6 @@ const WarehousePage = () => {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button
-              text="View All Inventory"
-              style="primary"
-              onClick={() => router.push(`/platform/${parsedUserId}/inventory`)}
-            />
             <Button
               text="Add Warehouse"
               style="primary"

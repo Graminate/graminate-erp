@@ -17,7 +17,16 @@ import {
   ArcElement,
 } from "chart.js";
 import InventoryForm from "@/components/form/InventoryForm";
+import WarehouseForm from "@/components/form/WarehouseForm";
 import axiosInstance from "@/lib/utils/axiosInstance";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import {
+  faWarehouse,
+  faMapMarkerAlt,
+  faUserTie,
+  faPhone,
+  faBoxOpen,
+} from "@fortawesome/free-solid-svg-icons";
 
 ChartJS.register(
   CategoryScale,
@@ -40,6 +49,22 @@ type ItemRecord = {
   price_per_unit: number;
   warehouse_id: number | null;
   status?: string;
+};
+
+type WarehouseDetails = {
+  warehouse_id: number;
+  user_id?: number;
+  name: string;
+  type: string;
+  address_line_1: string | null;
+  address_line_2: string | null;
+  city: string | null;
+  state: string | null;
+  postal_code: string | null;
+  country: string | null;
+  contact_person: string | null;
+  phone: string | null;
+  storage_capacity: number | string | null;
 };
 
 const getBarColor = (quantity: number, max: number) => {
@@ -72,7 +97,7 @@ const WarehouseInventoryPage = () => {
   const parsedWarehouseId = Array.isArray(queryWarehouseId)
     ? queryWarehouseId[0]
     : queryWarehouseId;
-  const warehouseName = queryWarehouseName
+  const warehouseNameFromQuery = queryWarehouseName
     ? decodeURIComponent(
         Array.isArray(queryWarehouseName)
           ? queryWarehouseName[0]
@@ -83,11 +108,15 @@ const WarehouseInventoryPage = () => {
   const [inventoryForWarehouse, setInventoryForWarehouse] = useState<
     ItemRecord[]
   >([]);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [currentWarehouseDetails, setCurrentWarehouseDetails] =
+    useState<WarehouseDetails | null>(null);
+  const [isInventoryFormOpen, setIsInventoryFormOpen] = useState(false);
+  const [isWarehouseFormOpen, setIsWarehouseFormOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(25);
   const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loadingInventory, setLoadingInventory] = useState(true);
+  const [loadingWarehouseDetails, setLoadingWarehouseDetails] = useState(true);
 
   const [chartThemeColors, setChartThemeColors] = useState({
     textColor: "#333",
@@ -108,31 +137,45 @@ const WarehouseInventoryPage = () => {
     if (!router.isReady || !parsedUserId || !parsedWarehouseId) {
       if (router.isReady && parsedUserId && !parsedWarehouseId) {
         setInventoryForWarehouse([]);
-        setLoading(false);
+        setLoadingInventory(false);
+        setCurrentWarehouseDetails(null);
+        setLoadingWarehouseDetails(false);
       }
       return;
     }
-    setLoading(true);
-    const fetchWarehouseSpecificInventory = async () => {
+
+    const fetchWarehouseData = async () => {
+      setLoadingInventory(true);
+      setLoadingWarehouseDetails(true);
       try {
-        const response = await axiosInstance.get(`/inventory/${parsedUserId}`, {
-          params: {
-            warehouse_id: parsedWarehouseId,
-          },
-        });
-        setInventoryForWarehouse(response.data.items || []);
-      } catch (error) {
-        console.error(
-          "Error fetching warehouse-specific inventory data:",
-          error
+        const [inventoryResponse, warehouseDetailsResponse] = await Promise.all(
+          [
+            axiosInstance.get(`/inventory/${parsedUserId}`, {
+              params: { warehouse_id: parsedWarehouseId },
+            }),
+            axiosInstance.get(`/warehouse/user/${parsedUserId}`),
+          ]
         );
+
+        setInventoryForWarehouse(inventoryResponse.data.items || []);
+
+        const warehouses = warehouseDetailsResponse.data.warehouses || [];
+        const foundWarehouse = warehouses.find(
+          (wh: WarehouseDetails) =>
+            wh.warehouse_id === parseInt(parsedWarehouseId as string, 10)
+        );
+        setCurrentWarehouseDetails(foundWarehouse || null);
+      } catch (error) {
+        console.error("Error fetching warehouse-specific data:", error);
         setInventoryForWarehouse([]);
+        setCurrentWarehouseDetails(null);
       } finally {
-        setLoading(false);
+        setLoadingInventory(false);
+        setLoadingWarehouseDetails(false);
       }
     };
 
-    fetchWarehouseSpecificInventory();
+    fetchWarehouseData();
   }, [router.isReady, parsedUserId, parsedWarehouseId]);
 
   const searchedInventory = useMemo(() => {
@@ -192,6 +235,9 @@ const WarehouseInventoryPage = () => {
     [groups, inventoryForWarehouse, maxQuantity]
   );
 
+  const dynamicWarehouseName =
+    currentWarehouseDetails?.name || warehouseNameFromQuery;
+
   const chartOptions = useMemo(
     () => ({
       responsive: true,
@@ -199,7 +245,7 @@ const WarehouseInventoryPage = () => {
         legend: { display: false },
         title: {
           display: true,
-          text: `Item Quantities in ${warehouseName} by Group`,
+          text: `Item Quantities in ${dynamicWarehouseName} by Category`,
           color: chartThemeColors.textColor,
         },
       },
@@ -218,7 +264,7 @@ const WarehouseInventoryPage = () => {
         },
       },
     }),
-    [warehouseName, chartThemeColors]
+    [dynamicWarehouseName, chartThemeColors]
   );
 
   const totalAssetValue = inventoryForWarehouse.reduce(
@@ -227,43 +273,115 @@ const WarehouseInventoryPage = () => {
     0
   );
 
+  const cumulativeAddress = useMemo(() => {
+    if (!currentWarehouseDetails) return "";
+    return [
+      currentWarehouseDetails.address_line_1,
+      currentWarehouseDetails.address_line_2,
+      currentWarehouseDetails.city,
+      currentWarehouseDetails.state,
+      currentWarehouseDetails.postal_code,
+      currentWarehouseDetails.country,
+    ]
+      .filter(Boolean)
+      .join(", ");
+  }, [currentWarehouseDetails]);
+
   return (
     <PlatformLayout>
       <Head>
-        <title>Graminate | {warehouseName} - Inventory</title>
+        <title>Graminate | {dynamicWarehouseName} - Inventory</title>
       </Head>
       <div className="min-h-screen container mx-auto p-4">
-        <div className="flex justify-between items-center dark:bg-dark relative mb-4">
+        <div className="flex justify-between items-start dark:bg-dark relative mb-4">
           <div>
             <h1 className="text-xl font-semibold dark:text-white">
               Inventory for{" "}
-              <span className="text-primary">{warehouseName}</span>
+              <span className="text-primary">{dynamicWarehouseName}</span>
             </h1>
-            <p className="text-xs text-dark dark:text-light">
-              {loading
+            <p className="text-xs text-dark dark:text-light mt-2">
+              {loadingInventory
                 ? "Loading items..."
-                : `${searchedInventory.length} Item(s) found ${
+                : `${searchedInventory.length} Item(s) in this Warehouse ${
                     searchQuery ? "(filtered)" : ""
                   }`}
             </p>
+            {!loadingWarehouseDetails && currentWarehouseDetails && (
+              <div className="flex flex-col gap-2 mt-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+                  {/* Left Column - Type and Capacity */}
+                  <div className="space-y-2">
+                    <p className="text-sm text-dark dark:text-light">
+                      <span className="font-semibold mr-1">Type:</span>
+                      {currentWarehouseDetails.type}
+                    </p>
+                    {currentWarehouseDetails.storage_capacity != null && (
+                      <p className="text-sm text-dark dark:text-light">
+                        <span className="font-semibold mr-1">Capacity:</span>
+                        {currentWarehouseDetails.storage_capacity} sq. ft.
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    {cumulativeAddress && (
+                      <div className="flex items-center">
+                        <span className="font-semibold mr-2 text-sm text-dark dark:text-light">
+                          <FontAwesomeIcon icon={faMapMarkerAlt} />
+                        </span>
+                        <p className="text-sm text-dark dark:text-light">
+                          {cumulativeAddress}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex flex-row flex-wrap gap-4 items-center">
+                  {currentWarehouseDetails.contact_person && (
+                    <p className="text-sm text-dark dark:text-light">
+                      <span className="font-semibold mr-1">
+                        Contact Person:
+                      </span>
+                      {currentWarehouseDetails.contact_person}
+                    </p>
+                  )}
+                  {currentWarehouseDetails.phone && (
+                    <p className="text-sm text-dark dark:text-light">
+                      <span className="font-semibold mr-2">
+                        <FontAwesomeIcon icon={faPhone} />
+                      </span>
+                      {currentWarehouseDetails.phone}
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-4 mt-2">
+            {parsedWarehouseId && currentWarehouseDetails && (
+              <Button
+                text="Edit Warehouse"
+                style="secondary"
+                onClick={() => setIsWarehouseFormOpen(true)}
+                isDisabled={loadingWarehouseDetails}
+              />
+            )}
             <Button
-              text="Back to Warehouses"
+              text="All Warehouses"
               style="secondary"
               onClick={() => router.push(`/platform/${parsedUserId}/warehouse`)}
             />
             <Button
-              text="Add Item to this Warehouse"
+              text="Add Item"
               style="primary"
               add
-              onClick={() => setIsSidebarOpen(true)}
+              onClick={() => setIsInventoryFormOpen(true)}
               isDisabled={!parsedWarehouseId}
             />
           </div>
         </div>
 
-        {inventoryForWarehouse.length > 0 && !loading && (
+        {inventoryForWarehouse.length > 0 && !loadingInventory && (
           <div className="mb-6 dark:bg-gray-800 p-4 rounded-lg shadow">
             <div className="flex flex-col lg:flex-row gap-6 justify-between">
               <div className="flex-1">
@@ -347,19 +465,42 @@ const WarehouseInventoryPage = () => {
           setSearchQuery={setSearchQuery}
           totalRecordCount={searchedInventory.length}
           view="inventory"
-          loading={loading}
+          loading={loadingInventory}
           reset={false}
           hideChecks={false}
           download={true}
         />
 
-        {isSidebarOpen && parsedWarehouseId && (
+        {isInventoryFormOpen && parsedWarehouseId && (
           <InventoryForm
-            onClose={() => setIsSidebarOpen(false)}
-            formTitle={`Add Item to ${warehouseName}`}
+            onClose={() => setIsInventoryFormOpen(false)}
+            formTitle={`Add Item to ${dynamicWarehouseName}`}
             warehouseId={parseInt(parsedWarehouseId, 10)}
           />
         )}
+        {isWarehouseFormOpen &&
+          parsedWarehouseId &&
+          currentWarehouseDetails && (
+            <WarehouseForm
+              onClose={() => setIsWarehouseFormOpen(false)}
+              formTitle={`Edit ${currentWarehouseDetails.name}`}
+              warehouseId={parseInt(parsedWarehouseId, 10)}
+              initialData={{
+                name: currentWarehouseDetails.name,
+                type: currentWarehouseDetails.type,
+                address_line_1: currentWarehouseDetails.address_line_1 || "",
+                address_line_2: currentWarehouseDetails.address_line_2 || "",
+                city: currentWarehouseDetails.city || "",
+                state: currentWarehouseDetails.state || "",
+                postal_code: currentWarehouseDetails.postal_code || "",
+                country: currentWarehouseDetails.country || "",
+                contact_person: currentWarehouseDetails.contact_person || "",
+                phone: currentWarehouseDetails.phone || "",
+                storage_capacity:
+                  currentWarehouseDetails.storage_capacity?.toString() || "",
+              }}
+            />
+          )}
       </div>
     </PlatformLayout>
   );
