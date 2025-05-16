@@ -517,30 +517,28 @@ const QualityCard = () => {
             />
           </div>
         </div>
-
-        {(selectedTimeRange === "Weekly" ||
-          selectedTimeRange === "Monthly") && (
-          <div className="flex justify-center items-center gap-x-3 mb-3">
-            <Button
-              text="Prev"
-              arrow="left"
-              style="ghost"
-              isDisabled={isPrevDisabled}
-              onClick={handlePrev}
-            />
-            <Button
-              text="Next"
-              arrow="right"
-              style="ghost"
-              isDisabled={isNextDisabled}
-              onClick={handleNext}
-            />
-          </div>
-        )}
       </div>
       <div className="relative h-72 sm:h-80 md:h-96">
         <canvas ref={chartRef}></canvas>
       </div>
+      {(selectedTimeRange === "Weekly" || selectedTimeRange === "Monthly") && (
+        <div className="flex justify-center items-center gap-x-3 my-3">
+          <Button
+            text="Prev"
+            arrow="left"
+            style="ghost"
+            isDisabled={isPrevDisabled}
+            onClick={handlePrev}
+          />
+          <Button
+            text="Next"
+            arrow="right"
+            style="ghost"
+            isDisabled={isNextDisabled}
+            onClick={handleNext}
+          />
+        </div>
+      )}
     </div>
   );
 };

@@ -1,7 +1,6 @@
 import { useEffect, useState, FormEvent, useCallback } from "react";
 import PlatformLayout from "@/layout/PlatformLayout";
 import Head from "next/head";
-import { Bar } from "react-chartjs-2";
 import { useRouter } from "next/router";
 import {
   Chart as ChartJS,
@@ -362,7 +361,7 @@ const Poultry = () => {
       }
     }
     setActiveAlerts(dynamicAlerts);
-  }, [temperature, feedInventoryDays, nextVisit, formatTemperature]); // formatTemperature is already a dependency
+  }, [temperature, feedInventoryDays, nextVisit, formatTemperature]);
 
   const dismissAlert = (id: number) => {
     setActiveAlerts((current) => current.filter((alert) => alert.id !== id));
@@ -527,28 +526,6 @@ const Poultry = () => {
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white dark:bg-dark p-4 rounded-lg shadow">
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-lg font-semibold text-dark dark:text-gray-300">
-                📈 Sales Performance
-              </h2>
-              <select
-                value={salesPeriod}
-                onChange={(e) => setSalesPeriod(e.target.value)}
-                className="text-sm border border-gray-300 dark:border-gray-600 rounded px-2 py-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
-              >
-                <option>This Month</option>
-                <option>Last Month</option>
-                <option>This Quarter</option>
-                <option>This Year</option>
-              </select>
-            </div>
-            <div className="relative h-56">
-              <Bar data={salesChartData} options={salesChartOptions} />
-            </div>
-          </div>
-        </div>
         <TaskManager userId={Number(parsedUserId)} projectType="Poultry" />
       </div>
       {isModalOpen && (

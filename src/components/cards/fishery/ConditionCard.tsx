@@ -72,7 +72,7 @@ const ConditionCard = ({
     <div className="relative bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg">
       <div className="flex justify-between items-start mb-4">
         <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
-          Water Conditions
+          Water & Weather Conditions
         </h2>
       </div>
 
