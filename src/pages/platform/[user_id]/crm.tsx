@@ -356,33 +356,29 @@ const CRM = () => {
 
       case "tasks":
         if (fetchedData.length === 0) return { columns: [], rows: [] };
-        const groupedTasks = fetchedData.reduce((acc, task) => {
-          if ("project" in task && !acc[task.project]) {
-            acc[task.project] = [];
-          }
-          if ("project" in task) {
-            acc[task.project].push(task as Task);
-          }
-          return acc;
-        }, {} as Record<string, Task[]>);
-
         return {
           columns: [
-            "Task Category",
-            "Tasks",
-            "Status Summary",
+            "#",
+            "Project",
+            "Task",
+            "Status",
             "Priority",
+            "Deadline",
             "Created On",
           ],
-          rows: Object.entries(groupedTasks).map(([project, tasks]) => [
-            project,
-            tasks.map((t) => t.task).join(", "),
-            `${tasks.filter((t) => t.status === "Completed").length}/${
-              tasks.length
-            } Completed`,
-            getDominantPriority(tasks),
-            new Date(tasks[0].created_on).toLocaleDateString(),
-          ]),
+          rows: fetchedData
+            .filter((item): item is Task => "task_id" in item)
+            .map((item) => [
+              item.task_id,
+              item.project,
+              item.task,
+              item.status,
+              item.priority,
+              item.deadline
+                ? new Date(item.deadline).toLocaleDateString()
+                : "-",
+              new Date(item.created_on).toLocaleDateString(),
+            ]),
         };
 
       default:
@@ -551,9 +547,9 @@ const CRM = () => {
           totalRecordCount={totalRecordCount}
           onRowClick={(row) => {
             if (view === "tasks") {
-              const projectName = row[0];
+              const taskId = row[0];
               const taskItem = tasksData.find(
-                (item) => item.project === projectName
+                (item) => item.task_id === taskId
               );
               if (taskItem) handleRowClick(taskItem);
             } else {

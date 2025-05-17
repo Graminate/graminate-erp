@@ -4,7 +4,7 @@ import TextField from "@/components/ui/TextField";
 import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import Button from "@/components/ui/Button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faX } from "@fortawesome/free-solid-svg-icons"; // Changed from faXmark
+import { faXmark } from "@fortawesome/free-solid-svg-icons";
 import { SidebarProp } from "@/types/card-props";
 import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
 import axiosInstance from "@/lib/utils/axiosInstance";
@@ -236,7 +236,7 @@ const WarehouseForm = ({
               onClick={handleClose}
               aria-label="Close panel"
             >
-              <FontAwesomeIcon icon={faX} className="w-5 h-5" />
+              <FontAwesomeIcon icon={faXmark} className="w-5 h-5" />
             </button>
           </div>
 

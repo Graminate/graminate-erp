@@ -26,6 +26,7 @@ import {
   faUserTie,
   faPhone,
   faBoxOpen,
+  faExclamationTriangle,
 } from "@fortawesome/free-solid-svg-icons";
 
 ChartJS.register(
@@ -66,6 +67,16 @@ type WarehouseDetails = {
   contact_person: string | null;
   phone: string | null;
   storage_capacity: number | string | null;
+};
+
+const getBarColor = (quantity: number, max: number) => {
+  if (max === 0 && quantity === 0) return "#6B7280";
+  if (max === 0 && quantity > 0) return "#04ad79";
+  const ratio = quantity / max;
+  if (ratio < 0.25) return "#e53e3e";
+  if (ratio < 0.5) return "orange";
+  if (ratio < 0.75) return "#facd1d";
+  return "#04ad79";
 };
 
 const generateColors = (count: number) =>
@@ -198,13 +209,19 @@ const WarehouseInventoryPage = () => {
         item.item_group,
         item.units,
         item.quantity,
-        item.minimum_limit ?? "N/A",
+        item.minimum_limit != null && item.minimum_limit > 0
+          ? item.minimum_limit
+          : "N/A",
         item.price_per_unit,
         item.status || "",
       ]),
     };
   }, [searchedInventory]);
 
+  const maxQuantity = Math.max(
+    0,
+    ...inventoryForWarehouse.map((item) => item.quantity)
+  );
   const groups = Array.from(
     new Set(inventoryForWarehouse.map((item) => item.item_group))
   );
@@ -213,30 +230,15 @@ const WarehouseInventoryPage = () => {
   const chartData = useMemo(
     () => ({
       labels: groups,
-      datasets: [
-        {
-          label: "Item Quantities",
-          data: groups.map((group) => {
-            const itemsInGroup = inventoryForWarehouse.filter(
-              (item) => item.item_group === group
-            );
-            return itemsInGroup.reduce((sum, item) => sum + item.quantity, 0);
-          }),
-          backgroundColor: groups.map((group) => {
-            const itemsInGroup = inventoryForWarehouse.filter(
-              (item) => item.item_group === group
-            );
-            const hasCriticalItems = itemsInGroup.some(
-              (item) =>
-                item.minimum_limit !== undefined &&
-                item.quantity < item.minimum_limit
-            );
-            return hasCriticalItems ? "#EF4444" : "#04ad79";
-          }),
-        },
-      ],
+      datasets: inventoryForWarehouse.map((item) => ({
+        label: item.item_name,
+        data: groups.map((group) =>
+          group === item.item_group ? item.quantity : null
+        ),
+        backgroundColor: getBarColor(item.quantity, maxQuantity),
+      })),
     }),
-    [groups, inventoryForWarehouse]
+    [groups, inventoryForWarehouse, maxQuantity]
   );
 
   const dynamicWarehouseName =
@@ -290,6 +292,15 @@ const WarehouseInventoryPage = () => {
       .filter(Boolean)
       .join(", ");
   }, [currentWarehouseDetails]);
+
+  const lowStockItems = useMemo(() => {
+    return inventoryForWarehouse.filter(
+      (item) =>
+        item.minimum_limit != null &&
+        item.minimum_limit > 0 &&
+        item.quantity < item.minimum_limit
+    );
+  }, [inventoryForWarehouse]);
 
   return (
     <PlatformLayout>
@@ -356,8 +367,8 @@ const WarehouseInventoryPage = () => {
                       className="mr-3 w-4 h-4 text-blue-200"
                     />
                     <div>
-                      <span className="font-semibold block">Capacity</span>
-                      {currentWarehouseDetails.storage_capacity}
+                      <span className="font-semibold block">Area</span>
+                      {currentWarehouseDetails.storage_capacity} sq. ft.
                     </div>
                   </div>
                 )}
@@ -440,13 +451,8 @@ const WarehouseInventoryPage = () => {
                               (item) => item.quantity
                             ),
                             backgroundColor: pieColors,
-                            borderColor:
-                              document.documentElement.classList.contains(
-                                "dark"
-                              )
-                                ? "#374151"
-                                : "#FFFFFF",
-                            borderWidth: 2,
+                            borderWidth: 1,
+                            borderColor: "#fff dark:#888",
                           },
                         ],
                       }}
@@ -459,6 +465,67 @@ const WarehouseInventoryPage = () => {
                 </div>
               </div>
             </div>
+            <div className="flex flex-wrap gap-4 mt-6 text-sm dark:text-gray-300 text-gray-700">
+              <div className="flex items-center gap-2">
+                <span className="inline-block w-4 h-4 bg-red-500 rounded-sm" />
+                {"< 25%"} of Maximum
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="inline-block w-4 h-4 bg-orange-500 rounded-sm" />
+                {"< 50%"} of Maximum
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className="inline-block w-4 h-4 rounded-sm"
+                  style={{ backgroundColor: "#facd1d" }}
+                />
+                {"< 75%"} of Maximum
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className="inline-block w-4 h-4 rounded-sm"
+                  style={{ backgroundColor: "#04ad79" }}
+                />
+                {"≥ 75%"} of Maximum
+              </div>
+            </div>
+
+            {lowStockItems.length > 0 && (
+              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-semibold text-red-200 dark:text-red-400 mb-4 flex items-center">
+                  <FontAwesomeIcon
+                    icon={faExclamationTriangle}
+                    className="mr-2 w-5 h-5 text-red-200 dark:text-red-400"
+                  />
+                  Low Stock Alerts
+                </h3>
+                <div className="space-y-3">
+                  {lowStockItems.map((item) => (
+                    <div
+                      key={item.inventory_id}
+                      className="p-3 bg-red-400 dark:bg-red-900/30 border border-red-300 dark:border-red-700/60 rounded-lg text-sm flex flex-col sm:flex-row sm:justify-between sm:items-center"
+                    >
+                      <div className="flex-grow mb-1 sm:mb-0">
+                        <span className="font-semibold text-gray-900 dark:text-white">
+                          {item.item_name}
+                        </span>
+                        <span className="text-gray-700 dark:text-gray-300 ml-1">
+                          ({item.item_group})
+                        </span>
+                      </div>
+                      <div className="text-red-600 dark:text-red-400 sm:text-right whitespace-nowrap">
+                        <span className="font-medium">
+                          Qty: {item.quantity}
+                        </span>
+                        <span className="ml-2 text-xs">
+                          (Min: {item.minimum_limit})
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
