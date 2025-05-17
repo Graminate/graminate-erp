@@ -48,6 +48,7 @@ type ItemRecord = {
   created_at: string;
   price_per_unit: number;
   warehouse_id: number | null;
+  minimum_limit?: number;
   status?: string;
 };
 
@@ -187,6 +188,7 @@ const WarehouseInventoryPage = () => {
         "Category",
         "Units",
         "Quantity",
+        "Min. Limit",
         "Price / Unit (₹)",
         "Status",
       ],
@@ -196,6 +198,7 @@ const WarehouseInventoryPage = () => {
         item.item_group,
         item.units,
         item.quantity,
+        item.minimum_limit ?? "N/A",
         item.price_per_unit,
         item.status || "",
       ]),
@@ -210,13 +213,28 @@ const WarehouseInventoryPage = () => {
   const chartData = useMemo(
     () => ({
       labels: groups,
-      datasets: inventoryForWarehouse.map((item) => ({
-        label: item.item_name,
-        data: groups.map((group) =>
-          group === item.item_group ? item.quantity : null
-        ),
-        backgroundColor: "#04ad79", // Consistent green color for all bars
-      })),
+      datasets: [
+        {
+          label: "Item Quantities",
+          data: groups.map((group) => {
+            const itemsInGroup = inventoryForWarehouse.filter(
+              (item) => item.item_group === group
+            );
+            return itemsInGroup.reduce((sum, item) => sum + item.quantity, 0);
+          }),
+          backgroundColor: groups.map((group) => {
+            const itemsInGroup = inventoryForWarehouse.filter(
+              (item) => item.item_group === group
+            );
+            const hasCriticalItems = itemsInGroup.some(
+              (item) =>
+                item.minimum_limit !== undefined &&
+                item.quantity < item.minimum_limit
+            );
+            return hasCriticalItems ? "#EF4444" : "#04ad79";
+          }),
+        },
+      ],
     }),
     [groups, inventoryForWarehouse]
   );
@@ -398,7 +416,11 @@ const WarehouseInventoryPage = () => {
                     Total Asset Value
                   </p>
                   <p className="text-3xl font-bold text-dark dark:text-light mt-2">
-                    ₹{totalAssetValue.toFixed(2)}
+                    ₹
+                    {totalAssetValue.toLocaleString("en-IN", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
                   </p>
                 </div>
                 <div className="p-4">
@@ -418,7 +440,13 @@ const WarehouseInventoryPage = () => {
                               (item) => item.quantity
                             ),
                             backgroundColor: pieColors,
-                            borderWidth: 1,
+                            borderColor:
+                              document.documentElement.classList.contains(
+                                "dark"
+                              )
+                                ? "#374151"
+                                : "#FFFFFF",
+                            borderWidth: 2,
                           },
                         ],
                       }}
@@ -447,7 +475,7 @@ const WarehouseInventoryPage = () => {
           totalRecordCount={searchedInventory.length}
           view="inventory"
           loading={loadingInventory}
-          reset={false}
+          reset={true}
           hideChecks={false}
           download={true}
         />

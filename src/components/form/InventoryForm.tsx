@@ -5,12 +5,12 @@ import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import Button from "@/components/ui/Button";
 import { UNITS } from "@/constants/options";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faX } from "@fortawesome/free-solid-svg-icons"; // Changed from faXmark
+import { faX } from "@fortawesome/free-solid-svg-icons";
 import { SidebarProp } from "@/types/card-props";
 import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
 import axiosInstance from "@/lib/utils/axiosInstance";
-import Loader from "../ui/Loader"; // Assuming this path is correct
-import axios from "axios"; // Added for isAxiosError
+import Loader from "../ui/Loader";
+import axios from "axios";
 
 interface InventoryFormProps extends SidebarProp {
   warehouseId?: number;
@@ -22,6 +22,7 @@ type InventoryItemData = {
   units: string;
   quantity: string;
   pricePerUnit: string;
+  minimumLimit: string;
 };
 
 type InventoryFormErrors = {
@@ -30,6 +31,7 @@ type InventoryFormErrors = {
   units?: string;
   quantity?: string;
   pricePerUnit?: string;
+  minimumLimit?: string;
 };
 
 const InventoryForm = ({
@@ -50,6 +52,7 @@ const InventoryForm = ({
     units: "",
     quantity: "",
     pricePerUnit: "",
+    minimumLimit: "",
   });
   const [inventoryErrors, setInventoryErrors] = useState<InventoryFormErrors>(
     {}
@@ -143,12 +146,33 @@ const InventoryForm = ({
     } else if (isNaN(Number(inventoryItem.quantity))) {
       errors.quantity = "Quantity must be a valid number.";
       isValid = false;
+    } else if (Number(inventoryItem.quantity) < 0) {
+      errors.quantity = "Quantity cannot be negative.";
+      isValid = false;
     }
+
     if (!inventoryItem.pricePerUnit.trim()) {
       errors.pricePerUnit = "Price Per Unit is required.";
       isValid = false;
     } else if (isNaN(Number(inventoryItem.pricePerUnit))) {
       errors.pricePerUnit = "Price Per Unit must be a valid number.";
+      isValid = false;
+    } else if (Number(inventoryItem.pricePerUnit) < 0) {
+      errors.pricePerUnit = "Price Per Unit cannot be negative.";
+      isValid = false;
+    }
+
+    if (
+      inventoryItem.minimumLimit.trim() &&
+      isNaN(Number(inventoryItem.minimumLimit))
+    ) {
+      errors.minimumLimit = "Minimum Limit must be a valid number if provided.";
+      isValid = false;
+    } else if (
+      inventoryItem.minimumLimit.trim() &&
+      Number(inventoryItem.minimumLimit) < 0
+    ) {
+      errors.minimumLimit = "Minimum Limit cannot be negative.";
       isValid = false;
     }
 
@@ -167,7 +191,7 @@ const InventoryForm = ({
       setSuggestions(filtered);
       setShowSuggestions(true);
     } else {
-      setSuggestions(subTypes); // Show all if input is cleared but field is focused
+      setSuggestions(subTypes);
       setShowSuggestions(true);
     }
   };
@@ -208,7 +232,7 @@ const InventoryForm = ({
       return;
     }
 
-    const payload = {
+    const payload: any = {
       user_id: Number(parsedUserId),
       item_name: inventoryItem.itemName,
       item_group: inventoryItem.itemGroup,
@@ -218,6 +242,10 @@ const InventoryForm = ({
       warehouse_id: warehouseId,
     };
 
+    if (inventoryItem.minimumLimit.trim()) {
+      payload.minimum_limit = Number(inventoryItem.minimumLimit);
+    }
+
     try {
       await axiosInstance.post(`/inventory/add`, payload);
       setInventoryItem({
@@ -226,10 +254,11 @@ const InventoryForm = ({
         units: "",
         quantity: "",
         pricePerUnit: "",
+        minimumLimit: "",
       });
       setInventoryErrors({});
       handleClose();
-      window.location.reload(); // Or a more granular state update
+      window.location.reload();
     } catch (error: unknown) {
       const message =
         axios.isAxiosError(error) && error.response?.data?.error
@@ -368,6 +397,21 @@ const InventoryForm = ({
                   errorMessage={inventoryErrors.pricePerUnit}
                 />
               </div>
+              <TextField
+                number
+                label="Minimum Stock Limit (Optional)"
+                placeholder="e.g. 10"
+                value={inventoryItem.minimumLimit}
+                onChange={(val: string) => {
+                  setInventoryItem({ ...inventoryItem, minimumLimit: val });
+                  setInventoryErrors({
+                    ...inventoryErrors,
+                    minimumLimit: undefined,
+                  });
+                }}
+                type={inventoryErrors.minimumLimit ? "error" : ""}
+                errorMessage={inventoryErrors.minimumLimit}
+              />
 
               <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
                 <Button text="Cancel" style="secondary" onClick={handleClose} />
