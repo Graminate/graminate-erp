@@ -24,6 +24,11 @@ type User = {
   time_format?: string;
   type?: string;
   sub_type?: string[];
+  address_line_1?: string;
+  address_line_2?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
 };
 
 const Dashboard = () => {
@@ -123,7 +128,12 @@ const Dashboard = () => {
   const handleFirstLogin = async (
     businessName: string,
     businessType: string,
-    subType?: string[]
+    subType?: string[],
+    addressLine1?: string,
+    addressLine2?: string,
+    city?: string,
+    state?: string,
+    postalCode?: string
   ) => {
     try {
       const token = localStorage.getItem("token");
@@ -133,6 +143,11 @@ const Dashboard = () => {
         business_name: businessName,
         type: businessType,
         sub_type: subType,
+        address_line_1: addressLine1,
+        address_line_2: addressLine2,
+        city: city,
+        state: state,
+        postal_code: postalCode,
       });
 
       setSuccessModal({
@@ -148,6 +163,11 @@ const Dashboard = () => {
               business_name: businessName,
               type: businessType,
               sub_type: subType,
+              address_line_1: addressLine1,
+              address_line_2: addressLine2,
+              city: city,
+              state: state,
+              postal_code: postalCode,
             }
           : prev
       );

@@ -145,16 +145,11 @@ const WeatherSettingsPage = () => {
               ) : (
                 <section>
                   <div>
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
                       <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-                        Manage how you receive notifications for your operations
-                      </p>
-                      <Button text="Save Changes" style="primary" />
-                    </div>
-                    <div className="rounded-lg">
-                      <p className="text-gray-300">
                         {t("weatherSettingsDescription" as TranslationKey)}
                       </p>
+                      <Button text="Save Changes" style="primary" />
                     </div>
 
                     <div className="flex flex-col gap-4 max-w-lg">

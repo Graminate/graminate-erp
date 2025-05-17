@@ -6,7 +6,7 @@ import RadioButton from "../ui/Radio";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCow, faFish, faKiwiBird } from "@fortawesome/free-solid-svg-icons";
 
-type Step = "businessName" | "businessType" | "subType";
+type Step = "businessName" | "address" | "businessType" | "subType";
 
 type FirstLoginModalProps = {
   isOpen: boolean;
@@ -14,30 +14,34 @@ type FirstLoginModalProps = {
   onSubmit: (
     businessName: string,
     businessType: string,
-    subType?: string[]
+    subType?: string[],
+    addressLine1?: string,
+    addressLine2?: string,
+    city?: string,
+    state?: string,
+    postalCode?: string
   ) => Promise<void>;
   onClose: () => void;
 };
 
 const BUSINESS_TYPES = ["Producer", "Wholesaler", "Processor"];
-const AGRICULTURE_TYPES = [
-  "Fishery",
-  "Poultry",
-  "Animal Husbandry",
-  // "Apiculture",
-  // "Tea Growing"
-  // "Coffe Growing"
-  // "Horticulture"
-  // "Viticulture"
-  // "Floriculture"
-];
+const AGRICULTURE_TYPES = ["Fishery", "Poultry", "Animal Husbandry"];
 
-const FirstLoginModal = ({ isOpen, onSubmit }: FirstLoginModalProps) => {
+const FirstLoginModal = ({
+  isOpen,
+  userId,
+  onSubmit,
+}: FirstLoginModalProps) => {
   const [businessName, setBusinessName] = useState("");
   const [businessType, setBusinessType] = useState(BUSINESS_TYPES[0]);
   const [step, setStep] = useState<Step>("businessName");
   const [isLoading, setIsLoading] = useState(false);
   const [selectedSubTypes, setSelectedSubTypes] = useState<string[]>([]);
+  const [addressLine1, setAddressLine1] = useState("");
+  const [addressLine2, setAddressLine2] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [postalCode, setPostalCode] = useState("");
 
   const [isStepMounted, setIsStepMounted] = useState(false);
 
@@ -65,13 +69,14 @@ const FirstLoginModal = ({ isOpen, onSubmit }: FirstLoginModalProps) => {
       triggerToast("Business Name cannot be blank.", "error");
       return;
     }
-    setStep("businessType");
+    setStep("address");
   }, [businessName]);
 
   const goToPreviousStep = useCallback(() => {
     setStep((prev) => {
       if (prev === "subType") return "businessType";
-      if (prev === "businessType") return "businessName";
+      if (prev === "businessType") return "address";
+      if (prev === "address") return "businessName";
       return prev;
     });
   }, []);
@@ -79,12 +84,33 @@ const FirstLoginModal = ({ isOpen, onSubmit }: FirstLoginModalProps) => {
   const handleSubmit = useCallback(async () => {
     setIsLoading(true);
     try {
-      await onSubmit(businessName.trim(), businessType, selectedSubTypes);
+      await onSubmit(
+        businessName.trim(),
+        businessType,
+        selectedSubTypes.length > 0 ? selectedSubTypes : undefined,
+        addressLine1.trim(),
+        addressLine2.trim(),
+        city.trim(),
+        state.trim(),
+        postalCode.trim()
+      );
     } catch (error: unknown) {
       console.error("Failed to save details:", error);
       triggerToast("Failed to save details. Please try again later.", "error");
+    } finally {
+      setIsLoading(false);
     }
-  }, [businessName, businessType, onSubmit, selectedSubTypes]);
+  }, [
+    businessName,
+    businessType,
+    onSubmit,
+    selectedSubTypes,
+    addressLine1,
+    addressLine2,
+    city,
+    state,
+    postalCode,
+  ]);
 
   const handleBusinessTypeSubmit = useCallback(
     (event: React.FormEvent<HTMLFormElement>) => {
@@ -104,6 +130,23 @@ const FirstLoginModal = ({ isOpen, onSubmit }: FirstLoginModalProps) => {
       await handleSubmit();
     },
     [handleSubmit]
+  );
+
+  const handleAddressSubmit = useCallback(
+    (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (
+        !addressLine1.trim() ||
+        !city.trim() ||
+        !state.trim() ||
+        !postalCode.trim()
+      ) {
+        triggerToast("Please fill in all required address fields", "error");
+        return;
+      }
+      setStep("businessType");
+    },
+    [addressLine1, city, state, postalCode]
   );
 
   const handleSubTypeChange = useCallback(
@@ -142,7 +185,7 @@ const FirstLoginModal = ({ isOpen, onSubmit }: FirstLoginModalProps) => {
                     : "opacity-0 -translate-y-4"
                 }`}
           >
-            Welcome! Let&apos;s set up your business.
+            Welcome! Let's set up your business.
           </h2>
           <p
             className={`text-sm text-center text-gray-300  mb-8
@@ -153,7 +196,7 @@ const FirstLoginModal = ({ isOpen, onSubmit }: FirstLoginModalProps) => {
                             : "opacity-0 -translate-y-4"
                         }`}
           >
-            Step 1 of {businessType === "Producer" ? 3 : 2}
+            Step 1 of {businessType === "Producer" ? 4 : 3}
           </p>
           <div
             className={`mb-6
@@ -191,6 +234,106 @@ const FirstLoginModal = ({ isOpen, onSubmit }: FirstLoginModalProps) => {
       );
     }
 
+    if (step === "address") {
+      return (
+        <form onSubmit={handleAddressSubmit} noValidate>
+          <h2
+            className={`text-2xl sm:text-3xl font-semibold mb-2 text-center text-foreground
+                        transition-all transform duration-500 ease-out
+                        ${
+                          isStepMounted
+                            ? "opacity-100 translate-y-0"
+                            : "opacity-0 -translate-y-4"
+                        }`}
+          >
+            Enter Your Business Address
+          </h2>
+          <p
+            className={`text-sm text-center text-gray-300 mb-6
+                        transition-all transform duration-500 ease-out delay-100
+                        ${
+                          isStepMounted
+                            ? "opacity-100 translate-y-0"
+                            : "opacity-0 -translate-y-4"
+                        }`}
+          >
+            Step 2 of {businessType === "Producer" ? 4 : 3}
+          </p>
+          <div
+            className={`space-y-4 mb-6
+                        transition-all transform duration-500 ease-out delay-200
+                        ${
+                          isStepMounted
+                            ? "opacity-100 translate-y-0"
+                            : "opacity-0 -translate-y-4"
+                        }`}
+          >
+            <TextField
+              label="Address Line 1*"
+              placeholder="Street address, P.O. box, company name"
+              value={addressLine1}
+              onChange={(value) => setAddressLine1(value)}
+            />
+            <TextField
+              label="Address Line 2"
+              placeholder="Apartment, suite, unit, building, floor, etc."
+              value={addressLine2}
+              onChange={(value) => setAddressLine2(value)}
+            />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <TextField
+                label="City*"
+                placeholder="City"
+                value={city}
+                onChange={(value) => setCity(value)}
+              />
+              <TextField
+                label="State/Province/Region*"
+                placeholder="State"
+                value={state}
+                onChange={(value) => setState(value)}
+              />
+            </div>
+            <TextField
+              label="Postal Code*"
+              placeholder="Postal code"
+              value={postalCode}
+              onChange={(value) => setPostalCode(value)}
+            />
+          </div>
+          <div
+            className={`flex justify-between items-center mt-10
+                        transition-all transform duration-500 ease-out 
+                        ${
+                          isStepMounted
+                            ? "opacity-100 translate-y-0"
+                            : "opacity-0 translate-y-4"
+                        }`}
+          >
+            <Button
+              text="Back"
+              style="secondary"
+              onClick={goToPreviousStep}
+              type="button"
+              isDisabled={isLoading}
+            />
+            <Button
+              text="Next"
+              style="primary"
+              type="submit"
+              isDisabled={
+                isLoading ||
+                !addressLine1.trim() ||
+                !city.trim() ||
+                !state.trim() ||
+                !postalCode.trim()
+              }
+            />
+          </div>
+        </form>
+      );
+    }
+
     if (step === "businessType") {
       return (
         <form onSubmit={handleBusinessTypeSubmit} noValidate>
@@ -214,7 +357,7 @@ const FirstLoginModal = ({ isOpen, onSubmit }: FirstLoginModalProps) => {
                             : "opacity-0 -translate-y-4"
                         }`}
           >
-            Step 2 of {businessType === "Producer" ? 3 : 2}
+            Step 3 of {businessType === "Producer" ? 4 : 3}
           </p>
           <fieldset
             className={`mb-6
@@ -234,7 +377,6 @@ const FirstLoginModal = ({ isOpen, onSubmit }: FirstLoginModalProps) => {
             </p>
             <div className="space-y-3 mt-4">
               {BUSINESS_TYPES.map((type, index) => {
-                // Disable / Enable options here
                 const isDisabled =
                   type === "Wholesaler" || type === "Processor";
                 return (
@@ -353,7 +495,6 @@ const FirstLoginModal = ({ isOpen, onSubmit }: FirstLoginModalProps) => {
         Fishery: <FontAwesomeIcon icon={faFish} />,
         Poultry: <FontAwesomeIcon icon={faKiwiBird} />,
         "Animal Husbandry": <FontAwesomeIcon icon={faCow} />,
-        // Apiculture: <FontAwesomeIcon icon={faCow} />,
       };
       return (
         <form onSubmit={handleSubTypeSubmit} noValidate>
@@ -377,7 +518,7 @@ const FirstLoginModal = ({ isOpen, onSubmit }: FirstLoginModalProps) => {
                             : "opacity-0 -translate-y-4"
                         }`}
           >
-            Step 3 of 3
+            Step 4 of 4
           </p>
           <fieldset
             className={`mb-6

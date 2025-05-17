@@ -44,6 +44,11 @@ const GeneralPage = () => {
     phoneNumber: "",
     language: currentLanguage,
     timeFormat: "24-hour" as TimeFormatOption,
+    addressLine1: "",
+    addressLine2: "",
+    city: "",
+    state: "",
+    postalCode: "",
   });
 
   useEffect(() => {
@@ -73,6 +78,11 @@ const GeneralPage = () => {
           phoneNumber: userData.phone_number || "",
           language: fetchedLanguage,
           timeFormat: fetchedTimeFormat,
+          addressLine1: userData.address_line_1 || "",
+          addressLine2: userData.address_line_2 || "",
+          city: userData.city || "",
+          state: userData.state || "",
+          postalCode: userData.postal_code || "",
         });
         setContextTimeFormat(fetchedTimeFormat);
         setContextLanguage(fetchedLanguage);
@@ -89,6 +99,11 @@ const GeneralPage = () => {
           phoneNumber: "",
           language: defaultLanguage,
           timeFormat: defaultTimeFormat,
+          addressLine1: "",
+          addressLine2: "",
+          city: "",
+          state: "",
+          postalCode: "",
         });
         setContextTimeFormat(defaultTimeFormat);
         setContextLanguage(defaultLanguage);
@@ -141,6 +156,11 @@ const GeneralPage = () => {
         phone_number: user.phoneNumber,
         language: user.language,
         time_format: user.timeFormat,
+        address_line_1: user.addressLine1,
+        address_line_2: user.addressLine2,
+        city: user.city,
+        state: user.state,
+        postal_code: user.postalCode,
       });
       setContextTimeFormat(user.timeFormat);
       setContextLanguage(user.language as SupportedLanguage);
@@ -345,6 +365,100 @@ const GeneralPage = () => {
                           width="large"
                         />
                       </div>
+
+                      <div className="mt-6 rounded-lg p-0">
+                        <h3 className="text-md font-semibold mb-4 dark:text-light">
+                          {t("addressDetails" as NavPanelTranslationKey) ||
+                            "Address Details"}
+                        </h3>
+                        <div className="flex flex-col gap-4 max-w-lg">
+                          <TextField
+                            label={
+                              t("addressLine1" as NavPanelTranslationKey) ||
+                              "Address Line 1"
+                            }
+                            placeholder={
+                              t(
+                                "enterAddressLine1" as NavPanelTranslationKey
+                              ) || "Enter Address Line 1"
+                            }
+                            value={user.addressLine1}
+                            onChange={(val) =>
+                              setUser((prev) => ({
+                                ...prev,
+                                addressLine1: val,
+                              }))
+                            }
+                            width="large"
+                          />
+                          <TextField
+                            label={
+                              t("addressLine2" as NavPanelTranslationKey) ||
+                              "Address Line 2 (Optional)"
+                            }
+                            placeholder={
+                              t(
+                                "enterAddressLine2" as NavPanelTranslationKey
+                              ) || "Enter Address Line 2"
+                            }
+                            value={user.addressLine2}
+                            onChange={(val) =>
+                              setUser((prev) => ({
+                                ...prev,
+                                addressLine2: val,
+                              }))
+                            }
+                            width="large"
+                          />
+                          <div className="flex gap-4">
+                            <TextField
+                              label={
+                                t("city" as NavPanelTranslationKey) || "City"
+                              }
+                              placeholder={
+                                t("enterCity" as NavPanelTranslationKey) ||
+                                "Enter City"
+                              }
+                              value={user.city}
+                              onChange={(val) =>
+                                setUser((prev) => ({ ...prev, city: val }))
+                              }
+                              width="medium"
+                            />
+                            <TextField
+                              label={
+                                t("state" as NavPanelTranslationKey) ||
+                                "State/Province"
+                              }
+                              placeholder={
+                                t("enterState" as NavPanelTranslationKey) ||
+                                "Enter State/Province"
+                              }
+                              value={user.state}
+                              onChange={(val) =>
+                                setUser((prev) => ({ ...prev, state: val }))
+                              }
+                              width="medium"
+                            />
+                          </div>
+                          <TextField
+                            label={
+                              t("postalCode" as NavPanelTranslationKey) ||
+                              "Postal Code"
+                            }
+                            placeholder={
+                              t("enterPostalCode" as NavPanelTranslationKey) ||
+                              "Enter Postal Code"
+                            }
+                            value={user.postalCode}
+                            onChange={(val) =>
+                              setUser((prev) => ({ ...prev, postalCode: val }))
+                            }
+                            width="medium"
+                          />
+                        </div>
+                      </div>
+
                       <div className="mt-6">
                         <Button
                           style="primary"
