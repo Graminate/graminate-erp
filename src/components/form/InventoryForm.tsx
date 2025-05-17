@@ -5,15 +5,32 @@ import DropdownLarge from "@/components/ui/Dropdown/DropdownLarge";
 import Button from "@/components/ui/Button";
 import { UNITS } from "@/constants/options";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faX } from "@fortawesome/free-solid-svg-icons"; // Changed from faXmark
 import { SidebarProp } from "@/types/card-props";
 import { useAnimatePanel, useClickOutside } from "@/hooks/forms";
 import axiosInstance from "@/lib/utils/axiosInstance";
-import Loader from "../ui/Loader";
+import Loader from "../ui/Loader"; // Assuming this path is correct
+import axios from "axios"; // Added for isAxiosError
 
 interface InventoryFormProps extends SidebarProp {
   warehouseId?: number;
 }
+
+type InventoryItemData = {
+  itemName: string;
+  itemGroup: string;
+  units: string;
+  quantity: string;
+  pricePerUnit: string;
+};
+
+type InventoryFormErrors = {
+  itemName?: string;
+  itemGroup?: string;
+  units?: string;
+  quantity?: string;
+  pricePerUnit?: string;
+};
 
 const InventoryForm = ({
   onClose,
@@ -27,27 +44,39 @@ const InventoryForm = ({
     : queryUserId;
 
   const [animate, setAnimate] = useState(false);
-  const [inventoryItem, setInventoryItem] = useState({
+  const [inventoryItem, setInventoryItem] = useState<InventoryItemData>({
     itemName: "",
     itemGroup: "",
     units: "",
     quantity: "",
     pricePerUnit: "",
   });
+  const [inventoryErrors, setInventoryErrors] = useState<InventoryFormErrors>(
+    {}
+  );
 
   const panelRef = useRef<HTMLDivElement>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
 
   const [subTypes, setSubTypes] = useState<string[]>([]);
   const [isLoadingSubTypes, setIsLoadingSubTypes] = useState(true);
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
-  const suggestionsRef = useRef<HTMLDivElement>(null);
+
   useAnimatePanel(setAnimate);
 
-  useClickOutside(panelRef, () => {
+  const handleCloseAnimation = () => {
     setAnimate(false);
-    setTimeout(() => handleClose(), 300);
-  });
+    setTimeout(() => {
+      onClose();
+    }, 300);
+  };
+
+  const handleClose = () => {
+    handleCloseAnimation();
+  };
+
+  useClickOutside(panelRef, handleClose);
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -82,6 +111,7 @@ const InventoryForm = ({
           setSubTypes(Array.isArray(user.sub_type) ? user.sub_type : []);
         }
       } catch (err) {
+        console.error("Error fetching user sub_types:", err);
         setSubTypes([]);
       } finally {
         setIsLoadingSubTypes(false);
@@ -91,12 +121,44 @@ const InventoryForm = ({
     fetchUserSubTypes();
   }, [parsedUserId]);
 
-  const handleClose = () => {
-    onClose();
+  const validateForm = (): boolean => {
+    const errors: InventoryFormErrors = {};
+    let isValid = true;
+
+    if (!inventoryItem.itemName.trim()) {
+      errors.itemName = "Item Name is required.";
+      isValid = false;
+    }
+    if (!inventoryItem.itemGroup.trim()) {
+      errors.itemGroup = "Item Category is required.";
+      isValid = false;
+    }
+    if (!inventoryItem.units) {
+      errors.units = "Units are required.";
+      isValid = false;
+    }
+    if (!inventoryItem.quantity.trim()) {
+      errors.quantity = "Quantity is required.";
+      isValid = false;
+    } else if (isNaN(Number(inventoryItem.quantity))) {
+      errors.quantity = "Quantity must be a valid number.";
+      isValid = false;
+    }
+    if (!inventoryItem.pricePerUnit.trim()) {
+      errors.pricePerUnit = "Price Per Unit is required.";
+      isValid = false;
+    } else if (isNaN(Number(inventoryItem.pricePerUnit))) {
+      errors.pricePerUnit = "Price Per Unit must be a valid number.";
+      isValid = false;
+    }
+
+    setInventoryErrors(errors);
+    return isValid;
   };
 
   const handleItemCategoryInputChange = (val: string) => {
     setInventoryItem({ ...inventoryItem, itemGroup: val });
+    setInventoryErrors({ ...inventoryErrors, itemGroup: undefined });
 
     if (val.length > 0) {
       const filtered = subTypes.filter((subType) =>
@@ -105,13 +167,14 @@ const InventoryForm = ({
       setSuggestions(filtered);
       setShowSuggestions(true);
     } else {
-      setSuggestions(subTypes);
+      setSuggestions(subTypes); // Show all if input is cleared but field is focused
       setShowSuggestions(true);
     }
   };
 
   const selectCategorySuggestion = (suggestion: string) => {
     setInventoryItem({ ...inventoryItem, itemGroup: suggestion });
+    setInventoryErrors({ ...inventoryErrors, itemGroup: undefined });
     setShowSuggestions(false);
   };
 
@@ -131,10 +194,20 @@ const InventoryForm = ({
 
   const handleSubmitInventoryItem = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!validateForm()) {
+      return;
+    }
+
     if (!parsedUserId) {
       alert("User ID is missing. Cannot create inventory item.");
       return;
     }
+    if (!warehouseId) {
+      alert("Warehouse ID is missing. Cannot create inventory item.");
+      return;
+    }
+
     const payload = {
       user_id: Number(parsedUserId),
       item_name: inventoryItem.itemName,
@@ -144,6 +217,7 @@ const InventoryForm = ({
       price_per_unit: Number(inventoryItem.pricePerUnit),
       warehouse_id: warehouseId,
     };
+
     try {
       await axiosInstance.post(`/inventory/add`, payload);
       setInventoryItem({
@@ -153,12 +227,17 @@ const InventoryForm = ({
         quantity: "",
         pricePerUnit: "",
       });
+      setInventoryErrors({});
       handleClose();
-      window.location.reload();
+      window.location.reload(); // Or a more granular state update
     } catch (error: unknown) {
       const message =
-        error instanceof Error ? error.message : "An unexpected error occurred";
-      alert(message);
+        axios.isAxiosError(error) && error.response?.data?.error
+          ? error.response.data.error
+          : error instanceof Error
+          ? error.message
+          : "An unexpected error occurred";
+      alert(`Error adding inventory item: ${message}`);
     }
   };
 
@@ -166,104 +245,136 @@ const InventoryForm = ({
     <div className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm">
       <div
         ref={panelRef}
-        className="fixed top-0 right-0 h-full w-full md:w-1/3 bg-light dark:bg-gray-800 shadow-lg dark:border-l border-gray-700 overflow-y-auto"
+        className="fixed top-0 right-0 h-full w-full md:w-[500px] bg-light dark:bg-gray-800 shadow-lg dark:border-l border-gray-700 overflow-y-auto"
         style={{
           transform: animate ? "translateX(0)" : "translateX(100%)",
           transition: "transform 300ms ease-out",
         }}
       >
         <div className="p-6 flex flex-col h-full">
-          <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-400 dark:border-gray-200">
+          <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200 dark:border-gray-700">
             <h2 className="text-xl font-semibold text-dark dark:text-light">
-              {formTitle ? formTitle : "Create Inventory Item"}
+              {formTitle || "Add New Inventory Item"}
             </h2>
             <button
-              className="text-gray-400 hover:text-gray-300 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
+              className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
               onClick={handleClose}
               aria-label="Close panel"
             >
-              <FontAwesomeIcon icon={faXmark} className="w-5 h-5" />
+              <FontAwesomeIcon icon={faX} className="w-5 h-5" />
             </button>
           </div>
-          <form
-            className="flex flex-col gap-4 w-full flex-grow"
-            onSubmit={handleSubmitInventoryItem}
-          >
-            <TextField
-              label="Item Name"
-              placeholder="e.g. Fertilizer"
-              value={inventoryItem.itemName}
-              onChange={(val: string) =>
-                setInventoryItem({ ...inventoryItem, itemName: val })
-              }
-            />
 
-            <div className="relative">
+          <div className="flex-grow overflow-y-auto pr-2 -mr-2 custom-scrollbar">
+            <form
+              className="flex flex-col gap-4 w-full"
+              onSubmit={handleSubmitInventoryItem}
+              noValidate
+            >
               <TextField
-                label="Item Category"
-                placeholder="e.g. Farming Supplies, Raw Materials"
-                value={inventoryItem.itemGroup}
-                onChange={handleItemCategoryInputChange}
-                onFocus={handleItemCategoryInputFocus}
-                isLoading={isLoadingSubTypes}
+                label="Item Name"
+                placeholder="e.g. Premium Arabica Beans"
+                value={inventoryItem.itemName}
+                onChange={(val: string) => {
+                  setInventoryItem({ ...inventoryItem, itemName: val });
+                  setInventoryErrors({
+                    ...inventoryErrors,
+                    itemName: undefined,
+                  });
+                }}
+                type={inventoryErrors.itemName ? "error" : ""}
+                errorMessage={inventoryErrors.itemName}
               />
-              {showSuggestions && (
-                <div
-                  ref={suggestionsRef}
-                  className="absolute z-10 mt-1 w-full bg-light dark:bg-gray-800 rounded-md shadow-lg max-h-60 overflow-y-auto"
-                >
-                  {isLoadingSubTypes ? (
-                    <p className="text-xs p-2 text-gray-500 dark:text-gray-400">
-                      <Loader />
-                    </p>
-                  ) : suggestions.length > 0 ? (
-                    suggestions.map((suggestion, index) => (
-                      <div
-                        key={index}
-                        className="px-4 py-2 hover:bg-gray-500 dark:hover:bg-gray-700 text-sm cursor-pointer text-dark dark:text-light"
-                        onClick={() => selectCategorySuggestion(suggestion)}
-                      >
-                        {suggestion}
-                      </div>
-                    ))
-                  ) : (
-                    ""
-                  )}
-                </div>
-              )}
-            </div>
 
-            <DropdownLarge
-              items={UNITS}
-              selectedItem={inventoryItem.units}
-              onSelect={(value: string) =>
-                setInventoryItem({ ...inventoryItem, units: value })
-              }
-              type="form"
-              label="Units"
-              width="full"
-            />
-            <TextField
-              number
-              label="Quantity"
-              value={inventoryItem.quantity}
-              onChange={(val: string) =>
-                setInventoryItem({ ...inventoryItem, quantity: val })
-              }
-            />
-            <TextField
-              number
-              label="Price Per Unit"
-              value={inventoryItem.pricePerUnit}
-              onChange={(val: string) =>
-                setInventoryItem({ ...inventoryItem, pricePerUnit: val })
-              }
-            />
-            <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-400 dark:border-gray-200">
-              <Button text="Create" style="primary" type="submit" />
-              <Button text="Cancel" style="secondary" onClick={handleClose} />
-            </div>
-          </form>
+              <div className="relative">
+                <TextField
+                  label="Item Category"
+                  placeholder="e.g. Raw Coffee, Packaging"
+                  value={inventoryItem.itemGroup}
+                  onChange={handleItemCategoryInputChange}
+                  onFocus={handleItemCategoryInputFocus}
+                  isLoading={isLoadingSubTypes}
+                  type={inventoryErrors.itemGroup ? "error" : ""}
+                  errorMessage={inventoryErrors.itemGroup}
+                />
+                {showSuggestions && (
+                  <div
+                    ref={suggestionsRef}
+                    className="absolute z-20 mt-1 w-full bg-light dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-lg max-h-60 overflow-y-auto"
+                  >
+                    {isLoadingSubTypes ? (
+                      <div className="p-3 flex justify-center items-center">
+                        <Loader />
+                      </div>
+                    ) : suggestions.length > 0 ? (
+                      suggestions.map((suggestion, index) => (
+                        <div
+                          key={index}
+                          className="px-4 py-2 hover:bg-gray-400 dark:hover:bg-gray-700 text-sm cursor-pointer text-dark dark:text-light"
+                          onClick={() => selectCategorySuggestion(suggestion)}
+                        >
+                          {suggestion}
+                        </div>
+                      ))
+                    ) : (
+                      <p className="px-4 py-2 text-sm text-gray-500 dark:text-gray-400">
+                        No categories found.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <DropdownLarge
+                items={UNITS}
+                selectedItem={inventoryItem.units}
+                onSelect={(value: string) => {
+                  setInventoryItem({ ...inventoryItem, units: value });
+                  setInventoryErrors({ ...inventoryErrors, units: undefined });
+                }}
+                type="form"
+                label="Units"
+                width="full"
+              />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <TextField
+                  number
+                  label="Quantity"
+                  placeholder="e.g. 100"
+                  value={inventoryItem.quantity}
+                  onChange={(val: string) => {
+                    setInventoryItem({ ...inventoryItem, quantity: val });
+                    setInventoryErrors({
+                      ...inventoryErrors,
+                      quantity: undefined,
+                    });
+                  }}
+                  type={inventoryErrors.quantity ? "error" : ""}
+                  errorMessage={inventoryErrors.quantity}
+                />
+                <TextField
+                  number
+                  label="Price Per Unit"
+                  placeholder="e.g. 25.50"
+                  value={inventoryItem.pricePerUnit}
+                  onChange={(val: string) => {
+                    setInventoryItem({ ...inventoryItem, pricePerUnit: val });
+                    setInventoryErrors({
+                      ...inventoryErrors,
+                      pricePerUnit: undefined,
+                    });
+                  }}
+                  type={inventoryErrors.pricePerUnit ? "error" : ""}
+                  errorMessage={inventoryErrors.pricePerUnit}
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 mt-auto pt-4 border-t border-gray-200 dark:border-gray-700">
+                <Button text="Cancel" style="secondary" onClick={handleClose} />
+                <Button text="Add Item" style="primary" type="submit" />
+              </div>
+            </form>
+          </div>
         </div>
       </div>
     </div>

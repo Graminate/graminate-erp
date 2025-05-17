@@ -138,7 +138,7 @@ const WarehousePage = () => {
         <div className="flex justify-between items-center dark:bg-dark relative mb-4">
           <div>
             <h1 className="text-lg font-semibold dark:text-white">
-              You Warehouses
+              Your Warehouses
             </h1>
             <p className="text-xs text-dark dark:text-light">
               {loading

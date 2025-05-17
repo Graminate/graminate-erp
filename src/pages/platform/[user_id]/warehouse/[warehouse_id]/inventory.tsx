@@ -67,16 +67,6 @@ type WarehouseDetails = {
   storage_capacity: number | string | null;
 };
 
-const getBarColor = (quantity: number, max: number) => {
-  if (max === 0 && quantity === 0) return "#6B7280";
-  if (max === 0 && quantity > 0) return "#04ad79";
-  const ratio = quantity / max;
-  if (ratio < 0.25) return "#e53e3e";
-  if (ratio < 0.5) return "orange";
-  if (ratio < 0.75) return "#facd1d";
-  return "#04ad79";
-};
-
 const generateColors = (count: number) =>
   Array.from(
     { length: count },
@@ -212,10 +202,6 @@ const WarehouseInventoryPage = () => {
     };
   }, [searchedInventory]);
 
-  const maxQuantity = Math.max(
-    0,
-    ...inventoryForWarehouse.map((item) => item.quantity)
-  );
   const groups = Array.from(
     new Set(inventoryForWarehouse.map((item) => item.item_group))
   );
@@ -229,10 +215,10 @@ const WarehouseInventoryPage = () => {
         data: groups.map((group) =>
           group === item.item_group ? item.quantity : null
         ),
-        backgroundColor: getBarColor(item.quantity, maxQuantity),
+        backgroundColor: "#04ad79", // Consistent green color for all bars
       })),
     }),
-    [groups, inventoryForWarehouse, maxQuantity]
+    [groups, inventoryForWarehouse]
   );
 
   const dynamicWarehouseName =
@@ -292,93 +278,112 @@ const WarehouseInventoryPage = () => {
       <Head>
         <title>Graminate | {dynamicWarehouseName} - Inventory</title>
       </Head>
-      <div className="min-h-screen container mx-auto p-4">
-        <div className="flex justify-between items-start dark:bg-dark relative mb-4">
-          <div>
-            <h1 className="text-xl font-semibold dark:text-white">
-              Inventory for{" "}
-              <span className="text-primary">{dynamicWarehouseName}</span>
-            </h1>
-            <p className="text-xs text-dark dark:text-light mt-2">
-              {loadingInventory
-                ? "Loading items..."
-                : `${searchedInventory.length} Item(s) in this Warehouse ${
-                    searchQuery ? "(filtered)" : ""
-                  }`}
-            </p>
-            {!loadingWarehouseDetails && currentWarehouseDetails && (
-              <div className="flex flex-col gap-2 mt-2">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
-                  {/* Left Column - Type and Capacity */}
-                  <div className="space-y-2">
-                    <p className="text-sm text-dark dark:text-light">
-                      <span className="font-semibold mr-1">Type:</span>
-                      {currentWarehouseDetails.type}
-                    </p>
-                    {currentWarehouseDetails.storage_capacity != null && (
-                      <p className="text-sm text-dark dark:text-light">
-                        <span className="font-semibold mr-1">Capacity:</span>
-                        {currentWarehouseDetails.storage_capacity} sq. ft.
-                      </p>
-                    )}
-                  </div>
+      <div className="min-h-screen container mx-auto p-4 md:p-6 lg:p-8">
+        <div className="mb-6 p-4 bg-white dark:bg-gray-800 shadow-md rounded-lg">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+            <div className="mb-4 md:mb-0">
+              <h1 className="text-2xl font-bold text-gray-800 dark:text-white">
+                Inventory for{" "}
+                <span className="text-primary">{dynamicWarehouseName}</span>
+              </h1>
+              <p className="text-sm text-gray-300 mt-1">
+                {loadingInventory
+                  ? "Loading items..."
+                  : `${searchedInventory.length} Item(s) in this Warehouse ${
+                      searchQuery ? "(filtered)" : ""
+                    }`}
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {parsedWarehouseId && currentWarehouseDetails && (
+                <Button
+                  text="Edit Warehouse"
+                  style="secondary"
+                  onClick={() => setIsWarehouseFormOpen(true)}
+                  isDisabled={loadingWarehouseDetails}
+                />
+              )}
+              <Button
+                text="All Warehouses"
+                style="secondary"
+                onClick={() => router.push(`/platform/${parsedUserId}/storage`)}
+              />
+              <Button
+                text="Add Item"
+                style="primary"
+                add
+                onClick={() => setIsInventoryFormOpen(true)}
+                isDisabled={!parsedWarehouseId}
+              />
+            </div>
+          </div>
 
-                  <div className="space-y-2">
-                    {cumulativeAddress && (
-                      <div className="flex items-center">
-                        <span className="font-semibold mr-2 text-sm text-dark dark:text-light">
-                          <FontAwesomeIcon icon={faMapMarkerAlt} />
-                        </span>
-                        <p className="text-sm text-dark dark:text-light">
-                          {cumulativeAddress}
-                        </p>
-                      </div>
-                    )}
+          {!loadingWarehouseDetails && currentWarehouseDetails && (
+            <div className="mt-4 pt-4 border-t border-gray-400 dark:border-gray-700">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-sm text-gray-700 dark:text-gray-300">
+                <div className="flex items-center">
+                  <FontAwesomeIcon
+                    icon={faWarehouse}
+                    className="mr-3 w-4 h-4 text-blue-200"
+                  />
+                  <div>
+                    <span className="font-semibold block">Type</span>
+                    {currentWarehouseDetails.type}
                   </div>
                 </div>
-                <div className="flex flex-row flex-wrap gap-4 items-center">
-                  {currentWarehouseDetails.contact_person && (
-                    <p className="text-sm text-dark dark:text-light">
-                      <span className="font-semibold mr-1">
-                        Contact Person:
+                {currentWarehouseDetails.storage_capacity != null && (
+                  <div className="flex items-center">
+                    <FontAwesomeIcon
+                      icon={faBoxOpen}
+                      className="mr-3 w-4 h-4 text-blue-200"
+                    />
+                    <div>
+                      <span className="font-semibold block">Capacity</span>
+                      {currentWarehouseDetails.storage_capacity}
+                    </div>
+                  </div>
+                )}
+                {currentWarehouseDetails.contact_person && (
+                  <div className="flex items-center">
+                    <FontAwesomeIcon
+                      icon={faUserTie}
+                      className="mr-3 w-4 h-4 text-blue-200"
+                    />
+                    <div>
+                      <span className="font-semibold block">
+                        Contact Person
                       </span>
                       {currentWarehouseDetails.contact_person}
-                    </p>
-                  )}
-                  {currentWarehouseDetails.phone && (
-                    <p className="text-sm text-dark dark:text-light">
-                      <span className="font-semibold mr-2">
-                        <FontAwesomeIcon icon={faPhone} />
-                      </span>
+                    </div>
+                  </div>
+                )}
+                {currentWarehouseDetails.phone && (
+                  <div className="flex items-center">
+                    <FontAwesomeIcon
+                      icon={faPhone}
+                      className="mr-3 w-4 h-4 text-blue-200"
+                    />
+                    <div>
+                      <span className="font-semibold block">Phone</span>
                       {currentWarehouseDetails.phone}
-                    </p>
-                  )}
-                </div>
+                    </div>
+                  </div>
+                )}
+                {cumulativeAddress && (
+                  <div className="flex items-center md:col-span-2 lg:col-span-1">
+                    <FontAwesomeIcon
+                      icon={faMapMarkerAlt}
+                      className="mr-3 w-4 h-4 text-blue-200"
+                    />
+                    <div>
+                      <span className="font-semibold block">Address</span>
+                      {cumulativeAddress}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          <div className="flex flex-col sm:flex-row gap-4 mt-2">
-            {parsedWarehouseId && currentWarehouseDetails && (
-              <Button
-                text="Edit Warehouse"
-                style="secondary"
-                onClick={() => setIsWarehouseFormOpen(true)}
-                isDisabled={loadingWarehouseDetails}
-              />
-            )}
-            <Button
-              text="All Warehouses"
-              style="secondary"
-              onClick={() => router.push(`/platform/${parsedUserId}/warehouse`)}
-            />
-            <Button
-              text="Add Item"
-              style="primary"
-              add
-              onClick={() => setIsInventoryFormOpen(true)}
-              isDisabled={!parsedWarehouseId}
-            />
-          </div>
+            </div>
+          )}
         </div>
 
         {inventoryForWarehouse.length > 0 && !loadingInventory && (
@@ -424,30 +429,6 @@ const WarehouseInventoryPage = () => {
                     />
                   </div>
                 </div>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-4 mt-4 text-sm dark:text-gray-300 text-gray-700">
-              <div className="flex items-center gap-2">
-                <span className="inline-block w-4 h-4 bg-red-600 rounded-sm" />
-                {"< 25%"} of Max
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="inline-block w-4 h-4 bg-orange-500 rounded-sm" />
-                {"< 50%"} of Max
-              </div>
-              <div className="flex items-center gap-2">
-                <span
-                  className="inline-block w-4 h-4 rounded-sm"
-                  style={{ backgroundColor: "#facd1d" }}
-                />
-                {"< 75%"} of Max
-              </div>
-              <div className="flex items-center gap-2">
-                <span
-                  className="inline-block w-4 h-4 rounded-sm"
-                  style={{ backgroundColor: "#04ad79" }}
-                />
-                {"≥ 75%"} of Max
               </div>
             </div>
           </div>
